@@ -126,3 +126,30 @@ fn smear_draws() {
     let lit = img.data.as_chunks::<3>().0.iter().filter(|p| p[0] > 60).count();
     assert!(lit > 500, "the smear lights {lit} pixels");
 }
+
+#[test]
+fn ball_and_projectile_trails_follow_their_centres() {
+    let rig = arm(1.0);
+    let mut rec = swing(10, 0.0, 30);
+    // Fighter 0 slides along x; a projectile flies along y from step 5.
+    for (i, s) in rec.steps.iter_mut().enumerate() {
+        s.pos[0] = [i as f64 * 0.05, 0.0, 0.0];
+        if i >= 5 {
+            s.projs.push((7, [0.0, (i - 5) as f64 * 0.1, 1.0]));
+        }
+    }
+    let t = step_to_t(20);
+    let ball = trail_points(&rec, &rig, 0.6, 0, BALL, t, 0.05, &step_to_t);
+    assert!(ball.len() >= 5);
+    for (a, b, age) in &ball {
+        assert_eq!(a, b);
+        assert!((a[2] - 0.6).abs() < 1e-9, "at the ball's centre height");
+        let s = (t - f64::from(*age) - step_to_t(0)) * 120.0;
+        assert!((a[0] - s * 0.05).abs() < 1e-6, "on the ball's path");
+    }
+    let proj = trail_points(&rec, &rig, 0.6, 0, PROJ + 7, t, 0.1, &step_to_t);
+    assert!(proj.len() >= 10);
+    assert!(proj.iter().all(|(a, _, _)| a[0] == 0.0 && a[2] == 1.0));
+    assert!(proj.windows(2).all(|w| w[1].0[1] >= w[0].0[1]), "oldest first");
+    assert!(trail_points(&rec, &rig, 0.6, 0, PROJ + 8, t, 0.1, &step_to_t).is_empty());
+}

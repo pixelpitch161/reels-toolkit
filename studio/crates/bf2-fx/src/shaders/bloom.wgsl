@@ -8,7 +8,7 @@ fn fs_prefilter(in: FsIn) -> @location(0) vec4<f32> {
     var wsum = 0.0;
     for (var i = 0u; i < 4u; i++) {
         let o = vec2<f32>(f32(i & 1u) - 0.5, f32(i >> 1u) - 0.5) * t;
-        let s = min(sane(textureSampleLevel(src, samp, in.uv + o, 0.0).rgb), vec3<f32>(256.0));
+        let s = min(sane(textureSampleLevel(src, samp, in.uv + o, 0.0).rgb), vec3<f32>(12.0));
         let w = 1.0 / (1.0 + luma(s));
         c += s * w;
         wsum += w;

@@ -9,9 +9,10 @@ fn radial_sample(uv: vec2<f32>) -> vec3<f32> {
     var wsum = 0.0;
     let toward = su.radial.xy - uv;
     for (var i = 0u; i < 16u; i++) {
+        // Taps bunched near the pixel (f squared), so the streaks trail off instead of the picture looking zoomed.
         let f = f32(i) / 15.0;
-        let w = 1.0 - 0.6 * f;
-        acc += sane(textureSampleLevel(src, samp, uv + toward * (f * 0.28 * amount), 0.0).rgb) * w;
+        let w = 1.0 - 0.5 * f;
+        acc += sane(textureSampleLevel(src, samp, uv + toward * (f * f * 0.22 * amount), 0.0).rgb) * w;
         wsum += w;
     }
     return acc / wsum;

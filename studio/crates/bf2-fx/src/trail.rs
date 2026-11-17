@@ -22,7 +22,13 @@ pub enum TrailStyle {
     Lightning,
 }
 
-/// A trail on fighter `k`'s `bone`.
+/// The "bone" that is fighter `k`'s ball itself: a trail with it follows the ball's centre (a launch ribbon).
+pub const BALL: usize = usize::MAX;
+
+/// The first "bone" that is a projectile: `PROJ + id` follows projectile `id` (a thrown thing's ribbon).
+pub const PROJ: usize = 1 << 40;
+
+/// A trail on fighter `k`'s `bone` (or its ball, [`BALL`], or a projectile, [`PROJ`] + its id).
 #[derive(Clone, Debug, PartialEq)]
 pub struct TrailDef {
     pub k: usize,
@@ -78,6 +84,13 @@ fn bone_at(
 ) -> Option<Segment> {
     let (pos, facing, joints) = state;
     let centre = [pos[0], pos[1], pos[2] + r_ball];
+    if bone == BALL {
+        return Some(Segment {
+            a: centre,
+            b: centre,
+            radius: r_ball,
+        });
+    }
     solve(rig, &Pose { joints }, centre, r_ball, facing, segs);
     segs.get(bone).copied()
 }
@@ -110,6 +123,9 @@ pub fn trail_points(
     length_s: f32,
     step_to_t: &dyn Fn(u32) -> f64,
 ) -> Vec<(V3, V3, f32)> {
+    if (PROJ..BALL).contains(&bone) {
+        return proj_points(rec, (bone - PROJ) as u32, t_end, length_s, step_to_t);
+    }
     let n = rec.steps.len();
     let mut out = Vec::new();
     if n == 0 {
@@ -136,6 +152,38 @@ pub fn trail_points(
         let alpha = if tb > ta { (t_end - ta) / (tb - ta) } else { 0.0 };
         if let Some(seg) = bone_at(rig, r_ball, state_at(rec, k, s - 1, alpha), bone, &mut segs) {
             out.push((seg.a, seg.b, 0.0));
+        }
+    }
+    out
+}
+
+/// Projectile `id`'s centre at every step within `length_s` before `t_end` (base = tip), then at `t_end`.
+fn proj_points(
+    rec: &Recording2,
+    id: u32,
+    t_end: f64,
+    length_s: f32,
+    step_to_t: &dyn Fn(u32) -> f64,
+) -> Vec<(V3, V3, f32)> {
+    let n = rec.steps.len();
+    let at = |i: usize| rec.steps[i].projs.iter().find(|p| p.0 == id).map(|p| p.1);
+    let t_start = t_end - f64::from(length_s);
+    let first = partition(n, |i| step_to_t(i as u32) < t_start);
+    let mut out = Vec::new();
+    for i in first..n {
+        let t = step_to_t(i as u32);
+        if t > t_end {
+            let (Some(a), Some(b)) = (i.checked_sub(1).and_then(at), at(i)) else {
+                break;
+            };
+            let ta = step_to_t(i as u32 - 1);
+            let u = if t > ta { (t_end - ta) / (t - ta) } else { 0.0 };
+            let p = std::array::from_fn(|c| a[c] + (b[c] - a[c]) * u);
+            out.push((p, p, 0.0));
+            break;
+        }
+        if let Some(p) = at(i) {
+            out.push((p, p, (t_end - t) as f32));
         }
     }
     out

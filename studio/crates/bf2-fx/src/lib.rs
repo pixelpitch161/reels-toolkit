@@ -6,17 +6,20 @@
 //! presets. Every effect has an exit: nothing just disappears. Milestone E3 builds it.
 
 pub mod decal;
+pub mod frame;
 pub mod hash;
 pub mod lights;
 pub mod meshfx;
 pub mod particles;
 pub(crate) mod pipe;
+pub mod presets;
 pub mod record;
 pub mod screen;
 #[cfg(test)]
 mod testkit;
 pub mod timeline;
 pub mod trail;
+pub mod wire;
 
 pub use record::{Anchor, Env, Exit, FxError, FxKind, FxRecord, envelope};
 pub use timeline::FxTimeline;
