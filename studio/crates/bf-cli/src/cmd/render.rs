@@ -220,7 +220,7 @@ mod tests {
         assert!(r.is_err(), "stopped after its first event");
         assert_eq!(
             first.into_inner().unwrap(),
-            Some(JobEvent::Stage(bf_export::job2::SILENCE)),
+            Some(JobEvent::Stage(bf_export::stage::SOUNDTRACK)),
             "an Engine 2 file reaches run_job2"
         );
         assert_eq!(ff.seed, Some(26));

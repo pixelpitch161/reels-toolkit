@@ -1,16 +1,18 @@
-//! Engine 2's render job: a silent soundtrack (E5 brings sound), the K.O. window check, the effect timeline (the
-//! events wired to `bf2-fx`'s presets plus each look's own records), every frame drawn by `bf2-fx`'s frame path
-//! (motion-blur sub-frames, effects, the screen chain) on one GPU thread (the GPU is the parallelism) and encoded at 1080 x 1920, the finished file's
-//! checks, then the folder moved into place under the same names and rules as the current engine's job
-//! ([`crate::job`]).
+//! Engine 2's render job: the soundtrack (`bf_content::build_soundtrack2`: the score on the shadow recording,
+//! slowing down with the slow-mo), the UI layer (`bf2_render::Ui2`: count-in, HUD, captions and VS card,
+//! composited over every GPU frame after the tone map), the render checks of a whole video
+//! ([`crate::checks::engine2`]: safe zone, levels, band, loudness, loop picture and sound, focus, the K.O. window;
+//! no flash check), the effect timeline (the events wired to `bf2-fx`'s presets plus each look's own records), every
+//! frame drawn by `bf2-fx`'s frame path (motion-blur sub-frames, effects, the screen chain) on one GPU thread (the
+//! GPU is the parallelism) and encoded at 1080 x 1920, the finished file's checks, then the folder moved into place
+//! under the same names and rules as the current engine's job ([`crate::job`]).
 //!
-//! Stages, in order ([`JobEvent::Stage`]): [`SILENCE`], [`stage::CHECKS`] (a whole video only), [`stage::FRAMES`],
-//! [`stage::ENCODE`], [`stage::VERIFY`], [`stage::SAVE`]. Cancel is looked at between the stages and before every
-//! frame; it ends ffmpeg and leaves nothing behind.
+//! Stages, in order ([`JobEvent::Stage`]): [`stage::SOUNDTRACK`], [`stage::CHECKS`] (a whole video only),
+//! [`stage::FRAMES`], [`stage::ENCODE`], [`stage::VERIFY`], [`stage::SAVE`]. Cancel is looked at between the stages
+//! and before every frame; it ends ffmpeg and leaves nothing behind.
 //!
-//! The checks of the current engine's picture and sound (focus, safe zone, levels, band, loudness, the flash
-//! limits) are not run: they are E5's. The loop checks of the finished file are reported but do not stop the job
-//! until E4 gives Engine 2 its ending (an Engine 2 fight does not yet end where it began).
+//! The loop checks of the finished file are reported but do not stop the job (an Engine 2 fight does not yet end
+//! exactly where it began).
 
 use std::ops::Range;
 use std::path::PathBuf;
@@ -22,25 +24,25 @@ use bf_content::fighters2;
 use bf_core::Engine;
 use bf_core::fightfile::FightFile;
 use bf_picture::config::{FPS, NF};
-use bf_sound::NA;
+use bf_picture::look::DefaultLook;
+use bf_picture::title::layout::Layout;
+use bf_picture::title::{CardLook, TitleCard};
 use bf_sound::wav::wav16_bytes;
+use bf_story::BeatSheet;
 use bf2_direct::{ArenaTrack, CameraTrack, DirectCfg, TimeMap};
 use bf2_fx::FxTimeline;
 use bf2_fx::frame::{Direction, FxFrame};
-use bf2_render::{Gpu, Look2, Renderer, Stage};
+use bf2_render::{Gpu, Look2, Renderer, RowDef, Stage, Ui2, rows_of};
 use bf2_sim::Recording2;
 
-use crate::checks::CheckResult;
+use crate::checks::engine2::{focus2, ko_window, pre_render2};
+use crate::checks::{BandPlan, CheckResult};
 use crate::encode::{ENCODING_NOTE, Encoder, Ffmpeg};
 use crate::job::{JobEvent, JobOpts, stage};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
 use crate::probe::verify_until;
 use crate::{ExportError, output};
 
-/// Engine 2's first stage: the silent soundtrack is written.
-pub const SILENCE: &str = "silence";
-/// The last moment a K.O. may come (video seconds): the video needs its last three seconds after it.
-pub const KO_BY: f64 = 58.0;
 /// Engine 2's frames.
 pub const W2: usize = bf2_render::W as usize;
 pub const H2: usize = bf2_render::H as usize;
@@ -49,34 +51,6 @@ pub const H2: usize = bf2_render::H as usize;
 const ADVISORY: [&str; 2] = ["mp4_loop_picture", "mp4_loop_audio"];
 /// The finished file's checks not run on Engine 2 at all (no flash cap on Engine 2, Aedan 2026-11-17).
 const NOT_RUN: [&str; 1] = ["mp4_flash"];
-
-/// The K.O. window, in video time (after slow-mo, `map.ko_video_t`): a K.O. after the fight starts and by
-/// [`KO_BY`].
-pub fn ko_window(rec: &Recording2, map: &TimeMap) -> CheckResult {
-    const TITLE: &str = "K.O. window";
-    match rec.outcome.t_ko.and(map.ko_video_t()) {
-        Some(t) if t >= rec.t_fight && t <= KO_BY => CheckResult::new(
-            "ko_window",
-            true,
-            format!("{TITLE}: the K.O. comes at {t:.2} s, by {KO_BY:.0} s."),
-            &[("t_ko", t)],
-        ),
-        Some(t) => CheckResult::new(
-            "ko_window",
-            false,
-            format!(
-                "{TITLE}: the K.O. comes at {t:.2} s, after {KO_BY:.0} s, so the video has no ending; choose another seed."
-            ),
-            &[("t_ko", t)],
-        ),
-        None => CheckResult::new(
-            "ko_window",
-            false,
-            format!("{TITLE}: this fight has no K.O., so it has no video; choose another seed."),
-            &[],
-        ),
-    }
-}
 
 /// What the director made of a fight, once per job: the time map, the camera of every frame and the arena's
 /// reactions.
@@ -105,6 +79,58 @@ pub fn direct(ff: &FightFile, rec: &Recording2) -> Directed {
     let camera = CameraTrack::build(rec, &map, &cfg);
     let arena = ArenaTrack::build(rec, &map, ff.grid().bpm, &cfg);
     Directed { map, camera, arena }
+}
+
+/// The VS card, the HUD rows and the fighters' colours (sRGB, 0 to 255) of [`ui_parts`].
+pub type UiParts = (TitleCard, [Vec<RowDef>; 2], [[f64; 3]; 2]);
+
+/// What the UI layer of an Engine 2 fight is drawn with besides its show: the VS card (each fighter's roster
+/// colours and its close-up model, `fighters2::card_mesh`, drawn with the plain look), each fighter's HUD rows and
+/// its colour (sRGB, 0 to 255).
+///
+/// # Errors
+/// A fighter with no Engine 2 roster entry or card model, or a card that cannot be made, in one sentence.
+pub fn ui_parts(
+    ff: &FightFile,
+    show: &bf_core::show::Show,
+    defs: [&bf2_sim::FighterDef; 2],
+    dt: f64,
+) -> Result<UiParts, ExportError> {
+    let no = |name: &str| {
+        ExportError::Content(format!(
+            "This fight cannot be rendered: {name} has no Engine 2 card yet."
+        ))
+    };
+    let mut cfgs = Vec::new();
+    let mut meshes = Vec::new();
+    for name in &show.names {
+        cfgs.push(fighters2::cfg(name).ok_or_else(|| no(name))?);
+        meshes.push(fighters2::card_mesh(name).ok_or_else(|| no(name))?);
+    }
+    let colours = [cfgs[0].color.map(f64::from), cfgs[1].color.map(f64::from)];
+    let darks = [cfgs[0].dark.map(f64::from), cfgs[1].dark.map(f64::from)];
+    let card_error = |e: &dyn std::fmt::Display| {
+        ExportError::Content(format!(
+            "The VS card could not be made ({e}), so nothing was saved; this is a fault in the app, not in your fight."
+        ))
+    };
+    let layout = Layout::new(&show.names[0], &show.names[1], &ff.picture).map_err(|e| card_error(&e))?;
+    let look = |k: usize| CardLook {
+        look: &DefaultLook,
+        mesh: &meshes[k],
+        yaw: 0.0,
+        roll: 0.0,
+    };
+    let card = TitleCard::with_layout(
+        show,
+        colours,
+        darks,
+        [look(0), look(1)],
+        ff.series_tag.as_deref(),
+        layout,
+    )
+    .map_err(|e| card_error(&e))?;
+    Ok((card, [rows_of(defs[0], dt), rows_of(defs[1], dt)], colours))
 }
 
 fn fx_error(what: &str, e: &bf2_fx::FxError) -> ExportError {
@@ -283,14 +309,14 @@ fn report2(results: Vec<CheckResult>, on: &(dyn Fn(JobEvent) + Sync)) -> Result<
 impl Job2<'_> {
     fn make(mut self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
         let (on, name) = (self.on, self.name);
-        on(JobEvent::Stage(SILENCE));
-        let wav = tmp.write("audio.wav", &wav16_bytes(&vec![[0.0; 2]; NA]))?;
+        let defs = [&*self.defs[0], &*self.defs[1]];
+        let (map, cams) = (&self.directed.map, &self.directed.camera);
+        on(JobEvent::Stage(stage::SOUNDTRACK));
+        let sound = bf_content::build_soundtrack2(self.rec, defs, map, self.ff)?;
+        let (card, rows, ui_colours) = ui_parts(self.ff, &sound.show, defs, self.rec.dt)?;
+        let ui = Ui2::new(&sound.show, &sound.shadow, self.rec, map, cams, rows, ui_colours, &card);
+        let wav = tmp.write("audio.wav", &wav16_bytes(&sound.soundtrack.master))?;
         stop()?;
-        if self.whole {
-            on(JobEvent::Stage(stage::CHECKS));
-            report2(vec![ko_window(self.rec, &self.directed.map)], on)?;
-            stop()?;
-        }
 
         let gpu = Gpu::headless().map_err(|e| {
             ExportError::Frame(format!(
@@ -304,15 +330,36 @@ impl Job2<'_> {
             look.setup(&mut r, &gpu);
         }
         let mut fx = FxFrame::new(&gpu, &r);
-        let defs = [&*self.defs[0], &*self.defs[1]];
         let (looks, timeline, colours, rec) = (&self.looks, &self.timeline, self.colours, self.rec);
         let dir = self.directed.direction();
         let size = (W2 as u32, H2 as u32);
+        // every frame: the UI layer of that frame, then the GPU frame with it composited after the tone map
         let mut draw = |f: usize| {
+            r.set_overlay(&gpu, Some(&ui.draw(f).0));
             fx.render(
                 &mut r, &gpu, &stage_set, looks, defs, rec, &dir, timeline, colours, f, size,
             )
         };
+
+        if self.whole {
+            on(JobEvent::Stage(stage::CHECKS));
+            let cfg = |k: usize| {
+                fighters2::cfg(&self.ff.fighters[k]).ok_or_else(|| {
+                    ExportError::Content(format!(
+                        "This fight cannot be rendered: {} has no Engine 2 roster entry yet.",
+                        self.ff.fighters[k]
+                    ))
+                })
+            };
+            let sheet = BeatSheet::series([cfg(0)?, cfg(1)?]);
+            let plan = BandPlan::of(self.ff)?;
+            let focus = focus2(rec, map, cams, &sound.show);
+            let ko = ko_window(map.ko_video_t(), &sheet);
+            let results = pre_render2(&ui, &mut draw, &sound, focus, ko, &plan, self.cancel)
+                .ok_or_else(ExportError::cancelled)?;
+            report2(results, on)?;
+            stop()?;
+        }
 
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);
@@ -407,14 +454,27 @@ mod tests {
         );
     }
 
+    /// No flash check on Engine 2: none before the render (`pre_render2` has none) and the finished file's is not
+    /// reported, even when it would fail.
     #[test]
-    fn ko_window_is_in_video_time() {
-        let (ff, rec) = dummy();
-        let d = direct(&ff, &rec);
-        let r = ko_window(&rec, &d.map);
-        let t = d.map.ko_video_t().expect("the dummy's seed K.O.s");
-        assert!(r.pass, "{}", r.summary);
-        assert!(t >= rec.outcome.t_ko.unwrap());
-        assert!(r.summary.contains(&format!("{t:.2}")), "{}", r.summary);
+    fn engine2_job_skips_flash() {
+        let events = std::sync::Mutex::new(Vec::new());
+        let on = |e: JobEvent| events.lock().unwrap().push(e);
+        let results = vec![
+            CheckResult::failed("mp4_flash", "flashes".into()),
+            CheckResult::new("mp4_frames", true, "ok".into(), &[]),
+        ];
+        assert!(report2(results, &on).is_ok());
+        let names: Vec<&str> = events
+            .into_inner()
+            .unwrap()
+            .iter()
+            .filter_map(|e| match e {
+                JobEvent::Check(r) => Some(r.name),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(names, ["mp4_frames"]);
+        assert!(!names.iter().any(|n| n.contains("flash")));
     }
 }

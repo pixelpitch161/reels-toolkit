@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use bf_core::fightfile::FightFile;
-use bf_export::job2::{SILENCE, run_job2};
+use bf_export::job2::run_job2;
 use bf_export::{EncodeSpeed, ExportError, JobEvent, JobOpts, find_ffmpeg, stage};
 use bf_testdata::repo_root;
 use bf2_sim::{Recording2, Rules2, Setup2};
@@ -86,9 +86,9 @@ fn engine2_job_writes_a_61s_1080x1920_video() {
     assert_eq!(probe(&mp4, "stream=codec_name", "a:0"), "aac");
     assert_eq!(probe(&mp4, "stream=nb_frames", "v:0"), "60");
     let audio: f64 = probe(&mp4, "stream=duration", "a:0").parse().unwrap();
-    assert!((audio - 61.0).abs() < 0.1, "the whole silent soundtrack: {audio} s");
+    assert!((audio - 61.0).abs() < 0.1, "the whole soundtrack: {audio} s");
     let events = events.into_inner().unwrap();
-    assert_eq!(events.first(), Some(&JobEvent::Stage(SILENCE)));
+    assert_eq!(events.first(), Some(&JobEvent::Stage(stage::SOUNDTRACK)));
     assert!(events.contains(&JobEvent::Stage(stage::FRAMES)));
     assert!(events.iter().any(|e| matches!(
         e,
@@ -98,6 +98,53 @@ fn engine2_job_writes_a_61s_1080x1920_video() {
             ..
         }
     )));
+    std::fs::remove_dir_all(&out).unwrap();
+}
+
+/// The clip's sound, decoded: 16-bit stereo samples at 48 kHz.
+fn decoded(mp4: &Path) -> Vec<i16> {
+    let out = Command::new("ffmpeg")
+        .args(["-v", "error", "-i"])
+        .arg(mp4)
+        .args(["-map", "0:a:0", "-f", "s16le", "-ac", "2", "-ar", "48000", "-"])
+        .output()
+        .expect("ffmpeg runs");
+    out.stdout
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|b| i16::from_le_bytes(*b))
+        .collect()
+}
+
+/// E5: an Engine 2 video has its soundtrack (the score on the shadow recording), not silence.
+#[test]
+fn engine2_job_has_sound() {
+    let _l = LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let Ok(ffmpeg) = find_ffmpeg() else {
+        eprintln!("ffmpeg is not installed: skipped");
+        return;
+    };
+    let (ff, rec) = dummy();
+    let out = root("sound");
+    let opts = JobOpts {
+        out_root: out.clone(),
+        workers: 1,
+        frames: Some(900..915),
+        speed: EncodeSpeed::Faster,
+    };
+    let folder = run_job2(&ffmpeg, &ff, rec, &opts, &|_| {}, &AtomicBool::new(false)).expect("the clip renders");
+    let mp4 = std::fs::read_dir(&folder)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .find(|p| p.extension().is_some_and(|x| x == "mp4"))
+        .expect("an mp4");
+    let pcm = decoded(&mp4);
+    assert!(pcm.len() > 2 * 48_000 * 60, "61 s of sound: {} samples", pcm.len());
+    let rms = |s: &[i16]| (s.iter().map(|&v| f64::from(v).powi(2)).sum::<f64>() / s.len() as f64).sqrt();
+    // the fight's middle (20 to 40 s) is loud, not silence
+    let mid = rms(&pcm[2 * 48_000 * 20..2 * 48_000 * 40]);
+    assert!(mid > 500.0, "the soundtrack is heard: rms {mid:.1}");
     std::fs::remove_dir_all(&out).unwrap();
 }
 
@@ -116,8 +163,23 @@ fn cancel_leaves_no_file() {
         frames: None,
         speed: EncodeSpeed::Faster,
     };
+    // A whole video cancelled during the checks before the render.
     let cancel = AtomicBool::new(false);
-    // Cancelled once 5 frames have gone to ffmpeg.
+    let on = |e: JobEvent| {
+        if e == JobEvent::Stage(stage::CHECKS) {
+            cancel.store(true, Ordering::SeqCst);
+        }
+    };
+    let e = run_job2(&ffmpeg, &ff, rec.clone(), &opts, &on, &cancel).expect_err("cancelled");
+    assert!(matches!(e, ExportError::Cancelled(_)), "{e}");
+    let left: Vec<_> = std::fs::read_dir(&out).unwrap().collect();
+    assert!(left.is_empty(), "nothing is left: {left:?}");
+    // A clip cancelled once 5 frames have gone to ffmpeg.
+    let opts = JobOpts {
+        frames: Some(0..60),
+        ..opts
+    };
+    let cancel = AtomicBool::new(false);
     let on = |e: JobEvent| {
         if let JobEvent::Progress { done: 5, .. } = e {
             cancel.store(true, Ordering::SeqCst);
