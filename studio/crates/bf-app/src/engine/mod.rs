@@ -71,6 +71,19 @@ pub struct EngineConfig {
     pub clip: Option<Range<usize>>,
     /// Tests: a search stops once this many seeds are checked.
     pub search_limit: Option<u64>,
+    /// The developer switch (`BALLFIGHT_DEV=1` at start-up, ruling E6-R2): the TEST DUMMY is offered on Engine 2,
+    /// and its fight files open.
+    pub dev: bool,
+}
+
+/// The developer switch from the environment: exactly `BALLFIGHT_DEV=1` turns it on.
+pub fn dev_from_env() -> bool {
+    dev_from(std::env::var_os("BALLFIGHT_DEV").as_deref())
+}
+
+/// The developer switch for a `BALLFIGHT_DEV` value: on only for exactly `1`.
+pub(crate) fn dev_from(value: Option<&std::ffi::OsStr>) -> bool {
+    value.is_some_and(|v| v == "1")
 }
 
 /// What every handler is given: the way to answer, the configuration, the shared settings, and the way to start
@@ -291,7 +304,7 @@ fn route(h: &mut Handlers, describer: &Describer, ctx: &Ctx, command: Command) {
             ctx.spawn(
                 "engine: roster",
                 "loading the fighters",
-                |ctx| ctx.emit(Event::Roster(content::roster())),
+                |ctx| ctx.emit(Event::Roster(content::roster_for(ctx.config.dev))),
                 problem,
             );
         }
@@ -429,6 +442,7 @@ pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf) {
         paths: Paths::under(&root),
         clip: None,
         search_limit: None,
+        dev: false,
     };
     (spawn(Arc::new(|| {}), config), root)
 }
@@ -551,6 +565,7 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::LoadRoster);
@@ -572,6 +587,7 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::DescribeFight {
@@ -697,6 +713,7 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         assert_eq!(ctx.workers(), 1, "at least one worker");

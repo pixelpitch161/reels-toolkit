@@ -18,6 +18,7 @@ pub fn vm() -> ViewModel {
     let mut history = starter();
     let id = history.record(
         ["FLUTE".to_string(), "TROMBONE".to_string()],
+        bf_core::Engine::One,
         NEW_FIGHT_SEED,
         Some("FLUTE".to_string()),
         NEW_FIGHT_MADE,
@@ -32,6 +33,7 @@ pub fn unknown_fighter() -> ViewModel {
     let mut history = History::default();
     history.record(
         ["KAZOO".to_string(), "FLUTE".to_string()],
+        bf_core::Engine::One,
         77,
         Some("KAZOO".to_string()),
         NEW_FIGHT_MADE,

@@ -109,6 +109,8 @@ pub struct ViewModel {
     pub app_line: String,
     /// Settings' "Remove" row: the button, the question, or the removal on its way.
     pub removal: upkeep::RemovalView,
+    /// The developer switch (`BALLFIGHT_DEV=1` at start-up, ruling E6-R2): the TEST DUMMY is offered on Engine 2.
+    pub dev: bool,
 }
 
 /// What to do when every fight tried fails the same check ([`ViewModel::theme_way_out`]).
@@ -557,6 +559,7 @@ impl AppState {
             app_line: crate::version::line(),
             removal: upkeep::RemovalView::Closed,
             failed_fits: Vec::new(),
+            dev: false,
         };
         let mut state = AppState::bare(vm);
         state.after_restart();
@@ -793,6 +796,7 @@ fn empty_draft() -> Draft {
         arrangement: None,
         pinned: None,
         base: None,
+        engine: bf_core::Engine::One,
     }
 }
 

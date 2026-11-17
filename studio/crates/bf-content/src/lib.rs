@@ -28,7 +28,10 @@ pub use fighters::look_for;
 pub use pair_rules::pair_rules;
 pub use personality::{Ornament, Personality, Role, Step, personality};
 pub use picture::{build_picture, mesh, title_preview};
-pub use registry::{PORTED, RETIRED, available, engines, music_feeds_fight, name_status, pair_engines, roster};
+pub use registry::{
+    DEV_ONLY, PORTED, RETIRED, available, dev_only, engines, engines_dev, music_feeds_fight, name_status, offered,
+    pair_engines, pair_engines_dev, roster,
+};
 pub use soundtrack::{SoundBuild, build_soundtrack, validate};
-pub use starter::{draft_captions, episode_pairs, home_config, home_fight, kit_pair_fights, starter};
+pub use starter::{draft_captions, episode_pairs, home_config, home_fight, kit_pair_fights, starter, starter_on};
 pub use themes::{theme_names, themes_for};
