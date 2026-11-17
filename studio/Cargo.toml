@@ -39,6 +39,8 @@ bf-app = { path = "crates/bf-app" }
 bf-pack = { path = "crates/bf-pack" }
 bf-engine = { path = "crates/bf-engine" }
 bf2-sim = { path = "crates/bf2-sim" }
+bf2-render = { path = "crates/bf2-render" }
+bf2-fx = { path = "crates/bf2-fx" }
 
 # The tech stack. Crates opt in with `name.workspace = true`; all of these are pure Rust.
 clap = { version = "4.6.7", features = ["derive"] }
@@ -62,6 +64,11 @@ eframe = { version = "=0.37.0", default-features = false, features = ["wgpu", "a
 egui = { version = "=0.37.0", default-features = false }
 egui_kittest = { version = "=0.37.0", features = ["snapshot", "wgpu", "eframe"] }
 rfd = "=0.18.0"
+
+# Engine 2's renderer (bf2-render): wgpu exactly as eframe pulls it in, so the app and the renderer share one copy.
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "parking_lot", "vulkan", "dx12", "wgsl"] }
+pollster = "=1.0.1"
+bytemuck = { version = "=1.25.2", features = ["derive"] }
 
 # Windows calls the render job needs (a move that never replaces, the Hidden attribute); already in the lock file.
 windows-sys = "=0.61.2"

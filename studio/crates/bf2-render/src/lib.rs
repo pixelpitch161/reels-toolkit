@@ -4,3 +4,33 @@
 //! The scene (ring, arena, crowd, the instruments in their glass balls), toon-banded and glass materials, many
 //! dynamic lights and shadows, the post stack (tone map, grade), offscreen frames read back for ffmpeg, and the same
 //! scene drawn into the app's preview. Milestone E2 builds it.
+
+pub mod error;
+pub mod gpu;
+
+pub use error::RenderError;
+pub use gpu::Gpu;
+pub mod post;
+pub mod target;
+
+pub use post::{Post, PostPass};
+pub use target::{H, Targets, W, read_back, read_back_hdr};
+pub mod geom;
+pub mod maths;
+pub mod mesh;
+pub mod scene;
+
+pub use mesh::{MeshData, MeshId, Meshes, Vertex};
+pub use scene::{Camera, Instance, Light, Material, Scene, Spot, to_render};
+pub mod renderer;
+
+pub use renderer::Renderer;
+pub mod fight_frame;
+pub mod fx;
+pub mod look2;
+pub mod stage;
+
+pub use fight_frame::{FightFrame, StepSnapLerp, frame_at, frame_at_time, render_frame, scene_at};
+pub use fx::{FxCamera, FxCtx, FxPass, NoFx, PostChain, PostCtx};
+pub use look2::Look2;
+pub use stage::Stage;
