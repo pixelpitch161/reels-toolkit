@@ -10,11 +10,16 @@
 
 #![forbid(unsafe_code)]
 
+pub mod camera;
 pub mod cfg;
+pub mod project;
+pub mod shots;
 #[cfg(test)]
-#[allow(dead_code)] // the camera's tests use the rest
 mod testkit;
 pub mod time;
 
+pub use camera::CameraTrack;
 pub use cfg::{DirectCfg, FPS, FRAMES};
+pub use project::{CamPose, project, to_render};
+pub use shots::{Priority, Shot, ShotKind};
 pub use time::TimeMap;

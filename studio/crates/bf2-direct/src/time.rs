@@ -267,6 +267,11 @@ impl TimeMap {
         }
     }
 
+    /// Fight seconds per step.
+    pub fn dt(&self) -> f64 {
+        self.dt
+    }
+
     /// The video time of step `step`.
     pub fn step_video_t(&self, step: u32) -> f64 {
         self.video_t(step as f64 * self.dt)

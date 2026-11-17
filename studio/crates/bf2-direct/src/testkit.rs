@@ -4,17 +4,20 @@ use bf2_sim::{Cue, Ev, EvKind, Outcome, Recording2, Rules2, Setup2, StepSnap, V3
 
 pub const DT: f64 = 1.0 / 120.0;
 
-/// FIGHT! on bar 2 at 120 bpm.
+/// FIGHT! on bar 2 at 132 bpm (FLUTE vs TROMBONE's tempo, as E1 measured the dummy).
 pub fn t_fight() -> f64 {
-    bf_core::grid::Grid::new(120.0).t_fight
+    bf_core::grid::Grid::new(132.0).t_fight
 }
 
-/// A TEST DUMMY mirror match.
+/// A TEST DUMMY mirror match set up as E1's measurement (`bf-engine/examples/engine2_speed.rs`): the
+/// `fights/flute_vs_trombone.toml` tempo and handicap, so most seeds end in a K.O.
 pub fn dummy(seed: u64, record: bool) -> Recording2 {
     let d = bf_content::fighters2::def("TEST DUMMY").expect("the dummy");
+    let mut rules = Rules2::new(t_fight());
+    rules.dmg_side = [2.0, 0.4];
     let setup = Setup2 {
         fighters: [d.clone(), d],
-        rules: Rules2::new(t_fight()),
+        rules,
         seed,
     };
     bf2_sim::run(&setup, record).expect("the dummy fights")
