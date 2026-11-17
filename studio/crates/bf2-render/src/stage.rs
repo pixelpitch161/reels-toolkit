@@ -20,13 +20,13 @@ pub const BALL_R: f32 = 0.6;
 pub const AMBIENT: f32 = 0.06;
 
 /// The posts stand just outside the ropes' square; the canvas runs on past them as the apron.
-const POST: f32 = RING_A + 0.25;
-const APRON: f32 = POST + 0.45;
+pub const POST: f32 = RING_A + 0.25;
+pub const APRON: f32 = POST + 0.45;
 /// The arena floor, below the ring's platform.
 const FLOOR_Y: f32 = -1.2;
-const ROPE_HEIGHTS: [f32; 3] = [0.45, 0.85, 1.25];
-const ROPE_R: f32 = 0.035;
-const ROPE_SAG: f32 = 0.06;
+pub const ROPE_HEIGHTS: [f32; 3] = [0.45, 0.85, 1.25];
+pub const ROPE_R: f32 = 0.035;
+pub const ROPE_SAG: f32 = 0.06;
 const POST_H: f32 = 1.45;
 /// The stands: tiers rising away from the ring on all four sides.
 const TIERS: usize = 3;
@@ -87,7 +87,7 @@ impl Seq {
 }
 
 /// The four sides of a square: (outward direction, along direction) in the floor plane of render space.
-const SIDES: [(V3, V3); 4] = [
+pub const SIDES: [(V3, V3); 4] = [
     ([0.0, 0.0, -1.0], [1.0, 0.0, 0.0]),
     ([1.0, 0.0, 0.0], [0.0, 0.0, 1.0]),
     ([0.0, 0.0, 1.0], [-1.0, 0.0, 0.0]),
