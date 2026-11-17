@@ -150,7 +150,11 @@ pub fn resolve(world: &mut World, step: u32) {
         };
         let mv = &def.moves[ms.def];
         for (h, hit) in mv.hits.iter().enumerate() {
-            if world.bodies[target].hp <= 0.0 || world.bodies[target].held_by.is_some_and(|by| by != att) {
+            // A knocked-out fighter lands nothing (armor or a 0 hitstop can leave its move running).
+            if world.bodies[att].hp <= 0.0
+                || world.bodies[target].hp <= 0.0
+                || world.bodies[target].held_by.is_some_and(|by| by != att)
+            {
                 break;
             }
             if !live(hit, s) || (!hit.multi && world.hit_mask[att].get(h).copied().unwrap_or(false)) {

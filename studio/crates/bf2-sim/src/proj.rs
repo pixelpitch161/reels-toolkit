@@ -109,7 +109,12 @@ pub fn step_projs(world: &mut World, step: u32) {
         }
         let mut gone = false;
         let tb = &world.bodies[target];
-        if world.ko.is_none() && tb.hp > 0.0 && tb.held_by.is_none() && len(sub(tc, p.pos)) <= def.radius + tb.r {
+        if world.ko.is_none()
+            && tb.hp > 0.0
+            && world.bodies[p.owner].hp > 0.0
+            && tb.held_by.is_none()
+            && len(sub(tc, p.pos)) <= def.radius + tb.r
+        {
             let point = add(tc, scale(norm(sub(p.pos, tc)), tb.r));
             let normal = norm(sub(tc, point));
             world.projs[i] = p;
@@ -235,6 +240,15 @@ mod tests {
             .unwrap();
         assert!(matches!(w.events.0.last().unwrap().kind, EvKind::Expire { .. }));
         assert!(hit_at < w.events.0.len() - 1);
+    }
+
+    #[test]
+    fn a_knocked_out_owner_deals_no_damage() {
+        let mut w = thrower(dart(120), 2.0, 0.0);
+        w.bodies[0].hp = -1.0;
+        run(&mut w, 120);
+        assert_eq!(count(&w, |k| matches!(k, EvKind::Contact { .. })), 0);
+        assert_eq!(w.bodies[1].hp, 100.0);
     }
 
     #[test]

@@ -141,6 +141,13 @@ impl FighterDef {
                 finite(format!("{sf}.proj.speed"), sp.proj.speed, 0.0)?;
                 finite(format!("{sf}.proj.up"), sp.proj.up, f64::MIN)?;
                 finite(format!("{sf}.proj.homing"), sp.proj.homing, 0.0)?;
+                if sp.proj.hit.grab.is_some() {
+                    // A grab holds the target on the thrower's bone: from a projectile it would teleport it.
+                    return Err(SimError2::new(
+                        format!("{sf}.proj.hit.grab"),
+                        "a projectile cannot grab (grabs are melee only)",
+                    ));
+                }
             }
         }
         let b = &self.brain;
@@ -170,6 +177,36 @@ mod tests {
     use crate::brain::Choice;
     use crate::moves::{Ease, Key};
     use crate::testkit::*;
+
+    #[test]
+    fn check_refuses_a_grab_on_a_projectile() {
+        let mut p = crate::proj::ProjDef {
+            name: "NET",
+            speed: 6.0,
+            up: 0.0,
+            gravity: false,
+            radius: 0.1,
+            life: 60,
+            hit: crate::moves::HitDef {
+                bones: vec![],
+                ..hit(1.0)
+            },
+            bounces: 0,
+            homing: 0.0,
+        };
+        p.hit.grab = Some(crate::moves::Grab {
+            hold: 10,
+            bone: 0,
+            slam: 1.0,
+            throw: 0.0,
+        });
+        let mv = crate::moves::MoveDef {
+            spawns: vec![crate::moves::Spawn { at: 0, proj: p }],
+            ..poke(vec![])
+        };
+        let e = fighter(vec![mv]).check().unwrap_err();
+        assert_eq!(e.field, "moves[0].spawns[0].proj.hit.grab");
+    }
 
     #[test]
     fn check_refuses_out_of_range_bone() {
