@@ -11,6 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 bf-core.workspace = true
+bf-engine.workspace = true
 bf-sim.workspace = true
 bf-story.workspace = true
 bf-picture.workspace = true

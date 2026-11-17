@@ -34,8 +34,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     }
     let cfg = fighters(&ff)?;
     let sheet = bf_story::BeatSheet::series(cfg);
-    let base =
-        bf_sim::setup_from(&ff, bf_content::roster(), 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let base = bf_engine::classic_setup(&ff, 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
     let setup_for = |h: [f64; 2], seed: u64| {
         let mut s = Setup { seed, ..base.clone() };
         s.rules.dmg_side = Some(h);

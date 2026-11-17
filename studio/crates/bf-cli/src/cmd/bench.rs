@@ -205,8 +205,7 @@ fn chosen(a: &Args) -> Result<Vec<&'static str>, Fail> {
 fn fights(a: &Args, ff: &bf_core::fightfile::FightFile, ctx: &Ctx) -> Result<(Value, String), Fail> {
     let cfg = fighters(ff)?;
     let sheet = BeatSheet::series(cfg);
-    let base =
-        bf_sim::setup_from(ff, bf_content::roster(), 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let base = bf_engine::classic_setup(ff, 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
     let setup_for = |seed: u64| Setup { seed, ..base.clone() };
     let rate = |workers: usize| -> Result<(f64, Option<f64>), Fail> {
         stopped(ctx, "the bench")?;

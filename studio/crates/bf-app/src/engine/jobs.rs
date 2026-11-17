@@ -327,8 +327,8 @@ fn fight(fight_toml: &str) -> Result<(FightFile, Recording), JobUpdate> {
     let Some(seed) = ff.seed else {
         return Err(not_made("This fight file names no seed."));
     };
-    let setup = bf_sim::setup_from(&ff, bf_content::roster(), seed)
-        .map_err(|e| not_made(&format!("This fight cannot be fought: {e}")))?;
+    let setup =
+        bf_engine::classic_setup(&ff, seed).map_err(|e| not_made(&format!("This fight cannot be fought: {e}")))?;
     let rec = bf_sim::run(&setup, true).map_err(|e| not_made(&format!("Seed {seed} cannot be fought: {e}")))?;
     if rec.winner.is_none() || rec.t_ko.is_none() {
         return Err(JobUpdate::Failed {

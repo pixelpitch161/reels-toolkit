@@ -456,9 +456,10 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
         Ok(ff) => ff,
         Err(words) => return me.fail(ctx, words),
     };
-    let base = match bf_sim::setup_from(&ff, bf_content::roster(), 0) {
+    let base = match bf_engine::classic_setup(&ff, 0) {
         Ok(base) => base,
-        Err(e) => return me.fail(ctx, unsearchable(&e.field, &ff.fighters)),
+        Err(bf_engine::EngineError::Sim(e)) => return me.fail(ctx, unsearchable(&e.field, &ff.fighters)),
+        Err(e) => return me.fail(ctx, convert::plain(&format!("This fight cannot be searched yet: {e}"))),
     };
     let sheet = BeatSheet::series(base.fighters);
     let key = search_key(&ff);

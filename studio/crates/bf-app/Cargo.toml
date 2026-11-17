@@ -17,6 +17,7 @@ path = "src/main.rs"
 [dependencies]
 bf-content.workspace = true
 bf-core.workspace = true
+bf-engine.workspace = true
 bf-export.workspace = true
 bf-pack.workspace = true
 bf-picture.workspace = true

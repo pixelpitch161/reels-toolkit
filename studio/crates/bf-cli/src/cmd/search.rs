@@ -44,8 +44,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     }
     let cfg = fighters(&ff)?;
     let sheet = BeatSheet::series(cfg);
-    let base =
-        bf_sim::setup_from(&ff, bf_content::roster(), 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let base = bf_engine::classic_setup(&ff, 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
     let setup_for = |seed: u64| Setup { seed, ..base.clone() };
     let opts = SearchOpts {
         from: a.from,

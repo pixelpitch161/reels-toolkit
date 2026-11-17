@@ -128,8 +128,8 @@ fn fight_of(draft: &Draft, what: &str) -> Result<(Setup<'static>, BeatSheet), St
         ));
     }
     let ff = convert::fight_file(draft)?;
-    let base = bf_sim::setup_from(&ff, bf_content::roster(), 0)
-        .map_err(|e| convert::plain(&format!("this fight cannot be {what}: {e}")))?;
+    let base =
+        bf_engine::classic_setup(&ff, 0).map_err(|e| convert::plain(&format!("this fight cannot be {what}: {e}")))?;
     let sheet = BeatSheet::series(base.fighters);
     Ok((base, sheet))
 }

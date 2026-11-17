@@ -477,8 +477,8 @@ impl Worker {
         }
 
         // the fight, its show and its story
-        let setup = bf_sim::setup_from(&ff, bf_content::roster(), seed)
-            .map_err(|e| plain(&format!("This fight cannot be fought: {e}")))?;
+        let setup =
+            bf_engine::classic_setup(&ff, seed).map_err(|e| plain(&format!("This fight cannot be fought: {e}")))?;
         if !me.heard(ctx) {
             return Ok(());
         }
@@ -620,7 +620,7 @@ mod tests {
     /// The first seeds (from 1) whose fight under `d` has a K.O. (`ko`) or has none (`!ko`): a short search.
     fn seeds_where(d: &Draft, ko: bool, n: usize) -> Vec<u64> {
         let ff = convert::fight_file(d).expect("a fight file");
-        let base = bf_sim::setup_from(&ff, bf_content::roster(), 0).expect("a set-up");
+        let base = bf_engine::classic_setup(&ff, 0).expect("a set-up");
         let sheet = BeatSheet::series(base.fighters);
         let mut found = Vec::new();
         for seed in 1..2_000 {
@@ -899,7 +899,7 @@ mod tests {
         let d = draft(None);
         let seed = seeds_where(&d, true, 1)[0];
         let ff = convert::fight_file(&draft(Some(seed))).expect("a fight file");
-        let setup = bf_sim::setup_from(&ff, bf_content::roster(), seed).expect("a set-up");
+        let setup = bf_engine::classic_setup(&ff, seed).expect("a set-up");
         let rec = bf_sim::run(&setup, false).expect("the fight");
         let show = Show::new(&rec, &ff).expect("a show");
         let lows = [setup.fighters[0].low.name.clone(), setup.fighters[1].low.name.clone()];
@@ -1089,7 +1089,7 @@ mod tests {
             panic!("not a picture");
         };
         let ff = convert::fight_file(&d).expect("a fight file");
-        let setup = bf_sim::setup_from(&ff, bf_content::roster(), seed).expect("a set-up");
+        let setup = bf_engine::classic_setup(&ff, seed).expect("a set-up");
         let rec = bf_sim::run(&setup, true).expect("the fight");
         let pic = bf_content::build_picture(Arc::new(rec), &ff).expect("the picture");
         assert_eq!(&frames.draw(500).rgb[..], &pic.frame(500).data[..]);
