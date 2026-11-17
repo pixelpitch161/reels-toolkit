@@ -133,13 +133,15 @@ impl ArenaTrack {
 }
 
 /// Rope wobble: amplitude per unit of the ball's speed, its most, the speed assumed without a recording, the
-/// frequency, the decay per fight second, and when it is let go (by then under a 10,000th of its start).
+/// frequency, the decay per fight second, and when it is let go. The current engine's give (`rope_points`: 5 Hz,
+/// falling by e every 0.22 s, let go after 0.9 s) so the ropes move as they always have (E7); by its end a
+/// wobble is under a 50th of its start.
 const ROPE_AMP: f64 = 0.025;
-const ROPE_MAX: f64 = 0.25;
+const ROPE_MAX: f64 = 0.16;
 const ROPE_SPEED: f64 = 6.0;
-const ROPE_HZ: f64 = 4.0;
-const ROPE_DECAY: f64 = 3.0;
-const ROPE_LIFE: f64 = 3.0;
+const ROPE_HZ: f64 = 5.0;
+const ROPE_DECAY: f64 = 1.0 / 0.22;
+const ROPE_LIFE: f64 = 0.9;
 /// The crowd's jump: up in `JUMP_RISE`, down over `JUMP_FALL` (fight seconds).
 const JUMP_RISE: f64 = 0.08;
 const JUMP_FALL: f64 = 0.5;

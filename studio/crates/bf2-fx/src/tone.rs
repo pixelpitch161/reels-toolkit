@@ -14,12 +14,14 @@ pub struct Restraint {
     pub glow: f32,
     /// How long rings, domes and lights last.
     pub life: f32,
+    /// How big rings and domes grow and how far lights reach.
+    pub size: f32,
     /// The size of the marks left on the canvas (scorches, cracks, glows).
     pub marks: f32,
-    /// Flashes, inverts, extra bloom and shake.
+    /// Flashes, inverts, extra bloom, letterbox bars and shake.
     pub screen: f32,
-    /// Whether the lens effects (speed lines, radial blur, chroma, shockwaves, desaturate, motion blur) stay
-    /// (scaled by `screen`); false drops them.
+    /// Whether the lens effects (speed lines, radial blur, chroma, shockwaves, desaturate, motion blur, and the
+    /// rings' push on the screen) stay (scaled by `screen`); false drops them.
     pub lens: bool,
 }
 
@@ -29,6 +31,7 @@ impl Restraint {
         particles: 1.0,
         glow: 1.0,
         life: 1.0,
+        size: 1.0,
         marks: 1.0,
         screen: 1.0,
         lens: true,
@@ -45,10 +48,13 @@ impl Restraint {
             }
             FxKind::Ring(x) => {
                 x.colour = g(x.colour);
+                x.r = (x.r.0 * self.size, x.r.1 * self.size);
+                x.distort *= if self.lens { self.screen } else { 0.0 };
                 r.life = shorter(r.life, self.life);
             }
             FxKind::Dome(x) => {
                 x.colour = g(x.colour);
+                x.r = (x.r.0 * self.size, x.r.1 * self.size);
                 r.life = shorter(r.life, self.life);
             }
             FxKind::Beam(x) => {
@@ -61,6 +67,7 @@ impl Restraint {
             }
             FxKind::Light(x) => {
                 x.colour = g(x.colour);
+                x.range *= self.size;
                 r.life = shorter(r.life, self.life);
             }
             FxKind::Decal(d) => d.r *= self.marks,
@@ -77,7 +84,7 @@ impl Restraint {
                 if lens && !self.lens {
                     return None;
                 }
-                if !matches!(s.effect, ScreenFx::Letterbox | ScreenFx::Grade { .. }) {
+                if !matches!(s.effect, ScreenFx::Grade { .. }) {
                     s.amount *= self.screen;
                 }
             }
@@ -120,6 +127,7 @@ mod tests {
             particles: 0.25,
             glow: 0.5,
             life: 0.6,
+            size: 0.5,
             marks: 0.6,
             screen: 0.3,
             lens: false,
@@ -134,11 +142,21 @@ mod tests {
             let t = &t;
             if let (FxKind::Screen(x), FxKind::Screen(y)) = (&f.kind, &t.kind)
                 && x.effect == y.effect
-                && x.effect != ScreenFx::Letterbox
+                && !matches!(x.effect, ScreenFx::Grade { .. })
             {
                 assert!((y.amount - 0.3 * x.amount).abs() < 1e-6);
             }
             assert!(t.life >= f.life.min(0.15));
+            // rings and domes grow half as big, rings stop pushing the screen, lights reach half as far
+            match (&f.kind, &t.kind) {
+                (FxKind::Ring(x), FxKind::Ring(y)) => {
+                    assert_eq!(y.r, (x.r.0 * 0.5, x.r.1 * 0.5));
+                    assert_eq!(y.distort, 0.0);
+                }
+                (FxKind::Dome(x), FxKind::Dome(y)) => assert_eq!(y.r, (x.r.0 * 0.5, x.r.1 * 0.5)),
+                (FxKind::Light(x), FxKind::Light(y)) => assert_eq!(y.range, x.range * 0.5),
+                _ => {}
+            }
         }
         // lens effects stay (scaled) when the restraint keeps them, as for the K.O.
         let ko = ko_burst(&h(), [1.0, 0.5, 0.1]);

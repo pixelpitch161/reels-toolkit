@@ -410,22 +410,25 @@ impl LookFx for DummyLook {
     /// The shared presets turned well down for the dummy's events (Aedan, E7: "tone down their attack effects by
     /// a lot ... very subtle for now"): a fifth of the sparks, a third of the glow and flash, shorter rings and
     /// lights, smaller marks on the canvas, and no lens effects (speed lines, radial blur, chroma, shockwaves) on
-    /// its hits. The K.O. stays readable: more of everything than a hit, its lens effects kept but turned down.
+    /// its hits. The K.O. stays readable: more sparks and longer than a hit, but no lens effects either, its dome and ring
+    /// under half their size and its flash and bars turned down.
     fn tone(&self, e: &EvKind) -> Restraint {
         if matches!(e, EvKind::Ko { .. }) {
             Restraint {
                 particles: 0.35,
-                glow: 0.5,
+                glow: 0.3,
                 life: 0.8,
+                size: 0.4,
                 marks: 0.8,
                 screen: 0.45,
-                lens: true,
+                lens: false,
             }
         } else {
             Restraint {
                 particles: 0.2,
                 glow: 0.35,
                 life: 0.6,
+                size: 0.5,
                 marks: 0.55,
                 screen: 0.3,
                 lens: false,
