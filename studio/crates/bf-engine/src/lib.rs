@@ -17,6 +17,10 @@ use bf_export::{ExportError, JobEvent, JobOpts};
 use bf_sim::{Setup, SimError};
 use bf2_sim::{Recording2, Rules2, Setup2, SimError2};
 
+mod prepared;
+
+pub use prepared::{Prepared, prepare, sheet2};
+
 /// Why a fight file could not be set up.
 #[derive(Clone, Debug, PartialEq)]
 pub enum EngineError {
@@ -28,6 +32,9 @@ pub enum EngineError {
     Sim2(SimError2),
     /// The render job did not make the video.
     Export(ExportError),
+    /// The file names a developer fighter and the developer switch is off: the words to show
+    /// (`bf_content::DEV_ONLY`).
+    Dev(String),
 }
 
 impl fmt::Display for EngineError {
@@ -42,6 +49,7 @@ impl fmt::Display for EngineError {
             EngineError::Sim(e) => write!(f, "{e}"),
             EngineError::Sim2(e) => write!(f, "{e}"),
             EngineError::Export(e) => write!(f, "{e}"),
+            EngineError::Dev(words) => f.write_str(words),
         }
     }
 }
@@ -67,6 +75,25 @@ pub enum Fought {
     One(bf_core::recording::Recording),
     /// Engine 2's recording.
     Two(Recording2),
+}
+
+impl Fought {
+    /// The fighter left standing; `None` without a K.O. (a decision or a draw).
+    pub fn winner(&self) -> Option<usize> {
+        match self {
+            Fought::One(rec) => rec.winner,
+            Fought::Two(rec) => rec.outcome.winner.filter(|_| rec.outcome.t_ko.is_some()),
+        }
+    }
+
+    /// When the K.O. comes in video time: the current engine's recording's K.O. time, Engine 2's K.O. step
+    /// through the time map (after slow-mo and the K.O. cinematic). `None` without a K.O.
+    pub fn t_ko_video(&self) -> Option<f64> {
+        match self {
+            Fought::One(rec) => rec.t_ko,
+            Fought::Two(rec) => prepared::ko_video(rec),
+        }
+    }
 }
 
 /// Fights `seed` under `ff` on the file's engine; `record` keeps every frame or step (the outcome and events are
@@ -116,23 +143,11 @@ pub fn render(
 /// # Errors
 /// The set-up's sentence.
 pub fn ko_video_t(ff: &FightFile, seed: u64) -> Result<Option<f64>, EngineError> {
-    match fight(ff, seed, false)? {
-        Fought::One(rec) => Ok(rec.t_ko),
-        Fought::Two(rec) => {
-            let Some(ko) = rec.events.iter().find(|e| matches!(e.kind, bf2_sim::EvKind::Ko { .. })) else {
-                return Ok(None);
-            };
-            // No steps were kept: the map covers the fight up to its last event, which holds the K.O.
-            let steps = rec.events.last().map_or(0, |e| e.step + 1);
-            let cfg = bf2_direct::DirectCfg::default();
-            let map = bf2_direct::TimeMap::build(&rec.events, steps, rec.dt, rec.t_fight, Some(ko.step), &cfg);
-            Ok(map.ko_video_t())
-        }
-    }
+    Ok(fight(ff, seed, false)?.t_ko_video())
 }
 
 /// Engine 2's set-up of `seed` under `ff`.
-fn engine_two_setup(ff: &FightFile, seed: u64) -> Result<Setup2, EngineError> {
+pub(crate) fn engine_two_setup(ff: &FightFile, seed: u64) -> Result<Setup2, EngineError> {
     let def = |i: usize| {
         ff.fighters
             .get(i)

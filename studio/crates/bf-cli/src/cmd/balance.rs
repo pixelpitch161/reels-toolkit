@@ -12,11 +12,10 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use bf_core::fightfile::FightFile;
-use bf_sim::Setup;
-use bf_story::{BalanceProgress, BalanceRound, Halt, Stats, auto_balance};
+use bf_story::{BalancePlan, BalanceProgress, BalanceRound, Halt, Stats, auto_balance_by};
 use serde_json::{Value, json};
 
-use crate::{Ctx, Done, Fail, fighters, load_fight_text, note, num, say, say_json, temp_beside, write_whole};
+use crate::{Ctx, Done, Fail, load_fight_text, note, num, say, say_json, temp_beside, write_whole};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -32,18 +31,20 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     if a.write && set_handicap(&text, [1.0, 1.0]).is_none() {
         return Err(one_line_handicap(&a.fight));
     }
-    let cfg = fighters(&ff)?;
-    let sheet = bf_story::BeatSheet::series(cfg);
-    let base = bf_engine::classic_setup(&ff, 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
-    let setup_for = |h: [f64; 2], seed: u64| {
-        let mut s = Setup { seed, ..base.clone() };
-        s.rules.dmg_side = Some(h);
-        s
-    };
+    let prepared = bf_engine::prepare(&ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let fight_for = |h: [f64; 2], seed: u64| prepared.candidate(seed, Some(h));
     let start = [ff.handicap[0], ff.handicap[1]];
     let progress = |p: BalanceProgress| note(&format!("balance: step {} of {}", p.done, p.total));
     let t0 = Instant::now();
-    let found = auto_balance(&setup_for, &sheet, start, ctx.workers, &progress, ctx.cancel).map_err(|h| match h {
+    let found = auto_balance_by(
+        &BalancePlan::default(),
+        &fight_for,
+        start,
+        ctx.workers,
+        &progress,
+        ctx.cancel,
+    )
+    .map_err(|h| match h {
         Halt::Cancelled => Fail::new("the balance was stopped (Ctrl+C), so nothing was written."),
         Halt::Failed(why) => Fail(format!("{}: {why}.", a.fight.display())),
     })?;
