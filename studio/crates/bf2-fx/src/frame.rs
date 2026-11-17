@@ -126,6 +126,9 @@ pub struct FxFrame {
     pub meshfx: MeshFx,
     pub decals: Decals,
     pub screen: Screen,
+    /// The post settings every frame is drawn with: [`Post::ring`], the current engine's grade, value steps and
+    /// pixel grid (its `pixel` is the art pixel's size, 3 by default).
+    pub post: Post,
 }
 
 /// One sub-frame's records, anchors resolved.
@@ -167,6 +170,7 @@ impl FxFrame {
             meshfx: MeshFx::new(gpu),
             decals: Decals::new(gpu),
             screen: Screen::new(gpu),
+            post: Post::ring(),
         }
     }
 
@@ -247,6 +251,7 @@ impl FxFrame {
             meshfx,
             decals,
             screen,
+            post,
         } = self;
         let mut pass = Pass {
             particles,
@@ -261,7 +266,7 @@ impl FxFrame {
             gpu,
             &scenes,
             &weights,
-            &Post::ring(),
+            post,
             &mut pass,
             Some(screen),
             size.0,

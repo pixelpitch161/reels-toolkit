@@ -2,7 +2,10 @@
 //! with its UI layer, for comparing with the current engine's frames (E7, "same style, higher fidelity"). With no
 //! frames given it lists the fight's moments worth a still (heavy hits, the K.O.).
 //!
-//! `cargo run -p bf-export --example engine2_style -- <folder> [frame ...]`
+//! `cargo run -p bf-export --example engine2_style -- <folder> [--pixel=N] [frame ...]`
+//!
+//! `--pixel=N` draws art pixels of N output pixels (3, the default, is the current engine's 360 x 640 grid; the
+//! stills of another size are named `engine2_f<frame>_px<N>.png`).
 
 use std::sync::Arc;
 
@@ -13,7 +16,14 @@ use bf2_sim::EvKind;
 fn main() {
     let mut args = std::env::args().skip(1);
     let out = std::path::PathBuf::from(args.next().unwrap_or_else(|| ".".into()));
-    let frames: Vec<usize> = args.map(|a| a.parse().expect("a frame number")).collect();
+    let mut pixel = bf2_render::post::RING_PIXEL;
+    let mut frames: Vec<usize> = Vec::new();
+    for a in args {
+        match a.strip_prefix("--pixel=") {
+            Some(n) => pixel = n.parse().expect("a pixel size"),
+            None => frames.push(a.parse().expect("a frame number")),
+        }
+    }
     let path = bf_testdata::repo_root().join("studio/fights/engine2/test_dummy.toml");
     let ff = FightFile::parse(&std::fs::read_to_string(path).unwrap()).expect("the dummy's file parses");
     let defs: [Arc<bf2_sim::FighterDef>; 2] =
@@ -61,11 +71,16 @@ fn main() {
     }
     let gpu = Gpu::headless().expect("a GPU");
     let mut fr = bf_export::job2::Frames2::of_scene(&gpu, scene, bf2_render::W, bf2_render::H);
+    fr.set_pixel(pixel);
     std::fs::create_dir_all(&out).expect("the output folder");
     for f in frames {
         let t0 = std::time::Instant::now();
         let img = fr.frame(f);
-        let file = out.join(format!("engine2_f{f}.png"));
+        let file = if pixel == bf2_render::post::RING_PIXEL {
+            out.join(format!("engine2_f{f}.png"))
+        } else {
+            out.join(format!("engine2_f{f}_px{pixel}.png"))
+        };
         std::fs::write(&file, bf_export::output::png_bytes(&img)).expect("the still is written");
         println!("{} ({:.1} s)", file.display(), t0.elapsed().as_secs_f64());
     }

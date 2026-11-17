@@ -452,6 +452,12 @@ impl Frames2 {
         }
     }
 
+    /// Draws the frames with art pixels of `pixel` output pixels across 1080 (3, the default, is the current
+    /// engine's 360 x 640; 2 is finer; 1 turns the pixel pass off).
+    pub fn set_pixel(&mut self, pixel: u32) {
+        self.fx.post.pixel = pixel;
+    }
+
     /// How many frames the video has.
     pub fn nf(&self) -> usize {
         NF
