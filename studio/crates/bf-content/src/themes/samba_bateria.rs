@@ -50,17 +50,39 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 42),
 };
 
-/// The pair the theme was made for (no kit config: a Studio theme).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "studio/samba_bateria",
-    fighters: ["MARIMBA", "SNARE DRUM"],
-    bpm: 104.0,
-    key: "A",
-    scale: "harmonic minor",
-    intro: ["Am", "E7"],
-    chord_loop: LOOPS[0],
-    tail: &[],
-}];
+/// The pair the theme was made for, once on each of its loops (no kit config: a Studio theme).
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "studio/samba_bateria/1",
+        fighters: ["MARIMBA", "SNARE DRUM"],
+        bpm: 104.0,
+        key: "A",
+        scale: "harmonic minor",
+        intro: ["Am", "E7"],
+        chord_loop: LOOPS[0],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/samba_bateria/2",
+        fighters: ["MARIMBA", "SNARE DRUM"],
+        bpm: 104.0,
+        key: "A",
+        scale: "harmonic minor",
+        intro: ["Am", "Am"],
+        chord_loop: LOOPS[1],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/samba_bateria/3",
+        fighters: ["MARIMBA", "SNARE DRUM"],
+        bpm: 104.0,
+        key: "A",
+        scale: "harmonic minor",
+        intro: ["Am", "Am"],
+        chord_loop: LOOPS[2],
+        tail: &[],
+    },
+];
 
 /// The Composed arrangement's table.
 pub const TABLE: ArrangementTable = ArrangementTable {

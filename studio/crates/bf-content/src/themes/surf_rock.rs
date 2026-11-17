@@ -49,17 +49,39 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 43),
 };
 
-/// The pair the theme was made for (no kit config: a Studio theme).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "studio/surf_rock",
-    fighters: ["ELECTRIC", "UKULELE"],
-    bpm: 160.0,
-    key: "E",
-    scale: "minor",
-    intro: ["Em", "B7"],
-    chord_loop: LOOPS[0],
-    tail: &[],
-}];
+/// The pair the theme was made for, once on each of its loops (no kit config: a Studio theme).
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "studio/surf_rock/1",
+        fighters: ["ELECTRIC", "UKULELE"],
+        bpm: 160.0,
+        key: "E",
+        scale: "minor",
+        intro: ["Em", "B7"],
+        chord_loop: LOOPS[0],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/surf_rock/2",
+        fighters: ["ELECTRIC", "UKULELE"],
+        bpm: 160.0,
+        key: "E",
+        scale: "minor",
+        intro: ["Em", "B7"],
+        chord_loop: LOOPS[1],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/surf_rock/3",
+        fighters: ["ELECTRIC", "UKULELE"],
+        bpm: 160.0,
+        key: "E",
+        scale: "minor",
+        intro: ["Em", "B7"],
+        chord_loop: LOOPS[2],
+        tail: &[],
+    },
+];
 
 /// The Composed arrangement's table.
 pub const TABLE: ArrangementTable = ArrangementTable {
