@@ -10,3 +10,8 @@ pub mod gpu;
 
 pub use error::RenderError;
 pub use gpu::Gpu;
+pub mod post;
+pub mod target;
+
+pub use post::{Post, PostPass};
+pub use target::{H, Targets, W, read_back};
