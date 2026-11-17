@@ -45,6 +45,11 @@ after the grade; the HUD's pixel font sits on the same grid. So:
   Normal maps still add detail across each flat face. The glass balls stay round.
 - **No smooth extras on top.** Everything, glow and screen effects included, goes through the pass; nothing is
   composited after it except the HUD, which is itself pixel art at 360 x 640.
+- **Hard edges, flat tones (E8b).** The pass resolves edges hard (one side's colour, never a blend) and keeps lines
+  and dots thinner than an art pixel whole. The shared effects already draw their pixel look under the pass (hard
+  shapes, fades and glows dithered in thirds on the art grid, `FxCamera::art`); a fighter's own shader or effect
+  must do the same: no soft falloffs, no smooth haze. There is no motion blur under the pass: smears are drawn
+  effects, as in the current engine.
 
 The rules from [`README.md`](README.md) still apply. Every fight goes through `bf-engine`. Both versions of a
 fighter stay until every fighter has moved. There are no mixed-engine match-ups.
