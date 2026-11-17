@@ -661,6 +661,12 @@ dependencies = [
 [[package]]
 name = "bf2-direct"
 version = "1.5.0"
+dependencies = [
+ "bf-content",
+ "bf-core",
+ "bf-sound",
+ "bf2-sim",
+]
 
 [[package]]
 name = "bf2-fx"

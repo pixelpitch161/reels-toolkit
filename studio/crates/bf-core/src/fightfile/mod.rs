@@ -81,6 +81,18 @@ impl fmt::Display for Engine {
     }
 }
 
+/// What the music does in an Engine 2 slow-mo (Engine 2 design section 5): by default it slows with the picture,
+/// pitch and all, like tape; `steady` keeps it at normal speed. `follow` is never written, so every fight file made
+/// before the switch reads and writes exactly as it did.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SlowmoMusic {
+    /// The music slows with slow-mo (the default).
+    #[default]
+    Follow,
+    /// The music keeps its speed through slow-mo.
+    Steady,
+}
+
 /// The two retired fighters: never offered, never ported, never accepted in a fight file.
 pub const RETIRED: [&str; 2] = ["GUITAR", "SAX"];
 
@@ -215,6 +227,8 @@ pub struct Music {
     pub chords_tail: Vec<String>,
     /// The composer's seed.
     pub music_seed: u64,
+    /// The music in an Engine 2 slow-mo (`slowmo = "follow" | "steady"`, format 2; absent: follow, never written).
+    pub slowmo: SlowmoMusic,
     /// Who plays what (`bass`, `melody`, ...), by fighter.
     pub roles: BTreeMap<String, String>,
     /// Hand-written lines over the loop (8 notes a bar = 8ths, 4 = beats), by fighter, or by an extra line a

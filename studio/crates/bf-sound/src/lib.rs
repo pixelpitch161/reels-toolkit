@@ -23,6 +23,7 @@ pub mod score;
 pub mod synth;
 pub mod traits;
 pub mod voice;
+pub mod warp;
 pub mod wav;
 
 pub use self::dsp::{

@@ -96,7 +96,7 @@ const TOP_KEYS: [(&str, u32); 14] = [
 ];
 
 /// The `[music]` keys, in the canonical order, each with the format it came in.
-const MUSIC_KEYS: [(&str, u32); 15] = [
+const MUSIC_KEYS: [(&str, u32); 16] = [
     ("theme", 1),
     ("arrangement", 1),
     ("pinned", 2),
@@ -106,6 +106,7 @@ const MUSIC_KEYS: [(&str, u32); 15] = [
     ("chord_loop", 1),
     ("chords_tail", 2),
     ("music_seed", 1),
+    ("slowmo", 2),
     ("roles", 1),
     ("lines", 1),
     ("solos", 1),
@@ -265,6 +266,19 @@ impl Music {
                 None => Vec::new(),
             },
             music_seed: as_u64(required(t, p, "music_seed")?, "music.music_seed")?,
+            slowmo: match t.get("slowmo") {
+                None => SlowmoMusic::Follow,
+                Some(v) => match as_str(v, "music.slowmo")? {
+                    "follow" => SlowmoMusic::Follow,
+                    "steady" => SlowmoMusic::Steady,
+                    other => {
+                        return Err(err(
+                            "music.slowmo",
+                            format!("{other:?} is not \"follow\" or \"steady\""),
+                        ));
+                    }
+                },
+            },
             roles,
             lines,
             solos,

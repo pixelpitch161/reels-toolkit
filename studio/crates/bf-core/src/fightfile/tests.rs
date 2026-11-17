@@ -1179,3 +1179,46 @@ fn the_search_key_separates_engines_and_keeps_engine_one_unchanged() {
     assert_eq!(one.search_key(&[false, false]), SEARCH_KEY_BEFORE_E0);
     assert_ne!(one.search_key(&[false, false]), two.search_key(&[false, false]));
 }
+
+// Engine 2, milestone E5: music in slow-mo.
+
+#[test]
+fn slowmo_defaults_to_follow() {
+    assert_eq!(episode().music.slowmo, SlowmoMusic::Follow);
+    assert_eq!(SlowmoMusic::default(), SlowmoMusic::Follow);
+}
+
+#[test]
+fn slowmo_steady_round_trips() {
+    let ff = FightFile::parse(&with("music_seed = 1\n", "music_seed = 1\nslowmo = \"steady\"\n")).expect("parses");
+    assert_eq!(ff.music.slowmo, SlowmoMusic::Steady);
+    let text = ff.to_toml();
+    assert!(text.contains("slowmo = \"steady\""), "{text}");
+    let again = FightFile::parse(&text).expect("reads back");
+    assert_eq!(again, ff);
+    assert_eq!(again.to_toml(), text);
+}
+
+#[test]
+fn slowmo_follow_written_by_hand_reads_and_is_dropped_on_write() {
+    let ff = FightFile::parse(&with("music_seed = 1\n", "music_seed = 1\nslowmo = \"follow\"\n")).expect("parses");
+    assert_eq!(ff.music.slowmo, SlowmoMusic::Follow);
+    assert_eq!(ff.to_toml(), EPISODE);
+}
+
+#[test]
+fn slowmo_refuses_other_words() {
+    let e = parse_err(&with("music_seed = 1\n", "music_seed = 1\nslowmo = \"fast\"\n"));
+    assert_eq!(e, "music.slowmo: \"fast\" is not \"follow\" or \"steady\"");
+    let e = parse_err(&with("music_seed = 1\n", "music_seed = 1\nslowmo = 2\n"));
+    assert!(e.starts_with("music.slowmo: "), "{e}");
+}
+
+#[test]
+fn follow_is_never_written() {
+    let ff = episode();
+    assert!(!ff.to_toml().contains("slowmo"));
+    assert_eq!(ff.to_toml(), EPISODE);
+    let old = FightFile::parse(FORMAT1).expect("format 1 reads");
+    assert!(!old.to_toml().contains("slowmo"));
+}
