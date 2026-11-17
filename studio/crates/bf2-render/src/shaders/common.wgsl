@@ -19,7 +19,8 @@ struct Frame {
     spot_dir: vec4<f32>,
     // rgb: HDR colour; w: cos of the inner (full strength) angle.
     spot_col: vec4<f32>,
-    // x: point lights; y: 1 when the spot casts a shadow; z: shadow map size in texels.
+    // x: point lights; y: 1 when the spot casts a shadow; z: shadow map size in texels; w: 1 under the pixel pass
+    // (the glass shades flat, as the current engine's balls).
     info: vec4<u32>,
 }
 

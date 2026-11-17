@@ -482,3 +482,53 @@ fn pixel_pass_keeps_the_art_grid_at_the_previews_size() {
     assert!(a.data == b.data);
     assert!(whole_blocks(&a, 3).is_err(), "pixel 1 leaves the full resolution");
 }
+
+#[test]
+fn under_the_pixel_pass_glass_is_flat_with_a_hard_highlight() {
+    let (gpu, mut r) = setup();
+    let ball = r.meshes.add(&gpu, geom::uv_sphere(1.0, 48, 24));
+    let scene = Scene {
+        camera: camera([0.0, 1.0, 6.0], [0.0; 3]),
+        ambient: [0.1; 3],
+        spot: Some(Spot {
+            pos: [2.0, 8.0, 4.0],
+            target: [0.0; 3],
+            colour: [2.0; 3],
+            angle_deg: 30.0,
+            shadow: false,
+        }),
+        lights: vec![Light {
+            pos: [-2.0, 1.0, 2.0],
+            colour: [0.0, 1.5, 1.0],
+            range: 6.0,
+            priority: 0,
+        }],
+        instances: vec![Instance::new(ball, Material::glass([1.0, 0.6, 0.3]), maths::IDENTITY)],
+    };
+    let tones = |img: &Rgb8| {
+        let mut set = std::collections::BTreeSet::new();
+        for p in img.data.as_chunks::<3>().0 {
+            set.insert(*p);
+        }
+        set.len()
+    };
+    // the same 360 x 640 art grid both ways: at 360 wide pixel 3 is one output pixel (the pass and the flat
+    // glass off); at 1080 wide it is on
+    let post = Post {
+        pixel: 3,
+        ..Post::default()
+    };
+    let smooth = r.render_sized(&gpu, &scene, &post, 360, 640);
+    let flat = r.render_sized(&gpu, &scene, &post, 1080, 1920);
+    assert!(
+        tones(&flat) * 4 <= tones(&smooth),
+        "flat glass has {} tones against {}",
+        tones(&flat),
+        tones(&smooth)
+    );
+    // the highlight is still there: some art pixel near white
+    assert!(
+        flat.data.as_chunks::<3>().0.iter().any(|p| p.iter().all(|&c| c > 200)),
+        "a highlight"
+    );
+}

@@ -19,6 +19,9 @@ pub struct FxCamera {
     /// The target's width and height in pixels.
     pub size: [u32; 2],
     pub near: f32,
+    /// Output pixels per art pixel when the pixel pass is on ([`crate::post::Post::pixel`]), else 1: effects with
+    /// a pixel look draw hard shapes and dither their fades on this grid ([`FxCamera::pixel_look`]).
+    pub art: f32,
 }
 
 impl FxCamera {
@@ -35,7 +38,19 @@ impl FxCamera {
             fov_y: c.fov_deg.to_radians(),
             size: [w, h],
             near: NEAR,
+            art: 1.0,
         }
+    }
+
+    /// This camera with the art pixel size of `post` at its target's width (as the tone map counts it).
+    pub fn with_art(mut self, post: &crate::post::Post) -> FxCamera {
+        self.art = crate::post::art_scale(post, self.size[0]);
+        self
+    }
+
+    /// Whether the pixel pass is on, so effects draw their pixel look.
+    pub fn pixel_look(&self) -> bool {
+        self.art > 1.0
     }
 
     /// World units per pixel at distance 1 from the eye.

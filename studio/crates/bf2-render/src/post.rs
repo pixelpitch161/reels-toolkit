@@ -112,6 +112,12 @@ pub fn dither_cpu(v: f32, step: f32, q: [u32; 2]) -> f32 {
     ((v * 255.0 / step + b).floor() * step).clamp(0.0, 255.0) / 255.0
 }
 
+/// Output pixels per art pixel for `post` on a frame `w` wide: `pixel * w / 1080`, never under 1 (the tone map's
+/// `s`).
+pub fn art_scale(post: &Post, w: u32) -> f32 {
+    (post.pixel as f32 * w as f32 / 1080.0).max(1.0)
+}
+
 /// The CPU reference of the grade the shader applies after the encode: `c` an encoded 0..1 colour at pixel
 /// `(x, y)` (centres) of a `w x h` picture.
 pub fn grade_cpu(c: [f32; 3], x: f32, y: f32, w: f32, h: f32, post: &Post) -> [f32; 3] {
@@ -434,7 +440,10 @@ mod tests {
                 for x in 0..4 {
                     let q = dither_cpu(v, 5.0, [x, y]);
                     let b = (q * 255.0).round();
-                    assert!((q * 255.0 - b).abs() < 1e-3 && (b as u32).is_multiple_of(5), "{v} -> {q}");
+                    assert!(
+                        (q * 255.0 - b).abs() < 1e-3 && (b as u32).is_multiple_of(5),
+                        "{v} -> {q}"
+                    );
                     assert!((0.0..=1.0).contains(&q));
                     let want = ((f64::from(v) * 255.0 / 5.0 + bf_picture::config::BAYER[y as usize][x as usize])
                         .floor()
@@ -595,7 +604,11 @@ fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {{
         for y in 0..img.h {
             for x in 0..img.w {
                 let want = if (x / 3) % 2 == 0 { lit() } else { 0 };
-                assert_eq!(img.px(x, y)[0], want, "({x}, {y}): a thin line is one whole art pixel, at full light");
+                assert_eq!(
+                    img.px(x, y)[0],
+                    want,
+                    "({x}, {y}): a thin line is one whole art pixel, at full light"
+                );
             }
         }
     }
