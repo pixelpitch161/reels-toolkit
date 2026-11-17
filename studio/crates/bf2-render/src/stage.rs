@@ -38,7 +38,7 @@ const SEAT_GAP: f32 = 0.55;
 const LEDS: usize = 16;
 const PROJ_R: f32 = 0.15;
 
-const CANVAS: [f32; 3] = [0.13, 0.14, 0.17];
+const CANVAS: [f32; 3] = [0.075, 0.08, 0.1];
 const SKIRT: [f32; 3] = [0.05, 0.06, 0.1];
 const FLOOR: [f32; 3] = [0.035, 0.035, 0.045];
 const STANDS: [f32; 3] = [0.09, 0.09, 0.12];
@@ -184,13 +184,13 @@ impl Stage {
 
     /// The whole stage for frame `f`: the arena and both balls. Projectiles are drawn by
     /// [`Stage::draw_projectiles`], once the looks have said which ones they drew.
-    pub fn draw(&self, f: &FightFrame, colours: [[f32; 3]; 2], out: &mut Scene) {
+    pub fn draw(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
         self.draw_arena(f, colours, out);
         self.draw_balls(f, colours, out);
     }
 
     /// Everything but the balls: the lights, the arena, the stands, the crowd, the LED boards and the ring.
-    pub fn draw_arena(&self, f: &FightFrame, colours: [[f32; 3]; 2], out: &mut Scene) {
+    pub fn draw_arena(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
         out.ambient = [AMBIENT; 3];
         out.spot = Some(Spot {
             pos: [0.0, 14.0, 0.0],
@@ -201,11 +201,12 @@ impl Stage {
         });
         let t = f.t_video as f32;
         let toon = Material::toon();
+        let matte = Material::matte();
         let put = |out: &mut Scene, mesh, material, model, rgb| {
             out.instances.push(Instance::new(mesh, material, model).coloured(rgb));
         };
 
-        put(out, self.floor, toon, maths::translation([0.0, FLOOR_Y, 0.0]), FLOOR);
+        put(out, self.floor, matte, maths::translation([0.0, FLOOR_Y, 0.0]), FLOOR);
         for (out_dir, along) in SIDES {
             let yaw = yaw_of(along);
             for tier in 0..TIERS {
@@ -216,13 +217,17 @@ impl Stage {
                 put(
                     out,
                     self.unit_box,
-                    toon,
+                    matte,
                     maths::trs(c, yaw, [len, height, TIER_DEPTH]),
                     STANDS,
                 );
             }
             // The LED boards: a chase of the leader's colour along the first tier's front.
-            let leader = if f.hp[0] >= f.hp[1] { colours[0] } else { colours[1] };
+            let leader = if f.snap.hp[0] >= f.snap.hp[1] {
+                colours[0]
+            } else {
+                colours[1]
+            };
             let seg = 2.0 * STAND_IN / LEDS as f32;
             for i in 0..LEDS {
                 let u = (i as f32 + 0.5) * seg - STAND_IN;
@@ -249,11 +254,11 @@ impl Stage {
         }
 
         // The ring: the canvas, its skirt down to the floor, the posts and the ropes.
-        put(out, self.canvas, toon, maths::IDENTITY, CANVAS);
+        put(out, self.canvas, matte, maths::IDENTITY, CANVAS);
         put(
             out,
             self.unit_box,
-            toon,
+            matte,
             maths::trs(
                 [0.0, (FLOOR_Y - 0.01) / 2.0, 0.0],
                 0.0,
@@ -275,8 +280,8 @@ impl Stage {
     }
 
     /// Each ball's glass shell, tinted in its fighter's colour, and its contact shadow on the canvas.
-    pub fn draw_balls(&self, f: &FightFrame, colours: [[f32; 3]; 2], out: &mut Scene) {
-        for (pos, colour) in f.pos.iter().zip(colours) {
+    pub fn draw_balls(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
+        for (pos, colour) in f.snap.pos.iter().zip(colours) {
             let c = ball_centre(*pos);
             out.instances
                 .push(Instance::new(self.ball, Material::glass(colour), maths::translation(c)));
@@ -299,8 +304,8 @@ impl Stage {
     }
 
     /// A glowing sphere and a small light for every live projectile whose id is not in `drawn`.
-    pub fn draw_projectiles(&self, f: &FightFrame, drawn: &[u32], out: &mut Scene) {
-        for &(id, pos) in &f.projs {
+    pub fn draw_projectiles(&self, f: &FightFrame<'_>, drawn: &[u32], out: &mut Scene) {
+        for &(id, pos) in &f.snap.projs {
             if drawn.contains(&id) {
                 continue;
             }

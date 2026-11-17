@@ -14,7 +14,8 @@ pub fn to_render(v: [f64; 3]) -> [f32; 3] {
 /// How an instance is shaded.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Material {
-    /// Banded diffuse, a stepped specular from the vertex `spec`, and a rim light.
+    /// Banded diffuse, a stepped specular from the vertex `spec`, and a rim light. `bands: 0` shades smoothly
+    /// (the set: canvas, floor, stands).
     Toon { bands: u32, rim: [f32; 3], rim_power: f32 },
     /// Transparent: tinted, mostly see-through face on, more opaque and reflective at grazing angles.
     Glass { tint: [f32; 3], opacity: f32, fresnel: f32 },
@@ -31,6 +32,15 @@ impl Material {
             bands: 4,
             rim: [0.35, 0.35, 0.35],
             rim_power: 4.0,
+        }
+    }
+
+    /// Smooth shading with no rim: the set (canvas, floor, stands), which should not read as cel bands.
+    pub fn matte() -> Material {
+        Material::Toon {
+            bands: 0,
+            rim: [0.0; 3],
+            rim_power: 1.0,
         }
     }
 

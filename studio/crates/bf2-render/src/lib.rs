@@ -25,8 +25,10 @@ pub use scene::{Camera, Instance, Light, Material, Scene, Spot, to_render};
 pub mod renderer;
 
 pub use renderer::Renderer;
+pub mod fight_frame;
 pub mod look2;
 pub mod stage;
 
-pub use look2::{FightFrame, Look2};
+pub use fight_frame::{FightFrame, StepSnapLerp, frame_at, frame_at_time, render_frame, scene_at};
+pub use look2::Look2;
 pub use stage::Stage;

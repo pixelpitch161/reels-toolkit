@@ -662,6 +662,7 @@ name = "bf2-render"
 version = "1.5.0"
 dependencies = [
  "bf-picture",
+ "bf2-sim",
  "bytemuck",
  "pollster",
  "wgpu",

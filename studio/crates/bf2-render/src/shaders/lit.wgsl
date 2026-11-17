@@ -7,8 +7,12 @@
 
 const SHININESS: f32 = 48.0;
 
-// `x` (0..1) cut into `bands` steps: 0 stays 0, anything lit gets at least one band.
+// `x` (0..1) cut into `bands` steps: 0 stays 0, anything lit gets at least one band. No bands (0) is smooth
+// shading, for the set (canvas, floor, stands): cel bands are for the models.
 fn band(x: f32, bands: f32) -> f32 {
+    if bands <= 0.0 {
+        return saturate(x);
+    }
     return ceil(saturate(x) * bands - 0.001) / bands;
 }
 
@@ -21,7 +25,7 @@ fn spec_step(n: vec3<f32>, l: vec3<f32>, v: vec3<f32>) -> f32 {
 fn toon(in: VOut, i: InstanceG) -> vec3<f32> {
     let n = normalize(in.nrm);
     let v = normalize(frame.eye.xyz - in.world);
-    let bands = f32(max(i.kind.y, 1u));
+    let bands = f32(i.kind.y);
     let base = in.rgb.rgb;
     var diffuse = frame.ambient.rgb;
     var spec = vec3<f32>(0.0);
