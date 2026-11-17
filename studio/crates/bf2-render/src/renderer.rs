@@ -5,7 +5,8 @@
 //! 2. the scene pass into the 4x MSAA HDR target: opaque instances (Toon, Emissive, Unlit), one draw per mesh,
 //!    then glass instances back to front, each its far side then its near side, depth tested but not written;
 //!    the pass resolves into the single-sample HDR target as it ends;
-//! 3. the tone map into the 8-bit picture, then the read-back.
+//! 3. the tone map into the 8-bit picture, then the UI overlay if one is set ([`Renderer::set_overlay`]), then the
+//!    read-back.
 //!
 //! Every pipeline, the shadow map, and the frame, light and instance buffers are made once in [`Renderer::new`]
 //! (the instance buffer grows when a frame needs more room); the targets are made once per frame size. A frame
@@ -260,6 +261,7 @@ pub struct Renderer {
     inst_bind: wgpu::BindGroup,
     post: PostPass,
     accum: Accum,
+    overlay: crate::overlay::OverlayPass,
     sized: Option<Sized>,
     // Reused every frame.
     inst_data: Vec<InstanceG>,
@@ -546,12 +548,20 @@ impl Renderer {
             inst_bind,
             post: PostPass::new(gpu),
             accum: Accum::new(gpu),
+            overlay: crate::overlay::OverlayPass::new(gpu),
             sized: None,
             inst_data: Vec::new(),
             opaque_draws: Vec::new(),
             caster_draws: 0,
             glass_draws: Vec::new(),
         }
+    }
+
+    /// The UI layer every later frame gets over its tone-mapped picture (once per output frame, after any
+    /// sub-frame accumulation), nearest-sampled at the frame's whole-number scale (3x for 360 x 640 over the
+    /// video), blended `One, OneMinusSrcAlpha`; `None` takes it away. The texture is made once per layer size.
+    pub fn set_overlay(&mut self, gpu: &Gpu, ov: Option<&crate::overlay::Overlay>) {
+        self.overlay.set(gpu, ov);
     }
 
     /// Draws `scene` at the video's size, 1080 x 1920.
@@ -586,6 +596,7 @@ impl Renderer {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("post") });
         self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post);
+        self.overlay.encode(gpu, &mut enc, &sized.targets);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, &sized.targets)
     }
@@ -660,6 +671,7 @@ impl Renderer {
             None => source_bind,
         };
         self.post.encode(gpu, &mut enc, t, bind, post);
+        self.overlay.encode(gpu, &mut enc, t);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, t)
     }
