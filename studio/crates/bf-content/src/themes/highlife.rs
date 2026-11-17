@@ -50,17 +50,39 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 42),
 };
 
-/// The pair the theme was made for (no kit config: a Studio theme).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "studio/highlife",
-    fighters: ["CORNET", "SOUSAPHONE"],
-    bpm: 120.0,
-    key: "C",
-    scale: "major",
-    intro: ["C", "G"],
-    chord_loop: LOOPS[0],
-    tail: &[],
-}];
+/// The pair the theme was made for, once on each of its loops (no kit config: a Studio theme).
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "studio/highlife/1",
+        fighters: ["CORNET", "SOUSAPHONE"],
+        bpm: 120.0,
+        key: "C",
+        scale: "major",
+        intro: ["C", "G"],
+        chord_loop: LOOPS[0],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/highlife/2",
+        fighters: ["CORNET", "SOUSAPHONE"],
+        bpm: 120.0,
+        key: "C",
+        scale: "major",
+        intro: ["C", "C"],
+        chord_loop: LOOPS[1],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/highlife/3",
+        fighters: ["CORNET", "SOUSAPHONE"],
+        bpm: 120.0,
+        key: "C",
+        scale: "major",
+        intro: ["C", "G"],
+        chord_loop: LOOPS[2],
+        tail: &[],
+    },
+];
 
 /// The Composed arrangement's table.
 pub const TABLE: ArrangementTable = ArrangementTable {
