@@ -15,3 +15,10 @@ pub mod target;
 
 pub use post::{Post, PostPass};
 pub use target::{H, Targets, W, read_back};
+pub mod geom;
+pub mod maths;
+pub mod mesh;
+pub mod scene;
+
+pub use mesh::{MeshData, MeshId, Meshes, Vertex};
+pub use scene::{Camera, Instance, Light, Material, Scene, Spot, to_render};
