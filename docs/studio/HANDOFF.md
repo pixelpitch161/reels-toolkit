@@ -177,6 +177,8 @@ Nov 16, 2026) from threads each keeping their own. The rules:
 
 ## How to add a fighter
 
+Engine 2 fighters follow `docs/studio/engine2/FIGHTER-GUIDE.md`; the steps below are for the current engine.
+
 The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a
 faithful-looking, faithful-sounding port, judged by eye and ear. The seed finder handicaps pairs to be fair, so a
 new fighter's fights need not match anything bit for bit. A theme is added the same way (its folder in
