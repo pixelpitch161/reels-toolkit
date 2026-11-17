@@ -1,30 +1,63 @@
-//! SPIKE: the TRUMPET's Engine 2 look, enough to judge the three candidate standard attacks in-engine.
+//! SPIKE: the TRUMPET's Engine 2 look, drawn the way the current engine draws it (Aedan, 2026-11-17: everything
+//! faithful to the original style, no 3D model).
 //!
-//! The model is the current engine's own (`data/models/TRUMPET.json`, the same faces the sprite renderer draws),
-//! lifted to 3D and laid in the glass side-on as today: its long axis across the facing, its valves toward the foe.
-//! `HORN`'s joint turns it (LEAD PIPE LANCE turns it mouthpiece-first) and rocks it (VALVE COMBO). The pistons are
-//! today's: a brass collar, the nickel-silver rod, a pearl button in a brass rim. The lance is the lead pipe in three
-//! telescoping brass sections with the silver mouthpiece on the end. The yo-yos are the valve caps on silver cords.
-//! Effects: brass smears behind the pistons and the lance, ribbons behind the caps, a puff of valve steam after the
-//! chord, and the shared hit presets turned down a notch below the dummy's.
+//! - The trumpet in the ball is the current engine's own sprite (`render_sprite` of `data/models/TRUMPET.json` at
+//!   its view's yaw, rolled in 10 degree steps so the valves face the aim), laid in the glass as a flat
+//!   camera-facing card of one quad per art pixel, unlit, at the current engine's `lit = sprite * 1.06`.
+//! - Every weapon is the current engine's flat drawing: polygons in the floor plane at the ball's centre height, in
+//!   its colours. The pistons are `draw_piston`'s (a brass collar, the silver rod with its glint line, the pearl
+//!   button in a rim of the fighter's colour, a pale streak while they shoot out). The lance and the valve caps are
+//!   new, in the same vocabulary: flat brass strips with a dark edge and a glint, collar rings, flat discs.
+//! - Effects: the shared hit presets turned a notch below the dummy's, with no scorch marks.
 
 use std::sync::Arc;
 
-use bf2_fx::particles::{BurstDef, Shape};
 use bf2_fx::tone::Restraint;
-use bf2_fx::trail::{TrailDef, TrailStyle};
-use bf2_fx::{Anchor, Env, Exit, FxError, FxKind, FxRecord, FxTimeline, frame::LookFx};
+use bf2_fx::{FxError, FxTimeline, frame::LookFx};
 use bf2_render::maths::{self, M4, V3};
+use bf2_render::mesh::FLAG_TWO_SIDED;
+use bf2_render::renderer::{ART_H, ART_W};
 use bf2_render::stage::{BALL_R, ball_centre, linear};
-use bf2_render::{FightFrame, Gpu, Instance, Look2, Material, MeshId, Renderer, Scene, geom, to_render};
-use bf2_sim::{EvKind, FighterDef, Pose, Recording2, Segment, solve};
+use bf2_render::{
+    Camera, FightFrame, Gpu, Instance, Look2, Material, MeshData, MeshId, Renderer, Scene, Vertex, to_render,
+};
+use bf2_sim::{EvKind, FighterDef, Joint, Pose, Recording2, Segment, solve};
 
-use super::{CAP1, CAP2, CAP3, HORN, LANCE, LEAD_PIPE_LANCE, P1, P2, P3, VALVE_CAP_YOYOS, VALVE_COMBO};
+use super::{CAP1, CAP2, CAP3, HORN, LANCE, P1, P2, P3};
+
+/// The current engine's TRUMPET colours (`fighters/trumpet/look.rs`).
+const BRASS: [f64; 3] = [232.0, 184.0, 72.0];
+const BRASS_HI: [f64; 3] = [255.0, 236.0, 160.0];
+const BRASS_DK: [f64; 3] = [150.0, 104.0, 34.0];
+const PEARL: [f64; 3] = [238.0, 236.0, 228.0];
+const PISTON: [f64; 3] = [212.0, 218.0, 230.0];
+const COLLAR: [f64; 3] = [214.0, 168.0, 62.0];
+
+/// The roster's `view` yaw (20) on the current engine's 6 degree grid.
+const YAW: f64 = 18.0;
+/// The current engine's roll step.
+const ROLL_STEP: i32 = 10;
+/// The sprite's share of the ball's radius on the picture (`sprite_k`).
+const SPRITE_K: f32 = 0.8;
+/// How far behind the ball's centre the card sits, so the flat weapons at centre height always draw over it.
+const CARD_BACK: f32 = 0.22;
+
+fn col(c: [f64; 3]) -> [f32; 3] {
+    linear(c.map(|v| v.clamp(0.0, 255.0)))
+}
+
+fn mix(c: [f64; 3], k: f64, add: f64) -> [f64; 3] {
+    c.map(|v| (v * k + add).clamp(0.0, 255.0))
+}
 
 struct Meshes {
-    model: MeshId,
-    cyl: MeshId,
-    sphere: MeshId,
+    /// A unit strip: x 0..1, z -0.5..0.5, in the floor plane, both sides drawn.
+    strip: MeshId,
+    /// A unit 12-gon (radius 1) in the floor plane, both sides drawn.
+    disc: MeshId,
+    /// The sprite cards: `radii` x 36 rolls.
+    cards: Vec<MeshId>,
+    radii: Vec<u32>,
 }
 
 pub struct TrumpetLook {
@@ -47,61 +80,94 @@ fn basis(x: V3, y: V3, z: V3, o: V3) -> M4 {
     ]
 }
 
-/// A unit cylinder (radius 1, height 1, along Y, centred) stretched over `a`..`b` with radius `r`.
-fn along(a: V3, b: V3, r: f32) -> M4 {
-    let d = maths::sub(b, a);
-    let len = maths::length(d).max(1e-5);
-    let y = maths::scale(d, 1.0 / len);
-    let helper = if y[1].abs() < 0.9 {
-        [0.0, 1.0, 0.0]
-    } else {
-        [1.0, 0.0, 0.0]
-    };
-    let x = maths::normalize(maths::cross(helper, y));
-    let z = maths::cross(x, y);
-    basis(
-        maths::scale(x, r),
-        d,
-        maths::scale(z, r),
-        maths::scale(maths::add(a, b), 0.5),
-    )
+const UP: V3 = [0.0, 1.0, 0.0];
+
+fn vert(p: V3, n: V3, rgb: [f32; 3]) -> Vertex {
+    let mut v = Vertex::new(p, n);
+    v.rgb = rgb;
+    v.flags = FLAG_TWO_SIDED;
+    v
 }
 
-/// A sphere squashed to `flat` along `axis` (unit), radius `r`, at `c`.
-fn disc(c: V3, axis: V3, r: f32, flat: f32) -> M4 {
-    let helper = if axis[1].abs() < 0.9 {
-        [0.0, 1.0, 0.0]
-    } else {
-        [1.0, 0.0, 0.0]
-    };
-    let x = maths::normalize(maths::cross(helper, axis));
-    let z = maths::cross(x, axis);
-    basis(maths::scale(x, r), maths::scale(axis, r * flat), maths::scale(z, r), c)
+fn unit_strip() -> MeshData {
+    let q = [[0.0, 0.0, -0.5], [1.0, 0.0, -0.5], [1.0, 0.0, 0.5], [0.0, 0.0, 0.5]];
+    MeshData {
+        verts: q.iter().map(|&p| vert(p, UP, [1.0; 3])).collect(),
+        idx: vec![0, 2, 1, 0, 3, 2],
+    }
 }
 
-/// The sim's floor direction at angle `a`, in render space.
+fn unit_disc() -> MeshData {
+    let mut verts = vec![vert([0.0; 3], UP, [1.0; 3])];
+    let mut idx = Vec::new();
+    for i in 0..12u32 {
+        let a = std::f32::consts::TAU * i as f32 / 12.0;
+        verts.push(vert([a.cos(), 0.0, a.sin()], UP, [1.0; 3]));
+        idx.extend([0, 1 + (i + 1) % 12, 1 + i]);
+    }
+    MeshData { verts, idx }
+}
+
+/// The sprite as a flat card: one quad per run of same-coloured pixels on a row, in pixel units (x right, y up,
+/// the sprite's centre at the origin), facing +z.
+fn card(img: &bf_picture::Img<u8>) -> MeshData {
+    let c = img.w as f32 / 2.0;
+    let mut m = MeshData {
+        verts: Vec::new(),
+        idx: Vec::new(),
+    };
+    for y in 0..img.h {
+        let mut x = 0;
+        while x < img.w {
+            let p = img.px(x, y);
+            if p[3] == 0 {
+                x += 1;
+                continue;
+            }
+            let rgb = [p[0], p[1], p[2]];
+            let mut e = x + 1;
+            while e < img.w && img.px(e, y)[3] != 0 && img.px(e, y)[..3] == rgb[..] {
+                e += 1;
+            }
+            let lit = col(rgb.map(|v| f64::from(v) * 1.06));
+            let (x0, x1) = (x as f32 - c, e as f32 - c);
+            let (y0, y1) = (c - (y + 1) as f32, c - y as f32);
+            let base = m.verts.len() as u32;
+            for q in [[x0, y0, 0.0], [x1, y0, 0.0], [x1, y1, 0.0], [x0, y1, 0.0]] {
+                m.verts.push(vert(q, [0.0, 0.0, 1.0], lit));
+            }
+            m.idx.extend([base, base + 1, base + 2, base, base + 2, base + 3]);
+            x = e;
+        }
+    }
+    m
+}
+
+/// The ball's radius on the art picture at `c`, through today's ring framing.
+fn ball_px(cam: &Camera, c: V3) -> f32 {
+    let (Some(a), Some(b)) = (
+        cam.project(c, ART_W, ART_H),
+        cam.project(maths::add(c, [BALL_R, 0.0, 0.0]), ART_W, ART_H),
+    ) else {
+        return 30.0;
+    };
+    (b[0] - a[0]).abs()
+}
+
+/// The floor direction at sim angle `a`, in render space.
 fn floor_dir(a: f64) -> V3 {
     [bf_core::dmath::cos(a) as f32, 0.0, -bf_core::dmath::sin(a) as f32]
 }
 
-const UP: V3 = [0.0, 1.0, 0.0];
-
-fn srgb(c: [u8; 3]) -> [f32; 3] {
-    linear(c.map(f64::from))
-}
-
-/// The model's brass (its main face colour), the fighter's yellow, nickel silver, pearl.
-fn brass() -> [f32; 3] {
-    srgb([228, 178, 72])
-}
-fn yellow() -> [f32; 3] {
-    srgb(super::COLOUR)
-}
-fn silver() -> [f32; 3] {
-    srgb([214, 218, 228])
-}
-fn pearl() -> [f32; 3] {
-    srgb([252, 248, 238])
+/// The screen angle (degrees, y down) of render-space direction `d` at `c`.
+fn screen_angle(cam: &Camera, c: V3, d: V3) -> f32 {
+    match (
+        cam.project(c, ART_W, ART_H),
+        cam.project(maths::add(c, d), ART_W, ART_H),
+    ) {
+        (Some(a), Some(b)) => (b[1] - a[1]).atan2(b[0] - a[0]).to_degrees(),
+        _ => 0.0,
+    }
 }
 
 impl Look2 for TrumpetLook {
@@ -109,10 +175,27 @@ impl Look2 for TrumpetLook {
         let mesh = crate::fighters::trumpet::MESH
             .and_then(|t| bf_picture::sprite::Mesh::from_json(t).ok())
             .expect("the trumpet's model is compiled in");
+        // the sprite radii the ring can need: the ball from the near ropes to the far ones
+        let cam = Camera::default_ring();
+        let rs: Vec<u32> = [-4.0f32, 4.0]
+            .iter()
+            .map(|&z| (ball_px(&cam, [0.0, BALL_R, z]) * SPRITE_K).round() as u32)
+            .collect();
+        let (lo, hi) = (rs[0].min(rs[1]).saturating_sub(1), rs[0].max(rs[1]) + 1);
+        let radii: Vec<u32> = (lo..=hi.min(bf_picture::sprite::MAX_RADIUS)).collect();
+        let mut cards = Vec::new();
+        for &rad in &radii {
+            for i in 0..36 {
+                let roll = f64::from(i * ROLL_STEP - 180);
+                let img = bf_picture::sprite::render_sprite(&mesh, rad, YAW, roll);
+                cards.push(r.meshes.add(gpu, card(&img)));
+            }
+        }
         self.meshes = Some(Meshes {
-            model: r.meshes.add(gpu, geom::from_sprite_mesh(&mesh, 1.0)),
-            cyl: r.meshes.add(gpu, geom::cylinder(1.0, 1.0, 16)),
-            sphere: r.meshes.add(gpu, geom::icosphere(1.0, 2)),
+            strip: r.meshes.add(gpu, unit_strip()),
+            disc: r.meshes.add(gpu, unit_disc()),
+            cards,
+            radii,
         });
     }
 
@@ -120,266 +203,273 @@ impl Look2 for TrumpetLook {
         let Some(m) = &self.meshes else {
             return Vec::new();
         };
-        let toon = Material::toon;
         let pos = f.snap.pos[k];
         let facing = f.snap.facing[k];
         let joints = &f.snap.joints[k];
-        let horn = joints.get(HORN).copied().unwrap_or(bf2_sim::Joint::REST);
-
-        // The horn in the glass: model +y (valves) toward the facing, model +x (bell) across it, model +z up;
-        // HORN's yaw turns it (minus: a quarter turn brings the mouthpiece, model -x, to the front), its pitch
-        // rocks the valves up.
-        let c = ball_centre(pos);
-        let turn = facing - horn.yaw;
-        let d = floor_dir(turn);
-        let e1 = floor_dir(turn - std::f64::consts::FRAC_PI_2);
-        let (sp, cp) = (
-            bf_core::dmath::sinf(horn.pitch as f32),
-            bf_core::dmath::cosf(horn.pitch as f32),
-        );
-        let dy = maths::add(maths::scale(d, cp), maths::scale(UP, sp));
-        let up = maths::sub(maths::scale(UP, cp), maths::scale(d, sp));
-        let s = BALL_R * 0.84;
-        out.instances.push(Instance::new(
-            m.model,
-            toon(),
-            basis(maths::scale(e1, s), maths::scale(dy, s), maths::scale(up, s), c),
-        ));
-
-        // The rig's segments.
-        let mut segs: Vec<Segment> = Vec::new();
-        let centre = [pos[0], pos[1], pos[2] + self.def.r];
-        let pose = Pose { joints: joints.clone() };
-        if pose.joints.len() == self.def.rig.bones.len() {
-            solve(&self.def.rig, &pose, centre, self.def.r, facing, &mut segs);
-        } else {
+        if joints.len() != self.def.rig.bones.len() {
             return Vec::new();
         }
-        let seg = |b: usize| (to_render(segs[b].a), to_render(segs[b].b));
+        let horn = joints.get(HORN).copied().unwrap_or(Joint::REST);
+        let cam = Camera::default_ring();
+        let c = ball_centre(pos);
 
-        // The pistons.
-        for b in [P1, P2, P3] {
-            let (a, tip) = seg(b);
+        // The sprite card. Valves toward the aim (the current engine's `trumpet_alpha`), turned a quarter by the
+        // lance (mouthpiece first), rocked by the combo.
+        let alpha = screen_angle(&cam, c, floor_dir(facing)) + 90.0;
+        // (a positive roll turns the sprite anticlockwise: a quarter turn back brings the mouthpiece to the aim)
+        let extra = -(horn.yaw.to_degrees() as f32) + horn.pitch.to_degrees() as f32;
+        let rl = ((-alpha + extra) / ROLL_STEP as f32).round() as i32 * ROLL_STEP;
+        let rl = (rl + 180).rem_euclid(360);
+        let rp = ball_px(&cam, c) * SPRITE_K;
+        let ri = m
+            .radii
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, r)| ((**r as f32 - rp).abs() * 100.0) as i32)
+            .map_or(0, |(i, _)| i);
+        let rad = m.radii[ri] as f32;
+        let toward = maths::normalize(maths::sub(cam.eye, c));
+        let right = maths::normalize(maths::cross(UP, toward));
+        let up = maths::cross(toward, right);
+        let at = maths::sub(c, maths::scale(toward, CARD_BACK));
+        // one sprite pixel: the sprite's radius covers SPRITE_K of the ball's (at the card's depth, a hair smaller)
+        let px = BALL_R * SPRITE_K / rad * (ball_px(&cam, at) / ball_px(&cam, c)).min(1.0);
+        let idx = ri * 36 + (rl / ROLL_STEP) as usize;
+        out.instances.push(
+            Instance::new(
+                m.cards[idx],
+                Material::Unlit,
+                basis(maths::scale(right, px), maths::scale(up, px), toward, at),
+            )
+            .coloured([1.0; 3]),
+        );
+
+        // The rig's segments, now and a few steps back (the caps' motion ghosts, the pistons' streaks).
+        let solve_at = |step: usize| -> Option<Vec<Segment>> {
+            let st = f.rec.steps.get(step)?;
+            let p = st.pos[k];
+            let pose = Pose {
+                joints: st.joints[k].clone(),
+            };
+            let mut segs = Vec::new();
+            solve(
+                &self.def.rig,
+                &pose,
+                [p[0], p[1], p[2] + self.def.r],
+                self.def.r,
+                st.facing[k],
+                &mut segs,
+            );
+            Some(segs)
+        };
+        let mut segs: Vec<Segment> = Vec::new();
+        let pose = Pose { joints: joints.clone() };
+        solve(
+            &self.def.rig,
+            &pose,
+            [pos[0], pos[1], pos[2] + self.def.r],
+            self.def.r,
+            facing,
+            &mut segs,
+        );
+        let flat = |v: V3| [v[0], c[1], v[2]];
+        let seg = |s: &[Segment], b: usize| (to_render(s[b].a), to_render(s[b].b));
+        let mut layer = 0.0f32;
+        let mut lift = |p: V3| {
+            layer += 0.003;
+            [p[0], p[1] + layer, p[2]]
+        };
+        let strip = |out: &mut Scene, a: V3, b: V3, w: f32, colour: [f32; 3], mat: Material| {
+            let d = maths::sub(b, a);
+            let len = maths::length(d).max(1e-5);
+            let n = maths::normalize(maths::cross(UP, maths::scale(d, 1.0 / len)));
+            out.instances
+                .push(Instance::new(m.strip, mat, basis(d, UP, maths::scale(n, w), a)).coloured(colour));
+        };
+        let disc = |out: &mut Scene, p: V3, r: f32, colour: [f32; 3], mat: Material| {
+            out.instances
+                .push(Instance::new(m.disc, mat, basis([r, 0.0, 0.0], UP, [0.0, 0.0, r], p)).coloured(colour));
+        };
+        let fighter = self.def.colour.map(f64::from);
+        let prev = f.step.checked_sub(2).and_then(solve_at);
+
+        // The pistons: `draw_piston`, at the valve's lateral offset, the rod's base 0.8 of the radius out.
+        for (i, b) in [P1, P2, P3].into_iter().enumerate() {
+            let (a, tip) = seg(&segs, b);
+            let (a, tip) = (flat(a), flat(tip));
             let len = maths::length(maths::sub(tip, a));
-            if len < 0.05 {
+            if len < 0.04 {
                 continue;
             }
-            let dir = maths::scale(maths::sub(tip, a), 1.0 / len);
-            // starts a little inside the glass, at the valve
-            let a0 = maths::sub(a, maths::scale(dir, 0.12));
-            out.instances.push(
-                Instance::new(m.cyl, toon(), along(a0, maths::add(a0, maths::scale(dir, 0.12)), 0.09))
-                    .coloured(brass()),
+            let d = maths::scale(maths::sub(tip, a), 1.0 / len);
+            let n = maths::normalize(maths::cross(UP, d));
+            let off = maths::scale(n, (i as f32 - 1.0) * 0.1);
+            let a0 = maths::add(maths::sub(a, maths::scale(d, BALL_R * 0.2)), off);
+            let tip = maths::add(tip, off);
+            let growing = prev.as_ref().is_some_and(|p| {
+                let (pa, pt) = seg(p, b);
+                maths::length(maths::sub(pt, pa)) + 0.02 < len
+            });
+            if growing {
+                strip(
+                    out,
+                    lift(a0),
+                    lift(tip),
+                    0.3,
+                    col(mix(fighter, 0.5, 120.0)),
+                    Material::Additive { strength: 0.3 },
+                );
+            }
+            strip(
+                out,
+                lift(a0),
+                lift(tip),
+                0.1,
+                col(PISTON.map(|v| v * 0.82)),
+                Material::Unlit,
             );
-            out.instances
-                .push(Instance::new(m.cyl, toon(), along(a0, tip, 0.05)).coloured(silver()));
-            out.instances.push(
-                Instance::new(
-                    m.cyl,
-                    toon(),
-                    along(tip, maths::add(tip, maths::scale(dir, 0.06)), 0.14),
-                )
-                .coloured(yellow()),
+            strip(
+                out,
+                lift(maths::add(a0, maths::scale(n, 0.018))),
+                lift(maths::add(tip, maths::scale(n, 0.018))),
+                0.022,
+                col([250.0, 252.0, 255.0]),
+                Material::Unlit,
             );
-            out.instances.push(
-                Instance::new(
-                    m.sphere,
-                    toon(),
-                    disc(maths::add(tip, maths::scale(dir, 0.07)), dir, 0.11, 0.45),
-                )
-                .coloured(pearl()),
+            disc(out, lift(a0), 0.095, col(COLLAR), Material::Unlit);
+            disc(out, lift(tip), 0.16, col(mix(fighter, 0.8, 30.0)), Material::Unlit);
+            disc(
+                out,
+                lift(maths::add(tip, maths::scale(d, 0.015))),
+                0.125,
+                col(PEARL),
+                Material::Unlit,
             );
         }
 
-        // The lance: three telescoping sections and the mouthpiece.
+        // The lance: the lead pipe in three telescoping flat brass sections, the mouthpiece on the end.
         {
-            let (a, tip) = seg(LANCE);
+            let (a, tip) = seg(&segs, LANCE);
+            let (a, tip) = (flat(a), flat(tip));
             let len = maths::length(maths::sub(tip, a));
-            if len > 0.05 {
-                let dir = maths::scale(maths::sub(tip, a), 1.0 / len);
-                let a0 = maths::sub(a, maths::scale(dir, 0.15));
-                let total = len + 0.15;
-                let radii = [0.11f32, 0.09, 0.072];
-                for (i, r) in radii.into_iter().enumerate() {
+            if len > 0.06 {
+                let d = maths::scale(maths::sub(tip, a), 1.0 / len);
+                let n = maths::normalize(maths::cross(UP, d));
+                let a0 = maths::sub(a, maths::scale(d, 0.18));
+                let total = len + 0.18;
+                let growing = prev.as_ref().is_some_and(|p| {
+                    let (pa, pt) = seg(p, LANCE);
+                    maths::length(maths::sub(pt, pa)) + 0.03 < len
+                });
+                if growing {
+                    strip(
+                        out,
+                        lift(a0),
+                        lift(tip),
+                        0.4,
+                        col(mix(fighter, 0.5, 120.0)),
+                        Material::Additive { strength: 0.3 },
+                    );
+                }
+                let halves = [0.11f32, 0.09, 0.072];
+                for (i, w) in halves.into_iter().enumerate() {
                     let from = (total * i as f32 / 3.0 - 0.04).max(0.0);
                     let to = total * (i as f32 + 1.0) / 3.0;
-                    let p0 = maths::add(a0, maths::scale(dir, from));
-                    let p1 = maths::add(a0, maths::scale(dir, to));
-                    out.instances
-                        .push(Instance::new(m.cyl, toon(), along(p0, p1, r)).coloured(brass()));
-                    // a ferrule at the section's mouth
-                    out.instances.push(
-                        Instance::new(
-                            m.cyl,
-                            toon(),
-                            along(maths::sub(p1, maths::scale(dir, 0.03)), p1, r + 0.014),
-                        )
-                        .coloured(yellow()),
+                    let p0 = maths::add(a0, maths::scale(d, from));
+                    let p1 = maths::add(a0, maths::scale(d, to));
+                    strip(out, lift(p0), lift(p1), 2.0 * w + 0.03, col(BRASS_DK), Material::Unlit);
+                    strip(out, lift(p0), lift(p1), 2.0 * w, col(BRASS), Material::Unlit);
+                    let g = maths::scale(n, w * 0.45);
+                    strip(
+                        out,
+                        lift(maths::add(p0, g)),
+                        lift(maths::add(p1, g)),
+                        0.022,
+                        col(BRASS_HI),
+                        Material::Unlit,
+                    );
+                    // a collar ring at the section's mouth
+                    strip(
+                        out,
+                        lift(maths::sub(p1, maths::scale(d, 0.05))),
+                        lift(p1),
+                        2.0 * w + 0.05,
+                        col(COLLAR),
+                        Material::Unlit,
                     );
                 }
                 // the mouthpiece: a silver shank and cup
-                out.instances.push(
-                    Instance::new(
-                        m.cyl,
-                        toon(),
-                        along(tip, maths::add(tip, maths::scale(dir, 0.12)), 0.05),
-                    )
-                    .coloured(silver()),
+                let cup = maths::add(tip, maths::scale(d, 0.13));
+                strip(
+                    out,
+                    lift(tip),
+                    lift(cup),
+                    0.08,
+                    col(PISTON.map(|v| v * 0.82)),
+                    Material::Unlit,
                 );
-                out.instances.push(
-                    Instance::new(
-                        m.sphere,
-                        toon(),
-                        disc(maths::add(tip, maths::scale(dir, 0.16)), dir, 0.11, 0.6),
-                    )
-                    .coloured(silver()),
-                );
+                disc(out, lift(cup), 0.12, col(PISTON.map(|v| v * 0.82)), Material::Unlit);
+                disc(out, lift(cup), 0.09, col(PISTON), Material::Unlit);
+                disc(out, lift(cup), 0.045, col(PISTON.map(|v| v * 0.55)), Material::Unlit);
             }
         }
 
-        // The valve caps on their cords (from the glass out to the cap), when they are out.
+        // The valve caps on their cords, with pale ghosts of where they were.
         for b in [CAP1, CAP2, CAP3] {
-            let (a, tip) = seg(b);
+            let (a, tip) = seg(&segs, b);
             let v = maths::sub(tip, a);
             let len = maths::length(v);
-            if len < 0.62 {
+            if len < 0.64 {
                 continue;
             }
             let dir = maths::scale(v, 1.0 / len);
+            for (j, back) in [6usize, 4, 2].into_iter().enumerate() {
+                if let Some(ps) = f.step.checked_sub(back).and_then(solve_at) {
+                    let (_, gt) = seg(&ps, b);
+                    if maths::length(maths::sub(gt, tip)) > 0.08 {
+                        disc(
+                            out,
+                            lift(gt),
+                            0.15,
+                            col(mix(fighter, 0.5, 120.0)),
+                            Material::Additive {
+                                strength: 0.12 + 0.08 * j as f32,
+                            },
+                        );
+                    }
+                }
+            }
             let from = maths::add(a, maths::scale(dir, BALL_R * 0.85));
-            out.instances
-                .push(Instance::new(m.cyl, toon(), along(from, tip, 0.02)).coloured(silver()));
-            out.instances.push(
-                Instance::new(
-                    m.cyl,
-                    toon(),
-                    along(
-                        maths::sub(tip, maths::scale(UP, 0.05)),
-                        maths::add(tip, maths::scale(UP, 0.05)),
-                        0.16,
-                    ),
-                )
-                .coloured(brass()),
+            strip(
+                out,
+                lift(from),
+                lift(tip),
+                0.025,
+                col(PISTON.map(|v| v * 0.82)),
+                Material::Unlit,
             );
-            out.instances.push(
-                Instance::new(
-                    m.sphere,
-                    toon(),
-                    disc(maths::add(tip, maths::scale(UP, 0.06)), UP, 0.1, 0.5),
-                )
-                .coloured(pearl()),
-            );
+            disc(out, lift(tip), 0.16, col(BRASS_DK), Material::Unlit);
+            disc(out, lift(tip), 0.135, col(COLLAR), Material::Unlit);
+            disc(out, lift(tip), 0.095, col(BRASS_HI), Material::Unlit);
+            disc(out, lift(tip), 0.05, col(PEARL), Material::Unlit);
         }
         Vec::new()
     }
 }
 
-fn record(t0: f64, life: f32, exit: Exit, env: Env, seed: u32, anchor: Anchor, kind: FxKind) -> FxRecord {
-    FxRecord {
-        t0,
-        life,
-        exit,
-        env,
-        seed,
-        anchor,
-        kind,
-    }
-}
-
-/// The yellow as HDR light (the bloom brings it down) and a hot core.
-const YELLOW_HOT: [f32; 3] = [2.4, 1.7, 0.35];
-const CORE_HOT: [f32; 3] = [3.2, 3.0, 2.2];
-
 impl LookFx for TrumpetLook {
     fn fx(
         &self,
-        k: usize,
-        rec: &Recording2,
-        step_to_t: &dyn Fn(u32) -> f64,
-        out: &mut FxTimeline,
+        _k: usize,
+        _rec: &Recording2,
+        _step_to_t: &dyn Fn(u32) -> f64,
+        _out: &mut FxTimeline,
     ) -> Result<(), FxError> {
-        let dt = rec.dt as f32;
-        for (i, e) in rec.events.iter().enumerate() {
-            if e.who != k {
-                continue;
-            }
-            let t0 = step_to_t(e.step);
-            let seed = 0x7B_0000 ^ (e.step.wrapping_mul(97) + i as u32);
-            let trail = |bone, life: f32, width, length_s, style, j: u32| {
-                record(
-                    t0,
-                    life,
-                    Exit::Fade,
-                    Env::new(0.02, 0.0, 0.12),
-                    seed ^ j,
-                    Anchor::Bone { k, bone },
-                    FxKind::Trail(TrailDef {
-                        k,
-                        bone,
-                        width,
-                        length_s,
-                        colour: YELLOW_HOT,
-                        core: CORE_HOT,
-                        style,
-                    }),
-                )
-            };
-            match &e.kind {
-                EvKind::Active { mv } if *mv == VALVE_COMBO => {
-                    let d = &self.def.moves[VALVE_COMBO];
-                    let life = (d.active + 4) as f32 * dt;
-                    for (j, b) in [P1, P2, P3].into_iter().enumerate() {
-                        out.push(trail(b, life, (0.2, 0.03), 0.07, TrailStyle::Smear, j as u32))?;
-                    }
-                    // valve steam after the chord: a soft puff from the casings, drifting up
-                    let Some(st) = rec.steps.get(e.step as usize) else {
-                        continue;
-                    };
-                    let f = st.facing[k];
-                    let off = [bf_core::dmath::cos(f) * 0.45, bf_core::dmath::sin(f) * 0.45, 0.15];
-                    out.push(record(
-                        t0 + f64::from(16.0 * dt),
-                        0.9,
-                        Exit::Dissolve,
-                        Env::new(0.06, 0.1, 0.5),
-                        seed ^ 9,
-                        Anchor::Body { k, offset: off },
-                        FxKind::Burst(BurstDef {
-                            count: 40,
-                            speed: (0.4, 1.2),
-                            spread: 0.6,
-                            dir: [0.0, 1.0, 0.0],
-                            gravity: -0.6,
-                            drag: 1.5,
-                            size: (0.08, 0.28),
-                            colour: [0.55, 0.55, 0.6],
-                            colour_end: [0.3, 0.3, 0.34],
-                            stretch: 0.0,
-                            bounce: 0.0,
-                            shape: Shape::Smoke,
-                            emit_over: 0.25,
-                        }),
-                    ))?;
-                }
-                EvKind::Active { mv } if *mv == LEAD_PIPE_LANCE => {
-                    let d = &self.def.moves[LEAD_PIPE_LANCE];
-                    let life = (d.active + 6) as f32 * dt;
-                    out.push(trail(LANCE, life, (0.26, 0.03), 0.09, TrailStyle::Smear, 1))?;
-                }
-                EvKind::Windup { mv } if *mv == VALVE_CAP_YOYOS => {
-                    let d = &self.def.moves[VALVE_CAP_YOYOS];
-                    let life = (d.windup + d.active + d.recovery / 2) as f32 * dt;
-                    for (j, b) in [CAP1, CAP2, CAP3].into_iter().enumerate() {
-                        out.push(trail(b, life, (0.16, 0.02), 0.14, TrailStyle::Ribbon, j as u32))?;
-                    }
-                }
-                _ => {}
-            }
-        }
         Ok(())
     }
 
-    /// A notch lighter than the dummy's (Aedan: fighters' hits land lighter than the dummy's presets).
+    /// A notch lighter than the dummy's (Aedan: fighters' hits land lighter than the dummy's presets), and no
+    /// scorch marks (they blur, which the current engine never does).
     fn tone(&self, e: &EvKind) -> Restraint {
         if matches!(e, EvKind::Ko { .. }) {
             Restraint {
@@ -387,7 +477,7 @@ impl LookFx for TrumpetLook {
                 glow: 0.3,
                 life: 0.8,
                 size: 0.4,
-                marks: 0.8,
+                marks: 0.0,
                 screen: 0.45,
                 lens: false,
             }
@@ -397,7 +487,7 @@ impl LookFx for TrumpetLook {
                 glow: 0.28,
                 life: 0.5,
                 size: 0.42,
-                marks: 0.45,
+                marks: 0.0,
                 screen: 0.22,
                 lens: false,
             }
