@@ -466,6 +466,20 @@ pub(crate) mod tests {
         s.vm.draft.clone()
     }
 
+    /// The TEST DUMMY's mirror on Engine 2 (TEST DUMMY vs TEST DUMMY 2) as a new match-up, under handicap 0.9 each:
+    /// the dummy's file deals 2.0 damage, so its K.O.s come before the series window; at 0.9 some seeds fit.
+    pub(crate) fn dummy_draft() -> Draft {
+        let start = bf_content::starter_on(bf_core::Engine::Two, "TEST DUMMY", "TEST DUMMY 2").expect("a starter");
+        let toml = start.to_toml();
+        Draft {
+            base: None,
+            captions_edited: false,
+            seed: None,
+            handicap: [0.9, 0.9],
+            ..convert::draft_of(&start, &toml)
+        }
+    }
+
     /// Waits up to 5 s until nothing but the test holds `probe`, so every engine thread has ended.
     fn wait_until_alone(probe: &Waker) {
         let deadline = Instant::now() + Duration::from_secs(5);

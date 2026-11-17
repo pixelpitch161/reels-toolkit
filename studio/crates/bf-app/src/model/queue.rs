@@ -21,6 +21,19 @@ pub const STEP_ORDER: [StepKey; 10] = [
     StepKey::Verify,
 ];
 
+/// The lines of an Engine 2 job's check list (ruling E6-R7): the lines whose checks its job runs. Until E5 brings
+/// its sound and its picture checks, an Engine 2 job makes a silent soundtrack, checks the K.O. window (no line of
+/// its own: a failure is told as the job's) and checks the finished file; it never checks flashes.
+pub const STEPS2: [StepKey; 4] = [StepKey::Soundtrack, StepKey::Frames, StepKey::Encode, StepKey::Verify];
+
+/// The lines of a job's check list on `engine`: [`STEP_ORDER`] for the current engine, [`STEPS2`] for Engine 2.
+pub fn steps_of(engine: bf_core::Engine) -> &'static [StepKey] {
+    match engine {
+        bf_core::Engine::One => &STEP_ORDER,
+        bf_core::Engine::Two => &STEPS2,
+    }
+}
+
 /// How many finished jobs the queue keeps.
 const KEEP_FINISHED: usize = 20;
 
@@ -266,7 +279,7 @@ impl Queue {
             return;
         }
         job.state = JobState::Rendering { done: 0, total: NF };
-        job.steps = STEP_ORDER
+        job.steps = steps_of(job.spec.engine())
             .iter()
             .map(|&key| StepLine {
                 key,

@@ -448,7 +448,7 @@ impl Worker {
         if !me.heard(ctx) {
             return Ok(());
         }
-        let ff = convert::fight_file(draft)?;
+        let ff = convert::fight_file_dev(draft, ctx.config.dev)?;
         let Some(seed) = ff.seed else {
             return Err("Pick a seed first.".to_string());
         };

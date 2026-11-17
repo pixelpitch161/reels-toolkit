@@ -172,6 +172,27 @@ pub fn fight_file(draft: &Draft) -> Result<FightFile, String> {
     })
 }
 
+/// [`fight_file`] for the engine's workers: a draft that names a developer fighter (the TEST DUMMY) while the
+/// developer switch (`dev`) is off is refused in `bf_content::DEV_ONLY`'s words (ruling E6-R2).
+///
+/// # Errors
+/// As [`fight_file`], or `DEV_ONLY`.
+pub fn fight_file_dev(draft: &Draft, dev: bool) -> Result<FightFile, String> {
+    dev_allowed(&draft.fighters, dev)?;
+    fight_file(draft)
+}
+
+/// `Err(DEV_ONLY)` when `fighters` names a developer fighter and the developer switch is off.
+///
+/// # Errors
+/// `bf_content::DEV_ONLY`.
+pub fn dev_allowed<S: AsRef<str>>(fighters: &[S], dev: bool) -> Result<(), String> {
+    if !dev && fighters.iter().any(|n| bf_content::dev_only(n.as_ref())) {
+        return Err(bf_content::DEV_ONLY.to_string());
+    }
+    Ok(())
+}
+
 /// "No music is written for Flute vs Piano yet.", from the roster names.
 fn no_music_sentence(fighters: &[String; 2]) -> String {
     format!("No music is written for {} yet.", wording::versus(fighters))

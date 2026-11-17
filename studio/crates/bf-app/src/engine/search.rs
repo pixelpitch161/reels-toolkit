@@ -32,8 +32,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use bf_core::fightfile::FightFile;
-use bf_sim::Setup;
-use bf_story::{BeatSheet, Candidate, SearchEnd, SearchOpts};
+use bf_story::{Candidate, FightFn, SearchEnd, SearchOpts};
 
 use super::{Ctx, STOP_WAIT, convert, problem};
 use crate::model::Gen;
@@ -452,18 +451,19 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
             std::thread::sleep(Duration::from_millis(2));
         }
     }
-    let ff = match convert::fight_file(draft) {
+    let ff = match convert::fight_file_dev(draft, ctx.config.dev) {
         Ok(ff) => ff,
         Err(words) => return me.fail(ctx, words),
     };
-    let base = match bf_engine::classic_setup(&ff, 0) {
-        Ok(base) => base,
+    let prepared = match bf_engine::prepare(&ff) {
+        Ok(p) => p,
         Err(bf_engine::EngineError::Sim(e)) => return me.fail(ctx, unsearchable(&e.field, &ff.fighters)),
+        Err(bf_engine::EngineError::Sim2(e)) => return me.fail(ctx, unsearchable(&e.field, &ff.fighters)),
+        Err(bf_engine::EngineError::Dev(words)) => return me.fail(ctx, words),
         Err(e) => return me.fail(ctx, convert::plain(&format!("This fight cannot be searched yet: {e}"))),
     };
-    let sheet = BeatSheet::series(base.fighters);
     let key = search_key(&ff);
-    let setup_for = |seed: u64| Setup { seed, ..base.clone() };
+    let fight_for = |seed: u64| prepared.candidate(seed, None);
     {
         let mut m = lock(&me.memory);
         m.key = Some(key.clone());
@@ -476,7 +476,7 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
     });
     let resumed = earlier.or_else(|| {
         let cached = load_shortlist(&ctx.config.paths.shortlists(), APP_VERSION, &key).filter(sound)?;
-        refight(ctx, me, &setup_for, &sheet, &cached).map(|c| (c, cached.next_seed))
+        refight(ctx, me, &fight_for, &cached).map(|c| (c, cached.next_seed))
     });
     // What was resumed is installed first, so a stop that came at once keeps it (and saves it again).
     let full = resumed.is_some_and(|(mut candidates, next_seed)| {
@@ -522,7 +522,7 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
             max_seeds: Some(remaining.min(CHUNK)),
             workers,
         };
-        let result = bf_story::search(&setup_for, &sheet, &opts, &progress, &me.stop);
+        let result = bf_story::search_by(&fight_for, &opts, &progress, &me.stop);
         let full = {
             let mut m = lock(&me.memory);
             m.candidates.extend(result.candidates);
@@ -556,13 +556,7 @@ fn search_worker(ctx: &Ctx, me: &Worker, draft: &Draft, before: Option<(Arc<Mute
 /// None when a fight cannot be fought, or when the search was silenced or the engine is ending meanwhile. A
 /// `StopSearch` does not cut it short (at most `FITS + OTHERS` fights, a fraction of a second on the workers): the
 /// stopped list then still holds what was cached.
-fn refight(
-    ctx: &Ctx,
-    me: &Worker,
-    setup_for: &(dyn Fn(u64) -> Setup<'static> + Sync),
-    sheet: &BeatSheet,
-    cached: &CachedShortlist,
-) -> Option<Vec<Candidate>> {
+fn refight(ctx: &Ctx, me: &Worker, fight_for: &FightFn, cached: &CachedShortlist) -> Option<Vec<Candidate>> {
     let seeds: Vec<u64> = cached.fit_seeds.iter().chain(&cached.other_seeds).copied().collect();
     let gone = || me.silent.load(Ordering::SeqCst) || ctx.stopping();
     let next = std::sync::atomic::AtomicUsize::new(0);
@@ -579,7 +573,7 @@ fn refight(
                     let Some(&seed) = seeds.get(i) else {
                         return;
                     };
-                    match bf_story::fight(&setup_for(seed), sheet) {
+                    match fight_for(seed) {
                         Ok(c) => lock(&out)[i] = Some(c),
                         Err(_) => failed.store(true, Ordering::SeqCst),
                     }
@@ -1118,6 +1112,98 @@ mod tests {
             (list.state, list.checked, list.rows.len()),
             (SearchState::Stopped, 0, 0)
         );
+        close(engine, waker);
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    /// An engine like [`engine_at`]'s with the developer switch `dev`.
+    fn engine_dev(root: &Path, limit: Option<u64>, dev: bool) -> (EngineHandle, Waker) {
+        let waker: Waker = Arc::new(|| {});
+        let config = EngineConfig {
+            workers: 4,
+            paths: Paths::under(root),
+            clip: None,
+            search_limit: limit,
+            dev,
+        };
+        (crate::engine::spawn(waker.clone(), config), waker)
+    }
+
+    #[test]
+    fn engine_one_search_is_unchanged() {
+        let d = draft();
+        let ff = convert::fight_file(&d).expect("a fight file");
+        // The key HEAD before E6 gave this file (no engine part for the current engine).
+        assert!(!search_key(&ff).contains("engine"), "{}", search_key(&ff));
+        let base = bf_engine::classic_setup(&ff, 0).expect("a set-up");
+        let sheet = bf_story::BeatSheet::series(base.fighters);
+        let opts = SearchOpts {
+            from: 1,
+            stop_fits: 20,
+            max_seeds: None,
+            workers: 4,
+        };
+        let stop = AtomicBool::new(false);
+        let setup_for = |seed: u64| bf_sim::Setup { seed, ..base.clone() };
+        let before = bf_story::search(&setup_for, &sheet, &opts, &|_| {}, &stop);
+        let prepared = bf_engine::prepare(&ff).expect("prepares");
+        let fight_for = |seed: u64| prepared.candidate(seed, None);
+        let now = bf_story::search_by(&fight_for, &opts, &|_| {}, &stop);
+        assert_eq!(now, before);
+        let first: Vec<(u64, f64)> = now
+            .candidates
+            .iter()
+            .take(20)
+            .map(|c| (c.seed, c.verdict.score))
+            .collect();
+        assert_eq!(first.len(), 20);
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        ignore = "slow in debug: cargo test -p bf-app --release --lib engine::"
+    )]
+    fn engine2_search_finds_dummy_fits() {
+        let root = temp_root("engine2");
+        let (engine, waker) = engine_dev(&root, Some(200), true);
+        let d = crate::engine::tests::dummy_draft();
+        start(&engine, 1, &d, FilterSpec::default());
+        let done = list_of(wait_for(&engine, 120.0, |e| {
+            is_list(e, |l| l.state == SearchState::Stopped)
+        }));
+        assert_eq!(done.checked, 200);
+        assert!(done.fits_total >= 1, "{done:?}");
+        for row in done.rows.iter().filter(|r| r.fits) {
+            let t_ko = row.t_ko.expect("a K.O.");
+            assert!((49.0..=53.0).contains(&t_ko), "{t_ko}");
+        }
+        close(engine, waker);
+        // its cache is apart from a current-engine file's of the same pair and music
+        let two = convert::fight_file(&d).expect("a fight file");
+        let one = FightFile {
+            engine: bf_core::Engine::One,
+            ..two.clone()
+        };
+        let dir = Paths::under(&root).shortlists();
+        let (k2, k1) = (search_key(&two), search_key(&one));
+        assert_ne!(cache_file(&dir, APP_VERSION, &k2), cache_file(&dir, APP_VERSION, &k1));
+        assert!(
+            cache_file(&dir, APP_VERSION, &k2).is_file(),
+            "the Engine 2 search saved its cache"
+        );
+        std::fs::remove_dir_all(&root).expect("the temp folder");
+    }
+
+    #[test]
+    fn a_dummy_search_needs_the_developer_switch() {
+        let root = temp_root("engine2-dev");
+        let (engine, waker) = engine_dev(&root, Some(10), false);
+        start(&engine, 1, &crate::engine::tests::dummy_draft(), FilterSpec::default());
+        let Event::Problem { text, .. } = wait_for(&engine, 30.0, |e| matches!(e, Event::Problem { .. })) else {
+            unreachable!()
+        };
+        assert_eq!(text, bf_content::DEV_ONLY);
         close(engine, waker);
         std::fs::remove_dir_all(&root).expect("the temp folder");
     }
