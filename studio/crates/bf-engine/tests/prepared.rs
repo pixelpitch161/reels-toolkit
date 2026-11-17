@@ -132,3 +132,21 @@ fn prepare_refuses_an_engine2_file_without_definitions() {
     };
     assert_eq!(prepare(&ff).err(), Some(EngineError::NotYet(Engine::Two)));
 }
+
+#[test]
+fn judge_of_a_recorded_fight_is_the_candidate() {
+    for ff in [example(), dummy()] {
+        let p = prepare(&ff).expect("prepares");
+        for seed in [1, 5, 26] {
+            let recorded = fight(&ff, seed, true).expect("fights");
+            assert_eq!(
+                p.judge(&recorded).expect("the same engine"),
+                p.candidate(seed, None).expect("fights"),
+                "{:?} seed {seed}",
+                ff.engine
+            );
+        }
+    }
+    let other = fight(&example(), 1, false).expect("fights");
+    assert!(prepare(&dummy()).unwrap().judge(&other).is_err());
+}

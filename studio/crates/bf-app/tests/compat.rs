@@ -152,6 +152,7 @@ fn start_engine(root: &Path) -> EngineHandle {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         },
     )
 }

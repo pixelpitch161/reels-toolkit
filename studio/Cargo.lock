@@ -482,6 +482,8 @@ dependencies = [
  "bf-sim",
  "bf-sound",
  "bf-story",
+ "bf2-render",
+ "bf2-sim",
  "chrono",
  "cpal",
  "directories",

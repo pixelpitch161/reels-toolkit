@@ -22,6 +22,7 @@ use bf_content::fighters2;
 use bf_core::Engine;
 use bf_core::fightfile::FightFile;
 use bf_picture::config::{FPS, NF};
+use bf_picture::img::Rgb8;
 use bf_sound::NA;
 use bf_sound::wav::wav16_bytes;
 use bf2_direct::{ArenaTrack, CameraTrack, DirectCfg, TimeMap};
@@ -151,32 +152,8 @@ pub fn run_job2(
         ));
     }
     let names = [ff.fighters[0].as_str(), ff.fighters[1].as_str()];
-    let mut looks = Vec::new();
-    let mut defs = Vec::new();
-    let mut colours = [[0.0; 3]; 2];
-    let mut timeline = FxTimeline::new();
-    // Directed once for the whole job: the frames, the effects (in video time), the camera and the arena read it.
-    let directed = direct(ff, &rec);
-    let map = &directed.map;
-    let step_to_t = |s: u32| map.step_video_t(s);
-    for (k, name) in names.iter().enumerate() {
-        let (Some(def), Some(look), Some(fx)) = (fighters2::def(name), fighters2::look(name), fighters2::look_fx(name))
-        else {
-            return Err(ExportError::Content(format!(
-                "This fight cannot be rendered: {name} has no Engine 2 look yet."
-            )));
-        };
-        colours[k] = linear(def.colour);
-        fx.fx(k, &rec, &step_to_t, &mut timeline)
-            .map_err(|e| fx_error(name, &e))?;
-        looks.push(look);
-        defs.push(def);
-    }
-    let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
-    bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
-        .map_err(|e| fx_error("the fight", &e))?;
-    let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
-    let seed = ff.seed.unwrap_or(rec.seed);
+    let scene = Scene2::new(ff, rec)?;
+    let seed = ff.seed.unwrap_or(scene.rec.seed);
     let frames = match &opts.frames {
         None => 0..NF,
         Some(r) if r.start < r.end && r.end <= NF => r.clone(),
@@ -218,12 +195,7 @@ pub fn run_job2(
     let mut tmp = TempFolder::create(&root, &name)?;
     let job = Job2 {
         ff,
-        rec: &rec,
-        directed: &directed,
-        looks,
-        defs,
-        timeline,
-        colours,
+        scene,
         frames,
         whole,
         ffmpeg,
@@ -247,12 +219,7 @@ pub fn run_job2(
 
 struct Job2<'a> {
     ff: &'a FightFile,
-    rec: &'a Recording2,
-    directed: &'a Directed,
-    looks: [Box<dyn Look2>; 2],
-    defs: [Arc<bf2_sim::FighterDef>; 2],
-    timeline: FxTimeline,
-    colours: [[f32; 3]; 2],
+    scene: Scene2,
     frames: Range<usize>,
     whole: bool,
     ffmpeg: &'a Ffmpeg,
@@ -280,15 +247,143 @@ fn report2(results: Vec<CheckResult>, on: &(dyn Fn(JobEvent) + Sync)) -> Result<
     }
 }
 
+/// Everything of an Engine 2 fight a frame is drawn from that needs no GPU: the fighters' definitions and looks,
+/// the effect timeline (the events wired to `bf2-fx`'s presets plus each look's own records, in video time), the
+/// fighters' colours and what the director made of the fight. Made once per fight.
+pub struct Scene2 {
+    pub rec: Arc<Recording2>,
+    pub directed: Directed,
+    looks: [Box<dyn Look2>; 2],
+    defs: [Arc<bf2_sim::FighterDef>; 2],
+    timeline: FxTimeline,
+    colours: [[f32; 3]; 2],
+}
+
+impl Scene2 {
+    /// The scene of the fight `rec` of `ff`.
+    ///
+    /// # Errors
+    /// A fighter with no Engine 2 look, or effects that cannot be made, in one sentence.
+    pub fn new(ff: &FightFile, rec: Arc<Recording2>) -> Result<Scene2, ExportError> {
+        let names = [ff.fighters[0].as_str(), ff.fighters[1].as_str()];
+        let mut looks = Vec::new();
+        let mut defs = Vec::new();
+        let mut colours = [[0.0; 3]; 2];
+        let mut timeline = FxTimeline::new();
+        // Directed once for the whole fight: the frames, the effects (in video time), the camera and the arena
+        // read it.
+        let directed = direct(ff, &rec);
+        let map = &directed.map;
+        let step_to_t = |s: u32| map.step_video_t(s);
+        for (k, name) in names.iter().enumerate() {
+            let (Some(def), Some(look), Some(fx)) =
+                (fighters2::def(name), fighters2::look(name), fighters2::look_fx(name))
+            else {
+                return Err(ExportError::Content(format!(
+                    "This fight cannot be rendered: {name} has no Engine 2 look yet."
+                )));
+            };
+            colours[k] = linear(def.colour);
+            fx.fx(k, &rec, &step_to_t, &mut timeline)
+                .map_err(|e| fx_error(name, &e))?;
+            looks.push(look);
+            defs.push(def);
+        }
+        let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
+        bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
+            .map_err(|e| fx_error("the fight", &e))?;
+        let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
+        Ok(Scene2 {
+            rec,
+            directed,
+            looks,
+            defs,
+            timeline,
+            colours,
+        })
+    }
+}
+
+/// The frames of an Engine 2 fight, drawn on demand in any order at any size by `bf2-fx`'s frame path (motion-blur
+/// sub-frames, effects, the screen chain), exactly as the render job draws them: the job draws through it at
+/// 1080 x 1920, the app's preview at a smaller size on the window's own device.
+pub struct Frames2 {
+    gpu: Gpu,
+    r: Renderer,
+    stage: Stage,
+    fx: FxFrame,
+    scene: Scene2,
+    size: (u32, u32),
+}
+
+impl Frames2 {
+    /// The frames of the fight `rec` of `ff` at `w x h`, drawn on `gpu`'s device (shared, not copied).
+    ///
+    /// # Errors
+    /// As [`Scene2::new`].
+    pub fn new(gpu: &Gpu, ff: &FightFile, rec: Arc<Recording2>, w: u32, h: u32) -> Result<Frames2, ExportError> {
+        Ok(Frames2::of_scene(gpu, Scene2::new(ff, rec)?, w, h))
+    }
+
+    /// The frames of `scene` at `w x h` on `gpu`'s device.
+    pub fn of_scene(gpu: &Gpu, mut scene: Scene2, w: u32, h: u32) -> Frames2 {
+        let gpu = Gpu::from_device(gpu.device.clone(), gpu.queue.clone(), gpu.adapter_name.clone());
+        let mut r = Renderer::new(&gpu);
+        let stage = Stage::new(&mut r, &gpu);
+        for look in &mut scene.looks {
+            look.setup(&mut r, &gpu);
+        }
+        let fx = FxFrame::new(&gpu, &r);
+        Frames2 {
+            gpu,
+            r,
+            stage,
+            fx,
+            scene,
+            size: (w, h),
+        }
+    }
+
+    /// How many frames the video has.
+    pub fn nf(&self) -> usize {
+        NF
+    }
+
+    /// The scene the frames are drawn from.
+    pub fn scene(&self) -> &Scene2 {
+        &self.scene
+    }
+
+    /// Draws frame `f` (at `f / 30` s).
+    pub fn frame(&mut self, f: usize) -> Rgb8 {
+        let sc = &self.scene;
+        let defs = [&*sc.defs[0], &*sc.defs[1]];
+        let dir = sc.directed.direction();
+        self.fx.render(
+            &mut self.r,
+            &self.gpu,
+            &self.stage,
+            &sc.looks,
+            defs,
+            &sc.rec,
+            &dir,
+            &sc.timeline,
+            sc.colours,
+            f,
+            self.size,
+        )
+    }
+}
+
 impl Job2<'_> {
-    fn make(mut self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
+    fn make(self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
         let (on, name) = (self.on, self.name);
         on(JobEvent::Stage(SILENCE));
         let wav = tmp.write("audio.wav", &wav16_bytes(&vec![[0.0; 2]; NA]))?;
         stop()?;
         if self.whole {
             on(JobEvent::Stage(stage::CHECKS));
-            report2(vec![ko_window(self.rec, &self.directed.map)], on)?;
+            report2(vec![ko_window(&self.scene.rec, &self.scene.directed.map)], on)?;
             stop()?;
         }
 
@@ -298,21 +393,16 @@ impl Job2<'_> {
                 e.to_string().trim_end_matches('.')
             ))
         })?;
-        let mut r = Renderer::new(&gpu);
-        let stage_set = Stage::new(&mut r, &gpu);
-        for look in &mut self.looks {
-            look.setup(&mut r, &gpu);
-        }
-        let mut fx = FxFrame::new(&gpu, &r);
-        let defs = [&*self.defs[0], &*self.defs[1]];
-        let (looks, timeline, colours, rec) = (&self.looks, &self.timeline, self.colours, self.rec);
-        let dir = self.directed.direction();
-        let size = (W2 as u32, H2 as u32);
-        let mut draw = |f: usize| {
-            fx.render(
-                &mut r, &gpu, &stage_set, looks, defs, rec, &dir, timeline, colours, f, size,
-            )
-        };
+        // The cover: the first frame of the K.O. freeze, in video time.
+        let cover_frame = self
+            .scene
+            .directed
+            .map
+            .ko_video_t()
+            .filter(|_| self.scene.rec.outcome.t_ko.is_some())
+            .map_or(NF / 2, |t| ((t * f64::from(FPS)).ceil() as usize).min(NF - 1));
+        let mut frames2 = Frames2::of_scene(&gpu, self.scene, W2 as u32, H2 as u32);
+        let mut draw = |f: usize| frames2.frame(f);
 
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);
@@ -354,14 +444,7 @@ impl Job2<'_> {
             tmp.write(ENCODING_NOTE, note.as_bytes())?;
         }
         if self.whole {
-            // The cover: the first frame of the K.O. freeze, in video time.
-            let f = self
-                .directed
-                .map
-                .ko_video_t()
-                .filter(|_| self.rec.outcome.t_ko.is_some())
-                .map_or(NF / 2, |t| ((t * f64::from(FPS)).ceil() as usize).min(NF - 1));
-            let cover = draw(f);
+            let cover = draw(cover_frame);
             tmp.write("cover.png", &png_bytes(&cover))?;
             tmp.write("caption.txt", caption_text(self.ff).as_bytes())?;
             // the fight file last: a folder with it is a finished video
@@ -405,6 +488,24 @@ mod tests {
             d.map.ko_video_t(),
             TimeMap::from_recording(&rec, &DirectCfg::default()).ko_video_t()
         );
+    }
+
+    #[test]
+    fn frames2_draws_any_size_in_any_order() {
+        let Ok(gpu) = Gpu::headless() else {
+            eprintln!("no GPU here: skipped");
+            return;
+        };
+        let (ff, rec) = dummy();
+        let mut frames = Frames2::new(&gpu, &ff, Arc::new(rec), 108, 192).expect("the dummy's frames");
+        assert_eq!(frames.nf(), NF);
+        let late = frames.frame(900);
+        let early = frames.frame(30);
+        assert_eq!((late.w, late.h), (108, 192));
+        assert_eq!(late.data.len(), 108 * 192 * 3);
+        assert_ne!(late.data, early.data, "two moments of the fight differ");
+        // the same frame again is the same picture: nothing of one frame leaks into the next
+        assert!(frames.frame(900).data == late.data);
     }
 
     #[test]

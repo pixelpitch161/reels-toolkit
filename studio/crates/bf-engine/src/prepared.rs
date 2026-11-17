@@ -19,7 +19,7 @@ use bf2_direct::shadow::{Clock, low_name, shadow};
 use bf2_direct::{DirectCfg, TimeMap};
 use bf2_sim::{EvKind, FighterDef, Recording2, Setup2, Tag};
 
-use crate::{EngineError, classic_setup, engine_two_setup};
+use crate::{EngineError, Fought, classic_setup, engine_two_setup};
 
 /// A fight file set up once, ready to fight any seed on its engine. It is `Send + Sync`, so the search's workers
 /// share one.
@@ -153,6 +153,37 @@ impl Prepared {
         match &self.inner {
             Inner::One(s) => s.fighters.map(|f| f.color),
             Inner::Two { setup, .. } => [setup.fighters[0].colour, setup.fighters[1].colour],
+        }
+    }
+
+    /// Judges a fight of this file fought elsewhere (the take's, recorded): the same candidate
+    /// [`Prepared::candidate`] gives for its seed without a handicap. A fight of the other engine is refused in
+    /// words.
+    ///
+    /// # Errors
+    /// The fight is not on this file's engine.
+    pub fn judge(&self, fought: &Fought) -> Result<Candidate, String> {
+        match (&self.inner, fought) {
+            (Inner::One(base), Fought::One(rec)) => {
+                let lows = [base.fighters[0].low.name.as_str(), base.fighters[1].low.name.as_str()];
+                let story = bf_story::story_at(rec, base.rules.t_fight, &self.sheet, lows);
+                let verdict = bf_story::score(&story, &self.sheet);
+                Ok(Candidate {
+                    seed: rec.seed,
+                    story,
+                    verdict,
+                })
+            }
+            (Inner::Two { setup, grid }, Fought::Two(rec)) => Ok(candidate_two(
+                rec,
+                [&setup.fighters[0], &setup.fighters[1]],
+                grid,
+                &self.sheet,
+            )),
+            _ => Err(format!(
+                "a fight on another engine than this file's ({})",
+                self.engine()
+            )),
         }
     }
 

@@ -541,6 +541,7 @@ pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
         clip: None,
         search_limit: None,
         dev: false,
+        gpu: None,
     };
     let handle = engine::spawn(Arc::new(|| {}), config);
     const TAKE: TakeId = 1;

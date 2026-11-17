@@ -476,6 +476,10 @@ impl Worker {
             return Ok(());
         }
 
+        if ff.engine == bf_core::Engine::Two {
+            return self.make_two(ctx, &ff, seed, key);
+        }
+
         // the fight, its show and its story
         let setup =
             bf_engine::classic_setup(&ff, seed).map_err(|e| plain(&format!("This fight cannot be fought: {e}")))?;
@@ -558,6 +562,82 @@ impl Worker {
         me.say(ctx, Event::TakeSound { take, audio, music });
         Ok(())
     }
+}
+
+impl Worker {
+    /// An Engine 2 take (ruling E6-R4): the fight recorded, its story on the video clock (as the search judged it),
+    /// its frames drawn by `bf2-render` on the window's device (or a headless one) at 540 x 960, then the sound.
+    /// Until E5 brings Engine 2's soundtrack, the sound is silent, as the render job's is, with no check lines and
+    /// no lanes; the markers are the title card, FIGHT!, the lead changes and the K.O. (video time).
+    fn make_two(&self, ctx: &Ctx, ff: &bf_core::fightfile::FightFile, seed: u64, key: String) -> Result<(), String> {
+        use crate::preview::gpu_frames::{Engine2Frames, headless_once, take_gpu};
+        let (me, take) = (&*self.me, self.take);
+        let fought =
+            bf_engine::fight(ff, seed, true).map_err(|e| plain(&format!("This fight cannot be fought: {e}")))?;
+        if !me.heard(ctx) {
+            return Ok(());
+        }
+        if fought.t_ko_video().is_none() {
+            return Err(show_problem(seed, &ShowError::NoKo));
+        }
+        let prepared = bf_engine::prepare(ff).map_err(|e| plain(&format!("This fight cannot be fought: {e}")))?;
+        let candidate = prepared.judge(&fought).map_err(|e| plain(&e))?;
+        let t_fight = ff.grid().t_fight;
+        let view = story_view(&candidate, t_fight);
+        let bf_engine::Fought::Two(rec) = fought else {
+            return Err(plain(&"This fight was fought on the current engine, not on Engine 2"));
+        };
+        let gpu = take_gpu(ctx.config.gpu.as_ref(), headless_once)?;
+        if !me.heard(ctx) {
+            return Ok(());
+        }
+        let frames: Arc<dyn FrameSource> =
+            Arc::new(Engine2Frames::new(&gpu.0, ff, Arc::new(rec)).map_err(|e| plain(&e))?);
+        let sent = me.say(
+            ctx,
+            Event::TakePicture {
+                take,
+                story: view.clone(),
+                frames: frames.clone(),
+            },
+        );
+        if !sent {
+            return Ok(());
+        }
+        let audio = AudioTake {
+            samples: vec![[0.0f32; 2]; bf_sound::NA].into(),
+        };
+        let music = MusicView {
+            checks: Vec::new(),
+            lanes: Vec::new(),
+            markers: markers2(&candidate.story, t_fight),
+        };
+        let gone = keep(
+            &mut lock(&self.kept),
+            Kept {
+                key,
+                story: view,
+                frames,
+                audio: audio.clone(),
+                music: music.clone(),
+            },
+        );
+        drop(gone);
+        me.say(ctx, Event::TakeSound { take, audio, music });
+        Ok(())
+    }
+}
+
+/// An Engine 2 fight's moments on the Music screen, in time order: the title card at 0, "Fight" at FIGHT!
+/// (`t_fight`), each lead change and the K.O. (video time). A time that is not a finite, non-negative number is
+/// left out.
+pub fn markers2(story: &Story, t_fight: f64) -> Vec<(f32, String)> {
+    let mut m: Vec<(f64, &str)> = vec![(0.0, "Title card"), (t_fight, "Fight")];
+    m.extend(story.lc_t.iter().map(|&t| (t, "Lead change")));
+    m.extend(story.t_ko.map(|t| (t, "K.O.")));
+    m.retain(|(t, _)| t.is_finite() && *t >= 0.0);
+    m.sort_by(|a, b| a.0.total_cmp(&b.0));
+    m.into_iter().map(|(t, label)| (t as f32, label.to_string())).collect()
 }
 
 /// The check lines and the lanes of a soundtrack: `band` (the slowest, about 3 s), `levels` with `loudness`, and
@@ -1076,6 +1156,97 @@ mod tests {
         let ko = music.markers.iter().find(|m| m.1 == "K.O.").expect("a K.O. marker");
         assert_eq!(ko.0, story.t_ko.unwrap() as f32);
         close(engine, root);
+    }
+
+    /// The first seed of the dummy mirror whose story fits the series, from the search's own judge.
+    fn dummy_fit() -> (Draft, u64) {
+        let d = crate::engine::tests::dummy_draft();
+        let ff = convert::fight_file(&d).expect("a fight file");
+        let p = bf_engine::prepare(&ff).expect("prepares");
+        let seed = (1..400)
+            .find(|&s| p.candidate(s, None).expect("a fight").verdict.fits)
+            .expect("a fitting dummy seed under 400");
+        (Draft { seed: Some(seed), ..d }, seed)
+    }
+
+    /// An Engine 2 take on an engine without the window's device (as every test's): the headless one.
+    #[test]
+    #[cfg_attr(debug_assertions, ignore = "slow in debug; run with --release --include-ignored")]
+    fn engine2_take_has_frames_audio_and_story() {
+        let (d, seed) = dummy_fit();
+        let (engine, root) = crate::engine::test_engine_with(true);
+        load(&engine, 1, &d);
+        let events = gather(&engine, 300.0, |e| {
+            matches!(e, Event::TakeSound { .. } | Event::TakeFailed { .. })
+        });
+        let [
+            Event::TakePicture { take: 1, story, frames },
+            Event::TakeSound { take: 1, audio, music },
+        ] = &events[..]
+        else {
+            panic!("not a picture then a sound: {events:?}");
+        };
+        assert_eq!(story.seed, seed);
+        assert!(story.fits, "{story:?}");
+        let t_ko = story.t_ko.expect("a K.O.");
+        assert!((49.0..=53.0).contains(&t_ko), "{t_ko}");
+        assert_eq!(frames.frames(), 1_830);
+        let f = frames.draw(900);
+        assert_eq!((f.w, f.h, f.rgb.len()), (540, 960, 540 * 960 * 3));
+        assert_eq!(audio.samples.len(), bf_sound::NA);
+        assert!(music.checks.is_empty() && music.lanes.is_empty());
+        let ko = music.markers.iter().find(|m| m.1 == "K.O.").expect("a K.O. marker");
+        assert_eq!(ko.0, t_ko as f32);
+        // going back to it is instant: the kept take
+        load(&engine, 2, &d);
+        let again = gather(&engine, 5.0, |e| matches!(e, Event::TakeSound { .. }));
+        assert!(matches!(
+            &again[..],
+            [Event::TakePicture { take: 2, .. }, Event::TakeSound { take: 2, .. }]
+        ));
+        close(engine, root);
+    }
+
+    #[test]
+    fn an_engine2_take_needs_the_developer_switch_for_the_dummy() {
+        let (d, _) = dummy_fit();
+        let (engine, root) = test_engine();
+        load(&engine, 1, &d);
+        let events = gather(&engine, 30.0, |e| matches!(e, Event::TakeFailed { .. }));
+        let [Event::TakeFailed { take: 1, problem }] = &events[..] else {
+            panic!("{events:?}");
+        };
+        assert_eq!(problem, bf_content::DEV_ONLY);
+        close(engine, root);
+    }
+
+    #[test]
+    fn engine2_markers_follow_the_story() {
+        let story = Story {
+            seed: 1,
+            winner: Some(0),
+            t_ko: Some(51.5),
+            lead_changes: 2,
+            lc_t: vec![30.0, 12.0],
+            winner_hp: 10.0,
+            firsts: vec![],
+            caps: vec![],
+            max_gap: 2.0,
+            lows: vec![],
+            lead: vec![],
+        };
+        let m = markers2(&story, 3.6);
+        let labels: Vec<(f32, &str)> = m.iter().map(|(t, l)| (*t, l.as_str())).collect();
+        assert_eq!(
+            labels,
+            [
+                (0.0, "Title card"),
+                (3.6, "Fight"),
+                (12.0, "Lead change"),
+                (30.0, "Lead change"),
+                (51.5, "K.O.")
+            ]
+        );
     }
 
     #[test]

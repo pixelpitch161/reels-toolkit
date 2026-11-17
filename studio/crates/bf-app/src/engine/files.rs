@@ -1700,6 +1700,7 @@ mod tests {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         (Ctx::new(side.events.clone(), config), handle)
     }

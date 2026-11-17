@@ -160,6 +160,7 @@ pub fn real_config(settings: &Settings, paths: Option<Paths>) -> EngineConfig {
         clip: None,
         search_limit: None,
         dev: crate::engine::dev_from_env(),
+        gpu: None,
     }
 }
 
@@ -219,7 +220,8 @@ pub fn start_with(
     };
     let (engine, dev) = match kind {
         EngineKind::Real => {
-            let config = real_config(&settings, paths);
+            let mut config = real_config(&settings, paths);
+            config.gpu = crate::preview::gpu_frames::shared_gpu(cc);
             let dev = config.dev;
             (engine::spawn(waker(&cc.egui_ctx), config), dev)
         }
@@ -240,6 +242,16 @@ pub fn start_with(
     let mut app = BfApp::new(cc, boot);
     app.adapter = started.adapter;
     app
+}
+
+/// How the preview texture is sampled: the current engine's 360 x 640 pixel picture stays crisp (nearest); any
+/// other size (Engine 2's 540 x 960) is smoothed (linear, ruling E6-R4).
+pub fn preview_filter(w: u32, h: u32) -> TextureOptions {
+    if (w, h) == (360, 640) {
+        TextureOptions::NEAREST
+    } else {
+        TextureOptions::LINEAR
+    }
 }
 
 /// Has the window draw with DirectX 12 alone on a PC that has a DirectX 12 graphics card, keeping wgpu's default
@@ -391,17 +403,18 @@ impl BfApp {
         }
     }
 
-    /// Loads `frame` into the preview texture (one upload, nearest sampling). A frame whose pixels do not fill it
-    /// is ignored.
+    /// Loads `frame` into the preview texture (one upload, sampled as [`preview_filter`] says). A frame whose pixels
+    /// do not fill it is ignored.
     pub fn show_frame(&mut self, frame: Frame) {
         let (w, h) = (frame.w as usize, frame.h as usize);
         if w == 0 || h == 0 || frame.rgb.len() != w * h * 3 {
             return;
         }
         let image = egui::ColorImage::from_rgb([w, h], &frame.rgb);
+        let filter = preview_filter(frame.w, frame.h);
         match &mut self.texture {
-            Some(texture) => texture.set(image, TextureOptions::NEAREST),
-            None => self.texture = Some(self.ctx.load_texture("preview", image, TextureOptions::NEAREST)),
+            Some(texture) => texture.set(image, filter),
+            None => self.texture = Some(self.ctx.load_texture("preview", image, filter)),
         }
     }
 
@@ -684,6 +697,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn preview_texture_filter_follows_size() {
+        assert_eq!(preview_filter(360, 640), TextureOptions::NEAREST);
+        assert_eq!(preview_filter(540, 960), TextureOptions::LINEAR);
+        assert_eq!(preview_filter(1080, 1920), TextureOptions::LINEAR);
+    }
+
+    #[test]
     fn the_real_engine_renders_whole_videos_with_the_settings_workers() {
         let settings = Settings {
             output_folder: std::path::PathBuf::from("Videos"),
@@ -701,6 +721,7 @@ mod tests {
                 search_limit: None,
                 // BALLFIGHT_DEV, read at start-up
                 dev: crate::engine::dev_from_env(),
+                gpu: None,
             }
         );
         // No folder from the PC: the shortlists go under the temp folder.

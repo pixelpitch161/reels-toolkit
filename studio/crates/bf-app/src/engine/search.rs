@@ -619,6 +619,7 @@ mod tests {
             clip: None,
             search_limit: limit,
             dev: false,
+            gpu: None,
         };
         (crate::engine::spawn(waker.clone(), config), waker)
     }
@@ -1125,6 +1126,7 @@ mod tests {
             clip: None,
             search_limit: limit,
             dev,
+            gpu: None,
         };
         (crate::engine::spawn(waker.clone(), config), waker)
     }

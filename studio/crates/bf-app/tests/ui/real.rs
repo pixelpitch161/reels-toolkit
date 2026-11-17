@@ -203,6 +203,7 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let (engine, w) = Watched::start(Arc::new(move || ctx.request_repaint()), config);
         let refused = w.refused.clone();

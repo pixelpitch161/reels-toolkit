@@ -688,6 +688,7 @@ mod tests {
             clip: Some(CLIP),
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         (super::super::spawn(Arc::new(|| {}), config), root)
     }
@@ -1478,6 +1479,7 @@ mod tests {
             clip: Some(0..900),
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let engine = super::super::spawn(Arc::new(|| {}), config);
         let out = root.join("Videos");
@@ -1561,6 +1563,7 @@ mod tests {
             clip: Some(CLIP),
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         let mut state = State::default();

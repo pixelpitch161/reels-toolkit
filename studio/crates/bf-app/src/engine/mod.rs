@@ -74,6 +74,9 @@ pub struct EngineConfig {
     /// The developer switch (`BALLFIGHT_DEV=1` at start-up, ruling E6-R2): the TEST DUMMY is offered on Engine 2,
     /// and its fight files open.
     pub dev: bool,
+    /// The window's wgpu device, shared with Engine 2's preview (ruling E6-R4); `None` when the window draws
+    /// without wgpu, or in a test: a take then makes a headless device once.
+    pub gpu: Option<crate::preview::gpu_frames::SharedGpu>,
 }
 
 /// The developer switch from the environment: exactly `BALLFIGHT_DEV=1` turns it on.
@@ -433,6 +436,12 @@ pub(crate) fn wait_for(handle: &EngineHandle, seconds: f64, want: impl Fn(&Event
 /// test removes it), a waker that does nothing.
 #[cfg(test)]
 pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf) {
+    test_engine_with(false)
+}
+
+/// [`test_engine`] with the developer switch `dev` (the TEST DUMMY's fights).
+#[cfg(test)]
+pub(crate) fn test_engine_with(dev: bool) -> (EngineHandle, std::path::PathBuf) {
     static N: AtomicUsize = AtomicUsize::new(0);
     let n = N.fetch_add(1, Ordering::SeqCst);
     let root = std::env::temp_dir().join(format!("bf-app-engine-{}-{n}", std::process::id()));
@@ -442,7 +451,8 @@ pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf) {
         paths: Paths::under(&root),
         clip: None,
         search_limit: None,
-        dev: false,
+        dev,
+        gpu: None,
     };
     (spawn(Arc::new(|| {}), config), root)
 }
@@ -580,6 +590,7 @@ pub(crate) mod tests {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::LoadRoster);
@@ -602,6 +613,7 @@ pub(crate) mod tests {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::DescribeFight {
@@ -728,6 +740,7 @@ pub(crate) mod tests {
             clip: None,
             search_limit: None,
             dev: false,
+            gpu: None,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         assert_eq!(ctx.workers(), 1, "at least one worker");
