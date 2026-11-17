@@ -43,7 +43,9 @@ fn render(r: &mut Renderer, gpu: &Gpu, p: &mut Particles, recs: &[&FxRecord], t:
 fn bright_share(img: &Rgb8) -> f64 {
     let n = img
         .data
-        .chunks_exact(3)
+        .as_chunks::<3>()
+        .0
+        .iter()
         .filter(|p| (0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32) / 255.0 > 0.8)
         .count();
     n as f64 / (img.w * img.h) as f64

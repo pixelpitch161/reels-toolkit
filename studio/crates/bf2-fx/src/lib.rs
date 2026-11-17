@@ -13,6 +13,8 @@ pub mod particles;
 pub(crate) mod pipe;
 pub mod record;
 pub mod screen;
+#[cfg(test)]
+mod testkit;
 pub mod timeline;
 pub mod trail;
 
