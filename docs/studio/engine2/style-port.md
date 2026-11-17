@@ -102,3 +102,18 @@ with a 4 x 4 ordered dither only where two steps meet (`PX_DITHER` 0.35 of a ste
 dot. It is not a filter after the picture (the reverted E8), so the lighting and effects stay as they are.
 Comparison stills of the four options: `/mnt/project-files/ballfight-studio/engine2/pixel-style/`. The
 environment can switch it for experiments (`BF2_PX_MODE=0` is the smooth look; see `renderer::px_consts`).
+
+## Flat, not a 3D model (2026-11-17)
+
+Aedan: the arena "looks much more like the original arena, but it still looks more like a 3D model". What gave it
+away, and what Engine 2 now does instead, each taken from how the current engine draws:
+
+| Gave it away | Current engine | Engine 2 now |
+|---|---|---|
+| Smoothed edges (4x MSAA) | Pillow polygons, hard pixel edges | `target::SAMPLES = 1`: no multisampling, the scene draws straight into the resolved colour |
+| Round 20-sided posts and capsule cushions, lit per pixel | `post_faces`: six-sided prisms, each face one `shade` tone | `stage::post_meshes`: the same prisms, each face's `shade` tone baked for the ambient (cushions carry the light, the instance the corner's colour) |
+| Ropes as lit tubes with highlights | `draw_rope_side`: flat 2 px lines, one shaded colour each | Unlit, `stage::rope_colour` (the same `shade` on [0, 1, 0.3]) |
+| Crowd as lit ellipsoids | Flat ellipses (body, head) and a rim line on the head | Flat camera-facing discs (`person_mesh`) and the rim line (`rim_mesh`, `body x 1.5 + 30`) |
+| No dithered haze: smooth gradients | The spot's beam (a dithered tenth over the can-to-pool outline), the vignette in fifths and the top scrim in sixths, all on the 4 x 4 Bayer dither | `Scene::beam` (`scene::Beam`), outlined on the CPU (`post::beam_outline`) and painted in `tonemap.wgsl` before the grade; the vignette and scrim banded and dithered there too |
+
+Before/after stills: `/mnt/project-files/ballfight-studio/engine2/arena-flat/`.
