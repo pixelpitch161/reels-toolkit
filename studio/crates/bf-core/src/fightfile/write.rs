@@ -47,6 +47,9 @@ impl FightFile {
         let _ = writeln!(o, "chord_loop = {}", w_strs(&m.chord_loop));
         let _ = writeln!(o, "chords_tail = {}", w_strs(&m.chords_tail));
         let _ = writeln!(o, "music_seed = {}", m.music_seed);
+        if m.slowmo == SlowmoMusic::Steady {
+            o.push_str("slowmo = \"steady\"\n");
+        }
         o.push_str("\n[music.roles]\n");
         for (k, v) in &m.roles {
             let _ = writeln!(o, "{} = {}", w_key(k), w_str(v));
