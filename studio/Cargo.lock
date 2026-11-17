@@ -660,6 +660,12 @@ version = "1.5.0"
 [[package]]
 name = "bf2-render"
 version = "1.5.0"
+dependencies = [
+ "bf-picture",
+ "bytemuck",
+ "pollster",
+ "wgpu",
+]
 
 [[package]]
 name = "bf2-sim"

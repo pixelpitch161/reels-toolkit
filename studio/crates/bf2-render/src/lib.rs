@@ -4,3 +4,9 @@
 //! The scene (ring, arena, crowd, the instruments in their glass balls), toon-banded and glass materials, many
 //! dynamic lights and shadows, the post stack (tone map, grade), offscreen frames read back for ffmpeg, and the same
 //! scene drawn into the app's preview. Milestone E2 builds it.
+
+pub mod error;
+pub mod gpu;
+
+pub use error::RenderError;
+pub use gpu::Gpu;
