@@ -56,7 +56,7 @@ const PROJ_R: f32 = 0.15;
 /// The arena's reactions: how far the crowd hops at a full jump (the current engine's one-pixel hop, a little more), and how much brighter the LED boards are at
 /// a full flash (added strength; on the beat they pulse as the current engine's do).
 const CROWD_JUMP: f32 = 0.08;
-const LED_FLASH: f32 = 2.0;
+const LED_FLASH: f32 = 0.8;
 /// The LED boards round the ring floor.
 const BOARDS: usize = 64;
 /// The spot (`SPOT`, `SPOT_AIM`) and its cone (`SPOT_COS`: soft from 19 to 27 degrees).
@@ -616,7 +616,7 @@ impl Stage {
         }
 
         // The LED boards: each fighter's colour on its own half, a chase stepping on the beat, brighter on the beat;
-        // in the flashing fighter's colour while it flashes.
+        // the flashing fighter's half brighter while it flashes.
         let step = (t * 2.2).floor();
         let k = 0.55 + 0.45 * beat;
         let flash = arena.led_flash.map(|(who, a)| (who.min(1), a as f32));
@@ -633,8 +633,11 @@ impl Stage {
                 c = c.map(|v| v * 0.42 + 40.0);
             }
             let mut strength = 1.0;
-            if let Some((who, a)) = flash {
-                c = col255[who];
+            // a flash brightens the flashing fighter's own half; each half keeps its colour, as the current
+            // engine's boards do (E8b: a whole ring in one fighter's colour read as a white-out)
+            if let Some((who, a)) = flash
+                && who == side
+            {
                 strength += LED_FLASH * a;
             }
             // `led_colour`'s pulse, then the board's fill and its top edge as the current engine paints them
