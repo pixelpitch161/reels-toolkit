@@ -24,6 +24,15 @@ pub struct Post {
     /// below this knee, a soft shoulder from it to white) and its 2.2 gamma, so a colour lit to `(c / 255)^2.2`
     /// comes out as `c` (E7).
     pub knee: f32,
+    /// The pixel pass (E8): output pixels per art pixel across a 1080-wide frame, so 3 draws the current engine's
+    /// 360 x 640 grid. Each art pixel takes the colour at its centre, and every output pixel inside it is that one
+    /// colour (nearest neighbour), whatever came before: the scene, the effects' glow and the screen chain all
+    /// land on the grid. A narrower frame keeps the same art grid (1.5 output pixels each at 540 wide), never
+    /// finer than its own pixels. 0 or 1: off.
+    pub pixel: u32,
+    /// The value steps after the grade, on 0..255 (0: none): `floor(v / step + bayer) * step` with the 4 x 4
+    /// Bayer matrix on the art grid, the current engine's `np.floor(col / 5 + BAYER_FULL) * 5`.
+    pub step: f32,
 }
 
 impl Default for Post {
@@ -36,6 +45,8 @@ impl Default for Post {
             vignette: 0.0,
             scrim: 0.0,
             knee: 0.0,
+            pixel: 1,
+            step: 0.0,
         }
     }
 }
@@ -52,6 +63,8 @@ impl Post {
             vignette: 0.45,
             scrim: 0.45,
             knee: RING_KNEE,
+            pixel: RING_PIXEL,
+            step: RING_STEP,
         }
     }
 }
@@ -61,6 +74,22 @@ pub const RING_KNEE: f32 = 0.7;
 
 /// The exposure of [`Post::ring`].
 pub const RING_EXPOSURE: f32 = 1.0;
+
+/// [`Post::ring`]'s pixel size: 1080 x 1920 is drawn as 360 x 640 art pixels, as the current engine draws it.
+pub const RING_PIXEL: u32 = 3;
+
+/// [`Post::ring`]'s value step: the current engine's canvas and model shading step of 5.
+pub const RING_STEP: f32 = 5.0;
+
+/// The CPU reference of the pass's value steps: `v` an encoded 0..1 value at art pixel `q`, stepped by `step`
+/// (on 0..255) with the 4 x 4 Bayer matrix (`bf_picture::config::BAYER`), 0..1. No step leaves it as it is.
+pub fn dither_cpu(v: f32, step: f32, q: [u32; 2]) -> f32 {
+    if step <= 0.0 {
+        return v;
+    }
+    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
+    ((v * 255.0 / step + b).floor() * step).clamp(0.0, 255.0) / 255.0
+}
 
 /// The CPU reference of the grade the shader applies after the encode: `c` an encoded 0..1 colour at pixel
 /// `(x, y)` (centres) of a `w x h` picture.
@@ -123,7 +152,8 @@ struct PostU {
     vignette: f32,
     scrim: f32,
     knee: f32,
-    _pad: [f32; 2],
+    pixel: f32,
+    step: f32,
 }
 
 /// The tone map pass: built once, its uniform rewritten each frame.
@@ -234,7 +264,8 @@ impl PostPass {
             vignette: post.vignette,
             scrim: post.scrim,
             knee: post.knee,
-            _pad: [0.0; 2],
+            pixel: post.pixel as f32,
+            step: post.step,
         };
         gpu.queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&u));
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -371,6 +402,67 @@ mod tests {
         assert!(last > 0.99);
         // the default stays ACES
         assert_eq!(curve_cpu(0.5, &Post::default()), srgb_encode(aces(0.5)));
+    }
+
+    #[test]
+    fn dither_lands_on_the_steps_and_keeps_the_mean() {
+        // the current engine's np.floor(v / 5 + BAYER_FULL) * 5, on 0..1 values
+        for v in [0.0f32, 0.2, 0.4, 0.5, 0.731, 0.99, 1.0] {
+            let mut sum = 0.0;
+            for y in 0..4 {
+                for x in 0..4 {
+                    let q = dither_cpu(v, 5.0, [x, y]);
+                    let b = (q * 255.0).round();
+                    assert!((q * 255.0 - b).abs() < 1e-3 && b as u32 % 5 == 0, "{v} -> {q}");
+                    assert!((0.0..=1.0).contains(&q));
+                    let want = ((f64::from(v) * 255.0 / 5.0 + bf_picture::config::BAYER[y as usize][x as usize])
+                        .floor()
+                        * 5.0)
+                        .min(255.0);
+                    assert_eq!(b, want as f32, "{v} at ({x}, {y})");
+                    sum += q;
+                }
+            }
+            // a 4 x 4 tile averages back to the value (to within a sixteenth of a step)
+            if v < 0.98 {
+                assert!((sum / 16.0 - v).abs() <= 5.0 / 255.0 / 2.0, "{v}: mean {}", sum / 16.0);
+            }
+        }
+        // no steps: unchanged
+        assert_eq!(dither_cpu(0.4321, 0.0, [1, 2]), 0.4321);
+    }
+
+    #[test]
+    fn pixel_pass_dithers_a_flat_colour_in_the_bayer_pattern() {
+        let gpu = Gpu::headless().unwrap();
+        let t = Targets::new(&gpu, 1080, 48);
+        let pass = PostPass::new(&gpu);
+        let bind = pass.bind(&gpu, &t);
+        // the straight curve, no grade: a flat value whose steps sit well clear of the dither's thresholds
+        let post = Post {
+            pixel: 3,
+            step: 5.0,
+            knee: 0.7,
+            ..Post::default()
+        };
+        let c = 0.1875; // exact in f16
+        let v = curve_cpu(c, &post);
+        let frac = (v * 255.0 / 5.0).fract();
+        assert!((0..16).all(|k| (frac + k as f32 / 16.0).fract() > 0.01 && (frac + k as f32 / 16.0).fract() < 0.99));
+        let mut enc = clear_hdr(&gpu, &t, [c as f64; 3]);
+        pass.encode(&gpu, &mut enc, &t, &bind, &post);
+        gpu.queue.submit([enc.finish()]);
+        let img = read_back(&gpu, &t);
+        let mut seen = std::collections::BTreeSet::new();
+        for y in 0..img.h {
+            for x in 0..img.w {
+                let q = [(x / 3) as u32, (y / 3) as u32];
+                let want = (dither_cpu(v, 5.0, [q[0] % 4, q[1] % 4]) * 255.0).round() as u8;
+                assert_eq!(img.px(x, y)[0], want, "pixel ({x}, {y}), art pixel {q:?}");
+                seen.insert(want);
+            }
+        }
+        assert_eq!(seen.len(), 2, "a flat value dithers between two neighbouring steps: {seen:?}");
     }
 
     #[test]

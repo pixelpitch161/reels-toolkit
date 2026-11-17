@@ -1,6 +1,8 @@
 // The tone map: resolved HDR colour -> exposure -> the curve (ACES fitted and the sRGB encode, or the current
-// engine's straight light and 2.2 gamma) -> grade -> Rgba8Unorm.
-// One full-screen triangle; each fragment reads its own texel, so no sampler and no filtering.
+// engine's straight light and 2.2 gamma) -> grade -> the value steps and Bayer dither -> Rgba8Unorm.
+// One full-screen triangle, no sampler and no filtering. With the pixel pass on (`pixel` above 1), each fragment
+// finds its art pixel and reads the texel at that art pixel's centre, and grades and dithers at the art pixel, so
+// every output pixel of one art pixel is the same colour (`post::Post::pixel`, `post::dither_cpu`).
 
 struct PostU {
     exposure: f32,
@@ -9,8 +11,8 @@ struct PostU {
     vignette: f32,
     scrim: f32,
     knee: f32,
-    _pad1: f32,
-    _pad2: f32,
+    pixel: f32,
+    step: f32,
 }
 
 @group(0) @binding(0) var hdr: texture_2d<f32>;
@@ -61,9 +63,28 @@ fn curve(x: vec3<f32>) -> vec3<f32> {
     return pow(s, vec3<f32>(1.0 / 2.2));
 }
 
+// `BAYER` of the current engine (`bf_picture::config::BAYER`), in sixteenths, rows top to bottom.
+const BAYER = array<u32, 16>(0u, 8u, 2u, 10u, 12u, 4u, 14u, 6u, 3u, 11u, 1u, 9u, 15u, 7u, 13u, 5u);
+
+// `post::dither_cpu`: floor(v / step + bayer) * step on 0..255, the Bayer matrix on the art grid.
+fn dither(v: vec3<f32>, q: vec2<u32>) -> vec3<f32> {
+    if u.step <= 0.0 {
+        return v;
+    }
+    let b = f32(BAYER[(q.y % 4u) * 4u + q.x % 4u]) / 16.0;
+    return clamp(floor(v * 255.0 / u.step + b) * u.step, vec3<f32>(0.0), vec3<f32>(255.0)) / 255.0;
+}
+
 @fragment
 fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
-    let c = textureLoad(hdr, vec2<i32>(p.xy), 0).rgb * u.exposure;
     let size = vec2<f32>(textureDimensions(hdr));
-    return vec4<f32>(grade(curve(max(c, vec3<f32>(0.0))), p.xy, size), 1.0);
+    // output pixels per art pixel: `pixel` across a 1080-wide frame, never under one
+    let s = max(u.pixel * size.x / 1080.0, 1.0);
+    // the pixel's index over s, as the UI layer's nearest fit counts it (`job2::fit`), so the HUD shares the grid
+    let q = floor(floor(p.xy) / s);
+    let centre = (q + 0.5) * s;
+    let texel = min(floor(centre), size - 1.0);
+    let c = textureLoad(hdr, vec2<i32>(texel), 0).rgb * u.exposure;
+    let g = grade(curve(max(c, vec3<f32>(0.0))), centre, size);
+    return vec4<f32>(dither(g, vec2<u32>(q)), 1.0);
 }

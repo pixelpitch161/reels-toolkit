@@ -374,3 +374,100 @@ fn additive_adds_without_covering() {
         "{b:?} -> {a:?}"
     );
 }
+
+/// A lit scene with edges, a gradient of light, glass and a coloured point light, for the pixel pass's tests.
+fn pixel_scene(r: &mut Renderer, gpu: &Gpu) -> Scene {
+    let mut scene = floor_scene(r, gpu);
+    let ball = r.meshes.add(gpu, geom::icosphere(1.0, 3));
+    scene.instances.push(Instance::new(
+        ball,
+        Material::toon(),
+        maths::translation([0.0, 1.0, 0.0]),
+    ));
+    scene.instances.push(Instance::new(
+        ball,
+        Material::glass([1.0, 0.5, 0.2]),
+        maths::translation([2.0, 1.0, 1.0]),
+    ));
+    scene.spot = Some(Spot {
+        pos: [0.0, 12.0, 0.0],
+        target: [0.0; 3],
+        colour: [4.0; 3],
+        angle_deg: 30.0,
+        shadow: true,
+    });
+    scene.lights.push(Light {
+        pos: [2.0, 1.0, 2.0],
+        colour: [0.0, 2.0, 1.0],
+        range: 5.0,
+        priority: 0,
+    });
+    scene
+}
+
+/// Whether every `n x n` block of `img` (from the top left) is one colour.
+fn whole_blocks(img: &Rgb8, n: usize) -> Result<(), String> {
+    for y in 0..img.h {
+        for x in 0..img.w {
+            let (bx, by) = (x / n * n, y / n * n);
+            if img.px(x, y) != img.px(bx, by) {
+                return Err(format!("({x}, {y}) differs from its block's corner ({bx}, {by})"));
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn pixel_pass_draws_whole_art_pixels_on_the_value_steps() {
+    let (gpu, mut r) = setup();
+    let scene = pixel_scene(&mut r, &gpu);
+    // 1080 wide: pixel 3 is 360 art pixels across, as the current engine draws
+    let post = Post::ring();
+    assert_eq!((post.pixel, post.step), (3, 5.0), "the default is the current engine's grid and steps");
+    let img = r.render_sized(&gpu, &scene, &post, 1080, 960);
+    whole_blocks(&img, 3).unwrap();
+    let mut levels = std::collections::BTreeSet::new();
+    for (i, &c) in img.data.iter().enumerate() {
+        assert_eq!(c % 5, 0, "byte {i} is {c}, not on a step of 5");
+        levels.insert(c);
+    }
+    assert!(levels.len() >= 12, "the picture is not flat: {levels:?}");
+}
+
+#[test]
+fn pixel_two_is_a_finer_grid() {
+    let (gpu, mut r) = setup();
+    let scene = pixel_scene(&mut r, &gpu);
+    let post = Post { pixel: 2, ..Post::ring() };
+    let img = r.render_sized(&gpu, &scene, &post, 1080, 960);
+    whole_blocks(&img, 2).unwrap();
+    assert!(whole_blocks(&img, 6).is_err(), "pixel 2 is not as coarse as pixel 6");
+    let three = r.render_sized(&gpu, &scene, &Post::ring(), 1080, 960);
+    assert!(whole_blocks(&three, 2).is_err(), "pixel 3 is coarser than pixel 2");
+}
+
+#[test]
+fn pixel_pass_keeps_the_art_grid_at_the_previews_size() {
+    let (gpu, mut r) = setup();
+    let scene = pixel_scene(&mut r, &gpu);
+    // half the video's width: still 360 art pixels across, so 1.5 output pixels each
+    let img = r.render_sized(&gpu, &scene, &Post::ring(), 540, 480);
+    for y in 0..img.h {
+        let mut runs = 1;
+        for x in 1..img.w {
+            if img.px(x, y) != img.px(x - 1, y) {
+                runs += 1;
+            }
+        }
+        assert!(runs <= 360, "row {y} has {runs} runs, more than the 360 art pixels");
+    }
+    // pixel 1 at the video's size, with no steps: the pass is off and the picture is as before
+    let plain = Post { pixel: 1, step: 0.0, ..Post::ring() };
+    let mut old = plain;
+    old.pixel = 0;
+    let a = r.render_sized(&gpu, &scene, &plain, 1080, 960);
+    let b = r.render_sized(&gpu, &scene, &old, 1080, 960);
+    assert!(a.data == b.data);
+    assert!(whole_blocks(&a, 3).is_err(), "pixel 1 leaves the full resolution");
+}
