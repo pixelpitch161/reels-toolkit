@@ -308,6 +308,53 @@ pub fn capsule(a: V3, b: V3, r: f32, n: u32) -> MeshData {
     m
 }
 
+/// `m` with flat faces, the current engine's low-poly look: every triangle gets its own three vertices and the
+/// triangle's normal, so the light turns at every edge as on the current engine's models. Colours, flags, uvs and
+/// specular stay as they were; each tangent is made at right angles to its face's normal (a normal map still adds
+/// detail across a face). A sliver triangle with no area keeps its vertices' normals.
+pub fn faceted(m: &MeshData) -> MeshData {
+    let mut out = MeshData::default();
+    for t in m.idx.as_chunks::<3>().0 {
+        let tri = [t[0], t[1], t[2]].map(|i| m.verts[i as usize]);
+        let g = maths::cross(
+            maths::sub(tri[1].pos, tri[0].pos),
+            maths::sub(tri[2].pos, tri[0].pos),
+        );
+        let flat = maths::length(g) > 1e-12;
+        let n = if flat { maths::normalize(g) } else { tri[0].nrm };
+        for mut v in tri {
+            if flat {
+                v.nrm = n;
+            }
+            let t = [v.tan[0], v.tan[1], v.tan[2]];
+            let t = maths::sub(t, maths::scale(v.nrm, maths::dot(t, v.nrm)));
+            let t = if maths::length(t) < 1e-6 {
+                crate::mesh::any_tangent(v.nrm)
+            } else {
+                maths::normalize(t)
+            };
+            v.tan = [t[0], t[1], t[2], v.tan[3]];
+            out.idx.push(out.verts.len() as u32);
+            out.verts.push(v);
+        }
+    }
+    out
+}
+
+/// `m` inside out (each triangle wound the other way, its normals turned in): drawn unlit and a little larger than
+/// the model, only its far side shows, as an ink outline round the silhouette (the current engine inks its
+/// models' and balls' edges).
+pub fn ink_shell(m: &MeshData) -> MeshData {
+    let mut out = m.clone();
+    for t in out.idx.as_chunks_mut::<3>().0 {
+        t.swap(1, 2);
+    }
+    for v in &mut out.verts {
+        v.nrm = maths::scale(v.nrm, -1.0);
+    }
+    out
+}
+
 /// An instrument model: each face a fan from its first vertex, flat-shaded with the face's normal, its colour
 /// (truncated to whole numbers, then over 255) and flags. Two-sided faces get both windings, so the renderer can
 /// cull back faces everywhere.
@@ -415,6 +462,44 @@ mod tests {
             let t = [v.tan[0], v.tan[1], v.tan[2]];
             (maths::length(t) - 1.0).abs() < 1e-3 && maths::dot(t, v.nrm).abs() < 1e-3 && v.tan[3].abs() == 1.0
         })
+    }
+
+    #[test]
+    fn faceted_gives_each_face_one_flat_normal() {
+        for smooth in [icosphere(1.0, 1), cylinder(0.5, 2.0, 8), capsule([0.0; 3], [0.0, 1.0, 0.0], 0.3, 8)] {
+            let m = faceted(&smooth);
+            assert_eq!(m.idx.len(), smooth.idx.len(), "the same triangles");
+            assert_eq!(m.verts.len(), m.idx.len(), "no vertex is shared between faces");
+            assert!(winds_outward(&m));
+            assert!(tangents_ok(&m));
+            for t in m.idx.as_chunks::<3>().0 {
+                let [a, b, c] = [t[0], t[1], t[2]].map(|i| m.verts[i as usize]);
+                let g = maths::normalize(maths::cross(maths::sub(b.pos, a.pos), maths::sub(c.pos, a.pos)));
+                for v in [a, b, c] {
+                    assert!(maths::dot(v.nrm, g) > 0.9999, "{:?} against the face's {g:?}", v.nrm);
+                }
+            }
+        }
+        // an 8-sided cylinder reads as 8 flat sides (and two caps): 10 normals
+        let m = faceted(&cylinder(0.5, 2.0, 8));
+        let mut normals: Vec<[i32; 3]> = m.verts.iter().map(|v| v.nrm.map(|c| (c * 1000.0).round() as i32)).collect();
+        normals.sort_unstable();
+        normals.dedup();
+        assert_eq!(normals.len(), 10, "{normals:?}");
+    }
+
+    #[test]
+    fn ink_shell_is_the_mesh_inside_out() {
+        let m = icosphere(1.0, 1);
+        let shell = ink_shell(&m);
+        assert_eq!(shell.verts.len(), m.verts.len());
+        for t in shell.idx.as_chunks::<3>().0 {
+            let [a, b, c] = [t[0], t[1], t[2]].map(|i| shell.verts[i as usize]);
+            let g = maths::cross(maths::sub(b.pos, a.pos), maths::sub(c.pos, a.pos));
+            // wound to face the centre, so from outside only its far side is drawn
+            assert!(maths::dot(g, a.pos) < 0.0);
+            assert!(maths::dot(a.nrm, a.pos) < 0.0);
+        }
     }
 
     #[test]
