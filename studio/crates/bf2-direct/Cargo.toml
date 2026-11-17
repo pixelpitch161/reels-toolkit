@@ -10,6 +10,8 @@ publish.workspace = true
 bf-core.workspace = true
 bf2-sim.workspace = true
 
-# The TEST DUMMY, for real recordings in the tests.
+# The TEST DUMMY, for real recordings in the tests; the music's event readers, to read a shadow recording as the
+# score does.
 [dev-dependencies]
 bf-content.workspace = true
+bf-sound.workspace = true

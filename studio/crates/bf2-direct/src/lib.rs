@@ -14,6 +14,7 @@ pub mod arena;
 pub mod camera;
 pub mod cfg;
 pub mod project;
+pub mod shadow;
 pub mod shots;
 #[cfg(test)]
 mod testkit;
@@ -23,5 +24,6 @@ pub use arena::{ArenaFrame, ArenaTrack};
 pub use camera::CameraTrack;
 pub use cfg::{DirectCfg, FPS, FRAMES};
 pub use project::{CamPose, project, to_render};
+pub use shadow::{Clock, low_name, shadow};
 pub use shots::{Priority, Shot, ShotKind};
 pub use time::TimeMap;
