@@ -86,6 +86,7 @@ impl<F: FnMut(&mut bf2_render::FxCtx<'_>)> bf2_render::FxPass for FnPass<F> {
 pub fn canvas_scene(r: &mut bf2_render::Renderer, gpu: &bf2_render::Gpu) -> bf2_render::Scene {
     let canvas = r.meshes.add(gpu, bf2_render::geom::plane(12.0, 12.0));
     bf2_render::Scene {
+        beam: None,
         ambient: [0.1; 3],
         instances: vec![
             bf2_render::Instance::new(canvas, bf2_render::Material::matte(), bf2_render::maths::IDENTITY)

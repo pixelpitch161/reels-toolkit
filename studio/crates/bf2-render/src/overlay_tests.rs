@@ -158,6 +158,7 @@ fn crisp(frame: &Rgb8, ov: &Overlay) {
 fn floor_scene(r: &mut crate::Renderer, gpu: &Gpu) -> crate::Scene {
     let floor = r.meshes.add(gpu, crate::geom::plane(40.0, 40.0));
     crate::Scene {
+        beam: None,
         camera: crate::Camera::default_ring(),
         ambient: [0.3; 3],
         instances: vec![crate::Instance::new(
