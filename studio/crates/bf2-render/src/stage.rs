@@ -29,7 +29,7 @@ use crate::look2::FightFrame;
 use crate::maths::{self, V3};
 use crate::mesh::{MeshData, MeshId, Vertex};
 use crate::renderer::Renderer;
-use crate::scene::{Instance, Light, Material, Scene, Spot, Surface, to_render};
+use crate::scene::{Beam, Instance, Light, Material, Scene, Spot, Surface, to_render};
 use crate::texture::{TEX_SIZE, TexId, hammered_height, normals_from_height, weave_height};
 
 /// The ring's half-size inside the ropes (`Rules2::a`, the current engine's `A`).
@@ -67,9 +67,6 @@ const NEUTRAL: [f64; 3] = [236.0, 232.0, 222.0];
 /// The current engine's ball glass (`title::GLASS`) and the ink round a ball.
 const GLASS: [f64; 3] = [236.0, 232.0, 226.0];
 const INK: [f64; 3] = [22.0, 14.0, 30.0];
-/// The steel of the posts and their caps.
-const STEEL: [f64; 3] = [190.0, 190.0, 204.0];
-const CAP: [f64; 3] = [220.0, 220.0, 230.0];
 /// The current engine's crowd: how much of its shirt colour reaches the picture (`spill`), and its body and
 /// head shades.
 const SPILL: f64 = 0.48;
@@ -82,22 +79,6 @@ pub fn linear(c: [f64; 3]) -> [f32; 3] {
 /// A linear colour as sRGB 0..255 (the fighters' colours come linear).
 fn srgb255(c: [f32; 3]) -> [f64; 3] {
     c.map(|v| 255.0 * f64::from(bf_core::dmath::powf(v.max(0.0), 1.0 / 2.2)))
-}
-
-/// The posts' and ropes' colours: lit by the current engine's key everywhere, they stand partly outside the
-/// spot's cone here, so their albedo is lifted until the ambient alone shows them near the current brightness
-/// (in the spot they go to white, as there).
-const SET_LIFT: f32 = 6.0;
-
-/// The ropes' lift: thin and mostly in the spot, they need less.
-const ROPE_LIFT: f32 = 1.6;
-
-/// An sRGB 0..255 colour of the posts as their albedo ([`SET_LIFT`]).
-fn lifted(c: [f64; 3]) -> [f32; 3] {
-    // over the ambient's own tint, so the ambient shows them in their own colour
-    let grey = (AMBIENT[0] + AMBIENT[1] + AMBIENT[2]) / 3.0;
-    let l = linear(c);
-    [0, 1, 2].map(|k| l[k] * SET_LIFT * grey / AMBIENT[k])
 }
 
 /// A current-engine world point in render space.
@@ -143,6 +124,13 @@ fn current_lights() -> Lights {
     let p = 58f64.to_radians();
     l.view = [0.0, bf_core::dmath::sin(p), bf_core::dmath::cos(p)];
     l
+}
+
+/// A rope's colour as the current engine draws it (`draw_rope_side`): its base shaded once on the normal
+/// [0, 1, 0.3], in linear light (drawn unlit, so the rope stays a flat line).
+fn rope_colour(base: [f64; 3]) -> [f32; 3] {
+    let up = [0.0, 1.0 / 1.09f64.sqrt(), 0.3 / 1.09f64.sqrt()];
+    linear(shade(&current_lights(), &[up], &[[0.0; 3]], &[base], None, 0.5, 0.0, 5.0)[0])
 }
 
 /// Capsules per rope.
@@ -238,6 +226,58 @@ fn skirt_mesh(l: &Lights) -> MeshData {
         }
     }
     m
+}
+
+/// Adds one flat face of the current engine (`q` and `n` in its world) to `m`, every corner `rgb`, wound to face `n`.
+fn push_face(m: &mut MeshData, q: &[[f64; 3]], n: [f64; 3], rgb: [f32; 3]) {
+    let n = from_world(n);
+    let base = m.verts.len() as u32;
+    for p in q {
+        let mut v = Vertex::new(from_world(*p), n);
+        v.rgb = rgb;
+        m.verts.push(v);
+    }
+    let (a, b, c) = (
+        m.verts[base as usize].pos,
+        m.verts[base as usize + 1].pos,
+        m.verts[base as usize + 2].pos,
+    );
+    let g = maths::cross(maths::sub(b, a), maths::sub(c, a));
+    for k in 1..q.len() as u32 - 1 {
+        if maths::dot(g, n) >= 0.0 {
+            m.idx.extend([base, base + k, base + k + 1]);
+        } else {
+            m.idx.extend([base, base + k + 1, base + k]);
+        }
+    }
+}
+
+/// The grey every post face is shaded on to find how the current engine's light falls on it (kept under 255, so
+/// nothing clips): a face's light is its shaded grey over this.
+const PROBE: f64 = 128.0;
+
+/// A corner post as the current engine draws it (`post_faces`, `draw_post`): six-sided prisms, flat faces, each
+/// lit once by the current engine's `shade` and baked for the ambient, so the ambient alone shows the current
+/// picture's flat tones. The steel pole and cap carry their colour; the three cushions ([`PostMeshes::cushions`])
+/// carry only the light, and their instance gives them the corner's colour (the same in linear light, as
+/// `(c f / 255)^2.2 = (c / 255)^2.2 f^2.2`).
+fn post_meshes(l: &Lights, corner: usize) -> (MeshData, MeshData) {
+    let sc = cur::Scene::new([[0.0; 3]; 2]);
+    let w = cur::to_world(cur::CORNERS[corner][0], cur::CORNERS[corner][1], 0.0);
+    let (mut steel, mut cushions) = (MeshData::default(), MeshData::default());
+    for f in &sc.posts[corner] {
+        let ctr = [0, 1, 2].map(|k| f.q.iter().map(|p| p[k]).sum::<f64>() / f.q.len() as f64);
+        // the cushions are the r 0.16 prisms (the pole is 0.085, its cap 0.11)
+        let r = f.q.iter().map(|p| (p[0] - w[0]).hypot(p[2] - w[2])).fold(0.0, f64::max);
+        if r > 0.14 {
+            let g = shade(l, &[f.n], &[ctr], &[[PROBE; 3]], None, 0.6, 0.0, 1.0)[0];
+            push_face(&mut cushions, &f.q, f.n, baked(g.map(|v| v / PROBE * 255.0)));
+        } else {
+            let c = shade(l, &[f.n], &[ctr], &[f.col], None, 0.6, 0.0, 5.0)[0];
+            push_face(&mut steel, &f.q, f.n, baked(c));
+        }
+    }
+    (steel, cushions)
 }
 
 /// The stands: `N_ROWS` tiers from `STAND_R0`, each a riser and a top, `segs` segments round, coloured as the
@@ -364,23 +404,44 @@ fn spill_mesh() -> MeshData {
     m
 }
 
-/// One of the crowd: a body (a flattened ball, the current engine's ellipse) and a head, standing on y = 0,
-/// facing −Z; the body's vertices at 0.8 and the head's at 0.62 of the shirt colour, as the current engine draws
-/// them.
+/// One of the crowd as the current engine draws it (`arena`): flat, a body ellipse (1.9 x 1.4 head radii, its
+/// top 0.6 head radii under the head's centre) and a round head, standing on y = 0 and facing −Z (turned to the
+/// camera, so it reads as the same flat figure, not a 3D one); the body's vertices at 0.8 and the head's at 0.62
+/// of the shirt colour, as the current engine inks them. The head sits a hair nearer than the body.
 fn person_mesh() -> MeshData {
-    let mut body = geom::icosphere(1.0, 2);
-    for v in &mut body.verts {
-        v.pos = [v.pos[0] * 0.285, v.pos[1] * 0.21 + 0.25, v.pos[2] * 0.2];
-        v.nrm = maths::normalize([v.nrm[0] / 0.285, v.nrm[1] / 0.21, v.nrm[2] / 0.2]);
-        v.rgb = [0.8f32.powf(2.2); 3];
-    }
-    let mut head = geom::icosphere(0.15, 2);
-    for v in &mut head.verts {
-        v.pos[1] += 0.55;
-        v.rgb = [0.62f32.powf(2.2); 3];
-    }
-    body.append(&head);
+    let disc = |cx: f32, cy: f32, rx: f32, ry: f32, z: f32, k: f32| {
+        let segs = 20u32;
+        let mut m = MeshData::default();
+        let mut v = Vertex::new([cx, cy, z], [0.0, 0.0, -1.0]);
+        v.rgb = [k.powf(2.2); 3];
+        m.verts.push(v);
+        for j in 0..segs {
+            let a = j as f32 / segs as f32 * std::f32::consts::TAU;
+            let mut v = Vertex::new([cx + rx * a.cos(), cy + ry * a.sin(), z], [0.0, 0.0, -1.0]);
+            v.rgb = [k.powf(2.2); 3];
+            m.verts.push(v);
+        }
+        for j in 0..segs {
+            // wound to face −Z
+            m.idx.extend([0, 1 + (j + 1) % segs, 1 + j]);
+        }
+        m
+    };
+    let mut body = disc(0.0, 0.25, 0.285, 0.21, 0.0, 0.8);
+    body.append(&disc(0.0, 0.55, 0.15, 0.15, -0.01, 0.62));
     body.with_tangents()
+}
+
+/// The rim light the ring puts on a head (`arena`: a line across the head, 0.8 head radii up, 1.2 wide), facing
+/// −Z in front of the head; the instance colours it.
+fn rim_mesh() -> MeshData {
+    let (y, hw, hh, z) = (0.55 + 0.12, 0.09, 0.012, -0.02);
+    let mut m = MeshData::default();
+    for (x, yy) in [(-hw, y - hh), (hw, y - hh), (hw, y + hh), (-hw, y + hh)] {
+        m.verts.push(Vertex::new([x, yy, z], [0.0, 0.0, -1.0]));
+    }
+    m.idx.extend([0, 2, 1, 0, 3, 2]);
+    m.painted([1.0; 3], 0.0)
 }
 
 /// The rotation turning the person mesh (front −Z, up +Y) at `pos` to face `eye`.
@@ -416,13 +477,14 @@ pub struct Stage {
     canvas: MeshId,
     skirt: MeshId,
     stands: MeshId,
-    pole: MeshId,
-    cushion: MeshId,
+    /// Each corner's pole and cap, and its cushions ([`post_meshes`]).
+    posts: [(MeshId, MeshId); 4],
     /// Each side's three ropes hanging still, in [`SIDES`] then [`ROPE_HEIGHTS`] order.
     ropes: [[MeshId; 3]; 4],
     /// One capsule of rope from the origin to +X, for ropes that wobble.
     rope_link: MeshId,
     person: MeshId,
+    rim: MeshId,
     ball: MeshId,
     outline: MeshId,
     disc: MeshId,
@@ -459,21 +521,14 @@ impl Stage {
         let canvas = add(geom::plane(2.0 * APRON, 2.0 * APRON).painted([1.0; 3], 0.0));
         let skirt = add(skirt_mesh(&l));
         let stands = add(stands_mesh(&l, 160));
-        let mut pole = geom::cylinder(0.085, POST_H, 20).painted(lifted(STEEL), 0.6);
-        for v in &mut pole.verts {
-            v.pos[1] += POST_H / 2.0;
-        }
-        let mut cap = geom::cylinder(0.11, 0.06, 20).painted(lifted(CAP), 0.6);
-        for v in &mut cap.verts {
-            v.pos[1] += POST_H + 0.03;
-        }
-        pole.append(&cap);
-        let pole = add(pole);
-        // a turnbuckle cushion: rounded, 0.22 tall, radius 0.16
-        let cushion = add(geom::capsule([0.0, -0.05, 0.0], [0.0, 0.05, 0.0], 0.16, 24).painted([1.0; 3], 0.25));
+        let posts = [0, 1, 2, 3].map(|c| {
+            let (steel, cushions) = post_meshes(&l, c);
+            (add(steel), add(cushions))
+        });
         let ropes = [0, 1, 2, 3].map(|side| ROPE_HEIGHTS.map(|h| add(rope_mesh(side, h))));
         let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 10).painted([1.0; 3], 0.35));
         let person = add(person_mesh());
+        let rim = add(rim_mesh());
         let ball = add(geom::uv_sphere(BALL_R, 48, 24));
         // the ink outline: the far side of a slightly bigger ball (wound inside out, so only it shows)
         let mut shell = geom::icosphere(BALL_R * 1.045, 3);
@@ -521,11 +576,11 @@ impl Stage {
             canvas,
             skirt,
             stands,
-            pole,
-            cushion,
+            posts,
             ropes,
             rope_link,
             person,
+            rim,
             ball,
             outline,
             disc,
@@ -569,7 +624,6 @@ impl Stage {
             let top = c[0].max(c[1]).max(c[2]).max(1.0);
             c.map(|v| v / top)
         });
-        let toon = Material::toon();
         let matte = Material::matte();
         let put = |out: &mut Scene, mesh, material, model, rgb| {
             out.instances.push(Instance::new(mesh, material, model).coloured(rgb));
@@ -598,6 +652,12 @@ impl Stage {
             }
             model[3] = [p[0], p[1], p[2], 1.0];
             put(out, self.person, matte, model, body);
+            // the ring's rim light on the head (`body x 1.5 + 30`)
+            let rim = baked([0, 1, 2].map(|c| {
+                let b = (shirt[c] * tone[c] * (SPILL + 0.28 * wk)).clamp(0.0, 255.0);
+                (b * 1.5 + 30.0).clamp(0.0, 255.0)
+            }));
+            put(out, self.rim, matte, model, rim);
             // phones up, twinkling (the current engine's `ph < 0.07`)
             if fan.ph < 0.07 {
                 let tw = 0.65 + 0.35 * (std::f32::consts::TAU * (t / (61.0 / 137.0) + fan.ph * 11.0)).sin();
@@ -677,26 +737,15 @@ impl Stage {
             }),
         );
         put(out, self.skirt, matte, maths::IDENTITY, [1.0; 3]);
-        for (c, corner) in cur::CORNERS.iter().enumerate() {
-            let p = [corner[0] as f32, 0.0, corner[1] as f32];
-            put(out, self.pole, toon, maths::translation(p), [1.0; 3]);
+        for c in 0..4 {
+            let (steel, cushions) = self.posts[c];
+            put(out, steel, matte, maths::IDENTITY, [1.0; 3]);
             let colour = match c {
-                cur::RED => lifted(col255[0].map(|v| (v * 0.9).min(255.0))),
-                cur::BLUE => lifted(col255[1].map(|v| (v * 0.9).min(255.0))),
-                _ => lifted(NEUTRAL),
+                cur::RED => col255[0].map(|v| (v * 0.9).min(255.0)),
+                cur::BLUE => col255[1].map(|v| (v * 0.9).min(255.0)),
+                _ => NEUTRAL,
             };
-            for h in ROPE_HEIGHTS {
-                out.instances.push(
-                    Instance::new(self.cushion, toon, maths::translation([p[0], h, p[2]]))
-                        .coloured(colour)
-                        .with_surface(Surface {
-                            normal: self.dimples,
-                            uv_scale: 2.0,
-                            normal_strength: 0.25,
-                            ..Surface::default()
-                        }),
-                );
-            }
+            put(out, cushions, matte, maths::IDENTITY, linear(colour));
         }
         // The corner lights over the red and blue posts, in each fighter's light colour, pulsing on the beat, and
         // their glow.
@@ -740,22 +789,32 @@ impl Stage {
                 colour,
             );
         }
+        // The ropes as the current engine draws them (`draw_rope_side`): flat 2 px lines, each in one colour, its
+        // base shaded once on the normal [0, 1, 0.3], unlit here so they stay flat lines.
         for (side, &w) in arena.rope_wobble.iter().enumerate() {
-            let middle = linear(col255[SIDE_FIGHTER[side]].map(|v| v * 0.92)).map(|v| v * ROPE_LIFT);
-            let cream = linear(cur::ROPE_COL[0]).map(|v| v * ROPE_LIFT);
+            let middle = rope_colour(col255[SIDE_FIGHTER[side]].map(|v| v * 0.92));
+            let cream = rope_colour(cur::ROPE_COL[0]);
             for (j, &h) in ROPE_HEIGHTS.iter().enumerate() {
                 let colour = if j == 1 { middle } else { cream };
                 if w == 0.0 {
-                    put(out, self.ropes[side][j], toon, maths::IDENTITY, colour);
+                    put(out, self.ropes[side][j], Material::Unlit, maths::IDENTITY, colour);
                     continue;
                 }
                 for i in 0..LINKS {
                     let a = rope_at(side, h, i as f32 / LINKS as f32, w as f32);
                     let b = rope_at(side, h, (i + 1) as f32 / LINKS as f32, w as f32);
-                    put(out, self.rope_link, toon, link_model(a, b), colour);
+                    put(out, self.rope_link, Material::Unlit, link_model(a, b), colour);
                 }
             }
         }
+        // The spot's beam: the current engine's dithered haze from the can down to the pool (`0.10 + 0.04 wk`).
+        let pool_r = cur::SPOT[1] * cur::spot_cos().0.acos().tan() * 0.92;
+        out.beam = Some(Beam {
+            apex: from_world(cur::SPOT),
+            centre: from_world(cur::SPOT_AIM),
+            radius: pool_r as f32,
+            k: 0.10 + 0.04 * wk as f32,
+        });
         // The spot's can at the top of the frame.
         put(
             out,

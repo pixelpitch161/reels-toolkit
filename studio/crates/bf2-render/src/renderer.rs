@@ -665,7 +665,7 @@ impl Renderer {
         let mut enc = gpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("post") });
-        self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post);
+        self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post, Some(scene));
         self.overlay.encode(gpu, &mut enc, &sized.targets);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, &sized.targets)
@@ -740,7 +740,7 @@ impl Renderer {
             }
             None => source_bind,
         };
-        self.post.encode(gpu, &mut enc, t, bind, post);
+        self.post.encode(gpu, &mut enc, t, bind, post, Some(&scenes[scenes.len() / 2]));
         self.overlay.encode(gpu, &mut enc, t);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, t)
@@ -957,7 +957,7 @@ impl Renderer {
     /// The scene pass. With `resolve`, it resolves into the single-sample HDR colour as it ends; without, it keeps
     /// the multisampled colour and depth for the effects.
     fn encode_scene(&self, enc: &mut wgpu::CommandEncoder, t: &Targets, resolve: bool) {
-        let keep = if resolve {
+        let keep = if resolve && SAMPLES > 1 {
             wgpu::StoreOp::Discard
         } else {
             wgpu::StoreOp::Store
@@ -967,7 +967,7 @@ impl Renderer {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &t.hdr_msaa,
                 depth_slice: None,
-                resolve_target: resolve.then_some(&t.hdr_resolved),
+                resolve_target: if resolve { t.resolve() } else { None },
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: keep,
@@ -1002,12 +1002,15 @@ impl Renderer {
 
 /// Resolves the multisampled HDR colour into the single-sample one.
 fn encode_resolve(enc: &mut wgpu::CommandEncoder, t: &Targets) {
+    let Some(resolved) = t.resolve() else {
+        return;
+    };
     enc.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("resolve"),
         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
             view: &t.hdr_msaa,
             depth_slice: None,
-            resolve_target: Some(&t.hdr_resolved),
+            resolve_target: Some(resolved),
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Load,
                 store: wgpu::StoreOp::Discard,

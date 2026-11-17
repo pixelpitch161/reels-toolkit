@@ -100,10 +100,11 @@ impl Default for ScreenLook {
             bloom: 0.1,
             threshold: 1.0,
             knee: 0.25,
-            dirt: 0.9,
+            // no lens dirt and no grain: the current engine has neither, and both soften the pixel art
+            dirt: 0.0,
             // the tone map's grade vignettes the picture as the current engine does (`Post::ring`)
             vignette: 0.0,
-            grain: 0.018,
+            grain: 0.0,
         }
     }
 }
@@ -696,20 +697,27 @@ fn points_at(src: &TrailSource<'_>, k: usize, t: f64, segs: &mut Vec<Segment>) -
     std::iter::once(centre).chain(segs.iter().map(|g| g.b)).collect()
 }
 
-/// How many sub-frames frame `t` needs: 1 when nothing moves fast, rising to 8 when a body or bone tip moves
-/// [`FAST`] ring units or more over the frame, or as a live `MotionBlur` cue asks.
+/// Whether speed alone opens the shutter. Off: the current engine draws every frame sharp, and the automatic
+/// motion blur read as soft (Aedan, 2026-11-17); a live `MotionBlur` cue still blurs.
+pub const SPEED_BLUR: bool = false;
+
+/// How many sub-frames frame `t` needs: as a live `MotionBlur` cue asks (up to 8), else 1, or with
+/// [`SPEED_BLUR`] rising to 8 when a body or bone tip moves [`FAST`] ring units or more over the frame.
 pub fn subframes(src: &TrailSource<'_>, t: f64, timeline: &FxTimeline) -> u32 {
-    let mut segs = Vec::new();
-    let mut d = 0.0f64;
-    for k in 0..2 {
-        let a = points_at(src, k, t - FRAME, &mut segs);
-        let b = points_at(src, k, t, &mut segs);
-        for (p, q) in a.iter().zip(&b) {
-            let dd = ((p[0] - q[0]).powi(2) + (p[1] - q[1]).powi(2) + (p[2] - q[2]).powi(2)).sqrt();
-            d = d.max(dd);
+    let mut n = 1;
+    if SPEED_BLUR {
+        let mut segs = Vec::new();
+        let mut d = 0.0f64;
+        for k in 0..2 {
+            let a = points_at(src, k, t - FRAME, &mut segs);
+            let b = points_at(src, k, t, &mut segs);
+            for (p, q) in a.iter().zip(&b) {
+                let dd = ((p[0] - q[0]).powi(2) + (p[1] - q[1]).powi(2) + (p[2] - q[2]).powi(2)).sqrt();
+                d = d.max(dd);
+            }
         }
+        n = 1 + (7.0 * (d / FAST).min(1.0)).floor() as u32;
     }
-    let mut n = 1 + (7.0 * (d / FAST).min(1.0)).floor() as u32;
     let mut live = Vec::new();
     timeline.active(t, &mut live);
     for &i in &live {

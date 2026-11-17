@@ -4,7 +4,69 @@
 //! Bloom, flashes and the rest are E3.
 
 use crate::gpu::Gpu;
+use crate::maths;
+use crate::scene::Scene;
 use crate::target::{LDR_FORMAT, Targets};
+
+/// Most corners of the beam's outline on screen.
+pub const BEAM_PTS: usize = 36;
+
+/// The spot's beam on screen ([`crate::scene::Beam`]): the convex outline of the can and the pool in pixels of a
+/// `w x h` picture, as the current engine's `ConvexHull` of them, its top row (the can's) and strength. Empty with
+/// no beam or when the can is behind the camera.
+pub fn beam_outline(scene: &Scene, w: u32, h: u32) -> (Vec<[f32; 2]>, f32, f32) {
+    let Some(b) = scene.beam else {
+        return (Vec::new(), 0.0, 0.0);
+    };
+    let vp = scene.camera.view_proj(w as f32 / h as f32);
+    let px = |p: maths::V3| {
+        let c = maths::transform_point(&vp, p);
+        (c[3] > 1e-3).then(|| {
+            [
+                (c[0] / c[3] * 0.5 + 0.5) * w as f32,
+                (0.5 - c[1] / c[3] * 0.5) * h as f32,
+            ]
+        })
+    };
+    let Some(s0) = px(b.apex) else {
+        return (Vec::new(), 0.0, 0.0);
+    };
+    let mut pts = vec![s0];
+    for k in 0..32 {
+        let a = k as f32 / 32.0 * std::f32::consts::TAU;
+        if let Some(q) = px(maths::add(b.centre, [b.radius * a.cos(), 0.0, b.radius * a.sin()])) {
+            pts.push(q);
+        }
+    }
+    (convex_hull(pts), s0[1], b.k)
+}
+
+/// Andrew's monotone chain: the hull's corners, anticlockwise on screen (y down: clockwise as drawn).
+fn convex_hull(mut p: Vec<[f32; 2]>) -> Vec<[f32; 2]> {
+    p.sort_by(|a, b| a[0].total_cmp(&b[0]).then(a[1].total_cmp(&b[1])));
+    p.dedup();
+    if p.len() < 3 {
+        return p;
+    }
+    let cross = |o: [f32; 2], a: [f32; 2], b: [f32; 2]| (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    let mut h: Vec<[f32; 2]> = Vec::new();
+    for pass in 0..2 {
+        let start = h.len();
+        let it: Box<dyn Iterator<Item = &[f32; 2]>> = if pass == 0 {
+            Box::new(p.iter())
+        } else {
+            Box::new(p.iter().rev())
+        };
+        for &q in it {
+            while h.len() >= start + 2 && cross(h[h.len() - 2], h[h.len() - 1], q) <= 0.0 {
+                h.pop();
+            }
+            h.push(q);
+        }
+        h.pop();
+    }
+    h
+}
 
 /// The post settings of one frame.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -123,7 +185,12 @@ struct PostU {
     vignette: f32,
     scrim: f32,
     knee: f32,
-    _pad: [f32; 2],
+    /// The beam's corners and the can's row.
+    beam_n: u32,
+    beam_top: f32,
+    beam_k: f32,
+    _pad: [f32; 3],
+    beam: [[f32; 4]; BEAM_PTS / 2],
 }
 
 /// The tone map pass: built once, its uniform rewritten each frame.
@@ -226,15 +293,33 @@ impl PostPass {
 
     /// Records the tone map from the view `bind` reads into `t.ldr`. The uniform is written now, so one `PostPass`
     /// serves one frame per submit.
-    pub fn encode(&self, gpu: &Gpu, enc: &mut wgpu::CommandEncoder, t: &Targets, bind: &wgpu::BindGroup, post: &Post) {
+    pub fn encode(
+        &self,
+        gpu: &Gpu,
+        enc: &mut wgpu::CommandEncoder,
+        t: &Targets,
+        bind: &wgpu::BindGroup,
+        post: &Post,
+        scene: Option<&Scene>,
+    ) {
+        let (hull, top, k) = scene.map_or((Vec::new(), 0.0, 0.0), |s| beam_outline(s, t.w, t.h));
+        let mut beam = [[0.0; 4]; BEAM_PTS / 2];
+        for (i, q) in hull.iter().take(BEAM_PTS).enumerate() {
+            beam[i / 2][(i % 2) * 2] = q[0];
+            beam[i / 2][(i % 2) * 2 + 1] = q[1];
+        }
         let u = PostU {
+            beam_n: hull.len().min(BEAM_PTS) as u32,
+            beam_top: top,
+            beam_k: k,
+            _pad: [0.0; 3],
+            beam,
             exposure: post.exposure,
             contrast: post.contrast,
             saturation: post.saturation,
             vignette: post.vignette,
             scrim: post.scrim,
             knee: post.knee,
-            _pad: [0.0; 2],
         };
         gpu.queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&u));
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -273,7 +358,7 @@ mod tests {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &t.hdr_msaa,
                 depth_slice: None,
-                resolve_target: Some(&t.hdr_resolved),
+                resolve_target: t.resolve(),
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
                         r: c[0],
@@ -281,7 +366,7 @@ mod tests {
                         b: c[2],
                         a: 1.0,
                     }),
-                    store: wgpu::StoreOp::Discard,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
@@ -302,7 +387,7 @@ mod tests {
         let c = [0.25, 0.75, 3.5];
         let post = Post::default();
         let mut enc = clear_hdr(&gpu, &t, c);
-        pass.encode(&gpu, &mut enc, &t, &bind, &post);
+        pass.encode(&gpu, &mut enc, &t, &bind, &post, None);
         gpu.queue.submit([enc.finish()]);
         let img = read_back(&gpu, &t);
         assert_eq!((img.w, img.h, img.c), (270, 480, 3));

@@ -158,6 +158,19 @@ pub struct Spot {
     pub shadow: bool,
 }
 
+/// The spot's beam as the current engine paints it (`render`: "a soft wedge of light from the can down to the
+/// pool"): a thin dithered haze over the outline of the can and the pool, added after the scene. Render space.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Beam {
+    /// The spot's can.
+    pub apex: V3,
+    /// The pool's centre on the canvas and its radius.
+    pub centre: V3,
+    pub radius: f32,
+    /// How strong (the current engine's `0.10 + 0.04 wk`).
+    pub k: f32,
+}
+
 /// The camera.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -253,6 +266,8 @@ pub struct Scene {
     /// At most [`MAX_LIGHTS`] reach the GPU; the dimmest of any extra are dropped.
     pub lights: Vec<Light>,
     pub instances: Vec<Instance>,
+    /// The spot's beam, painted by the tone map ([`Beam`]); `None`: none.
+    pub beam: Option<Beam>,
 }
 
 impl Default for Scene {
@@ -263,6 +278,7 @@ impl Default for Scene {
             spot: None,
             lights: Vec::new(),
             instances: Vec::new(),
+            beam: None,
         }
     }
 }

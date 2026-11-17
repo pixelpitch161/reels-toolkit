@@ -106,7 +106,12 @@ fn read_maps(in: VOut) -> Maps {
     let i = instances[in.inst];
     // the albedo map covers the mesh's uvs once; the normal map (a fine finish) repeats `uv_scale` times
     let uv = in.uv * i.mat_b.y;
-    let a = textureSample(albedo_maps, map_sampler, in.uv, i32(max(i.kind.z, 1u) - 1u)).rgb;
+    // the albedo is read texel for texel (no filtering), as the current engine works its canvas out per pixel:
+    // filtered, its rings and star went soft
+    let layer = i32(max(i.kind.z, 1u) - 1u);
+    let dims = vec2<f32>(textureDimensions(albedo_maps));
+    let texel = clamp(vec2<i32>(saturate(in.uv) * dims), vec2<i32>(0), vec2<i32>(dims) - 1);
+    let a = textureLoad(albedo_maps, texel, layer, 0).rgb;
     let n = textureSample(normal_maps, map_sampler, uv, i32(max(i.kind.w, 1u) - 1u)).xyz * 2.0 - 1.0;
     var m: Maps;
     m.albedo = select(vec3<f32>(1.0), a, i.kind.z > 0u);
