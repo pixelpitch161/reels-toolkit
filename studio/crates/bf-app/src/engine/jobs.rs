@@ -594,13 +594,16 @@ impl Steps {
         out
     }
 
-    /// The job stopped with `e`: a failed check has marked its line already; anything else fails the first line
+    /// The job stopped with `e`: a failed check with a line of this job has marked it already; anything else (a
+    /// check with no line, such as Engine 2's `ko_window`, or an error that is not a check) fails the first line
     /// in progress.
     fn failed_at(&mut self, e: &ExportError) -> Vec<JobUpdate> {
         let mut out = Vec::new();
-        if !matches!(e, ExportError::Check(_))
-            && let Some(&key) = self.now().first()
-        {
+        let marked = match e {
+            ExportError::Check(r) => step_of_check(r.name).is_some_and(|key| self.lines.contains(&key)),
+            _ => false,
+        };
+        if !marked && let Some(&key) = self.now().first() {
             self.set(key, StepState::Failed, None, &mut out);
         }
         out
@@ -869,6 +872,33 @@ mod tests {
             panic!("a rule the engine does not have cannot be fought");
         };
         assert_eq!(update, not_made(&format!("This fight cannot be fought: {why}")));
+    }
+
+    /// A failed check with no line of its own (Engine 2's K.O. window) fails the first line in progress, so the
+    /// check list of a failed job does not stay in progress.
+    #[test]
+    fn a_failed_ko_window_fails_a_line() {
+        let t = Instant::now();
+        let mut s = Steps::new(Engine::Two);
+        s.on(JobEvent::Stage(stage::SOUNDTRACK), t);
+        s.on(JobEvent::Stage(stage::CHECKS), t);
+        let first = s.now()[0];
+        let r = result("ko_window", false, "The K.O. comes at 47.10 s, before the window.");
+        assert!(s.on(JobEvent::Check(r.clone()), t).is_empty());
+        assert_eq!(
+            s.failed_at(&ExportError::Check(r)),
+            [JobUpdate::Step {
+                key: first,
+                state: StepState::Failed,
+                note: None
+            }]
+        );
+        // a failed check with a line of its own has marked it already: nothing more
+        let mut s = Steps::new(Engine::Two);
+        s.on(JobEvent::Stage(stage::CHECKS), t);
+        let r = result("safezone", false, "A caption sticks out.");
+        s.on(JobEvent::Check(r.clone()), t);
+        assert!(s.failed_at(&ExportError::Check(r)).is_empty());
     }
 
     #[test]
