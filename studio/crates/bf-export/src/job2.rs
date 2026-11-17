@@ -11,8 +11,8 @@
 //! [`stage::FRAMES`], [`stage::ENCODE`], [`stage::VERIFY`], [`stage::SAVE`]. Cancel is looked at between the stages
 //! and before every frame; it ends ffmpeg and leaves nothing behind.
 //!
-//! The loop checks of the finished file are reported but do not stop the job (an Engine 2 fight does not yet end
-//! exactly where it began).
+//! The picture's loop check before the render and both loop checks of the finished file are reported but do not
+//! stop the job (an Engine 2 fight does not yet end exactly where it began).
 
 use std::ops::Range;
 use std::path::PathBuf;
@@ -50,8 +50,10 @@ use crate::{ExportError, output};
 pub const W2: usize = bf2_render::W as usize;
 pub const H2: usize = bf2_render::H as usize;
 
-/// The checks of the finished file that are reported but do not stop an Engine 2 job yet.
-const ADVISORY: [&str; 2] = ["mp4_loop_picture", "mp4_loop_audio"];
+/// The checks that are reported but do not stop an Engine 2 job yet: the loop point of the picture before the render
+/// (the director's outro reset cut lands in the last 0.3 s, e5-measurements.md) and both loop checks of the
+/// finished file.
+const ADVISORY: [&str; 3] = ["loop_picture", "mp4_loop_picture", "mp4_loop_audio"];
 /// The finished file's checks not run on Engine 2 at all (no flash cap on Engine 2, Aedan 2026-11-17).
 const NOT_RUN: [&str; 1] = ["mp4_flash"];
 
@@ -328,6 +330,13 @@ impl Scene2 {
         let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
         bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
             .map_err(|e| fx_error("the fight", &e))?;
+        // TEMP-DIAG
+        if let Ok(skip) = std::env::var("BF2_FX_SKIP") {
+            timeline.records.retain(|r| {
+                let k = format!("{:?}", r.kind);
+                !skip.split(',').any(|w| !w.is_empty() && k.contains(w))
+            });
+        }
         let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
         let dref = [&*defs[0], &*defs[1]];
         let (show, shadow) = bf_content::video_show2(&rec, dref, map, ff)?;
@@ -707,6 +716,20 @@ mod tests {
         assert!((r.numbers["t_ko"] - t).abs() < 1e-12);
         assert!(r.summary.contains(&format!("{t:.2}")), "{}", r.summary);
         assert_eq!(r.pass, (a..=b).contains(&t), "{}", r.summary);
+    }
+
+    /// The loop point is advisory before the render as after it: the director's outro reset cut lands in the last
+    /// 0.3 s, so a whole video's `loop_picture` fails (e5-measurements.md) and must not stop the job.
+    #[test]
+    fn engine2_pre_render_loop_picture_is_advisory() {
+        let on = |_: JobEvent| {};
+        let results = vec![
+            CheckResult::failed("loop_picture", "A jump at the seam.".into()),
+            CheckResult::new("safezone", true, "ok".into(), &[]),
+        ];
+        assert!(report2(results, &on).is_ok());
+        let stops = vec![CheckResult::failed("safezone", "out".into())];
+        assert!(report2(stops, &on).is_err(), "a failed safe zone still stops the job");
     }
 
     /// No flash check on Engine 2: none before the render (`pre_render2` has none) and the finished file's is not
