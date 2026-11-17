@@ -391,27 +391,28 @@ mod tests {
         assert!(!c.verdict.fits);
     }
 
-    /// The story costs little next to the fight: over 200 seeds, at most 1.1x `fight(.., false)` alone (release; the
-    /// best of three rounds each).
+    /// The story costs little next to the fight: over 200 seeds, at most 1.1x `fight(.., false)` alone (release; per
+    /// seed the best of five each).
     #[test]
     #[cfg_attr(debug_assertions, ignore = "a timing, for release builds")]
     fn candidate2_is_cheap() {
         use std::time::Instant;
         let ff = dummy_toml();
         let sheet = beat_sheet2(&ff).unwrap();
-        // the best of three rounds of each, taken in turn (the first round also warms the caches)
-        let (mut alone, mut with) = (f64::INFINITY, f64::INFINITY);
-        for _ in 0..3 {
-            let t = Instant::now();
-            for seed in 1..=200 {
+        // per seed, the best of five of each, taken in turn (so a busy machine slows both alike)
+        let (mut alone, mut with) = (0.0, 0.0);
+        for seed in 1..=200 {
+            let (mut a, mut w) = (f64::INFINITY, f64::INFINITY);
+            for _ in 0..5 {
+                let t = Instant::now();
                 fight(&ff, seed, false).unwrap();
-            }
-            alone = alone.min(t.elapsed().as_secs_f64());
-            let t = Instant::now();
-            for seed in 1..=200 {
+                a = a.min(t.elapsed().as_secs_f64());
+                let t = Instant::now();
                 candidate2(&ff, seed, &sheet).unwrap();
+                w = w.min(t.elapsed().as_secs_f64());
             }
-            with = with.min(t.elapsed().as_secs_f64());
+            alone += a;
+            with += w;
         }
         assert!(with <= 1.1 * alone, "{with} s against {alone} s");
     }
