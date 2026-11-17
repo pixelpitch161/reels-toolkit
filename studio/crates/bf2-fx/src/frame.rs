@@ -4,6 +4,7 @@
 //! effect timeline: it lives here because `bf2-render` cannot know `bf2-fx`'s records.
 
 use bf_picture::img::Rgb8;
+use bf2_direct::TimeMap;
 use bf2_render::{FightFrame, FxCtx, FxPass, Gpu, Look2, Post, Renderer, Stage, frame_at_time, scene_at};
 use bf2_sim::{FighterDef, Pose, Recording2, solve};
 
@@ -109,7 +110,8 @@ impl FxFrame {
         }
     }
 
-    /// Video frame `f` (at `f / 30` s) of the fight in `rec` with the effects of `timeline`, at `w x h`.
+    /// Video frame `f` (at `f / 30` s) of the fight in `rec` through the time map `map`, with the effects of
+    /// `timeline` (whose records are in video time, from `map.step_video_t`), at `w x h`.
     #[allow(clippy::too_many_arguments)]
     pub fn render(
         &mut self,
@@ -119,13 +121,14 @@ impl FxFrame {
         looks: &[Box<dyn Look2>; 2],
         defs: [&FighterDef; 2],
         rec: &Recording2,
+        map: &TimeMap,
         timeline: &FxTimeline,
         colours: [[f32; 3]; 2],
         f: usize,
         size: (u32, u32),
     ) -> Rgb8 {
         let t = f as f64 / bf2_render::fight_frame::FPS;
-        let step_to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+        let step_to_t = |s: u32| map.step_video_t(s);
         let src = TrailSource {
             rec,
             rigs: [&defs[0].rig, &defs[1].rig],
@@ -140,7 +143,7 @@ impl FxFrame {
         for &ts in &times {
             idx.clear();
             timeline.active(ts, &mut idx);
-            let frame = frame_at_time(rec, ts);
+            let frame = frame_at_time(rec, map, ts);
             let recs: Vec<(&FxRecord, [f64; 3])> = idx
                 .iter()
                 .map(|&i| {
@@ -158,7 +161,7 @@ impl FxFrame {
         // The screen chain reads the frame's own time.
         idx.clear();
         timeline.active(t, &mut idx);
-        let mid = frame_at_time(rec, t);
+        let mid = frame_at_time(rec, map, t);
         let now: Vec<(&FxRecord, [f64; 3])> = idx
             .iter()
             .map(|&i| {

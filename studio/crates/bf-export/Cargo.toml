@@ -13,6 +13,7 @@ bf-sound.workspace = true
 bf-content.workspace = true
 png.workspace = true
 bf2-sim.workspace = true
+bf2-direct.workspace = true
 bf2-render.workspace = true
 bf2-fx.workspace = true
 

@@ -2,6 +2,7 @@
 //! whole frame drawn (stage, looks, projectiles).
 
 use bf_picture::img::Rgb8;
+use bf2_direct::TimeMap;
 use bf2_sim::{Joint, Recording2, V3};
 
 use crate::gpu::Gpu;
@@ -34,7 +35,8 @@ pub struct FightFrame<'a> {
     pub rec: &'a Recording2,
     /// Seconds of video.
     pub t_video: f64,
-    /// Seconds since the fight started (negative before it).
+    /// Seconds of fight since the fight started, through the time map (negative before it): it runs slowly in
+    /// slow-mo and stands still in the K.O. freeze.
     pub t_fight: f64,
     pub step: usize,
     /// 0 to 1, toward `step + 1`.
@@ -42,9 +44,9 @@ pub struct FightFrame<'a> {
     pub snap: StepSnapLerp,
 }
 
-/// Video frame `f` (at `f / 30` s).
-pub fn frame_at(rec: &Recording2, f: usize) -> FightFrame<'_> {
-    frame_at_time(rec, f as f64 / FPS)
+/// Video frame `f` (at `f / 30` s), through the time map `map`.
+pub fn frame_at<'a>(rec: &'a Recording2, map: &TimeMap, f: usize) -> FightFrame<'a> {
+    frame_at_time(rec, map, f as f64 / FPS)
 }
 
 fn lerp(a: f64, b: f64, t: f64) -> f64 {
@@ -63,10 +65,12 @@ fn lerp_angle(a: f64, b: f64, t: f64) -> f64 {
     a + d * t
 }
 
-/// The frame at `t_video` seconds of video (any time, for sub-frames). Before the fight it holds step 0, after
-/// the last step it holds the last, and while either ball is frozen by hitstop it holds the step it is on.
-pub fn frame_at_time(rec: &Recording2, t_video: f64) -> FightFrame<'_> {
-    let t_fight = t_video - rec.t_fight;
+/// The frame at `t_video` seconds of video (any time, for sub-frames): the fight time `map` shows there, so
+/// sub-frames in slow-mo are closer together in fight time and a freeze shows one moment. Before the fight it
+/// holds step 0, after the last step it holds the last, and while either ball is frozen by hitstop it holds the
+/// step it is on.
+pub fn frame_at_time<'a>(rec: &'a Recording2, map: &TimeMap, t_video: f64) -> FightFrame<'a> {
+    let t_fight = map.fight_t(t_video);
     let n = rec.steps.len();
     let s = t_fight / rec.dt;
     let (step, mut alpha) = if n == 0 || s.is_nan() || s <= 0.0 {
@@ -138,17 +142,19 @@ pub fn scene_at(stage: &Stage, looks: &[Box<dyn Look2>; 2], f: &FightFrame<'_>, 
     scene
 }
 
-/// Video frame `f` of the fight in `rec`, drawn at 1080 x 1920.
+/// Video frame `f` of the fight in `rec` (through the time map `map`), drawn at 1080 x 1920.
+#[allow(clippy::too_many_arguments)]
 pub fn render_frame(
     r: &mut Renderer,
     gpu: &Gpu,
     stage: &Stage,
     looks: &[Box<dyn Look2>; 2],
     rec: &Recording2,
+    map: &TimeMap,
     f: usize,
     colours: [[f32; 3]; 2],
 ) -> Rgb8 {
-    let frame = frame_at(rec, f);
+    let frame = frame_at(rec, map, f);
     let scene = scene_at(stage, looks, &frame, colours);
     r.render(gpu, &scene, &Post::default())
 }

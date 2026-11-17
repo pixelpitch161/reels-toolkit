@@ -567,6 +567,7 @@ dependencies = [
  "bf-sound",
  "bf-story",
  "bf-testdata",
+ "bf2-direct",
  "bf2-fx",
  "bf2-render",
  "bf2-sim",
@@ -673,6 +674,7 @@ name = "bf2-fx"
 version = "1.5.0"
 dependencies = [
  "bf-picture",
+ "bf2-direct",
  "bf2-render",
  "bf2-sim",
  "bytemuck",
@@ -684,6 +686,7 @@ name = "bf2-render"
 version = "1.5.0"
 dependencies = [
  "bf-picture",
+ "bf2-direct",
  "bf2-sim",
  "bytemuck",
  "pollster",

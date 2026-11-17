@@ -24,6 +24,7 @@ use bf_core::fightfile::FightFile;
 use bf_picture::config::{FPS, NF};
 use bf_sound::NA;
 use bf_sound::wav::wav16_bytes;
+use bf2_direct::{DirectCfg, TimeMap};
 use bf2_fx::FxTimeline;
 use bf2_fx::frame::FxFrame;
 use bf2_render::{Gpu, Look2, Renderer, Stage};
@@ -124,7 +125,9 @@ pub fn run_job2(
     let mut defs = Vec::new();
     let mut colours = [[0.0; 3]; 2];
     let mut timeline = FxTimeline::new();
-    let step_to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+    // One time map for the whole job: the frames and the effects (in video time) read it.
+    let map = TimeMap::from_recording(&rec, &DirectCfg::default());
+    let step_to_t = |s: u32| map.step_video_t(s);
     for (k, name) in names.iter().enumerate() {
         let (Some(def), Some(look), Some(fx)) = (fighters2::def(name), fighters2::look(name), fighters2::look_fx(name))
         else {
@@ -185,6 +188,7 @@ pub fn run_job2(
     let job = Job2 {
         ff,
         rec: &rec,
+        map: &map,
         looks,
         defs,
         timeline,
@@ -213,6 +217,7 @@ pub fn run_job2(
 struct Job2<'a> {
     ff: &'a FightFile,
     rec: &'a Recording2,
+    map: &'a TimeMap,
     looks: [Box<dyn Look2>; 2],
     defs: [Arc<bf2_sim::FighterDef>; 2],
     timeline: FxTimeline,
@@ -269,9 +274,13 @@ impl Job2<'_> {
         }
         let mut fx = FxFrame::new(&gpu, &r);
         let defs = [&*self.defs[0], &*self.defs[1]];
-        let (looks, timeline, colours, rec) = (&self.looks, &self.timeline, self.colours, self.rec);
+        let (looks, timeline, colours, rec, map) = (&self.looks, &self.timeline, self.colours, self.rec, self.map);
         let size = (W2 as u32, H2 as u32);
-        let mut draw = |f: usize| fx.render(&mut r, &gpu, &stage_set, looks, defs, rec, timeline, colours, f, size);
+        let mut draw = |f: usize| {
+            fx.render(
+                &mut r, &gpu, &stage_set, looks, defs, rec, map, timeline, colours, f, size,
+            )
+        };
 
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);

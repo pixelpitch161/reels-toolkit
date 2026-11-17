@@ -9,6 +9,12 @@ const TW: u32 = 270;
 const TH: u32 = 480;
 const COLOURS: [[f32; 3]; 2] = [[0.9, 0.2, 0.1], [0.1, 0.4, 0.95]];
 
+/// The map with no slow-mo and no K.O.
+fn plain(rec: &Recording2) -> bf2_direct::TimeMap {
+    let cfg = bf2_direct::DirectCfg::default();
+    bf2_direct::TimeMap::build(&[], rec.steps.len() as u32, rec.dt, rec.t_fight, None, &cfg)
+}
+
 /// A one-step recording: the balls where the test wants them.
 fn recording(projs: Vec<(u32, [f64; 3])>) -> Recording2 {
     let snap = StepSnap {
@@ -45,7 +51,7 @@ fn stage_draws_both_balls_where_the_sim_says() {
     let mut r = Renderer::new(&gpu);
     let stage = Stage::new(&mut r, &gpu);
     let rec = recording(vec![(7, [0.0, 0.0, 1.0])]);
-    let f = frame_at_time(&rec, 12.5);
+    let f = frame_at_time(&rec, &plain(&rec), 12.5);
     let mut full = Scene::default();
     stage.draw(&f, COLOURS, &mut full);
     let mut empty = Scene::default();
@@ -67,7 +73,7 @@ fn stage_scene_is_bounded() {
     let mut r = Renderer::new(&gpu);
     let stage = Stage::new(&mut r, &gpu);
     let rec = recording((0..20).map(|i| (i, [i as f64 * 0.1, 0.0, 1.0])).collect());
-    let f = frame_at_time(&rec, 12.5);
+    let f = frame_at_time(&rec, &plain(&rec), 12.5);
     let mut s = Scene::default();
     stage.draw(&f, COLOURS, &mut s);
     stage.draw_projectiles(&f, &[3, 4], &mut s);
