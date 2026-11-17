@@ -148,7 +148,6 @@ pub fn step_projs(world: &mut World, step: u32) {
 }
 
 /// Expires every live projectile (the end of the fight), so each one still has its exit event.
-#[allow(dead_code)] // until the run (Task 9)
 pub(crate) fn expire_all(world: &mut World, step: u32) {
     for i in 0..world.projs.len() {
         expire(world, i, step);
