@@ -73,9 +73,8 @@ that quality using the shared toolkit, without inventing engine features.
 - Never edit `projects/`, `reelkit/` or `series/`. GUITAR and SAX stay retired as fighters.
 - Video spec is unchanged: 61.0 s, 1080 x 1920, 30 fps, h264 + aac, loop at the file boundary, the safe zone,
   consistent loudness, one unique colour per instrument.
-- Full-screen flashes are now allowed (Aedan, 2026-11-17). The photosensitivity check stays, as a cap on how often
-  flashes happen (Punchy used at most 3 per second and at least 0.5 s apart). **Theirs to confirm, see Open
-  questions.**
+- Full-screen flashes are allowed, with **no flash cap** (Aedan, 2026-11-17 05:25Z): the flash check does not apply to
+  Engine 2 videos. Effects that turn out problematic are handled while each one is made.
 - Determinism. The fight (simulation) must be reproducible from its fight file and seed on every run, because the
   seed search, auto-balance and Matchups depend on it. The picture only needs to be reproducible on Aedan's PC
   (same GPU and driver). Tests compare pictures within a tolerance, not byte for byte.
@@ -232,8 +231,9 @@ the lighting follows the beat (Aedan's earlier picks, now done properly).
 
 `bf-sound` is reused. Sound effects are placed in **video time** through the time map. During slow-mo they are
 stretched or pitched down (builder's call per sound, and fighters can supply slow-mo variants). Hitstop gets a
-"freeze" treatment: a held tail or reverb swell. The Composed and Classic music keep running at video time and do
-not slow down, but react to the v2 events (accents on contacts, drops on specials, the K.O. hit). Loudness checks
+"freeze" treatment: a held tail or reverb swell. The music **slows down with slow-mo by default** (it follows the time map, like the sound effects), with a
+**switch** to keep it at normal speed instead in case it sounds wrong (Aedan, 2026-11-17 05:25Z). The Composed and
+Classic music react to the v2 events (accents on contacts, drops on specials, the K.O. hit). Loudness checks
 are unchanged.
 
 ### 6. App integration
@@ -292,6 +292,7 @@ monthly limit around 2026-11-14 and it resets on the 17th.
 - Systems first, then one session per fighter.
 - Engine 2 beside the current engine.
 - Full-screen flashes allowed (earlier thread).
+- No flash cap; music slows with slow-mo, with a switch to keep it at normal speed (2026-11-17 05:25Z).
 - Keep both engine versions of a fighter until every fighter has moved (decision card, 2026-11-17 05:21Z).
 
 ## My calls (Aedan can correct)
@@ -300,16 +301,14 @@ monthly limit around 2026-11-14 and it resets on the 17th.
 - Sim at 240 Hz, recording every step.
 - Keep the low-poly-instruments-in-glass-balls identity, crisp and lit, with toon-banded shading.
 - Keep the HUD, captions and VS card look, just crisp.
-- Music runs in video time and does not slow down in slow-mo.
 - No mixed-engine matchups.
-- Flash cap kept as a photosensitivity check (max 3 per second).
 - Fighter count: 40 (the roster installed in 1.5.0). The toolkit is scoped for all 40.
 - Seed-search fit: the director's time map is headless and cheap (built from events only, no camera or picture),
   so the search runs the real time map for every seed. The K.O. window (today 49 to 53 s) and the balance band
   (49 to 52 s) are measured in video time.
 - Music: the full Composed system carries over. The story layer (`bf-story`: lead changes, desperation move,
   final exchange, K.O. tape stop, victory solo) is rebuilt from the v2 events, and Classic stays one click away.
-- Render checks: safe zone, loudness, loop, the K.O. window and the flash cap carry over unchanged. The focus and
+- Render checks: safe zone, loudness, loop and the K.O. window carry over unchanged; the flash check is off. The focus and
   band checks are tied to the current picture, so they get new definitions for Engine 2 (builder's call, and the
   milestone plan states them).
 - Shipping: each systems milestone merges into the build branch with Engine 2 and the dummy hidden, so the app
@@ -325,4 +324,4 @@ Hz) within the speed target, the HUD port method, test layout.
 
 ## Open questions
 
-- Flash cap: keep the 3-per-second photosensitivity cap? (My call is yes unless Aedan says otherwise.)
+None.
