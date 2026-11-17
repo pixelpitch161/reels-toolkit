@@ -121,13 +121,18 @@ impl PostPass {
 
     /// The bind group reading `t`'s resolved HDR colour. Made once per `Targets`.
     pub fn bind(&self, gpu: &Gpu, t: &Targets) -> wgpu::BindGroup {
+        self.bind_view(gpu, &t.hdr_resolved)
+    }
+
+    /// The bind group reading any single-sample HDR view of the targets' size.
+    pub fn bind_view(&self, gpu: &Gpu, view: &wgpu::TextureView) -> wgpu::BindGroup {
         gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("tonemap"),
             layout: &self.layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&t.hdr_resolved),
+                    resource: wgpu::BindingResource::TextureView(view),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -137,7 +142,7 @@ impl PostPass {
         })
     }
 
-    /// Records the tone map from `t.hdr_resolved` into `t.ldr`. The uniform is written now, so one `PostPass`
+    /// Records the tone map from the view `bind` reads into `t.ldr`. The uniform is written now, so one `PostPass`
     /// serves one frame per submit.
     pub fn encode(&self, gpu: &Gpu, enc: &mut wgpu::CommandEncoder, t: &Targets, bind: &wgpu::BindGroup, post: &Post) {
         let u = PostU {

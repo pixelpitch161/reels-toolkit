@@ -26,6 +26,11 @@ pub struct Targets {
     pub h: u32,
     pub hdr_msaa: wgpu::TextureView,
     pub hdr_resolved: wgpu::TextureView,
+    /// Sub-frames are averaged here (motion blur).
+    pub hdr_accum: wgpu::TextureView,
+    /// The post chain's output, which the tone map then reads.
+    pub hdr_post_tex: wgpu::Texture,
+    pub hdr_post: wgpu::TextureView,
     pub depth_msaa: wgpu::TextureView,
     pub ldr_tex: wgpu::Texture,
     pub ldr: wgpu::TextureView,
@@ -61,6 +66,9 @@ impl Targets {
             1,
             attach | wgpu::TextureUsages::TEXTURE_BINDING,
         );
+        let sampled = attach | wgpu::TextureUsages::TEXTURE_BINDING;
+        let hdr_accum = tex("hdr accum", HDR_FORMAT, 1, sampled);
+        let hdr_post_tex = tex("hdr post", HDR_FORMAT, 1, sampled | wgpu::TextureUsages::COPY_SRC);
         let depth_msaa = tex("depth msaa", DEPTH_FORMAT, SAMPLES, attach);
         let ldr_tex = tex("ldr", LDR_FORMAT, 1, attach | wgpu::TextureUsages::COPY_SRC);
         let padded_row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
@@ -75,6 +83,9 @@ impl Targets {
             h,
             hdr_msaa: view(&hdr_msaa),
             hdr_resolved: view(&hdr_resolved),
+            hdr_accum: view(&hdr_accum),
+            hdr_post: view(&hdr_post_tex),
+            hdr_post_tex,
             depth_msaa: view(&depth_msaa),
             ldr: view(&ldr_tex),
             ldr_tex,
@@ -128,6 +139,69 @@ pub fn read_back(gpu: &Gpu, t: &Targets) -> Rgb8 {
     }
     t.readback.unmap();
     Rgb8::from_vec(w, h, 3, data)
+}
+
+/// A half float's value.
+fn half(h: u16) -> f32 {
+    let sign = if h & 0x8000 != 0 { -1.0 } else { 1.0 };
+    let exp = (h >> 10) & 0x1F;
+    let man = f32::from(h & 0x3FF);
+    sign * match exp {
+        0 => man * (2f32).powi(-24),
+        31 if man == 0.0 => f32::INFINITY,
+        31 => f32::NAN,
+        e => (1.0 + man / 1024.0) * (2f32).powi(i32::from(e) - 15),
+    }
+}
+
+/// The post chain's HDR output (`hdr_post`) on the CPU, row-major RGBA. For tests and tools; it allocates.
+pub fn read_back_hdr(gpu: &Gpu, t: &Targets) -> Vec<[f32; 4]> {
+    let row = (t.w * 8).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    let buf = gpu.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("hdr read-back"),
+        size: u64::from(row) * u64::from(t.h),
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let mut enc = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("hdr read-back"),
+    });
+    enc.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture: &t.hdr_post_tex,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buf,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(row),
+                rows_per_image: Some(t.h),
+            },
+        },
+        wgpu::Extent3d {
+            width: t.w,
+            height: t.h,
+            depth_or_array_layers: 1,
+        },
+    );
+    gpu.queue.submit([enc.finish()]);
+    buf.map_async(wgpu::MapMode::Read, .., |r| r.expect("map the HDR read-back"));
+    gpu.device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("wait for the HDR read-back");
+    let mapped = buf.get_mapped_range(..).expect("mapped");
+    let mut out = Vec::with_capacity((t.w * t.h) as usize);
+    for r in mapped.chunks_exact(row as usize) {
+        for px in r[..t.w as usize * 8].as_chunks::<8>().0 {
+            out.push(std::array::from_fn(|k| {
+                half(u16::from_le_bytes([px[2 * k], px[2 * k + 1]]))
+            }));
+        }
+    }
+    out
 }
 
 #[cfg(test)]

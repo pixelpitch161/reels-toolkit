@@ -13,7 +13,7 @@
 
 use bf_picture::img::Rgb8;
 
-use crate::fx::{FxCamera, FxCtx, FxPass};
+use crate::fx::{FxCamera, FxCtx, FxPass, PostChain, PostCtx};
 use crate::gpu::Gpu;
 use crate::maths::{self, M4};
 use crate::mesh::{MeshId, Meshes, Vertex};
@@ -106,6 +106,141 @@ struct Draw {
 struct Sized {
     targets: Targets,
     post_bind: wgpu::BindGroup,
+    /// The tone map reading the accumulation and the post chain's output.
+    post_bind_accum: wgpu::BindGroup,
+    post_bind_post: wgpu::BindGroup,
+    accum_bind: wgpu::BindGroup,
+}
+
+/// The sub-frame accumulation pass (motion blur).
+struct Accum {
+    pipeline: wgpu::RenderPipeline,
+    layout: wgpu::BindGroupLayout,
+    uniform: wgpu::Buffer,
+}
+
+impl Accum {
+    fn new(gpu: &Gpu) -> Accum {
+        let device = &gpu.device;
+        let m = device.create_shader_module(wgpu::include_wgsl!("shaders/accum.wgsl"));
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("accum"),
+            entries: &[
+                layout_entry(
+                    0,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                ),
+                layout_entry(
+                    1,
+                    wgpu::ShaderStages::FRAGMENT,
+                    buffer_ty(wgpu::BufferBindingType::Uniform),
+                ),
+            ],
+        });
+        let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("accum"),
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
+        });
+        let add = wgpu::BlendComponent {
+            src_factor: wgpu::BlendFactor::One,
+            dst_factor: wgpu::BlendFactor::One,
+            operation: wgpu::BlendOperation::Add,
+        };
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("accum"),
+            layout: Some(&pl),
+            vertex: wgpu::VertexState {
+                module: &m,
+                entry_point: Some("vs"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &m,
+                entry_point: Some("fs"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: HDR_FORMAT,
+                    blend: Some(wgpu::BlendState { color: add, alpha: add }),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("accum"),
+            size: 16,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        Accum {
+            pipeline,
+            layout,
+            uniform,
+        }
+    }
+
+    fn bind(&self, gpu: &Gpu, t: &Targets) -> wgpu::BindGroup {
+        gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("accum"),
+            layout: &self.layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&t.hdr_resolved),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: self.uniform.as_entire_binding(),
+                },
+            ],
+        })
+    }
+
+    /// Adds the resolved colour times `weight` into the accumulation (cleared first when `first`). Submits.
+    fn add(&self, gpu: &Gpu, t: &Targets, bind: &wgpu::BindGroup, weight: f32, first: bool) {
+        gpu.queue
+            .write_buffer(&self.uniform, 0, bytemuck::bytes_of(&[weight, 0.0f32, 0.0, 0.0]));
+        let mut enc = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("accum") });
+        {
+            let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("accum"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &t.hdr_accum,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: if first {
+                            wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT)
+                        } else {
+                            wgpu::LoadOp::Load
+                        },
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_pipeline(&self.pipeline);
+            pass.set_bind_group(0, bind, &[]);
+            pass.draw(0..3, 0..1);
+        }
+        gpu.queue.submit([enc.finish()]);
+    }
 }
 
 pub struct Renderer {
@@ -124,6 +259,7 @@ pub struct Renderer {
     inst_cap: usize,
     inst_bind: wgpu::BindGroup,
     post: PostPass,
+    accum: Accum,
     sized: Option<Sized>,
     // Reused every frame.
     inst_data: Vec<InstanceG>,
@@ -409,6 +545,7 @@ impl Renderer {
             inst_cap,
             inst_bind,
             post: PostPass::new(gpu),
+            accum: Accum::new(gpu),
             sized: None,
             inst_data: Vec::new(),
             opaque_draws: Vec::new(),
@@ -451,6 +588,87 @@ impl Renderer {
         self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, &sized.targets)
+    }
+
+    /// Motion blur: each of `scenes` (the sub-frames across the shutter) is drawn with its effects (`fx` sees
+    /// `ctx.sub` = its index), and they are averaged by `weights` in HDR; then `chain` (screen effects, if any),
+    /// the tone map and the read-back. One scene is a plain frame.
+    pub fn render_accum(
+        &mut self,
+        gpu: &Gpu,
+        scenes: &[Scene],
+        weights: &[f32],
+        post: &Post,
+        fx: &mut dyn FxPass,
+        chain: Option<&mut dyn PostChain>,
+    ) -> Rgb8 {
+        self.render_accum_sized(gpu, scenes, weights, post, fx, chain, W, H)
+    }
+
+    /// [`Renderer::render_accum`] at `w x h`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_accum_sized(
+        &mut self,
+        gpu: &Gpu,
+        scenes: &[Scene],
+        weights: &[f32],
+        post: &Post,
+        fx: &mut dyn FxPass,
+        chain: Option<&mut dyn PostChain>,
+        w: u32,
+        h: u32,
+    ) -> Rgb8 {
+        assert!(!scenes.is_empty(), "render_accum needs at least one scene");
+        assert_eq!(scenes.len(), weights.len(), "one weight per scene");
+        self.ensure_size(gpu, w, h);
+        let total: f32 = weights.iter().sum();
+        let many = scenes.len() > 1;
+        for (i, (scene, wt)) in scenes.iter().zip(weights).enumerate() {
+            self.draw_scene(gpu, scene, Some(&mut *fx), i);
+            if many {
+                let s = self.sized.as_ref().expect("targets were just made");
+                let k = if total > 0.0 {
+                    wt / total
+                } else {
+                    1.0 / scenes.len() as f32
+                };
+                self.accum.add(gpu, &s.targets, &s.accum_bind, k, i == 0);
+            }
+        }
+        let s = self.sized.as_ref().expect("targets were just made");
+        let t = &s.targets;
+        let mut enc = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("post") });
+        let (source, source_bind) = if many {
+            (&t.hdr_accum, &s.post_bind_accum)
+        } else {
+            (&t.hdr_resolved, &s.post_bind)
+        };
+        let bind = match chain {
+            Some(chain) => {
+                let mut ctx = PostCtx {
+                    gpu,
+                    encoder: &mut enc,
+                    input: source,
+                    output: &t.hdr_post,
+                    camera: FxCamera::of(&scenes[scenes.len() / 2].camera, w, h),
+                };
+                chain.run(&mut ctx);
+                &s.post_bind_post
+            }
+            None => source_bind,
+        };
+        self.post.encode(gpu, &mut enc, t, bind, post);
+        gpu.queue.submit([enc.finish()]);
+        read_back(gpu, t)
+    }
+
+    /// The last frame's post chain output in HDR (see [`read_back_hdr`]); `None` before any frame.
+    pub fn read_hdr(&self, gpu: &Gpu) -> Option<Vec<[f32; 4]>> {
+        self.sized
+            .as_ref()
+            .map(|s| crate::target::read_back_hdr(gpu, &s.targets))
     }
 
     /// The scene (shadow, opaque, glass), then the effects, resolved into the targets' single-sample HDR colour.
@@ -497,8 +715,13 @@ impl Renderer {
             return;
         }
         let targets = Targets::new(gpu, w, h);
-        let post_bind = self.post.bind(gpu, &targets);
-        self.sized = Some(Sized { targets, post_bind });
+        self.sized = Some(Sized {
+            post_bind: self.post.bind(gpu, &targets),
+            post_bind_accum: self.post.bind_view(gpu, &targets.hdr_accum),
+            post_bind_post: self.post.bind_view(gpu, &targets.hdr_post),
+            accum_bind: self.accum.bind(gpu, &targets),
+            targets,
+        });
     }
 
     /// Writes the frame uniform and the lights; returns whether the spot casts a shadow this frame.

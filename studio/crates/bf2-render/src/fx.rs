@@ -95,3 +95,19 @@ pub struct NoFx;
 impl FxPass for NoFx {
     fn draw(&mut self, _ctx: &mut FxCtx<'_>) {}
 }
+
+/// What a post chain reads and writes: the frame's HDR colour in, the HDR colour the tone map reads out.
+pub struct PostCtx<'a> {
+    pub gpu: &'a Gpu,
+    pub encoder: &'a mut wgpu::CommandEncoder,
+    /// Single-sample HDR, bindable as a texture ([`crate::target::HDR_FORMAT`]).
+    pub input: &'a wgpu::TextureView,
+    /// Single-sample HDR render target of the same size; the chain must cover every pixel.
+    pub output: &'a wgpu::TextureView,
+    pub camera: FxCamera,
+}
+
+/// Screen effects between the scene and the tone map, in HDR.
+pub trait PostChain {
+    fn run(&mut self, ctx: &mut PostCtx<'_>);
+}

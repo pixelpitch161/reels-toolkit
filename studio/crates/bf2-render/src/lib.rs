@@ -14,7 +14,7 @@ pub mod post;
 pub mod target;
 
 pub use post::{Post, PostPass};
-pub use target::{H, Targets, W, read_back};
+pub use target::{H, Targets, W, read_back, read_back_hdr};
 pub mod geom;
 pub mod maths;
 pub mod mesh;
@@ -31,6 +31,6 @@ pub mod look2;
 pub mod stage;
 
 pub use fight_frame::{FightFrame, StepSnapLerp, frame_at, frame_at_time, render_frame, scene_at};
-pub use fx::{FxCamera, FxCtx, FxPass, NoFx};
+pub use fx::{FxCamera, FxCtx, FxPass, NoFx, PostChain, PostCtx};
 pub use look2::Look2;
 pub use stage::Stage;

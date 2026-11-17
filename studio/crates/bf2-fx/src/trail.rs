@@ -53,7 +53,7 @@ impl Default for TrailDef {
 }
 
 /// The state of fighter `k` at step `s` moved `alpha` toward step `s + 1`.
-fn state_at(rec: &Recording2, k: usize, s: usize, alpha: f64) -> (V3, f64, Vec<Joint>) {
+pub(crate) fn state_at(rec: &Recording2, k: usize, s: usize, alpha: f64) -> (V3, f64, Vec<Joint>) {
     let a = &rec.steps[s];
     let b = rec.steps.get(s + 1).unwrap_or(a);
     let lerp = |x: f64, y: f64| x + (y - x) * alpha;
@@ -83,7 +83,7 @@ fn bone_at(
 }
 
 /// The first of `0..n` for which `pred` is false (`pred` true then false, as for a sorted slice).
-fn partition(n: usize, pred: impl Fn(usize) -> bool) -> usize {
+pub(crate) fn partition(n: usize, pred: impl Fn(usize) -> bool) -> usize {
     let (mut lo, mut hi) = (0, n);
     while lo < hi {
         let mid = (lo + hi) / 2;
