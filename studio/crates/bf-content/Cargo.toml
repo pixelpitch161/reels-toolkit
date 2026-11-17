@@ -9,6 +9,7 @@ publish.workspace = true
 bf-core.workspace = true
 bf-picture.workspace = true
 bf-sound.workspace = true
+bf2-sim.workspace = true
 
 # The reader for studio/reference (dev support only), its sidecars' JSON values and the exceptions list.
 [dev-dependencies]

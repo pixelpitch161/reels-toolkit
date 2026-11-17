@@ -9,3 +9,8 @@ publish.workspace = true
 bf-core.workspace = true
 bf-sim.workspace = true
 bf-content.workspace = true
+bf2-sim.workspace = true
+
+# The speed example's workers.
+[dev-dependencies]
+rayon.workspace = true

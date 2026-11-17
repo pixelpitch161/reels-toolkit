@@ -6,6 +6,7 @@ GPU rendering, heavy particles, dramatic lighting, camera work and time control.
 
 - Design (approved by Aedan, 2026-11-17): `docs/superpowers/specs/2026-11-17-engine2-design.md`
 - E0 plan: `docs/superpowers/plans/2026-11-17-engine2-e0.md`
+- E1 plan: `docs/superpowers/plans/2026-11-17-engine2-e1.md`; its speeds: [`e1-measurements.md`](e1-measurements.md)
 
 ## Rules every session follows
 
@@ -34,7 +35,7 @@ GPU rendering, heavy particles, dramatic lighting, camera work and time control.
 | | Milestone | Status |
 |---|---|---|
 | E0 | Plan and seams: `engine` in fight files, `bf-engine`, `engines()`, empty crates, today's speeds | in progress |
-| E1 | Fight engine core | not started |
+| E1 | Fight engine core | done (the PC speed run comes with E2's PC session) |
 | E2 | Renderer core | not started |
 | E3 | Effects toolkit, then a clip for Aedan's review | not started |
 | E4 | Director and time | not started |

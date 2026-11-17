@@ -62,7 +62,10 @@ impl World {
     pub fn new(setup: &Setup2) -> World {
         let rules = setup.rules.clone();
         let mut rng = Generator::new(setup.seed);
-        let defs = setup.fighters.clone();
+        // Each world gets its own copy of the two definitions. The step clones a definition's `Arc` several times,
+        // and fights on many threads sharing one `Arc` would fight over its reference count (E1 measured 1 worker
+        // and 3 workers at about the same fights/s); a private copy costs a few microseconds once per fight.
+        let defs = [0, 1].map(|i| Arc::new(FighterDef::clone(&setup.fighters[i])));
         let body = |who: usize, rng: &mut Generator| {
             let d = &defs[who];
             let [x, y] = START[who];

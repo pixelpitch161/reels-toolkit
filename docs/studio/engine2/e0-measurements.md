@@ -86,5 +86,9 @@ idle PC.
 | Target | Today | Engine 2 must reach |
 | --- | --- | --- |
 | E1: full auto-balance on a dummy pair | 3.10 s (FLUTE vs TROMBONE) | **at most 3.87 s** (1.25x today) |
-| E1: fights per second on all workers | 4661 | **at least 1165** (today / 4) |
+| E1: fights per second on all workers | 4661 | **at least 3729** (0.8x today) |
 | E2: render of a 61 s video (1830 frames) | 63.9 s, 28.6 fps whole render | **30 fps or faster**, so **61 s or less** end to end |
+
+The fights-per-second line first said "at least 1165 (today / 4)"; it was corrected in E1 to 0.8x today, because the
+spec binds auto-balance to about the same time as today, and auto-balance is fights, so 1.25x today's time needs at
+least 0.8x today's fights per second.

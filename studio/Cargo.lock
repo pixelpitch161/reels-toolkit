@@ -525,6 +525,7 @@ dependencies = [
  "bf-picture",
  "bf-sound",
  "bf-testdata",
+ "bf2-sim",
  "serde_json",
  "sha2",
  "toml",
@@ -548,6 +549,8 @@ dependencies = [
  "bf-content",
  "bf-core",
  "bf-sim",
+ "bf2-sim",
+ "rayon",
 ]
 
 [[package]]
