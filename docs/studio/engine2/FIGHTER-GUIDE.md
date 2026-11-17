@@ -5,6 +5,30 @@ it before you start. The worked example throughout is the TEST DUMMY, in
 `studio/crates/bf-content/src/fighters2/test_dummy/`. Every name below is the name in the code. If one is missing,
 the code has moved on. Grep for it, and fix this guide in the same session.
 
+## 0. The rule above all: same fighter, same style, higher fidelity
+
+Aedan (E7, verbatim): "I want to make sure the art style stays the same, just higher fidelity and improved with
+normal maps for the lighting. The point of the new engine was more advanced effects, not revamping the entire
+style."
+
+So a fighter session **ports the fighter's existing look faithfully, then raises its fidelity**. It never redesigns.
+
+1. **Port first.** Start from the current engine's look of this fighter:
+   `studio/crates/bf-content/src/fighters/<slug>/look.rs` (its instrument, weapon, colours, move looks, canvas
+   marks, projectiles) and the sprite meshes it draws through `bf_picture::sprite` (`geom::from_sprite_mesh` lifts
+   a `bf_picture::sprite::Mesh` to 3D). Keep its model's shape and proportions, its colours (the same sRGB values,
+   through `bf_export::job2::linear` or `bf2_render::stage::linear`), and each move's look: what appears, where,
+   in what colour, for how long. Render the same moment on both engines (`ballfight frame --frame N --up` and the
+   `engine2_style` example, adapted) and compare them side by side before going further.
+2. **Then raise the fidelity.** More geometry detail on the same silhouette, normal maps (`Surface` in 3.2) for
+   the lighting, real lights and shadows, the glass.
+3. **Then use Engine 2's advanced effects** (particles, trails, domes, decals, screen effects) to carry the same
+   ideas further, restrained: the hits land lighter than the shared presets (section 5), the K.O. reads but does
+   not blind. No new colour scheme, no new character design, no new move ideas that the current look does not have.
+
+The stage already follows this rule (`docs/studio/engine2/style-port.md` maps every element of the current ring to
+its Engine 2 equivalent); the fighter must too.
+
 The rules from [`README.md`](README.md) still apply. Every fight goes through `bf-engine`. Both versions of a
 fighter stay until every fighter has moved. There are no mixed-engine match-ups.
 
@@ -42,19 +66,21 @@ give `engine = 2`. The dummy's `dmg_scale = 2.0` is tuned for the dummy. Leave i
 
 Each step says what Aedan sees and approves. Do not move past an approval step without his answer.
 
-1. **Brainstorm the move set with Aedan.** Use `superpowers:brainstorming`. Publish a concepts artifact with one card
-   per move. Each card shows:
+1. **Brainstorm the port of the move set with Aedan.** Use `superpowers:brainstorming`. Start from the fighter's
+   current moves and their current look (section 0): the session ports them, it does not invent new ones. Publish a
+   concepts artifact with one card per move. Each card shows:
    - its phases (wind-up, active and recovery steps);
    - its hit kind: light, heavy, launch, grab, projectile or special;
    - its camera and time cues (`Cue`);
-   - the effect ideas;
+   - the current look of the move (a still from `ballfight frame`) and how Engine 2 raises its fidelity;
    - a sketch.
 
    Aedan picks and edits the moves before any code is written. *He approves the move list.*
 2. **Real photo references for the model.** Image sites are blocked in the cloud. Start a Remote Control session on
    the PC with `start_remote_control`. Have it search the web and save 6 to 12 photos of the real instrument to
    `/mnt/project-files/ballfight-studio/refs/<slug>/`: the whole instrument, its details, and how it is held. Have it
-   list the sources. Build the low-poly model from those photos, not from memory.
+   list the sources. The model is the current engine's model of the fighter (its sprite meshes and `look.rs`), lifted
+   to 3D: the photos refine its detail and materials (the normal maps), they do not change its design.
 3. **Build, in this order:**
    - the moves (section 3.1);
    - the look (3.2, 3.3);
@@ -232,8 +258,15 @@ Looks, effects, the director and sound all key off these events. Nothing reads t
 - **Meshes:** `bf2_render::geom` has `icosphere`, `box_`, `plane`, `cylinder` and `capsule`, plus `from_sprite_mesh`,
   which turns a current-engine `bf_picture::sprite::Mesh` into 3D. Build a low-poly instrument from boxes,
   cylinders and spheres, as the dummy's metronome does.
-- **Materials:** `Material::toon()` for the weapon, `Material::matte()`, and `Material::glass(tint)`.
+- **Materials:** `Material::toon()` for the weapon, `Material::matte()`, `Material::glass(tint)`, and
+  `Material::Additive { strength }` (light laid on the picture, e.g. a glow on the floor).
   `Instance::new(mesh, material, model).coloured(rgb)` places one.
+- **Maps (E7):** `.with_surface(Surface { albedo, normal, uv_scale, normal_strength, back })` gives an instance an
+  albedo map (covering the mesh's uvs once) and a tangent-space normal map (repeating `uv_scale` times), both
+  optional. Make them once in `setup` with `r.textures.add_albedo(gpu, &rgba)` / `r.textures.add_normal(gpu, &rgba)`
+  (`TEX_SIZE` square, RGBA8); `bf2_render::texture` has `weave_height`, `hammered_height` and
+  `normals_from_height` to bake procedural ones. Meshes from `geom` carry uvs and tangents (`geom::uv_sphere` for a
+  sphere with clean uvs); a hand-built `MeshData` gets them from `.with_tangents()`.
 - **Lights:** `bf2_render::Light { pos, colour /*linear HDR*/, range, priority }`. Use priority 1 for a fighter's
   lights; the stage's are 0. The dummy's orange projectiles each carry one.
 - **Space:** `to_render` converts sim space (floor x, y, height z) to the renderer's space.
@@ -270,6 +303,12 @@ The dummy's signature effects:
 
 Its colours are written hot (HDR, as `GREY_HOT` and `ORANGE_HOT`), because the bloom brings them down.
 
+**Restraint (E7).** `LookFx::tone(&self, e: &EvKind) -> bf2_fx::tone::Restraint` turns the shared presets down for
+this fighter's own events (and the K.O. it wins): particle counts, glow, life, size of rings/domes/light reach,
+marks, screen effects, and whether the lens effects (speed lines, radial blur, chroma, shockwaves, desaturate,
+motion blur) stay at all. The default changes nothing. The dummy's `tone` is the reference for "subtle": copy it
+and adjust, rather than editing the shared presets.
+
 No per-fighter shader hook exists yet. If a fighter needs its own shader, add it as a shared building block in
 `bf2-fx` (section 1's exception), with its WGSL in `bf2-fx/src/shaders/` and its test in `bf2-fx`. Then name it in
 the ledger.
@@ -291,6 +330,10 @@ its moves' `Cue`s and what its hits do.
 | `EvKind::Slam` | A low angle, 14 degrees lower. |
 | `EvKind::Clash` | A quick push-in to 0.9. |
 | `EvKind::Ko` | A 0.35 s freeze, then 0.3x speed for 0.8 s, pushing in on the loser and orbiting. Then it pulls out on the winner. |
+
+Every shot is an offset around the base shot, which is the current engine's camera (`bf2_direct::base`: the ring
+as the same diamond, fighter 0's corner on the left). `DirectCfg::intensity` scales every offset, follow and the
+shake; its default, 0.2, keeps the moves very subtle (Aedan, E7). The table gives the moves at intensity 1.
 
 The defaults are in `DirectCfg::default()`. Big shots (punch-in, slam, K.O.) are at least `big_shot_gap` = 2.5 s
 apart unless the later one has a higher priority. Slow motion and the K.O. add at most `max_extra` = 4 s of video
@@ -411,9 +454,11 @@ Paste this into the session's progress checklist.
 <NAME> on Engine 2
 
 ○ Brainstorm the moves with Aedan; concepts artifact approved
+○ Current look studied (fighters/<slug>/look.rs, its sprite meshes); port plan: same model, colours, move looks
 ○ Photo references saved to refs/<slug>/ (Remote Control)
 ○ fighters2/<slug>/: def() with rig, moves, brain; <slug>_checks green
-○ look.rs: Look2 model, LookFx signature; exit audit green
+○ look.rs: Look2 model ported from the current look, then normal maps and detail; LookFx signature; tone(); exit audit green
+○ Side-by-side stills, current | Engine 2, of the same moments: it reads as the same fighter
 ○ sound.rs and card.rs; card test green
 ○ fighters2/mod.rs: mod, MOVED, NAMES, def/look/look_fx/card arms; registry tests green
 ○ fights/engine2/<slug>_vs_test_dummy.toml
