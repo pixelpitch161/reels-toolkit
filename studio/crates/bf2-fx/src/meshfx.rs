@@ -215,7 +215,7 @@ impl MeshFx {
         });
         let insts = Grow::new(gpu, "meshfx instances", wgpu::BufferUsages::STORAGE, 64 * 64);
         let bind = Self::bind_group(gpu, &layout, &cam, &insts.buf);
-        // The trail shader's camera is the first 64 bytes of ours.
+        // The trail shader's camera is ours: the matrix, then a vector whose w is the art pixel size.
         let beam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("beams"),
             layout: &trail_layout,
@@ -337,7 +337,8 @@ impl MeshFx {
         self.data.extend(domes);
         let cam = CamU {
             view_proj: camera.view_proj,
-            eye: [camera.eye[0], camera.eye[1], camera.eye[2], 1.0],
+            // w: output pixels per art pixel, for the pixel look (the beams read it as their `art.w`)
+            eye: [camera.eye[0], camera.eye[1], camera.eye[2], camera.art],
         };
         gpu.queue.write_buffer(&self.cam, 0, bytemuck::bytes_of(&cam));
         if self.insts.write(gpu, bytemuck::cast_slice(&self.data)) {

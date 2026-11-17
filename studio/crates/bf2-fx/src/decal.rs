@@ -128,7 +128,8 @@ impl Decals {
         );
         let cam = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("decals camera"),
-            size: 64,
+            // the matrix, then x: output pixels per art pixel (`FxCamera::art`)
+            size: 80,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -232,6 +233,8 @@ impl Decals {
         self.data.extend(ropes);
         gpu.queue
             .write_buffer(&self.cam, 0, bytemuck::cast_slice(&camera.view_proj));
+        gpu.queue
+            .write_buffer(&self.cam, 64, bytemuck::cast_slice(&[camera.art, 0.0, 0.0, 0.0]));
         if self.decs.write(gpu, bytemuck::cast_slice(&self.data)) {
             self.bind = Self::bind_group(gpu, &self.layout, &self.cam, &self.decs.buf);
         }

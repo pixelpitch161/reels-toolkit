@@ -214,6 +214,8 @@ struct CamU {
     eye: [f32; 4],
     right: [f32; 4],
     up: [f32; 4],
+    /// x: output pixels per art pixel (`FxCamera::art`).
+    art: [f32; 4],
 }
 
 /// `Burst` in particles.wgsl.
@@ -388,6 +390,7 @@ impl Particles {
                 self.data.len() as f32,
             ],
             up: [camera.up[0], camera.up[1], camera.up[2], t.rem_euclid(1000.0) as f32],
+            art: [camera.art, 0.0, 0.0, 0.0],
         };
         gpu.queue.write_buffer(&self.cam, 0, bytemuck::bytes_of(&cam));
         if self.bursts.write(gpu, bytemuck::cast_slice(&self.data)) {

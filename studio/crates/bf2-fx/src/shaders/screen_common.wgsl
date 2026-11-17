@@ -27,7 +27,8 @@ struct ScreenU {
     bloom: vec4<f32>,
     // Each: xy centre (uv), z radius (picture heights), w strength.
     shock: array<vec4<f32>, 4>,
-    // x: frame (grain and speed-line seed); y: shockwaves in use.
+    // x: frame (grain and speed-line seed); y: shockwaves in use; z: the art pixel size (f32 bits; 1: no pixel
+    // look).
     frame: vec4<u32>,
 }
 

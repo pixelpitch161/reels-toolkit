@@ -5,6 +5,8 @@
 
 struct Cam {
     view_proj: mat4x4<f32>,
+    // w: output pixels per art pixel (1: no pixel look).
+    art: vec4<f32>,
 }
 
 @group(0) @binding(0) var<uniform> cam: Cam;
@@ -57,6 +59,13 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
         body = exp(-x * x * 2.5) * (1.0 - smoothstep(0.85, 1.0, x));
         let e = x / 0.22;
         core = exp(-e * e);
+    }
+    if cam.art.w > 1.0 {
+        // the pixel look: the strip's light in dithered thirds, the hot core a hard line, the tail dithered out
+        let p = in.clip.xy;
+        let a = cam.art.w;
+        let on = art_on(fade, p, a);
+        return vec4<f32>((in.colour * art_steps(body, 3.0, p, a) + in.core * select(0.0, 1.0, core > 0.5)) * on, 0.0);
     }
     return vec4<f32>((in.colour * body + in.core * core) * fade, 0.0);
 }
