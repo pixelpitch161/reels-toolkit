@@ -1,0 +1,6 @@
+//! Engine 2's effects toolkit, built on `bf2-render` (Engine 2 design,
+//! `docs/superpowers/specs/2026-11-17-engine2-design.md` section 3).
+//!
+//! GPU particles (100k+ live, seeded), ribbons and trails on weapon bones, mesh effects, decals, screen effects
+//! (motion blur, radial blur, shockwaves, bloom, flashes, speed lines, grading), emissive effect lights and the hit
+//! presets. Every effect has an exit: nothing just disappears. Milestone E3 builds it.

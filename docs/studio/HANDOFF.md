@@ -1,5 +1,8 @@
 # BALLFIGHT Studio: handoff brief (updated Nov 15)
 
+> **Engine 2 (Nov 17):** a new fight engine and GPU renderer are being built beside the current one. Read
+> `docs/studio/engine2/README.md` before touching how fights are fought or drawn.
+
 ## Status (Nov 15): the packaged Studio, 30 fighters, 26 themes, the music system
 
 **Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is

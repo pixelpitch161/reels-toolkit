@@ -14,6 +14,10 @@ members = [
     "crates/bf-pack",
     "crates/bf-harness",
     "crates/bf-engine",
+    "crates/bf2-sim",
+    "crates/bf2-render",
+    "crates/bf2-fx",
+    "crates/bf2-direct",
 ]
 
 [workspace.package]
