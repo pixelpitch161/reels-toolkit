@@ -49,17 +49,39 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (24, 42),
 };
 
-/// The pair the theme was made for (no kit config: a Studio theme).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "studio/celtic_reel",
-    fighters: ["FLUTE", "BAGPIPES"],
-    bpm: 124.0,
-    key: "D",
-    scale: "mixolydian",
-    intro: ["D", "D"],
-    chord_loop: LOOPS[0],
-    tail: &[],
-}];
+/// The pair the theme was made for, once on each of its loops (no kit config: a Studio theme).
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "studio/celtic_reel/1",
+        fighters: ["FLUTE", "BAGPIPES"],
+        bpm: 124.0,
+        key: "D",
+        scale: "mixolydian",
+        intro: ["D", "D"],
+        chord_loop: LOOPS[0],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/celtic_reel/2",
+        fighters: ["FLUTE", "BAGPIPES"],
+        bpm: 124.0,
+        key: "D",
+        scale: "mixolydian",
+        intro: ["D", "D"],
+        chord_loop: LOOPS[1],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/celtic_reel/3",
+        fighters: ["FLUTE", "BAGPIPES"],
+        bpm: 124.0,
+        key: "D",
+        scale: "mixolydian",
+        intro: ["D", "A"],
+        chord_loop: LOOPS[2],
+        tail: &[],
+    },
+];
 
 /// The Composed arrangement's table.
 pub const TABLE: ArrangementTable = ArrangementTable {

@@ -49,17 +49,39 @@ pub static CARD: ThemeCard = ThemeCard {
     bars: (40, 43),
 };
 
-/// The pair the theme was made for (no kit config: a Studio theme).
-pub static PRESETS: [Preset; 1] = [Preset {
-    config: "studio/liquid_dnb",
-    fighters: ["FLUTE", "ALTO SAX"],
-    bpm: 164.0,
-    key: "F",
-    scale: "minor",
-    intro: ["Fm", "Eb"],
-    chord_loop: LOOPS[0],
-    tail: &[],
-}];
+/// The pair the theme was made for, once on each of its loops (no kit config: a Studio theme).
+pub static PRESETS: [Preset; 3] = [
+    Preset {
+        config: "studio/liquid_dnb/1",
+        fighters: ["FLUTE", "ALTO SAX"],
+        bpm: 164.0,
+        key: "F",
+        scale: "minor",
+        intro: ["Fm", "Eb"],
+        chord_loop: LOOPS[0],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/liquid_dnb/2",
+        fighters: ["FLUTE", "ALTO SAX"],
+        bpm: 164.0,
+        key: "F",
+        scale: "minor",
+        intro: ["Fm", "Eb"],
+        chord_loop: LOOPS[1],
+        tail: &[],
+    },
+    Preset {
+        config: "studio/liquid_dnb/3",
+        fighters: ["FLUTE", "ALTO SAX"],
+        bpm: 164.0,
+        key: "F",
+        scale: "minor",
+        intro: ["Fm", "C"],
+        chord_loop: LOOPS[2],
+        tail: &[],
+    },
+];
 
 /// The Composed arrangement's table.
 pub const TABLE: ArrangementTable = ArrangementTable {
