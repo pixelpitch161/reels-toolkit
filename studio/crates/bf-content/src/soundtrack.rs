@@ -397,7 +397,7 @@ fn make_parts(ctx: &MusicCtx, sounds: [&dyn Sound; 2]) -> Result<(), MusicError>
 }
 
 /// What a caught panic said.
-fn panic_text(payload: Box<dyn Any + Send>) -> String {
+pub(crate) fn panic_text(payload: Box<dyn Any + Send>) -> String {
     match payload.downcast::<String>() {
         Ok(text) => *text,
         Err(payload) => match payload.downcast::<&'static str>() {

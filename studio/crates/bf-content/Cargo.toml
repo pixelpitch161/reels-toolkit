@@ -12,9 +12,12 @@ bf-sound.workspace = true
 bf2-sim.workspace = true
 bf2-render.workspace = true
 bf2-fx.workspace = true
+bf2-direct.workspace = true
 
 # The reader for studio/reference (dev support only), its sidecars' JSON values and the exceptions list.
 [dev-dependencies]
+bf-story.workspace = true
+rayon.workspace = true
 bf-testdata = { path = "../bf-testdata" }
 serde_json.workspace = true
 sha2.workspace = true
