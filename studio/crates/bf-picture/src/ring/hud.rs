@@ -3,8 +3,10 @@
 //! and the captions, as `kit/picture.py`'s `render` draws them.
 
 use bf_core::event::Event;
+use bf_core::grid::Grid;
 use bf_core::py::py_max;
 use bf_core::roster::FighterCfg;
+use bf_core::show::Show;
 use serde_json::Value as Json;
 
 use super::state::BallState;
@@ -241,33 +243,75 @@ pub fn big_text(
     );
 }
 
-impl PictureCtx {
-    /// `countdown(img, t, cs)`: 3, 2, 1, FIGHT! in the ring, one count a beat, centred on `cs`.
-    pub(super) fn countdown(&self, img: &mut Rgb8, log: &mut DrawLog, t: f64, cs: (f64, f64)) {
-        let count = &self.show.grid.count;
-        for (j, &(tc, txt)) in count.iter().enumerate() {
-            let tn = count.get(j + 1).map_or(tc + 0.85, |c| c.0);
-            let fight = txt == "FIGHT!";
-            let size = if fight { 44.0 } else { 78.0 };
-            let col = if fight { [255, 214, 96] } else { [255, 244, 220] };
-            if tc <= t && t < tn {
-                let u = t - tc;
-                // punch = 1 + 0.25 * max(0.0, 1 - u / 0.12) ** 2
-                let p = py_max(0.0, 1.0 - u / 0.12);
-                let punch = 1.0 + 0.25 * (p * p);
-                let out = ss(tn - 0.1, tn, t);
-                big_text(
-                    img,
-                    log,
-                    txt,
-                    cs.0,
-                    cs.1,
-                    size * punch * (1.0 - 0.35 * out),
-                    col,
-                    1.0 - out,
-                );
-            }
+/// `countdown(img, t, cs)`: 3, 2, 1, FIGHT! in the ring, one count a beat of `grid`'s count-in, centred on `cs`.
+/// The current engine's picture and Engine 2's UI layer both draw it.
+pub fn countdown(img: &mut Rgb8, log: &mut DrawLog, grid: &Grid, t: f64, cs: (f64, f64)) {
+    let count = &grid.count;
+    for (j, &(tc, txt)) in count.iter().enumerate() {
+        let tn = count.get(j + 1).map_or(tc + 0.85, |c| c.0);
+        let fight = txt == "FIGHT!";
+        let size = if fight { 44.0 } else { 78.0 };
+        let col = if fight { [255, 214, 96] } else { [255, 244, 220] };
+        if tc <= t && t < tn {
+            let u = t - tc;
+            // punch = 1 + 0.25 * max(0.0, 1 - u / 0.12) ** 2
+            let p = py_max(0.0, 1.0 - u / 0.12);
+            let punch = 1.0 + 0.25 * (p * p);
+            let out = ss(tn - 0.1, tn, t);
+            big_text(
+                img,
+                log,
+                txt,
+                cs.0,
+                cs.1,
+                size * punch * (1.0 - 0.35 * out),
+                col,
+                1.0 - out,
+            );
         }
+    }
+}
+
+/// The six caption calls of `render`, with their styles: the (empty) title caption, each fighter's ability
+/// captions in its tint, `*K.O.*`, the winner's WINS! and the comment line, from `show` with the fighters' colours
+/// `col`. The current engine's picture and Engine 2's UI layer both draw them.
+pub fn draw_show_captions(img: &mut Rgb8, log: &mut DrawLog, t: f64, show: &Show, col: [[f64; 3]; 2]) {
+    // tuple(int(v) for v in COL[k])
+    let ink = |c: [f64; 3]| -> [u8; 3] { [c[0] as u8, c[1] as u8, c[2] as u8] };
+    let tint = |c: [f64; 3]| ink(c.map(|v| np::clip(v * 0.8 + 60.0, 0.0, 255.0)));
+    let gold = [255, 214, 96];
+    // CAP_TITLE is empty: the VS title card replaces the top caption
+    let style = CaptionStyle {
+        hi: ink(col[0]),
+        alt: ink(col[1]),
+        ..CaptionStyle::default()
+    };
+    ui::draw_captions(img, log, t, &[], &style);
+    for (c, caps) in col.iter().zip(&show.caps_ability) {
+        let style = CaptionStyle {
+            base: tint(*c),
+            puff: Some(ink(*c)),
+            ..CaptionStyle::default()
+        };
+        ui::draw_captions(img, log, t, caps, &style);
+    }
+    let hi_gold = CaptionStyle {
+        hi: gold,
+        ..CaptionStyle::default()
+    };
+    ui::draw_captions(img, log, t, &show.cap_ko, &hi_gold);
+    let wins = CaptionStyle {
+        base: tint(col[show.win]),
+        ..CaptionStyle::default()
+    };
+    ui::draw_captions(img, log, t, &show.cap_wins, &wins);
+    ui::draw_captions(img, log, t, &show.cap_comment, &hi_gold);
+}
+
+impl PictureCtx {
+    /// `countdown(img, t, cs)`: 3, 2, 1, FIGHT! in the ring, one count a beat, centred on `cs` ([`countdown`]).
+    pub(super) fn countdown(&self, img: &mut Rgb8, log: &mut DrawLog, t: f64, cs: (f64, f64)) {
+        countdown(img, log, &self.show.grid, t, cs);
     }
 
     /// `status(k, t)`: the ability fighter `k` used in the last 1.6 s and how strongly its name shows.
@@ -407,35 +451,6 @@ impl PictureCtx {
                 &HudOptions::default(),
             );
         }
-        // tuple(int(v) for v in COL[k])
-        let ink = |c: [f64; 3]| -> [u8; 3] { [c[0] as u8, c[1] as u8, c[2] as u8] };
-        let tint = |c: [f64; 3]| ink(c.map(|v| np::clip(v * 0.8 + 60.0, 0.0, 255.0)));
-        let gold = [255, 214, 96];
-        // CAP_TITLE is empty: the VS title card replaces the top caption
-        let style = CaptionStyle {
-            hi: ink(self.col[0]),
-            alt: ink(self.col[1]),
-            ..CaptionStyle::default()
-        };
-        ui::draw_captions(img, log, t, &[], &style);
-        for k in 0..2 {
-            let style = CaptionStyle {
-                base: tint(self.col[k]),
-                puff: Some(ink(self.col[k])),
-                ..CaptionStyle::default()
-            };
-            ui::draw_captions(img, log, t, &self.show.caps_ability[k], &style);
-        }
-        let hi_gold = CaptionStyle {
-            hi: gold,
-            ..CaptionStyle::default()
-        };
-        ui::draw_captions(img, log, t, &self.show.cap_ko, &hi_gold);
-        let wins = CaptionStyle {
-            base: tint(self.col[self.win]),
-            ..CaptionStyle::default()
-        };
-        ui::draw_captions(img, log, t, &self.show.cap_wins, &wins);
-        ui::draw_captions(img, log, t, &self.show.cap_comment, &hi_gold);
+        draw_show_captions(img, log, t, &self.show, self.col);
     }
 }
