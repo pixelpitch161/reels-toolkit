@@ -9,12 +9,19 @@
 #![forbid(unsafe_code)]
 
 pub mod body;
+pub mod brain;
 pub mod event;
+pub mod fighter;
+pub mod hits;
 pub mod moves;
 pub mod physics;
+pub mod proj;
 pub mod rig;
 pub mod rules;
+#[cfg(test)]
+mod testkit;
 pub mod v3;
+pub mod world;
 
 pub use rules::{Rules2, SimError2};
 pub use v3::V3;
