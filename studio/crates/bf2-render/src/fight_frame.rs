@@ -2,7 +2,7 @@
 //! whole frame drawn (stage, looks, projectiles).
 
 use bf_picture::img::Rgb8;
-use bf2_direct::TimeMap;
+use bf2_direct::{ArenaFrame, TimeMap};
 use bf2_sim::{Joint, Recording2, V3};
 
 use crate::gpu::Gpu;
@@ -42,6 +42,9 @@ pub struct FightFrame<'a> {
     /// 0 to 1, toward `step + 1`.
     pub alpha: f64,
     pub snap: StepSnapLerp,
+    /// The arena's reactions (ropes, crowd, LEDs, beat, house lights) the stage draws: quiet unless the caller
+    /// sets it from the director's `ArenaTrack`.
+    pub arena: ArenaFrame,
 }
 
 /// Video frame `f` (at `f / 30` s), through the time map `map`.
@@ -89,6 +92,7 @@ pub fn frame_at_time<'a>(rec: &'a Recording2, map: &TimeMap, t_video: f64) -> Fi
             step,
             alpha: 0.0,
             snap: StepSnapLerp::default(),
+            arena: ArenaFrame::default(),
         };
     };
     if a.hitstop.iter().any(|&h| h > 0) {
@@ -126,6 +130,7 @@ pub fn frame_at_time<'a>(rec: &'a Recording2, map: &TimeMap, t_video: f64) -> Fi
             projs,
             hp: a.hp,
         },
+        arena: ArenaFrame::default(),
     }
 }
 

@@ -87,7 +87,7 @@ fn fx_error(what: &str, e: &bf2_fx::FxError) -> ExportError {
 
 /// A fighter's colour (sRGB bytes) in linear light.
 pub fn linear(c: [u8; 3]) -> [f32; 3] {
-    c.map(|v| (f32::from(v) / 255.0).powf(2.2))
+    c.map(|v| bf_core::dmath::powf(f32::from(v) / 255.0, 2.2))
 }
 
 /// Renders the Engine 2 fight `ff` from its recording `rec` into a new folder under `opts.out_root`, with the

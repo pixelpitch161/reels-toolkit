@@ -86,3 +86,108 @@ fn stage_scene_is_bounded() {
     let glowing = s.instances.iter().filter(|i| i.mesh == stage.proj_mesh()).count();
     assert_eq!(glowing, 18);
 }
+
+/// Where each instance of `mesh` starts (its model's translation).
+fn starts(s: &Scene, mesh: crate::mesh::MeshId) -> Vec<V3> {
+    s.instances
+        .iter()
+        .filter(|i| i.mesh == mesh)
+        .map(|i| [i.model[3][0], i.model[3][1], i.model[3][2]])
+        .collect()
+}
+
+#[test]
+fn stage_ropes_bend_with_wobble() {
+    let gpu = Gpu::headless().unwrap();
+    let mut r = Renderer::new(&gpu);
+    let stage = Stage::new(&mut r, &gpu);
+    let rec = recording(vec![]);
+    let quiet = frame_at_time(&rec, &plain(&rec), 12.5);
+    let mut still = Scene::default();
+    stage.draw(&quiet, COLOURS, &mut still);
+    assert!(
+        starts(&still, stage.rope_link).is_empty(),
+        "a quiet frame draws whole ropes"
+    );
+    assert_eq!(starts(&still, stage.ropes[0]).len(), 1);
+
+    let mut f = quiet.clone();
+    f.arena.rope_wobble = [0.2, 0.0, -0.1, 0.0];
+    let mut bent = Scene::default();
+    stage.draw(&f, COLOURS, &mut bent);
+    // The far side (sim +y) bows out, the near side in; the others hang as they were.
+    assert!(starts(&bent, stage.ropes[0]).is_empty() && starts(&bent, stage.ropes[2]).is_empty());
+    assert_eq!(starts(&bent, stage.ropes[1]).len(), 1);
+    assert_eq!(starts(&bent, stage.ropes[3]).len(), 1);
+    let links = starts(&bent, stage.rope_link);
+    assert_eq!(links.len(), 2 * 3 * 8, "eight links a rope, three ropes a side");
+    let out = |side: usize| {
+        let (dir, _) = SIDES[side];
+        links
+            .iter()
+            .map(|p| maths::dot(*p, dir))
+            .filter(|d| (d - POST).abs() < 0.5)
+            .fold(f32::NAN, |a, d| {
+                if (d - POST).abs() > (a - POST).abs() || a.is_nan() {
+                    d
+                } else {
+                    a
+                }
+            })
+    };
+    assert!(
+        (out(0) - POST - 0.2).abs() < 0.02,
+        "the far side bows out to {}",
+        out(0)
+    );
+    assert!(
+        (out(2) - POST + 0.1).abs() < 0.02,
+        "the near side bows in to {}",
+        out(2)
+    );
+    // The posts hold the ends: a rope's first link starts at its post.
+    assert!(links.iter().any(|p| (maths::dot(*p, SIDES[0].0) - POST).abs() < 1e-4));
+}
+
+#[test]
+fn stage_crowd_leds_and_house_follow_the_arena() {
+    let gpu = Gpu::headless().unwrap();
+    let mut r = Renderer::new(&gpu);
+    let stage = Stage::new(&mut r, &gpu);
+    let rec = recording(vec![]);
+    let quiet = frame_at_time(&rec, &plain(&rec), 12.5);
+    let mut still = Scene::default();
+    stage.draw(&quiet, COLOURS, &mut still);
+    let mut f = quiet.clone();
+    f.arena.crowd_jump = 1.0;
+    f.arena.led_flash = Some((1, 1.0));
+    f.arena.house = 0.35;
+    f.arena.beat = 1.0;
+    let mut live = Scene::default();
+    stage.draw(&f, COLOURS, &mut live);
+    let (a, b) = (starts(&still, stage.fan), starts(&live, stage.fan));
+    assert_eq!(a.len(), b.len());
+    assert!(
+        a.iter().zip(&b).all(|(p, q)| (q[1] - p[1] - 0.25).abs() < 1e-5),
+        "the crowd is up"
+    );
+    assert!((live.ambient[0] - AMBIENT * 0.35).abs() < 1e-7);
+    // The leader is fighter 0 (more HP), but the flash is fighter 1's.
+    let leds = |s: &Scene| -> Vec<([f32; 4], f32)> {
+        s.instances
+            .iter()
+            .filter_map(|i| match i.material {
+                Material::Emissive { strength } if i.mesh == stage.unit_box => Some((i.colour, strength)),
+                _ => None,
+            })
+            .collect()
+    };
+    let (l0, l1) = (leds(&still), leds(&live));
+    assert_eq!(l0.len(), l1.len());
+    assert!(l0.iter().all(|(c, _)| c[..3] == COLOURS[0]));
+    assert!(l1.iter().all(|(c, _)| c[..3] == COLOURS[1]));
+    assert!(
+        l0.iter().zip(&l1).all(|(a, b)| b.1 > a.1 + 1.0),
+        "the flash and the beat brighten the boards"
+    );
+}
