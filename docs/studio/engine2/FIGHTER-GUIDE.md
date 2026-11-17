@@ -29,6 +29,23 @@ So a fighter session **ports the fighter's existing look faithfully, then raises
 The stage already follows this rule (`docs/studio/engine2/style-port.md` maps every element of the current ring to
 its Engine 2 equivalent); the fighter must too.
 
+**The pixel look is part of the style (E8).** Aedan: "I do still want the pixel art/low-poly look as the original."
+Engine 2 draws every frame on the current engine's grid: the pixel pass (`Post::pixel`, default 3) turns 1080 x 1920
+into 360 x 640 art pixels, each one colour, with the current engine's value steps of 5 and its 4 x 4 Bayer dither
+after the grade; the HUD's pixel font sits on the same grid. So:
+
+- **Judge the fighter at 360 x 640 art pixels.** Its model, weapon and effects must read at that size: a detail
+  under one art pixel (about 0.03 units at the base camera, 36 art pixels a unit) is averaged into its neighbours,
+  and a line thinner than that goes faint. Make the parts that must read at least two art pixels wide. Look at the
+  stills at 100 % (or a 2x nearest crop), never scaled down smoothly.
+- **Models are low-poly and faceted**, at about the current models' counts (tubes of 6 to 12 sides, joints of
+  about 80 faces): build them from `geom` primitives with few sides and pass them through `geom::faceted`, shade
+  them with `Material::low_poly()` (seven bands, no rim, like the current sprites), and ink their silhouettes with
+  `geom::ink_shell` drawn `Material::Unlit` in the current ink, about one art pixel out (the dummy's `INK_W`).
+  Normal maps still add detail across each flat face. The glass balls stay round.
+- **No smooth extras on top.** Everything, glow and screen effects included, goes through the pass; nothing is
+  composited after it except the HUD, which is itself pixel art at 360 x 640.
+
 The rules from [`README.md`](README.md) still apply. Every fight goes through `bf-engine`. Both versions of a
 fighter stay until every fighter has moved. There are no mixed-engine match-ups.
 
@@ -247,7 +264,7 @@ Looks, effects, the director and sound all key off these events. Nothing reads t
 `Look2` (`bf2_render::look2`) has two required methods:
 
 - `setup(&mut self, r: &mut Renderer, gpu: &Gpu)` makes the meshes once. For example,
-  `r.meshes.add(gpu, geom::cylinder(1.0, 1.0, 20))`.
+  `r.meshes.add(gpu, geom::faceted(&geom::cylinder(1.0, 1.0, 8)))`.
 - `draw(&self, f: &FightFrame<'_>, k: usize, out: &mut Scene) -> Vec<u32>` adds fighter `k`'s weapon, its instrument
   inside the glass, and its lights for one frame.
   - It reads `f.snap.pos[k]`, `f.snap.facing[k]` and `f.snap.joints[k]`, and the recording as `f.rec`.
@@ -256,9 +273,12 @@ Looks, effects, the director and sound all key off these events. Nothing reads t
 `instrument()` is optional.
 
 - **Meshes:** `bf2_render::geom` has `icosphere`, `box_`, `plane`, `cylinder` and `capsule`, plus `from_sprite_mesh`,
-  which turns a current-engine `bf_picture::sprite::Mesh` into 3D. Build a low-poly instrument from boxes,
-  cylinders and spheres, as the dummy's metronome does.
-- **Materials:** `Material::toon()` for the weapon, `Material::matte()`, `Material::glass(tint)`, and
+  which turns a current-engine `bf_picture::sprite::Mesh` into 3D (already flat-shaded per face). Build a low-poly
+  instrument from boxes, cylinders and spheres with few sides, as the dummy's metronome and arm do, and make it
+  faceted with `geom::faceted` (every triangle its own normal: the light turns at each edge, as on the current
+  models). `geom::ink_shell` gives the inside-out copy for an ink outline (section 0).
+- **Materials:** `Material::low_poly()` for the weapon and the instrument (seven bands, no rim: the current
+  sprites' shading), `Material::toon()` (four bands and a soft rim), `Material::matte()`, `Material::glass(tint)`, and
   `Material::Additive { strength }` (light laid on the picture, e.g. a glow on the floor).
   `Instance::new(mesh, material, model).coloured(rgb)` places one.
 - **Maps (E7):** `.with_surface(Surface { albedo, normal, uv_scale, normal_strength, back })` gives an instance an
@@ -420,6 +440,9 @@ for the tier you mean: the dummy's jab is 0.25, its haymaker 0.7, and its specia
 - **The colour.** The fighter's colour is unique (`docs/ballfight/RULES.md`) and is used: on the weapon, in the
   signature effects, and in the card's `colour`.
 - **Aedan's batch-1 notes apply.** Nothing cuts off, and the impact frames look good.
+- **It reads as pixel art (E8).** At the default pixel 3 the fighter looks right at 360 x 640 art pixels: a
+  low-poly faceted model with an ink edge, readable parts, effects that land as solid art pixels and do not
+  dissolve into dots.
 - **Hit impact: tone it down from the dummy's.** Aedan reviewed the TEST DUMMY renders (2026-11-17): the camera,
   slow-mo, K.O. and everything else feel good, but the hit impact is a little too over the top. Each fighter's hits
   should land a notch lighter than the dummy's presets (fewer sparks, shorter flash and shake), saving the big
@@ -458,7 +481,8 @@ Paste this into the session's progress checklist.
 ○ Photo references saved to refs/<slug>/ (Remote Control)
 ○ fighters2/<slug>/: def() with rig, moves, brain; <slug>_checks green
 ○ look.rs: Look2 model ported from the current look, then normal maps and detail; LookFx signature; tone(); exit audit green
-○ Side-by-side stills, current | Engine 2, of the same moments: it reads as the same fighter
+○ Side-by-side stills, current | Engine 2 (pixel 3), of the same moments, viewed at 100 %: it reads as the same
+  fighter, low-poly and faceted, on the 360 x 640 grid
 ○ sound.rs and card.rs; card test green
 ○ fighters2/mod.rs: mod, MOVED, NAMES, def/look/look_fx/card arms; registry tests green
 ○ fights/engine2/<slug>_vs_test_dummy.toml
