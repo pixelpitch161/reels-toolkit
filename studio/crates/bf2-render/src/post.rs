@@ -82,6 +82,26 @@ pub const RING_PIXEL: u32 = 3;
 /// [`Post::ring`]'s value step: the current engine's canvas and model shading step of 5.
 pub const RING_STEP: f32 = 5.0;
 
+/// The current engine's vignette at art pixel `q` of the 360 x 640 grid with the value steps on: the darkening
+/// `clip(r - 0.55, 0, 1) * strength` banded into fifths and dithered, capped at a half (`bf_picture::post::vignette`).
+/// Returns the multiplier.
+pub fn vignette_cpu(strength: f32, q: [u32; 2]) -> f32 {
+    let (x, y) = (q[0] as f32 + 0.5, q[1] as f32 + 0.5);
+    let r = ((x - 180.0) / (0.62 * 360.0)).hypot((y - 0.47 * 640.0) / (0.62 * 640.0));
+    let d = (r - 0.55).clamp(0.0, 1.0) * strength;
+    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
+    1.0 - ((d * 5.0 + b * 0.999).floor() / 5.0).min(0.5)
+}
+
+/// The current engine's top scrim at art pixel `q` with the value steps on: `amount` above row 100, fading over 90
+/// rows, banded into sixths and dithered (`bf_picture::post::top_scrim`). Returns the multiplier.
+pub fn scrim_cpu(amount: f32, q: [u32; 2]) -> f32 {
+    let y = q[1] as f32 + 0.5;
+    let d = (1.0 - (y - 100.0) / 90.0).clamp(0.0, 1.0) * amount;
+    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
+    1.0 - (d * 6.0 + b * 0.999).floor() / 6.0
+}
+
 /// The CPU reference of the pass's value steps: `v` an encoded 0..1 value at art pixel `q`, stepped by `step`
 /// (on 0..255) with the 4 x 4 Bayer matrix (`bf_picture::config::BAYER`), 0..1. No step leaves it as it is.
 pub fn dither_cpu(v: f32, step: f32, q: [u32; 2]) -> f32 {
@@ -470,23 +490,28 @@ mod tests {
         );
     }
 
-    /// One output column in three lit (`x % 3 == 1`, HDR 1.0), the rest black, drawn into the resolved HDR.
-    fn thin_lines(gpu: &Gpu, t: &Targets) -> wgpu::CommandEncoder {
+    /// A pattern drawn into the resolved HDR: HDR 1.0 where the WGSL condition `on` (of the pixel `x`, `y`, as
+    /// `u32`) holds, black elsewhere.
+    fn hdr_pattern(gpu: &Gpu, t: &Targets, on: &str) -> wgpu::CommandEncoder {
         let module = gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("thin lines"),
             source: wgpu::ShaderSource::Wgsl(
-                r#"
+                format!(
+                    r#"
 @vertex
-fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
+fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {{
     let uv = vec2<f32>(f32((i << 1u) & 2u), f32(i & 2u));
     return vec4<f32>(uv * 2.0 - 1.0, 0.0, 1.0);
-}
+}}
 @fragment
-fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
-    let on = select(0.0, 1.0, u32(p.x) % 3u == 1u);
+fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {{
+    let x = u32(p.x);
+    let y = u32(p.y);
+    let on = select(0.0, 1.0, {on});
     return vec4<f32>(on, on, on, 1.0);
-}
+}}
 "#
+                )
                 .into(),
             ),
         });
@@ -537,8 +562,8 @@ fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
         enc
     }
 
-    #[test]
-    fn an_art_pixel_is_the_mean_of_what_it_covers() {
+    /// The pattern `on` through the pixel pass at pixel 3, no grade or steps: the output's first channel.
+    fn through_the_pass(on: &str) -> bf_picture::img::Rgb8 {
         let gpu = Gpu::headless().unwrap();
         let t = Targets::new(&gpu, 1080, 24);
         let pass = PostPass::new(&gpu);
@@ -548,18 +573,66 @@ fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
             knee: 0.7,
             ..Post::default()
         };
-        let mut enc = thin_lines(&gpu, &t);
+        let mut enc = hdr_pattern(&gpu, &t, on);
         pass.encode(&gpu, &mut enc, &t, &bind, &post);
         gpu.queue.submit([enc.finish()]);
-        let img = read_back(&gpu, &t);
-        // a line a third of an art pixel wide stays, as a third of its light: it does not break up or vanish
-        let want = (curve_cpu(1.0 / 3.0, &post) * 255.0).round() as u8;
+        read_back(&gpu, &t)
+    }
+
+    /// HDR 1.0 through `through_the_pass`'s curve.
+    fn lit() -> u8 {
+        let post = Post {
+            knee: 0.7,
+            ..Post::default()
+        };
+        (curve_cpu(1.0, &post) * 255.0).round() as u8
+    }
+
+    #[test]
+    fn a_thin_line_stays_a_whole_art_pixel_line() {
+        // one output column in six: the first column of every other art pixel
+        let img = through_the_pass("x % 6u == 0u");
         for y in 0..img.h {
             for x in 0..img.w {
-                let got = img.px(x, y)[0];
-                assert!(got.abs_diff(want) <= 1, "({x}, {y}): {got} against {want}");
+                let want = if (x / 3) % 2 == 0 { lit() } else { 0 };
+                assert_eq!(img.px(x, y)[0], want, "({x}, {y}): a thin line is one whole art pixel, at full light");
             }
         }
+    }
+
+    #[test]
+    fn an_edge_is_hard_with_no_in_between_colour() {
+        // bright up to x = 540, the first column of art pixel 180: the edge lands on a whole art pixel, no blend
+        let img = through_the_pass("x <= 540u");
+        for y in 0..img.h {
+            for x in 0..img.w {
+                let want = if x < 540 { lit() } else { 0 };
+                assert_eq!(img.px(x, y)[0], want, "({x}, {y})");
+            }
+        }
+        // a diagonal edge: every art pixel is one side or the other
+        let img = through_the_pass("x + y < 500u");
+        assert!(img.data.iter().all(|&c| c == 0 || c == lit()));
+    }
+
+    #[test]
+    fn the_steps_band_the_vignette_and_scrim_as_the_current_engine() {
+        let cur_v = bf_picture::post::vignette(0.45, 0.55, 0.5, 0.47);
+        let cur_s = bf_picture::post::top_scrim(0.45, 100.0, 90.0);
+        let (mut n, mut same) = (0, 0);
+        for y in (0..640).step_by(3) {
+            for x in (0..360).step_by(2) {
+                let (v, s) = (vignette_cpu(0.45, [x, y]), scrim_cpu(0.45, [x, y]));
+                n += 1;
+                if (f64::from(v) - cur_v.px(x as usize, y as usize)[0]).abs() < 1e-6
+                    && (f64::from(s) - cur_s.px(x as usize, y as usize)[0]).abs() < 1e-6
+                {
+                    same += 1;
+                }
+            }
+        }
+        // the same bands and dither, but for a few art pixels on a band's edge (float32 against float64)
+        assert!(same * 1000 >= n * 995, "{same} of {n}");
     }
 
     #[test]
