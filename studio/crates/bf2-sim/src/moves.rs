@@ -131,6 +131,12 @@ pub struct ProjDef {
     pub bounces: u32,
     /// Radians/s toward the target; 0 for none.
     pub homing: f64,
+    /// SPIKE (trumpet): placed instead of launched: it appears at rest on the canvas at (angle off the attacker's
+    /// facing, distance) from the target's centre.
+    pub place: Option<(f64, f64)>,
+    /// SPIKE (trumpet): 0: it expires on its first hit. Otherwise it stays and can hit again this many steps later
+    /// (a post the target bounces off).
+    pub rehit: u32,
 }
 
 /// A projectile launched during the Active phase.

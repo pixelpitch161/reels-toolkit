@@ -23,7 +23,10 @@ use bf2_render::{
 };
 use bf2_sim::{EvKind, FighterDef, Joint, Pose, Recording2, Segment, solve};
 
-use super::{CAP1, CAP2, CAP3, HORN, LANCE, P1, P2, P3};
+use super::{
+    CAP1, CAP2, CAP3, CAVALRY_CHARGE, H1, H2, H3, HERALD_LINE, HORN, LANCE, P1, P2, P3, POLE_LIFE, ROYAL_HERALDS,
+    TICKER_TAPE,
+};
 
 /// The current engine's TRUMPET colours (`fighters/trumpet/look.rs`).
 const BRASS: [f64; 3] = [232.0, 184.0, 72.0];
@@ -55,6 +58,8 @@ struct Meshes {
     strip: MeshId,
     /// A unit 12-gon (radius 1) in the floor plane, both sides drawn.
     disc: MeshId,
+    /// A unit triangle in the floor plane: its base across z at x 0, its point at x 1.
+    tri: MeshId,
     /// The sprite cards: `radii` x 36 rolls.
     cards: Vec<MeshId>,
     radii: Vec<u32>,
@@ -95,6 +100,28 @@ fn unit_strip() -> MeshData {
         verts: q.iter().map(|&p| vert(p, UP, [1.0; 3])).collect(),
         idx: vec![0, 2, 1, 0, 3, 2],
     }
+}
+
+fn unit_tri() -> MeshData {
+    let q = [[0.0, 0.0, -0.5], [1.0, 0.0, 0.0], [0.0, 0.0, 0.5]];
+    MeshData {
+        verts: q.iter().map(|&p| vert(p, UP, [1.0; 3])).collect(),
+        idx: vec![0, 2, 1],
+    }
+}
+
+/// A flat shape's model: `x` and `z` span it, `o` places it. Its face turns toward the camera (z is flipped when
+/// it would face away), and the basis stays right-handed, so its triangles are never culled.
+fn facing_cam(x: V3, z: V3, o: V3) -> M4 {
+    let eye = Camera::default_ring().eye;
+    let mut z = z;
+    let mut y = maths::cross(z, x);
+    if maths::dot(y, maths::sub(eye, o)) < 0.0 {
+        z = maths::scale(z, -1.0);
+        y = maths::scale(y, -1.0);
+    }
+    let ly = maths::length(y).max(1e-6);
+    basis(x, maths::scale(y, 1.0 / ly), z, o)
 }
 
 fn unit_disc() -> MeshData {
@@ -193,6 +220,7 @@ impl Look2 for TrumpetLook {
         }
         self.meshes = Some(Meshes {
             strip: r.meshes.add(gpu, unit_strip()),
+            tri: r.meshes.add(gpu, unit_tri()),
             disc: r.meshes.add(gpu, unit_disc()),
             cards,
             radii,
@@ -454,7 +482,296 @@ impl Look2 for TrumpetLook {
             disc(out, lift(tip), 0.095, col(BRASS_HI), Material::Unlit);
             disc(out, lift(tip), 0.05, col(PEARL), Material::Unlit);
         }
-        Vec::new()
+        // ---------------------------------------------------------------- round 2: the specials
+        let fstep = f.step.min(f.rec.steps.len().saturating_sub(1));
+        let now_mv = f.rec.steps.get(fstep).and_then(|st| st.mv[k]);
+        let flat_put = |out: &mut Scene, mesh: MeshId, x: V3, z: V3, o: V3, colour: [f32; 3], mat: Material| {
+            out.instances
+                .push(Instance::new(mesh, mat, facing_cam(x, z, o)).coloured(colour));
+        };
+        let cam_right = right;
+        let mut drawn = Vec::new();
+
+        // My projectiles: which move threw each (HERALD LINE's poles, TICKER TAPE's flakes), and when.
+        let mut mine: Vec<(u32, usize, u32, usize)> = Vec::new(); // (id, move, spawn step, index in its cast)
+        for e in &f.rec.events {
+            if e.step as usize > fstep {
+                break;
+            }
+            if e.who != k {
+                continue;
+            }
+            if let EvKind::Spawn { proj } = e.kind {
+                let mv = f
+                    .rec
+                    .steps
+                    .get(e.step as usize)
+                    .and_then(|st| st.mv[k])
+                    .map_or(usize::MAX, |m| m.0 as usize);
+                let idx = mine
+                    .iter()
+                    .filter(|m| m.1 == mv && e.step.saturating_sub(m.2) < 40)
+                    .count();
+                mine.push((proj as u32, mv, e.step, idx));
+            }
+        }
+        for &(id, pos3) in &f.snap.projs {
+            let Some(&(_, mv, at, idx)) = mine.iter().find(|m| m.0 == id) else {
+                continue;
+            };
+            let age = (f.step as f64 + f.alpha) - f64::from(at);
+            let p = to_render(pos3);
+            if mv == HERALD_LINE {
+                drawn.push(id);
+                let life = f64::from(POLE_LIFE);
+                let up = (1.0 - (1.0 - (age / 10.0).clamp(0.0, 1.0)).powi(3))
+                    * (1.0 - ((age - (life - 24.0)) / 20.0).clamp(0.0, 1.0));
+                let h = 0.95 * up as f32;
+                if h < 0.02 {
+                    continue;
+                }
+                let base = [p[0], 0.0, p[2]];
+                let top = maths::add(base, [0.0, h, 0.0]);
+                disc(out, [base[0], 0.012, base[2]], 0.11, col(COLLAR), Material::Unlit);
+                flat_put(
+                    out,
+                    m.strip,
+                    [0.0, h, 0.0],
+                    maths::scale(cam_right, 0.06),
+                    base,
+                    col(PISTON.map(|v| v * 0.82)),
+                    Material::Unlit,
+                );
+                flat_put(
+                    out,
+                    m.strip,
+                    [0.0, h, 0.0],
+                    maths::scale(cam_right, 0.018),
+                    maths::add(base, maths::scale(cam_right, 0.012)),
+                    col([250.0, 252.0, 255.0]),
+                    Material::Unlit,
+                );
+                // the pennant streams away from the foe it fences, fluttering
+                let tc = ball_centre(f.snap.pos[1 - k]);
+                let out_dir = maths::normalize([p[0] - tc[0], 0.0, p[2] - tc[2]]);
+                let flut = (age * 0.5 + idx as f64).sin() as f32 * 0.05;
+                let tip = maths::add(maths::scale(out_dir, 0.36), [0.0, flut, 0.0]);
+                let o = maths::sub(top, [0.0, 0.11, 0.0]);
+                flat_put(
+                    out,
+                    m.tri,
+                    maths::scale(tip, 1.12),
+                    [0.0, 0.26, 0.0],
+                    o,
+                    col(BRASS_DK),
+                    Material::Unlit,
+                );
+                flat_put(
+                    out,
+                    m.tri,
+                    tip,
+                    [0.0, 0.2, 0.0],
+                    maths::add(o, [0.0, 0.004, 0.0]),
+                    col(fighter),
+                    Material::Unlit,
+                );
+                disc(
+                    out,
+                    maths::add(top, [0.0, 0.01, 0.0]),
+                    0.04,
+                    col(BRASS_HI),
+                    Material::Unlit,
+                );
+            } else if mv == TICKER_TAPE {
+                drawn.push(id);
+                let colours = [fighter, BRASS_HI, BRASS];
+                for j in 0..3usize {
+                    let a = (age * 0.31 + (idx * 3 + j) as f64 * 1.7) as f32;
+                    let off = [
+                        ((idx * 5 + j * 3) as f32).sin() * 0.16,
+                        ((j * 7) as f32).cos() * 0.08,
+                        ((idx * 3 + j * 5) as f32).cos() * 0.16,
+                    ];
+                    let at = maths::add(p, if j == 0 { [0.0; 3] } else { off });
+                    let landed = at[1] < 0.16;
+                    let x = if landed {
+                        [a.cos() * 0.14, 0.0, a.sin() * 0.14]
+                    } else {
+                        maths::scale(maths::normalize([a.cos(), 0.7 * (1.3 * a).sin(), a.sin()]), 0.15)
+                    };
+                    let z = maths::scale(
+                        maths::normalize(maths::cross(x, if landed { [0.0, -1.0, 0.0] } else { [0.3, 1.0, 0.2] })),
+                        0.08,
+                    );
+                    let at = if landed { [at[0], 0.015, at[2]] } else { at };
+                    flat_put(
+                        out,
+                        m.strip,
+                        x,
+                        z,
+                        maths::sub(at, maths::scale(x, 0.5)),
+                        col(colours[(idx + j) % 3]),
+                        Material::Unlit,
+                    );
+                }
+            }
+        }
+
+        // CAVALRY CHARGE: a brass wake and a row of pennants left standing along the dash.
+        let last_active = f
+            .rec
+            .events
+            .iter()
+            .rev()
+            .filter(|e| e.who == k && e.step as usize <= fstep)
+            .find_map(|e| match e.kind {
+                EvKind::Active { mv } if mv == CAVALRY_CHARGE => Some(e.step),
+                _ => None,
+            });
+        if let Some(a0) = last_active {
+            let since = (f.step as f64 + f.alpha) - f64::from(a0);
+            if (0.0..70.0).contains(&since) {
+                let fade = (1.0 - ((since - 20.0) / 50.0).clamp(0.0, 1.0)) as f32;
+                let start = f.rec.steps.get(a0 as usize).map(|st| ball_centre(st.pos[k]));
+                if let Some(s0) = start {
+                    let s0 = [s0[0], c[1], s0[2]];
+                    let cc = [c[0], c[1], c[2]];
+                    if maths::length(maths::sub(cc, s0)) > 0.3 {
+                        strip(
+                            out,
+                            lift(s0),
+                            lift(cc),
+                            0.9,
+                            col(mix(fighter, 0.5, 120.0)),
+                            Material::Additive { strength: 0.28 * fade },
+                        );
+                    }
+                    for i in 0..3u32 {
+                        let st = f
+                            .rec
+                            .steps
+                            .get((a0 + 3 + i * 4) as usize)
+                            .map(|st| ball_centre(st.pos[k]));
+                        let Some(q) = st else { continue };
+                        if since < f64::from(3 + i * 4) {
+                            continue;
+                        }
+                        let d = floor_dir(f.rec.steps[(a0 + 3 + i * 4) as usize].facing[k]);
+                        let back = maths::scale(d, -1.0);
+                        let base = maths::add([q[0], 0.0, q[2]], maths::scale(back, 0.7));
+                        let h = 0.6 * fade;
+                        if h < 0.03 {
+                            continue;
+                        }
+                        flat_put(
+                            out,
+                            m.strip,
+                            [0.0, h, 0.0],
+                            maths::scale(cam_right, 0.05),
+                            base,
+                            col(PISTON.map(|v| v * 0.82)),
+                            Material::Unlit,
+                        );
+                        let flut = ((since * 0.6) as f32 + i as f32).sin() * 0.05;
+                        let o = maths::add(base, [0.0, h - 0.09, 0.0]);
+                        flat_put(
+                            out,
+                            m.tri,
+                            maths::add(maths::scale(back, 0.32), [0.0, flut, 0.0]),
+                            [0.0, 0.17, 0.0],
+                            o,
+                            col(fighter),
+                            Material::Unlit,
+                        );
+                    }
+                }
+            }
+        }
+
+        // ROYAL HERALDS: three long herald trumpets with hanging banners, cones of air on the blast.
+        let blast = match now_mv {
+            Some((mv, 1, s)) if mv as usize == ROYAL_HERALDS => Some(f64::from(s) + f.alpha),
+            Some((mv, 2, s)) if mv as usize == ROYAL_HERALDS && s < 8 => Some(8.0 + f64::from(s) + f.alpha),
+            _ => None,
+        };
+        for b in [H1, H2, H3] {
+            let (a, tip) = seg(&segs, b);
+            let (a, tip) = (flat(a), flat(tip));
+            let len = maths::length(maths::sub(tip, a));
+            if len < 0.1 {
+                continue;
+            }
+            let d = maths::scale(maths::sub(tip, a), 1.0 / len);
+            let n = maths::normalize(maths::cross(d, UP));
+            let a0 = maths::sub(a, maths::scale(d, 0.12));
+            strip(out, lift(a0), lift(tip), 0.11, col(BRASS_DK), Material::Unlit);
+            strip(out, lift(a0), lift(tip), 0.075, col(BRASS), Material::Unlit);
+            strip(
+                out,
+                lift(maths::add(a0, maths::scale(n, 0.018))),
+                lift(maths::add(tip, maths::scale(n, 0.018))),
+                0.02,
+                col(BRASS_HI),
+                Material::Unlit,
+            );
+            // the bell, flaring out
+            let bell = lift(maths::add(tip, maths::scale(d, 0.28)));
+            flat_put(
+                out,
+                m.tri,
+                maths::scale(d, -0.3),
+                maths::scale(n, 0.4),
+                bell,
+                col(BRASS_DK),
+                Material::Unlit,
+            );
+            flat_put(
+                out,
+                m.tri,
+                maths::scale(d, -0.27),
+                maths::scale(n, 0.33),
+                lift(bell),
+                col(BRASS),
+                Material::Unlit,
+            );
+            // the banner, hanging from the middle of the tube
+            let mid = maths::add(a0, maths::scale(maths::sub(tip, a0), 0.55));
+            let bh = (0.32 * (len / 1.5)).min(0.32);
+            flat_put(
+                out,
+                m.strip,
+                [0.0, -bh, 0.0],
+                maths::scale(d, 0.26),
+                mid,
+                col(BRASS_DK),
+                Material::Unlit,
+            );
+            flat_put(
+                out,
+                m.strip,
+                [0.0, -bh + 0.03, 0.0],
+                maths::scale(d, 0.21),
+                maths::add(mid, [0.0, -0.015, 0.0]),
+                col(fighter),
+                Material::Unlit,
+            );
+            if let Some(s) = blast {
+                let kk = (s / 16.0).clamp(0.0, 1.0) as f32;
+                let l = 0.4 + 1.1 * kk;
+                flat_put(
+                    out,
+                    m.tri,
+                    maths::scale(d, -l),
+                    maths::scale(n, 0.25 + 0.9 * kk),
+                    lift(maths::add(bell, maths::scale(d, l))),
+                    col(mix(fighter, 0.4, 150.0)),
+                    Material::Additive {
+                        strength: 0.4 * (1.0 - kk),
+                    },
+                );
+            }
+        }
+        drawn
     }
 }
 

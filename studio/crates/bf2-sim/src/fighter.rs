@@ -193,6 +193,8 @@ mod tests {
             },
             bounces: 0,
             homing: 0.0,
+            place: None,
+            rehit: 0,
         };
         p.hit.grab = Some(crate::moves::Grab {
             hold: 10,

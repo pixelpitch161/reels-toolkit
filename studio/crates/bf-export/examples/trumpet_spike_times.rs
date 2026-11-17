@@ -43,7 +43,8 @@ fn main() {
                         f.who == 0
                             && f.step >= e.step
                             && f.step < e.step + defs[0].moves[*mv].total()
-                            && matches!(f.kind, EvKind::Contact { mv: m, .. } if m == *mv)
+                            && (matches!(f.kind, EvKind::Contact { mv: m, .. } if m == *mv)
+                                || matches!(f.kind, EvKind::ProjHit { .. }))
                     })
                     .count();
                 contacts += hits;
@@ -69,5 +70,11 @@ fn main() {
             b
         );
     }
-    println!("{contacts} contacts");
+    let ph: Vec<i64> = rec
+        .events
+        .iter()
+        .filter(|e| e.who == 0 && matches!(e.kind, EvKind::ProjHit { .. }))
+        .map(|e| fr(e.step))
+        .collect();
+    println!("{contacts} contacts; projectile hits at frames {ph:?}");
 }

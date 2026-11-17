@@ -23,6 +23,8 @@ pub struct Proj {
     pub alive: bool,
     /// Unique within the fight, in spawn order.
     pub id: u32,
+    /// Steps before it can hit again (a `rehit` projectile).
+    pub cool: u32,
 }
 
 /// `a - b` wrapped into -π to π, for angles that are each within -π to π.
@@ -42,11 +44,23 @@ pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step
     let def = &world.defs[who].moves[mv].spawns[spawn].proj;
     let b = &world.bodies[who];
     let (c, s) = (dmath::cos(b.facing), dmath::sin(b.facing));
-    let pos = match world.segments[who].last() {
-        Some(seg) => seg.b,
-        None => add(b.centre(), [c * b.r, s * b.r, 0.0]),
+    let (pos, vel) = match def.place {
+        Some((ang, dist)) => {
+            let t = world.bodies[1 - who].centre();
+            let a = b.facing + ang;
+            (
+                [t[0] + dmath::cos(a) * dist, t[1] + dmath::sin(a) * dist, def.radius],
+                [0.0; 3],
+            )
+        }
+        None => (
+            match world.segments[who].last() {
+                Some(seg) => seg.b,
+                None => add(b.centre(), [c * b.r, s * b.r, 0.0]),
+            },
+            [c * def.speed, s * def.speed, def.up],
+        ),
     };
-    let vel = [c * def.speed, s * def.speed, def.up];
     let id = world.next_proj;
     world.next_proj += 1;
     world.projs.push(Proj {
@@ -58,6 +72,7 @@ pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step
         bounces: 0,
         alive: true,
         id,
+        cool: 0,
     });
     world.events.push(step, who, EvKind::Spawn { proj: id as usize });
 }
@@ -87,6 +102,7 @@ pub fn step_projs(world: &mut World, step: u32) {
         let tc = world.bodies[target].centre();
         let rules = &world.rules;
         p.age += 1;
+        p.cool = p.cool.saturating_sub(1);
         if def.homing > 0.0 {
             let want = dmath::atan2(tc[1] - p.pos[1], tc[0] - p.pos[0]);
             let now = dmath::atan2(p.vel[1], p.vel[0]);
@@ -113,6 +129,7 @@ pub fn step_projs(world: &mut World, step: u32) {
             && tb.hp > 0.0
             && world.bodies[p.owner].hp > 0.0
             && tb.held_by.is_none()
+            && p.cool == 0
             && len(sub(tc, p.pos)) <= def.radius + tb.r
         {
             let point = add(tc, scale(norm(sub(p.pos, tc)), tb.r));
@@ -128,7 +145,14 @@ pub fn step_projs(world: &mut World, step: u32) {
                 },
             );
             apply_hit(world, p.owner, target, &def.hit, point, normal, &[], p.def.1, step);
-            gone = true;
+            if def.rehit > 0 {
+                world.projs[i].cool = def.rehit;
+                p = world.projs[i];
+                gone |= p.age >= def.life;
+                world.projs[i] = p;
+            } else {
+                gone = true;
+            }
         } else {
             let lim = world.rules.a - def.radius;
             for axis in 0..2 {
@@ -183,6 +207,8 @@ mod tests {
             },
             bounces: 0,
             homing: 0.0,
+            place: None,
+            rehit: 0,
         }
     }
 
@@ -311,6 +337,8 @@ mod tests {
                 life: 1 + (g.random() * 300.0) as u32,
                 bounces: (g.random() * 4.0) as u32,
                 homing: if g.random() < 0.5 { 0.0 } else { g.uniform(0.0, 4.0) },
+                place: None,
+                rehit: 0,
                 ..dart(1)
             };
             let mut w = thrower(p, g.uniform(-2.4, 2.4), g.uniform(-2.4, 2.4));

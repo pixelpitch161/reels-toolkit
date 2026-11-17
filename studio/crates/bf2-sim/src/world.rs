@@ -230,6 +230,8 @@ mod tests {
             hit: hit(1.0),
             bounces: 0,
             homing: 0.0,
+            place: None,
+            rehit: 0,
         };
         let mv = MoveDef {
             cues: vec![CueAt {

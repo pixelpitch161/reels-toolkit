@@ -17,7 +17,9 @@
 
 pub mod look;
 
-use bf2_sim::{Bone, Brain, Choice, Cue, CueAt, Ease, FighterDef, HitDef, Joint, Key, MoveDef, Phase, Rig, Tag};
+use bf2_sim::{
+    Bone, Brain, Choice, Cue, CueAt, Ease, FighterDef, HitDef, Joint, Key, MoveDef, Phase, ProjDef, Rig, Spawn, Tag,
+};
 
 pub const P1: usize = 0;
 pub const P2: usize = 1;
@@ -28,7 +30,13 @@ pub const HUB: usize = 5;
 pub const CAP1: usize = 6;
 pub const CAP2: usize = 7;
 pub const CAP3: usize = 8;
-pub const BONES: usize = 9;
+/// ROYAL HERALDS: the three herald trumpets (root bones, 120 degrees apart).
+pub const H1: usize = 9;
+pub const H2: usize = 10;
+pub const H3: usize = 11;
+/// CAVALRY CHARGE's front (never drawn): the bone that hits. Last, so projectiles launch from the ball's front.
+pub const RAM: usize = 12;
+pub const BONES: usize = 13;
 
 /// A bone's rest length: tiny, so the drawn parts sit inside the casing until a move stretches them.
 pub const STUB: f64 = 0.02;
@@ -36,6 +44,10 @@ pub const STUB: f64 = 0.02;
 pub const VALVE_COMBO: usize = 0;
 pub const LEAD_PIPE_LANCE: usize = 1;
 pub const VALVE_CAP_YOYOS: usize = 2;
+pub const HERALD_LINE: usize = 3;
+pub const CAVALRY_CHARGE: usize = 4;
+pub const TICKER_TAPE: usize = 5;
+pub const ROYAL_HERALDS: usize = 6;
 
 /// The yellow of the current engine's TRUMPET (roster `color`).
 pub const COLOUR: [u8; 3] = [255, 214, 60];
@@ -317,6 +329,187 @@ fn valve_cap_yoyos() -> MoveDef {
     }
 }
 
+fn cue(phase: Phase, step: u32, cue: Cue) -> CueAt {
+    CueAt { phase, step, cue }
+}
+
+fn proj(name: &'static str, hit: HitDef) -> ProjDef {
+    ProjDef {
+        name,
+        speed: 0.0,
+        up: 0.0,
+        gravity: false,
+        radius: 0.12,
+        life: 120,
+        hit,
+        bounces: 0,
+        homing: 0.0,
+        place: None,
+        rehit: 0,
+    }
+}
+
+/// The herald poles: six, round the foe 1.15 m out, standing 3.5 s.
+pub const POLES: usize = 6;
+pub const POLE_LIFE: u32 = 420;
+
+/// HERALD LINE, 30/8/24 (round 2, idea 2). Wind-up: the bell tips up and the call sounds. Active: six banner poles
+/// spring up out of the canvas in a ring round the foe (placed projectiles that stay 3.5 s); every time the foe
+/// touches one it is nicked and bounced back inside (a hit at most every 30 steps per pole).
+fn herald_line() -> MoveDef {
+    let (w, a, r) = (30u32, 8u32, 24u32);
+    let total = w + a + r;
+    let wf = f64::from(w);
+    let keys = sampled(total, |s| {
+        let up = smooth(s / (wf * 0.7)) * (1.0 - smooth((s - wf - 10.0) / 14.0));
+        let mut p = [Joint::REST; BONES];
+        p[HORN] = j(-std::f64::consts::FRAC_PI_2 * up, 0.0, 1.0);
+        p
+    });
+    let spawns = (0..POLES)
+        .map(|i| Spawn {
+            at: i as u32,
+            proj: ProjDef {
+                place: Some((std::f64::consts::TAU * i as f64 / POLES as f64 + 0.3, 1.15)),
+                radius: 0.14,
+                life: POLE_LIFE,
+                rehit: 30,
+                ..proj(
+                    "HERALD POLE",
+                    HitDef {
+                        hitstop: 2,
+                        knock: 4.0,
+                        hitstun: 6,
+                        strength: 0.15,
+                        ..hit(vec![], (0, 1), 1.0)
+                    },
+                )
+            },
+        })
+        .collect();
+    MoveDef {
+        keys,
+        spawns,
+        cues: vec![cue(Phase::Windup, 4, Cue::PunchIn)],
+        ..base("HERALD LINE", vec![Tag::Special, Tag::Ranged], (w, a, r))
+    }
+}
+
+/// CAVALRY CHARGE, 40/16/30 (idea 3). Wind-up: the bugle call; the ball rocks back on its heels. Active: it rockets
+/// forward (a big lunge) and bowls the foe over (a launch). Recovery: it skids to a stop.
+fn cavalry_charge() -> MoveDef {
+    let (w, a, r) = (40u32, 16u32, 30u32);
+    let total = w + a + r;
+    let wf = f64::from(w);
+    let keys = sampled(total, |s| {
+        let act = s - wf;
+        let rock = if act < 0.0 {
+            -0.25 * (s / wf * std::f64::consts::PI).sin().max(0.0)
+        } else {
+            0.0
+        };
+        let mut p = [Joint::REST; BONES];
+        p[HORN] = j(0.0, rock, 1.0);
+        p[RAM] = j(0.0, 0.0, if (0.0..=16.0).contains(&act) { reach(0.25) } else { 1.0 });
+        p
+    });
+    MoveDef {
+        keys,
+        hits: vec![HitDef {
+            hitstop: 8,
+            knock: 6.0,
+            lift: 8.0,
+            hitstun: 30,
+            strength: 0.55,
+            ..hit(vec![RAM], (0, 16), 6.0)
+        }],
+        cues: vec![cue(Phase::Windup, 0, Cue::PunchIn)],
+        lunge: 10.0,
+        ..base("CAVALRY CHARGE", vec![Tag::Special, Tag::Melee], (w, a, r))
+    }
+}
+
+/// The confetti flakes: ten, launched up over the foe.
+pub const FLAKES: usize = 10;
+
+/// TICKER TAPE, 22/14/20 (idea 6). Wind-up: the bell tips up. Active: ten brass flakes shoot up and flutter down
+/// over the foe (light homing), each one that lands on it a tiny hit.
+fn ticker_tape() -> MoveDef {
+    let (w, a, r) = (22u32, 14u32, 20u32);
+    let total = w + a + r;
+    let wf = f64::from(w);
+    let keys = sampled(total, |s| {
+        let up = smooth(s / (wf * 0.8)) * (1.0 - smooth((s - wf - 14.0) / 12.0));
+        let mut p = [Joint::REST; BONES];
+        p[HORN] = j(-1.1 * up, 0.0, 1.0);
+        p
+    });
+    let spawns = (0..FLAKES)
+        .map(|i| {
+            let f = i as f64 / (FLAKES - 1) as f64;
+            Spawn {
+                at: (i as u32 * 13) / FLAKES as u32,
+                proj: ProjDef {
+                    speed: 1.6 + 1.2 * ((i * 7 % FLAKES) as f64 / FLAKES as f64),
+                    up: 6.0 + 1.5 * f,
+                    gravity: true,
+                    radius: 0.12,
+                    life: 200,
+                    homing: 2.5,
+                    ..proj(
+                        "CONFETTI",
+                        HitDef {
+                            hitstop: 0,
+                            knock: 0.3,
+                            hitstun: 2,
+                            strength: 0.05,
+                            ..hit(vec![], (0, 1), 0.5)
+                        },
+                    )
+                },
+            }
+        })
+        .collect();
+    MoveDef {
+        keys,
+        spawns,
+        ..base("TICKER TAPE", vec![Tag::Special, Tag::Ranged], (w, a, r))
+    }
+}
+
+/// ROYAL HERALDS, 32/8/28 (idea 7). Wind-up: three long herald trumpets fold out of the ball in a Y, turning slowly.
+/// Active: all three blow at once (each a hit along its length and a cone of air past its bell). Recovery: they
+/// fold back in like a fan.
+fn royal_heralds() -> MoveDef {
+    let (w, a, r) = (32u32, 8u32, 28u32);
+    let total = w + a + r;
+    let wf = f64::from(w);
+    let third = std::f64::consts::TAU / 3.0;
+    let keys = sampled(total, |s| {
+        let act = s - wf;
+        let open = out_back(s / (wf * 0.8)) * (1.0 - smooth((act - 12.0) / 14.0));
+        let turn = 0.5 * smooth(s / (wf + 8.0)) - 0.25;
+        let len = 1.5 * open;
+        let mut p = [Joint::REST; BONES];
+        for (i, b) in [H1, H2, H3].into_iter().enumerate() {
+            p[b] = j(turn + third * i as f64, 0.0, reach(len.max(STUB)));
+        }
+        p
+    });
+    MoveDef {
+        keys,
+        hits: vec![HitDef {
+            hitstop: 6,
+            knock: 5.0,
+            hitstun: 18,
+            strength: 0.4,
+            ..hit(vec![H1, H2, H3], (1, 8), 4.0)
+        }],
+        cues: vec![cue(Phase::Windup, 6, Cue::PunchIn), cue(Phase::Active, 1, Cue::Flash)],
+        ..base("ROYAL HERALDS", vec![Tag::Special, Tag::Melee], (w, a, r))
+    }
+}
+
 fn choice(mv: usize, range: (f64, f64), weight: f64, cooldown: u32) -> Choice {
     Choice {
         mv,
@@ -346,17 +539,31 @@ pub fn def() -> FighterDef {
         bone("cap1", Some(HUB), 0.1),
         bone("cap2", Some(HUB), 0.1),
         bone("cap3", Some(HUB), 0.1),
+        bone("herald1", None, 0.12),
+        bone("herald2", None, 0.12),
+        bone("herald3", None, 0.12),
+        bone("ram", None, 0.4),
     ])
     .expect("the trumpet's rig is parent-first");
-    let only = std::env::var("BF_TRUMPET_STD").ok();
-    let all = [
+    // Round 1: BF_TRUMPET_STD picks one standard attack (default: VALVE COMBO+, Aedan's pick). Round 2:
+    // BF_TRUMPET_SPECIAL (2, 3, 6 or 7) adds that special, thrown whenever it is off cooldown.
+    let std_pick = std::env::var("BF_TRUMPET_STD").unwrap_or_else(|_| "1".into());
+    let std_all = [
         ("1", choice(VALVE_COMBO, (1.1, 2.6), 2.0, 110)),
         ("2", choice(LEAD_PIPE_LANCE, (1.6, 3.4), 1.5, 150)),
         ("5", choice(VALVE_CAP_YOYOS, (1.1, 2.1), 1.5, 150)),
     ];
-    let choices = all
+    let special = std::env::var("BF_TRUMPET_SPECIAL").ok();
+    let sp_all = [
+        ("2", choice(HERALD_LINE, (1.2, 4.0), 50.0, 720)),
+        ("3", choice(CAVALRY_CHARGE, (2.0, 5.5), 50.0, 480)),
+        ("6", choice(TICKER_TAPE, (1.4, 3.2), 50.0, 480)),
+        ("7", choice(ROYAL_HERALDS, (1.1, 2.0), 50.0, 480)),
+    ];
+    let choices = std_all
         .into_iter()
-        .filter(|(n, _)| only.as_deref().is_none_or(|o| o == *n))
+        .filter(|(n, _)| *n == std_pick)
+        .chain(sp_all.into_iter().filter(|(n, _)| special.as_deref() == Some(*n)))
         .map(|(_, c)| c)
         .collect();
     FighterDef {
@@ -365,7 +572,15 @@ pub fn def() -> FighterDef {
         mass: 1.0,
         hp_scale: 4.0,
         rig,
-        moves: vec![valve_combo(), lead_pipe_lance(), valve_cap_yoyos()],
+        moves: vec![
+            valve_combo(),
+            lead_pipe_lance(),
+            valve_cap_yoyos(),
+            herald_line(),
+            cavalry_charge(),
+            ticker_tape(),
+            royal_heralds(),
+        ],
         brain: Brain {
             choices,
             speed: 2.6,
