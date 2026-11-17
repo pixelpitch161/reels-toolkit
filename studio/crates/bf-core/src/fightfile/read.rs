@@ -44,6 +44,17 @@ impl FightFile {
         let ff = FightFile {
             // A format 1 file reads as the format 2 fight it is (and is written as format 2).
             format: FIGHT_FORMAT,
+            engine: match top.get("engine") {
+                None => Engine::One,
+                Some(toml::Value::Integer(1)) => Engine::One,
+                Some(toml::Value::Integer(2)) => Engine::Two,
+                Some(other) => {
+                    return Err(err(
+                        "engine",
+                        format!("must be 1 (the current engine) or 2 (Engine 2), found {}", found(other)),
+                    ));
+                }
+            },
             app_version: as_str(required(&top, "", "app_version")?, "app_version")?.to_string(),
             fighters,
             arena: opt_str(&top, "", "arena")?.unwrap_or_else(|| ARENAS[0].to_string()),
@@ -67,8 +78,9 @@ impl FightFile {
 struct Version(u32);
 
 /// The top-level keys, in the canonical order, each with the format it came in.
-const TOP_KEYS: [(&str, u32); 13] = [
+const TOP_KEYS: [(&str, u32); 14] = [
     ("format", 1),
+    ("engine", 1),
     ("app_version", 1),
     ("fighters", 1),
     ("arena", 1),

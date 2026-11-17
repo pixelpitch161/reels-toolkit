@@ -49,6 +49,38 @@ mod tests;
 /// The newest fight-file format this app reads and writes (it reads 1 and 2, and writes 2).
 pub const FIGHT_FORMAT: u32 = 2;
 
+/// Which fight engine a fight runs on (Engine 2 design, `docs/superpowers/specs/2026-11-17-engine2-design.md`).
+///
+/// A fight file without an `engine` setting is on the current engine, and the current engine is never written, so
+/// every file made before Engine 2 reads and writes exactly as it did.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Engine {
+    /// The current engine (`bf-sim` and `bf-picture`).
+    #[default]
+    One,
+    /// Engine 2 (`bf2-sim`, `bf2-render`, `bf2-fx`, `bf2-direct`).
+    Two,
+}
+
+impl Engine {
+    /// The number a fight file writes: 1 or 2.
+    pub fn number(self) -> u32 {
+        match self {
+            Engine::One => 1,
+            Engine::Two => 2,
+        }
+    }
+}
+
+impl fmt::Display for Engine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Engine::One => "the current engine",
+            Engine::Two => "Engine 2",
+        })
+    }
+}
+
 /// The two retired fighters: never offered, never ported, never accepted in a fight file.
 pub const RETIRED: [&str; 2] = ["GUITAR", "SAX"];
 
@@ -130,6 +162,8 @@ pub struct FightFile {
     /// The fight-file format: [`FIGHT_FORMAT`] for a file read from text (an older file reads as this format's
     /// fight) and for every file this app makes; `validate` refuses a newer one.
     pub format: u32,
+    /// The fight engine (absent in the file: [`Engine::One`], which is never written).
+    pub engine: Engine,
     /// The version of the app that wrote the file.
     pub app_version: String,
     /// The fighters, left corner (screen left) first.

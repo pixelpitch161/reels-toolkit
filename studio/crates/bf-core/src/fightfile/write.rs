@@ -12,6 +12,9 @@ impl FightFile {
         let mut o = String::new();
         // Always the newest format: the text holds format 2's settings whatever the value says.
         let _ = writeln!(o, "format = {FIGHT_FORMAT}");
+        if self.engine != Engine::One {
+            let _ = writeln!(o, "engine = {}", self.engine.number());
+        }
         let _ = writeln!(o, "app_version = {}", w_str(&self.app_version));
         let _ = writeln!(o, "fighters = {}", w_strs(&self.fighters));
         let _ = writeln!(o, "arena = {}", w_str(&self.arena));

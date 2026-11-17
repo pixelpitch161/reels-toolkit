@@ -1130,3 +1130,52 @@ fn a_format_1_file_cannot_hold_a_chord_in_a_solo() {
          file with it says format = 2)"
     );
 }
+
+// Engine 2, milestone E0: the engine choice.
+
+/// The example's search key before the engine choice existed (no music feeds the fight).
+const SEARCH_KEY_BEFORE_E0: &str = "fight-key 2;fighters=[5:FLUTE,8:TROMBONE];arena=4:ring;handicap=[4000000000000000,3fd999999999999a];dmg_scale=3ff0000000000000;tempo_bpm=4060800000000000;pair_rules=[11:swat_cobras=b:true];music=none";
+
+#[test]
+fn engine_is_the_current_one_when_absent_and_never_written() {
+    let ff = episode();
+    assert_eq!(ff.engine, Engine::One);
+    assert_eq!(ff.to_toml(), EPISODE);
+    assert!(!ff.to_toml().contains("engine"));
+}
+
+#[test]
+fn engine_two_reads_and_writes() {
+    let text = with("app_version = ", "engine = 2\napp_version = ");
+    let ff = FightFile::parse(&text).expect("an Engine 2 file parses");
+    assert_eq!(ff.engine, Engine::Two);
+    let again = FightFile::parse(&ff.to_toml()).expect("round trip");
+    assert_eq!(again.engine, Engine::Two);
+    assert_eq!(again, ff);
+}
+
+#[test]
+fn engine_one_written_by_hand_reads_and_is_dropped_on_write() {
+    let ff = FightFile::parse(&with("app_version = ", "engine = 1\napp_version = ")).expect("parses");
+    assert_eq!(ff.engine, Engine::One);
+    assert!(!ff.to_toml().contains("engine"));
+}
+
+#[test]
+fn bad_engines_are_refused_naming_the_setting() {
+    for bad in ["engine = 0", "engine = 3", "engine = \"two\"", "engine = 1.5"] {
+        let e = parse_err(&with("app_version = ", &format!("{bad}\napp_version = ")));
+        assert!(e.starts_with("engine: "), "{bad}: {e}");
+    }
+}
+
+#[test]
+fn the_search_key_separates_engines_and_keeps_engine_one_unchanged() {
+    let one = episode();
+    let two = FightFile {
+        engine: Engine::Two,
+        ..one.clone()
+    };
+    assert_eq!(one.search_key(&[false, false]), SEARCH_KEY_BEFORE_E0);
+    assert_ne!(one.search_key(&[false, false]), two.search_key(&[false, false]));
+}
