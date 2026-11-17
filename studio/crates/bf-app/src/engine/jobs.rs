@@ -340,11 +340,20 @@ fn fight(fight_toml: &str, dev: bool) -> Result<(FightFile, Fought), JobUpdate> 
         return Err(not_made("This fight file names no seed."));
     };
     dev_allowed(&ff.fighters, dev).map_err(|words| not_made(&words))?;
-    let rec = bf_engine::fight(&ff, seed, true).map_err(|e| match e {
-        bf_engine::EngineError::Sim(e) => not_made(&format!("Seed {seed} cannot be fought: {e}")),
-        bf_engine::EngineError::Sim2(e) => not_made(&format!("Seed {seed} cannot be fought: {e}")),
-        e => not_made(&format!("This fight cannot be fought: {e}")),
-    })?;
+    // The current engine's set-up and run are told apart as before Engine 2: a set-up refused is the fight's, a
+    // run refused the seed's.
+    let rec = match ff.engine {
+        Engine::One => {
+            let setup = bf_engine::classic_setup(&ff, seed)
+                .map_err(|e| not_made(&format!("This fight cannot be fought: {e}")))?;
+            let rec = bf_sim::run(&setup, true).map_err(|e| not_made(&format!("Seed {seed} cannot be fought: {e}")))?;
+            Fought::One(rec)
+        }
+        Engine::Two => bf_engine::fight(&ff, seed, true).map_err(|e| match e {
+            bf_engine::EngineError::Sim2(e) => not_made(&format!("Seed {seed} cannot be fought: {e}")),
+            e => not_made(&format!("This fight cannot be fought: {e}")),
+        })?,
+    };
     if rec.winner().is_none() || rec.t_ko_video().is_none() {
         return Err(JobUpdate::Failed {
             headline: NOT_MADE.to_string(),
@@ -846,6 +855,20 @@ mod tests {
             panic!("the dummy needs the developer switch");
         };
         assert_eq!(update, not_made(bf_content::DEV_ONLY));
+    }
+
+    /// A current-engine file whose set-up is refused is told as before Engine 2: the fight, not the seed.
+    #[test]
+    fn an_engine1_setup_failure_names_the_fight() {
+        let mut ff = FightFile::parse(EPISODE).expect("the example parses");
+        ff.pair_rules
+            .insert("no_rule_of_this_name".to_string(), bf_core::event::Value::Int(1));
+        ff.seed = Some(4);
+        let why = bf_engine::classic_setup(&ff, 4).expect_err("no such rule");
+        let Err(update) = fight(&ff.to_toml(), false) else {
+            panic!("a rule the engine does not have cannot be fought");
+        };
+        assert_eq!(update, not_made(&format!("This fight cannot be fought: {why}")));
     }
 
     #[test]
