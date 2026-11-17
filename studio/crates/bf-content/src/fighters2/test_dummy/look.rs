@@ -293,7 +293,7 @@ impl LookFx for DummyLook {
                             width: (0.22, 0.04),
                             length_s: 0.22,
                             colour: [4.0, 2.2, 0.8],
-                            core: [10.0, 9.0, 8.0],
+                            core: [5.0, 3.6, 2.0],
                             style: TrailStyle::Lightning,
                         }),
                     ))?;
@@ -319,7 +319,7 @@ impl LookFx for DummyLook {
                         Anchor::World(*point),
                         FxKind::Dome(DomeDef {
                             r: (0.3, 2.4),
-                            colour: [5.0, 2.2, 0.5],
+                            colour: [2.0, 0.9, 0.2],
                             fresnel: 0.85,
                         }),
                     ))?;
@@ -337,8 +337,8 @@ impl LookFx for DummyLook {
                                 offset: [0.0; 3],
                             },
                             width: 0.35,
-                            colour: [6.0, 2.6, 0.6],
-                            core: [12.0, 11.0, 10.0],
+                            colour: [4.0, 1.7, 0.4],
+                            core: [6.0, 4.4, 2.4],
                             jitter: 0.18,
                         }),
                     ))?;

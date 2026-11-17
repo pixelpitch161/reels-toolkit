@@ -86,30 +86,44 @@ the mean step of steady), which is the slow-mo pitch drop.
 
 ## The full-length review renders (on the PC)
 
-From `studio/` on the PC, release build, with the PC's GPU:
+The dummy's file now names seed 576 (chosen in the review set-up, below), which passes every check before the
+render, so the whole video renders with its checks, cover and fight file. From `studio/` on the PC, release build,
+with the PC's GPU:
 
 ```
 cargo build --release -p bf-cli
-target\release\ballfight.exe render fights\engine2\test_dummy.toml --out <folder> --frames 0:1830
+target\release\ballfight.exe render fights\engine2\test_dummy.toml --out <folder>
 ```
 
 For the steady copy, put `slowmo = "steady"` on its own line after `music_seed = 1` under `[music]` in a copy of
 the file, saved as `fights\engine2\test_dummy_steady.toml`. Then run:
 
 ```
-target\release\ballfight.exe render fights\engine2\test_dummy_steady.toml --out <folder> --frames 0:1830
+target\release\ballfight.exe render fights\engine2\test_dummy_steady.toml --out <folder>
 ```
 
-Each makes `test_dummy_vs_test_dummy_2_frames0-1830\test_dummy_vs_test_dummy_2_frames0-1830.mp4`. Use a different
-`--out` for each copy, because both copies have the same folder name. `--frames 0:1830` is needed only while the
-seed fails `levels`, `ko_window` and `loop_picture`. Without it, the render stops at the checks and saves nothing.
+Use a different `--out` for each copy, because both copies have the same folder name. If a check after the render
+fails (the mp4's own frames and loop sound, which the cloud could not run on a whole video), add `--frames 0:1830`
+to save every frame as a clip instead.
+
+## Review set-up (seed 576 and the effects retune)
+
+- Seed: `ballfight search fights/engine2/test_dummy.toml --stop 40 --max 3000` found 20 fits in seeds 1 to 3000;
+  576 has the best story score (7.73), its K.O. lands at 49.57 s of video, and
+  `cargo run --release -p bf-export --example engine2_tune -- <folder> --checks` passes safezone, levels (spread
+  4.6 dB, no dips), band, loudness, loop_picture, loop_audio, focus (100 %) and ko_window. `dmg_scale` stays 2.0.
+- loop_picture failed on every seed tried: the VS card dims the arena to 0.55 on its first closing frame, a jump of
+  about 125 times a normal frame 0.27 s before the end. The UI layer now ramps that dim in over the half second
+  before.
+- A K.O. frame with the retuned effects draws in 3.4 s at 1080 x 1920 on lavapipe (frame 1495; it was 15 to 60 s):
+  the K.O.'s 5,000 dark smoke sprites are now 300 low dust sprites, and its motion blur is 4 sub-frames for 0.5 s.
+- Stills, the two clips and a contact sheet are in `/mnt/project-files/ballfight-studio/engine2/review/`.
 
 ## For the review at the end of E6
 
 - Should slow-mo music stay `follow` (the default: the score slows and drops in pitch with the picture, then
   splices back at the K.O.) or default to `steady` (the score plays on at tempo through the slow-mo)? Compare
   `e5_ko_10s_follow.m4a` with `e5_ko_10s_steady.m4a`, and the two full renders.
-- The dummy's seed fails three checks (above): a new review seed, or a K.O. window that allows the slow-mo's
-  shift?
-- The special and the K.O. wash the frame almost white under the effects. The HUD's HP numbers then float on a
-  white field.
+- Seed 26 failed three checks (above); the file now names seed 576, which passes them.
+- The special and the K.O. washed the frame almost white; the review set-up retuned the effects (see the
+  ledger), and the review stills show the result.

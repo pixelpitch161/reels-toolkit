@@ -361,7 +361,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
             0.05,
         ),
     );
-    o.burst(2.2, embers(8_000, (1.0, 9.0), hot(h.colour, 0.6, 6.0), 0.06));
+    o.burst(2.2, embers(8_000, (1.0, 9.0), spark(h.colour, 6.0), 0.06));
     o.burst(1.6, dust(400, (1.5, 5.0), (0.3, 0.9), [0.24, 0.23, 0.24]));
     o.add(
         0.9,
@@ -370,7 +370,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
         at,
         FxKind::Dome(DomeDef {
             r: (0.3, 2.8),
-            colour: hot(h.colour, 0.7, 3.0),
+            colour: spark(h.colour, 3.0),
             fresnel: 0.85,
         }),
     );
@@ -386,7 +386,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
         Exit::Burst,
         Env::new(0.02, 0.0, 0.45),
         at,
-        ring((0.2, 3.2), 0.35, [14.0, 13.0, 12.0], 1.2, 1.5),
+        ring((0.2, 3.2), 0.35, spark(h.colour, 10.0), 1.2, 1.5),
     );
     o.add(
         DECAL_LIFE,
@@ -400,9 +400,9 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
             on: Surface::Canvas,
         }),
     );
-    o.light(1.1, hot(h.colour, 0.6, 7.0), 7.5, 0.45);
-    let flash = hot(h.colour, 0.2, 6.0);
-    o.screen(0.1, Env::new(0.02, 0.0, 0.08), ScreenFx::Flash { colour: flash }, 0.8);
+    o.light(1.1, spark(h.colour, 7.0), 7.5, 0.45);
+    let flash = spark(h.colour, 4.0);
+    o.screen(0.1, Env::new(0.02, 0.0, 0.08), ScreenFx::Flash { colour: flash }, 0.7);
     o.screen(
         0.7,
         Env::new(0.02, 0.0, 0.6),
