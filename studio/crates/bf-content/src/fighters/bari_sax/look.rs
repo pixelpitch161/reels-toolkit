@@ -167,6 +167,16 @@ fn cable(a: V3, b: V3, n: usize, sag: f64, wig: f64, ph: f64) -> Vec<V3> {
 
 /// `hook_block(img, cam, c, size, col)`: the crane's hook block at world point `c`: a small inked steel box.
 fn hook_block(arr: &mut Img<f32>, cam: &Cam, c: V3) {
+    hook_block_body(arr, cam, c, None);
+}
+
+/// (Punchy) the hook block at opacity `a`.
+fn hook_block_a(arr: &mut Img<f32>, cam: &Cam, c: V3, a: f64) {
+    hook_block_body(arr, cam, c, Some(a));
+}
+
+fn hook_block_body(arr: &mut Img<f32>, cam: &Cam, c: V3, a: Option<f64>) {
+    let al = |v: f64| a.map_or(v, |a| v * a);
     let size = 0.24;
     let q: Vec<V3> = [
         (-size, -size * 1.2),
@@ -178,7 +188,12 @@ fn hook_block(arr: &mut Img<f32>, cam: &Cam, c: V3) {
     .map(|&(dx, dy)| add3(c, [dx, dy, 0.0]))
     .collect();
     let sp = cam.wp(&q);
-    reeds::blend(arr, &reeds::mask(std::slice::from_ref(&sp), &[], 1), INK, Num::Py(0.9));
+    reeds::blend(
+        arr,
+        &reeds::mask(std::slice::from_ref(&sp), &[], 1),
+        INK,
+        Num::Py(al(0.9)),
+    );
     // sp.mean(0)
     let m = (
         (sp[0].0 + sp[1].0 + sp[2].0 + sp[3].0) / 4.0,
@@ -192,10 +207,10 @@ fn hook_block(arr: &mut Img<f32>, cam: &Cam, c: V3) {
         arr,
         &reeds::mask(std::slice::from_ref(&inner), &[], 1),
         STEEL.map(|v| v * 0.85),
-        Num::Py(1.0),
+        Num::Py(al(1.0)),
     );
     let top = vec![inner[2], inner[3]];
-    reeds::blend(arr, &reeds::mask(&[], &[top], 1), STEEL_HI, Num::Py(0.7));
+    reeds::blend(arr, &reeds::mask(&[], &[top], 1), STEEL_HI, Num::Py(al(0.7)));
 }
 
 /// `hook_shape(img, cam, end, toward, size)`: a steel hook at world point `end` (the harness ring), opening away from
@@ -398,6 +413,9 @@ struct Crane {
     end: Option<V3>,
     attached: bool,
     pieces: Vec<(Vec<V3>, f64)>,
+    /// (Punchy) the hook block's opacity, and whether the line from the rig is drawn.
+    block_a: f64,
+    rig_line: bool,
 }
 
 /// The painter item of this look: the crane under the balls.
@@ -612,6 +630,8 @@ impl BariSaxLook {
                     block: tgt,
                     end: Some(ring),
                     attached: true,
+                    block_a: 1.0,
+                    rig_line: true,
                     pieces: Vec::new(),
                 });
             }
@@ -642,10 +662,18 @@ impl BariSaxLook {
                 block: blk,
                 end: None,
                 attached: false,
+                block_a: 1.0,
+                rig_line: true,
                 pieces: vec![(up_piece, py_max(0.0, 1.0 - tsn / 0.7)), (stub, fade)],
             });
         }
-        let c = self.cycle_at(tf, 0.55)?;
+        let punchy = p.punch.is_some();
+        let c = if punchy {
+            // (Punchy) a cycle's crane stays for its snap-away exit, unless the next cycle has begun
+            self.w.cycles.iter().filter(|c| c.t0 <= tf && tf < c.end + 1.5).last()?
+        } else {
+            self.cycle_at(tf, 0.55)?
+        };
         let pv = match c.sw {
             Some(sw) => w_at(sw.bot, R + VERT * sw.l),
             None => w_at(p.run.p(p.sim_i(c.t0), k), R + VERT * self.base),
@@ -669,6 +697,8 @@ impl BariSaxLook {
                 block: blk,
                 end: Some(end),
                 attached: false,
+                block_a: 1.0,
+                rig_line: true,
                 pieces: Vec::new(),
             });
         }
@@ -680,8 +710,13 @@ impl BariSaxLook {
                 block: pv,
                 end: Some(ring),
                 attached: true,
+                block_a: 1.0,
+                rig_line: true,
                 pieces: Vec::new(),
             });
+        }
+        if punchy {
+            return Some(Self::snap_away(pv, self.cycle_end_ring(p, c), tf - c.end));
         }
         // unhooked: the block flies back up
         let v = (tf - c.end) / 0.55;
@@ -697,8 +732,63 @@ impl BariSaxLook {
             block: blk,
             end: Some(end),
             attached: false,
+            block_a: 1.0,
+            rig_line: true,
             pieces: Vec::new(),
         })
+    }
+
+    /// (Punchy) the crane's exit, `u` s after the hook let go at `end`: the cable snaps up at the rig and whips away
+    /// out of shot, the hook block drops from `pv` to the canvas, bounces twice, tumbles on and fades.
+    fn snap_away(pv: V3, end: V3, u: f64) -> Crane {
+        let g = 30.0;
+        let floor = 0.26;
+        let drop = (pv[1] - floor).max(0.0);
+        let tf = (2.0 * drop / g).sqrt();
+        let out = unit3([pv[0], 0.0, pv[2]]);
+        let (mut blk, mut slide) = (pv, 0.0);
+        if u < tf {
+            blk[1] = pv[1] - 0.5 * g * u * u;
+        } else {
+            let k = u - tf;
+            let hop = if k < 0.3 {
+                0.5 * dmath::sin(std::f64::consts::PI * k / 0.3)
+            } else if k < 0.5 {
+                0.18 * dmath::sin(std::f64::consts::PI * (k - 0.3) / 0.2)
+            } else {
+                0.0
+            };
+            blk[1] = floor + hop;
+            slide = 1.4 * k - 0.5 * k * k.min(1.2);
+        }
+        blk = add3(blk, scale3(out, slide));
+        let fade = 1.0 - ss(1.0, 1.45, u);
+        // the upper cable: from the snap point up out of the frame, whipping
+        let up = ss(0.0, 0.35, u);
+        let snap = [pv[0], pv[1] + 2.0 + (Y_RIG - pv[1]) * up, pv[2]];
+        let whip = cable(
+            [pv[0], Y_RIG + 2.0, pv[2]],
+            add3(snap, [0.6 * dmath::sin(u * 26.0) * dmath::exp(-u * 4.0), 0.0, 0.0]),
+            7,
+            0.0,
+            0.3 * dmath::exp(-u * 3.0),
+            u * 40.0,
+        );
+        // the lower cable flops down with the block, then lies on the canvas
+        let lie = ss(0.0, tf + 0.2, u);
+        let tail = add3(blk, [-out[0] * 0.9 * lie, 0.0, -out[2] * 0.9 * lie]);
+        let tail = [tail[0], blk[1] + (pv[1] + 1.6 - blk[1]) * (1.0 - lie), tail[2]];
+        let lower = cable(add3(blk, [0.0, 0.17, 0.0]), tail, 7, 0.0, 0.12 * (1.0 - lie), u * 30.0);
+        let _ = end;
+        Crane {
+            top: blk,
+            block: blk,
+            end: None,
+            attached: false,
+            pieces: vec![(whip, (1.0 - u / 0.45).max(0.0)), (lower, fade)],
+            block_a: fade,
+            rig_line: false,
+        }
     }
 
     /// `draw_crane(arr, cam, cs)`: the crane line from the rig, the hook block, the swing cable and its hook, the
@@ -708,9 +798,15 @@ impl BariSaxLook {
             return;
         };
         let blk = cs.block;
-        let line = cable(cs.top, add3(blk, [0.0, 0.17, 0.0]), 6, 0.0, 0.0, 0.0);
-        line3(arr, cam, &line, STEEL.map(|v| v * 0.75), 2, 0.8, 0.3, 1.0);
-        hook_block(arr, cam, blk);
+        if cs.rig_line {
+            let line = cable(cs.top, add3(blk, [0.0, 0.17, 0.0]), 6, 0.0, 0.0, 0.0);
+            line3(arr, cam, &line, STEEL.map(|v| v * 0.75), 2, 0.8, 0.3, 1.0);
+        }
+        if cs.block_a >= 1.0 {
+            hook_block(arr, cam, blk);
+        } else if cs.block_a > 0.02 {
+            hook_block_a(arr, cam, blk, cs.block_a);
+        }
         if let Some(end) = cs.end {
             let bot = sub3(blk, [0.0, 0.2, 0.0]);
             let slack = if cs.attached { 0.0 } else { 0.02 };

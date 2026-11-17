@@ -51,6 +51,8 @@ pub struct Special {
     pub t0: f64,
     pub t_hit: f64,
     pub at: [f64; 2],
+    /// The attacker's position at the impact (ring frame).
+    pub own: [f64; 2],
     pub name: String,
 }
 
@@ -67,6 +69,10 @@ pub struct Anime {
     /// Other abilities: an aura burst at `(fighter, time)`.
     pub pops: Vec<(usize, f64)>,
     pub names: [String; 2],
+    /// PEDAL TONE bells that burst where they would vanish.
+    pub bells: Vec<Bell>,
+    /// Full-screen flashes: `(time, fighter, strength)`, at least 0.5 s apart.
+    pub flashes: Vec<(f64, usize, f64)>,
 }
 
 fn num(v: &serde_json::Value, key: &str) -> Option<f64> {
@@ -111,11 +117,13 @@ impl Anime {
                             (t, p.run.p(p.sim_i(t), 1 - k))
                         }
                     };
+                    let own = p.run.p(p.sim_i(t_hit), k);
                     a.specials.push(Special {
                         k,
                         t0: e.t,
                         t_hit,
                         at,
+                        own,
                         name,
                     });
                 }
@@ -124,6 +132,16 @@ impl Anime {
                 _ => a.pops.push((k, e.t)),
             }
         }
+        // full-screen flashes on the specials' impacts and the heaviest hits, spaced out
+        let mut cand: Vec<(f64, usize, f64)> = a.specials.iter().map(|s| (s.t_hit, s.k, 0.5)).collect();
+        cand.extend(hits.iter().filter(|h| h.s >= 0.9).map(|h| (h.t, h.att, 0.3)));
+        cand.sort_by(|x, y| x.0.total_cmp(&y.0).then(y.2.total_cmp(&x.2)));
+        for c in cand {
+            if a.flashes.last().is_none_or(|l| c.0 - l.0 >= 0.5) {
+                a.flashes.push(c);
+            }
+        }
+        a.bells = bells(p);
         a
     }
 
@@ -142,7 +160,71 @@ impl Anime {
     }
 }
 
+/// The PEDAL TONE bells of the recording (`RUN['SLAMS']`) that leave the picture while still standing.
+fn bells(p: &PictureCtx) -> Vec<Bell> {
+    use bf_core::event::Value;
+    let num = |v: &Value| match *v {
+        Value::Float(f) => Some(f),
+        Value::Int(i) => Some(i as f64),
+        _ => None,
+    };
+    // (owner, x, z, slam time, radius) -> the last frame it shows
+    let mut seen: Vec<((usize, f64, f64, f64, f64), usize)> = Vec::new();
+    for i in 0..p.run.nsim {
+        let Some(Value::List(rows)) = p.run.nested("SLAMS", i) else {
+            continue;
+        };
+        for row in rows {
+            let Value::List(v) = row else { continue };
+            let (Some(Value::Int(o)), Some(x), Some(z), Some(ts), Some(r)) = (
+                v.first(),
+                v.get(1).and_then(num),
+                v.get(2).and_then(num),
+                v.get(4).and_then(num),
+                v.get(5).and_then(num),
+            ) else {
+                continue;
+            };
+            let key = (*o as usize, x, z, ts, r);
+            match seen.iter_mut().find(|(k, _)| *k == key) {
+                Some(e) => e.1 = i,
+                None => seen.push((key, i)),
+            }
+        }
+    }
+    let fr = 1.0 / f64::from(crate::config::FPS);
+    seen.into_iter()
+        .filter_map(|((k, x, z, ts, rad), i)| {
+            let t = p.show.grid.t_fight + (i + 1) as f64 * fr;
+            // the bell's own height then: hovering, slamming, sitting; gone already once it flies off
+            let h = if t < ts - 0.12 {
+                3.2
+            } else if t < ts {
+                let u = (t - (ts - 0.12)) / 0.12;
+                3.2 - 3.1 * u * u
+            } else if t < ts + 0.3 {
+                0.1
+            } else {
+                return None;
+            };
+            (k < 2 && t < p.t_ko).then_some(Bell {
+                t,
+                k,
+                at: [x, z],
+                h,
+                rad,
+            })
+        })
+        .collect()
+}
+
 // ---------------------------------------------------------------- drawing kit (graded picture, 0..255)
+
+/// Smoothstep of `x` clamped to 0..1.
+fn ease(x: f64) -> f64 {
+    let x = x.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}
 
 fn hyp(x: f64, y: f64) -> f64 {
     (x * x + y * y).sqrt()
@@ -285,46 +367,6 @@ fn god_rays(img: &mut Img<f64>, x: f64, y: f64, col: V3, k: f64) {
             let f = j as f64 / n as f64;
             let (cx, cy) = (top.0 + (x + off * 0.3 - top.0) * f, top.1 + (y - top.1) * f);
             disc(img, cx, cy, w * (0.4 + 0.6 * f), col, 0.035 * k * f);
-        }
-    }
-}
-
-/// A local impact frame: inside a disc around `(x, y)` the picture turns to inked, inverted black and white,
-/// with a dark rim. `k` 0..1.
-fn impact_frame(img: &mut Img<f64>, x: f64, y: f64, r: f64, k: f64) {
-    if k <= 0.01 {
-        return;
-    }
-    let (xa, xb) = (
-        (x - r - 3.0).floor().max(0.0) as usize,
-        (x + r + 3.0).ceil().min(img.w as f64 - 1.0) as usize,
-    );
-    let (ya, yb) = (
-        (y - r - 3.0).floor().max(0.0) as usize,
-        (y + r + 3.0).ceil().min(img.h as f64 - 1.0) as usize,
-    );
-    for py in ya..=yb {
-        for px in xa..=xb {
-            let d = hyp(px as f64 - x, py as f64 - y);
-            let p = img.px_mut(px, py);
-            if d < r {
-                let l = 0.3 * p[0] + 0.59 * p[1] + 0.11 * p[2];
-                // posterised, inverted ink
-                let inv = if l > 150.0 {
-                    12.0
-                } else if l > 70.0 {
-                    120.0
-                } else {
-                    248.0
-                };
-                for v in p.iter_mut().take(3) {
-                    *v = *v * (1.0 - k) + inv * k;
-                }
-            } else if d < r + 3.0 {
-                for v in p.iter_mut().take(3) {
-                    *v *= 1.0 - 0.9 * k;
-                }
-            }
         }
     }
 }
@@ -542,32 +584,73 @@ impl Punch {
             );
             speed_lines(img, s.0, s.1, rp * 1.6, 0.7 * (1.0 - u / 0.6), 77 + k as u64, col);
         }
-        // ---- the weapons' own marks, around every hit
-        let lo = self.hits.partition_point(|h| h.t < t - 0.7);
-        let hi = self.hits.partition_point(|h| h.t <= t + 0.3);
-        for (i, h) in self.hits[lo..hi].iter().enumerate() {
-            let u = t - h.t;
-            let st = an.style[h.att].unwrap_or(Style::Plain);
+        // ---- motion blur on fast balls (a ghost trail over the last 1.5 frames)
+        if t >= self.t_fight && t < self.t_ko {
+            for d in drawn {
+                let st = p.fighter(d.k, t - 0.05);
+                let pw = scene::to_world(st.p[0], st.p[1], st.paint_h.unwrap_or(R + st.lift));
+                let prev = cam.wp(&[pw])[0];
+                motion_blur(img, d.s, prev, d.rp);
+            }
+        }
+        // ---- the weapons' own marks, around every hit (some last on the canvas for a while)
+        let lo = self.hits.partition_point(|h| h.t < t - 2.6);
+        let hi = self.hits.partition_point(|h| h.t <= t + 0.7);
+        let mut posts: Vec<Post> = Vec::new();
+        let ctx = |h: &PunchHit| {
             let c = self.screen(cam, h.x, h.z, R);
             let qa = p.run.p(p.sim_i(h.t), h.att);
             let a = self.screen(cam, qa[0], qa[1], R);
-            let col = self.col[h.att];
             let ang = dmath::atan2(c.1 - a.1, c.0 - a.0);
-            // wind-up glint
-            if st != Style::Plain && (-0.1..0.0).contains(&u) {
-                let g = 1.0 + u / 0.1;
-                disc(
-                    img,
-                    a.0 + dmath::cos(ang) * 10.0,
-                    a.1 + dmath::sin(ang) * 10.0 - 6.0,
-                    4.0 + 6.0 * g,
-                    WHITE,
-                    0.9 * g,
-                );
+            (a, c, ang)
+        };
+        // warps first: they bend the scene under the marks
+        for h in &self.hits[lo..hi] {
+            let u = t - h.t;
+            let (a, c, ang) = ctx(h);
+            if an.style[h.att] == Some(Style::Tuba) {
+                if (0.0..1.6).contains(&u) {
+                    ripple(img, c, u, 1.5 + 5.0 * h.s);
+                }
+                if h.s >= 0.55 && (0.0..1.0).contains(&u) {
+                    let life = 0.45 + 0.5 * h.s;
+                    let r = (30.0 + 100.0 * h.s) * ease((u / (life * 0.65)).min(1.0));
+                    let k = (1.0 - ((u - life * 0.65) / (life * 0.35)).max(0.0)).max(0.0);
+                    if u < life {
+                        dome_bend(img, c, r, (4.0 + 9.0 * h.s) * k);
+                    }
+                }
+                if (-0.3..0.2).contains(&u)
+                    && let Some((vs, rp)) = ball(h.vic)
+                {
+                    let env = if u < 0.0 { ease((u + 0.3) / 0.3) } else { 1.0 - u / 0.2 };
+                    stretch(img, vs, rp, (a.0 - vs.0, a.1 - vs.1), (0.25 + 0.9 * h.s) * env);
+                }
             }
-            self.weapon_mark(img, st, h, u, a, c, ang, col, (lo + i) as u64);
-            if u >= 0.0 && h.s >= 0.45 {
-                // the shared layer: speed lines and an impact frame on every hit
+            let _ = ang;
+        }
+        for (i, h) in self.hits[lo..hi].iter().enumerate() {
+            let u = t - h.t;
+            let st = an.style[h.att].unwrap_or(Style::Plain);
+            let (a, c, ang) = ctx(h);
+            let col = self.col[h.att];
+            self.weapon_mark(
+                p,
+                img,
+                cam,
+                st,
+                h,
+                u,
+                a,
+                c,
+                ang,
+                col,
+                (lo + i) as u64,
+                &mut posts,
+                &ball,
+            );
+            if (0.0..0.3).contains(&u) && h.s >= 0.45 {
+                // the shared layer: speed lines on harder hits
                 speed_lines(
                     img,
                     c.0,
@@ -578,24 +661,47 @@ impl Punch {
                     WHITE,
                 );
             }
+            if h.s >= 0.85 && (0.0..0.15).contains(&u) {
+                posts.push(Post::Radial(c, 1.0 - u / 0.15));
+            }
+        }
+        // ---- PEDAL TONE's bell bursts where it would vanish
+        for b in &an.bells {
+            let u = t - b.t;
+            if (0.0..1.3).contains(&u) {
+                self.bell_burst(img, cam, b, u);
+            }
         }
         // ---- the specials' own moments
         if let Some((sp, env)) = special {
             self.special(p, img, cam, t, sp, env, &ball);
         }
-        // impact frames last: they ink what is under them
-        for h in &self.hits[lo..hi] {
-            let u = t - h.t;
-            if (0.0..0.012).contains(&u) && h.s >= 0.4 {
-                let c = self.screen(cam, h.x, h.z, R);
-                impact_frame(img, c.0, c.1, 34.0 + 40.0 * h.s, 1.0);
-            }
-        }
         for sp in &an.specials {
             let u = t - sp.t_hit;
-            if (0.0..0.03).contains(&u) {
-                let c = self.screen(cam, sp.at[0], sp.at[1], R);
-                impact_frame(img, c.0, c.1, 95.0, if u < 0.015 { 1.0 } else { 0.6 });
+            if (0.0..0.25).contains(&u) {
+                posts.push(Post::Radial(
+                    self.screen(cam, sp.at[0], sp.at[1], R),
+                    1.4 * (1.0 - u / 0.25),
+                ));
+            }
+        }
+        // ---- the picture-wide passes: the Violin's slice, radial blurs, flashes
+        for post in &posts {
+            match *post {
+                Post::Slice(c, ang, d) => slice(img, c, ang, d),
+                Post::Radial(c, k) => radial_blur(img, c, k),
+            }
+        }
+        for &(tf, k, s) in &an.flashes {
+            let u = t - tf;
+            if (0.0..0.1).contains(&u) {
+                let tint = mix(self.col[k], WHITE, 0.6);
+                let a = s * (1.0 - u / 0.1);
+                for px in img.data.chunks_exact_mut(3) {
+                    for c in 0..3 {
+                        px[c] = px[c] * (1.0 - a) + tint[c] * a;
+                    }
+                }
             }
         }
         for v in &mut img.data {
@@ -603,10 +709,120 @@ impl Punch {
         }
     }
 
+    /// The camera's roll through a special: the picture turned by [`Punch::tilt`] about its centre, zoomed just
+    /// enough to keep the corners filled.
+    pub fn roll(&self, img: &mut Img<f64>, t: f64) {
+        let a = self.tilt(t);
+        if a.abs() < 0.002 {
+            return;
+        }
+        let (w, h) = (img.w as f64, img.h as f64);
+        let (cx, cy) = (w / 2.0, h / 2.0);
+        let z = 1.0 + 1.9 * a.abs();
+        let (ca, sa) = (dmath::cos(a), dmath::sin(a));
+        remap(img, 0.0, w, 0.0, h, |x, y| {
+            let (dx, dy) = ((x - cx) / z, (y - cy) / z);
+            Some((cx + dx * ca - dy * sa, cy + dx * sa + dy * ca))
+        });
+    }
+
+    /// The burst of a PEDAL TONE bell: brass shards, a dust cloud and a flash where the bell stood.
+    fn bell_burst(&self, img: &mut Img<f64>, cam: &Cam, b: &Bell, u: f64) {
+        let c = self.screen(cam, b.at[0], b.at[1], b.h + 0.4);
+        let f = self.screen(cam, b.at[0], b.at[1], 0.0);
+        let rpx = (self.screen(cam, b.at[0] + b.rad, b.at[1], 0.0).0 - f.0)
+            .abs()
+            .max(20.0);
+        let brass = [236.0, 198.0, 108.0];
+        let col = self.col[b.k];
+        if u < 0.1 {
+            disc(img, c.0, c.1, rpx * 1.3, mix(col, WHITE, 0.6), 1.0 - u / 0.1);
+        }
+        // dust
+        let mut m = Mix(b.t.to_bits() | 3);
+        for _ in 0..10 {
+            let a = m.next() * 2.0 * dmath::PI;
+            let d = rpx * (0.3 + 0.7 * m.next()) + u * 70.0;
+            let r = 14.0 + u * 50.0;
+            disc(
+                img,
+                f.0 + dmath::cos(a) * d,
+                f.1 + dmath::sin(a) * d * 0.6,
+                r,
+                [190.0, 180.0, 160.0],
+                0.3 * (1.0 - u / 1.1).max(0.0),
+            );
+        }
+        // shards: brass triangles flung out and falling
+        let mut m = Mix(b.t.to_bits() | 5);
+        for _ in 0..34 {
+            let a = m.next() * 2.0 * dmath::PI;
+            let sp = 140.0 + 220.0 * m.next();
+            let sz = 3.0 + 6.0 * m.next();
+            let spin = (m.next() - 0.5) * 16.0;
+            let life = 0.7 + 0.5 * m.next();
+            let go = (1.0 - dmath::exp(-u * 2.4)) / 2.4;
+            let x = c.0 + dmath::cos(a) * (rpx * 0.4 + sp * go);
+            let y = c.1 + dmath::sin(a) * (rpx * 0.25 + sp * 0.6 * go) + 120.0 * u * u;
+            let k = (1.3 - u / life).clamp(0.0, 1.0);
+            let r = spin * u + a;
+            let pts: Vec<(f64, f64)> = [(-1.0, -0.4), (1.0, -0.2), (0.0, 0.7), (-1.0, -0.4)]
+                .iter()
+                .map(|&(px, py)| {
+                    (
+                        x + (px * dmath::cos(r) - py * dmath::sin(r)) * sz,
+                        y + (px * dmath::sin(r) + py * dmath::cos(r)) * sz,
+                    )
+                })
+                .collect();
+            let shade = mix(brass, WHITE, 0.4 * m.next());
+            for w in pts.windows(2) {
+                line(img, w[0], w[1], shade, 0.9 * k, 0.9 * k, 2.0);
+            }
+            disc(img, x, y, sz * 0.8, shade, 0.5 * k);
+        }
+        burst(
+            img,
+            c,
+            u,
+            b.t.to_bits() | 7,
+            60,
+            mix(col, WHITE, 0.5),
+            300.0,
+            80.0,
+            0.8,
+            None,
+        );
+        ring(
+            img,
+            f.0,
+            f.1,
+            rpx + u * 200.0,
+            0.55,
+            [220.0, 210.0, 190.0],
+            (1.0 - u / 0.7).max(0.0),
+            4.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+        cracks(
+            img,
+            f.0,
+            f.1,
+            rpx * 2.0,
+            (u / 0.2).min(1.0) * (1.0 - u / 1.3).max(0.0),
+            col,
+            b.t.to_bits() | 9,
+        );
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn weapon_mark(
         &self,
+        p: &PictureCtx,
         img: &mut Img<f64>,
+        cam: &Cam,
         st: Style,
         h: &PunchHit,
         u: f64,
@@ -615,165 +831,708 @@ impl Punch {
         ang: f64,
         col: V3,
         seed: u64,
+        posts: &mut Vec<Post>,
+        ball: &dyn Fn(usize) -> Option<((f64, f64), f64)>,
     ) {
         let hot = mix(col, WHITE, 0.45);
-        let s = 0.6 + 0.4 * h.s;
+        let s = h.s;
+        let (dx, dy) = (dmath::cos(ang), dmath::sin(ang));
+        let (nx, ny) = (-dy, dx);
+        let dist = hyp(c.0 - a.0, c.1 - a.1);
+        // a quick glint on the weapon before it fires
+        if st != Style::Plain && (-0.25..-0.04).contains(&u) {
+            let g = dmath::sin(dmath::PI * (u + 0.25) / 0.21);
+            star(
+                img,
+                (a.0 + dx * 10.0, a.1 + dy * 10.0 - 6.0),
+                6.0 + 8.0 * s,
+                hot,
+                0.9 * g,
+                0.3,
+            );
+        }
         match st {
             Style::Violin => {
-                // a crescent stroke through the victim, then a crossed X that hangs
-                if (-0.06..0.25).contains(&u) {
-                    let k = if u < 0.0 { 1.0 + u / 0.06 } else { 1.0 - u / 0.25 };
+                // the rapier crescent: razor thin, white-hot, sweeping through the contact
+                if (-0.03..0.5).contains(&u) {
+                    let pr = ease((u + 0.03) / 0.06);
+                    let len = 1.2 + 2.0 * s;
+                    let r = 18.0 + 36.0 * s;
+                    let ctr = (c.0 - dx * r * 0.45, c.1 - dy * r * 0.45);
                     let dir = if seed % 2 == 0 { 1.0 } else { -1.0 };
-                    smear(img, c.0, c.1, 26.0 * s, ang - dir * 2.2, ang + dir * 0.3, col, k, 6.0);
+                    let a0 = ang - dir * len / 2.0;
+                    let pts = arc_pts(ctr, r, a0, a0 + dir * len * pr, 0.75, 36);
+                    let k = (1.0 - (u - 0.06) / 0.44).clamp(0.0, 1.0);
+                    taper(img, &pts, col, k, 2.0 + 4.0 * s);
+                    if s >= 0.6 && (0.03..0.25).contains(&u) {
+                        posts.push(Post::Slice(c, ang + dir * 1.1, 7.0 * s * (1.0 - (u - 0.03) / 0.22)));
+                    }
                 }
-                if (0.0..0.35).contains(&u) {
-                    let k = 1.0 - u / 0.35;
-                    let r = 22.0 * s;
-                    line(img, (c.0 - r, c.1 - r), (c.0 + r, c.1 + r), hot, k, k, 3.0);
-                    line(img, (c.0 + r, c.1 - r), (c.0 - r, c.1 + r), hot, k, k, 3.0);
+                // the flèche: a blurred lunge streak from where the bow was a moment ago
+                if (-0.08..0.06).contains(&u) {
+                    let q0 = p.run.p(p.sim_i(h.t - 0.14), h.att);
+                    let b0 = self.screen(cam, q0[0], q0[1], R);
+                    let k = if u < 0.0 { 1.0 + u / 0.08 } else { 1.0 - u / 0.06 };
+                    for j in 0..4 {
+                        line(img, b0, c, col, 0.0, 0.16 * k, 4.0 + 6.0 * s - j as f64 * 2.0);
+                    }
+                    line(img, b0, c, WHITE, 0.0, 0.7 * k, 1.5);
+                }
+                if (0.0..0.09).contains(&u) {
+                    star(img, c, 12.0 + 40.0 * s, col, 1.0 - u / 0.09, ang);
+                }
+                burst(
+                    img,
+                    a,
+                    u,
+                    seed * 7 + 1,
+                    (6.0 + 20.0 * s) as usize,
+                    [235.0, 222.0, 196.0],
+                    90.0 + 90.0 * s,
+                    30.0,
+                    0.7,
+                    Some((ang + dmath::PI, 0.9)),
+                );
+                burst(
+                    img,
+                    c,
+                    u,
+                    seed * 7 + 2,
+                    (6.0 + 26.0 * s) as usize,
+                    [230.0, 212.0, 255.0],
+                    150.0 + 110.0 * s,
+                    40.0,
+                    0.6,
+                    None,
+                );
+                // the string: a light hit twangs it, a heavy one snaps it
+                let half = 32.0 + 24.0 * s;
+                let (p0, p1) = ((c.0 - nx * half, c.1 - ny * half), (c.0 + nx * half, c.1 + ny * half));
+                if s < 0.6 && seed % 2 == 0 && (0.0..0.7).contains(&u) {
+                    let amp = 6.0 * dmath::exp(-u * 4.0);
+                    let pts: Vec<(f64, f64)> = (0..=30)
+                        .map(|i| {
+                            let f = f64::from(i) / 30.0;
+                            let o = amp * dmath::sin(dmath::PI * f) * dmath::sin(u * 70.0 + f * 3.0);
+                            (p0.0 + (p1.0 - p0.0) * f + dx * o, p0.1 + (p1.1 - p0.1) * f + dy * o)
+                        })
+                        .collect();
+                    taper(img, &pts, col, (1.0 - u / 0.7).max(0.0), 1.6);
+                } else if s >= 0.6 && (0.0..1.0).contains(&u) {
+                    let fe = ease(u / 0.35);
+                    for (end, sg) in [(p0, -1.0), (p1, 1.0)] {
+                        let pts: Vec<(f64, f64)> = (0..=24)
+                            .map(|i| {
+                                let f = f64::from(i) / 24.0; // 0 at the end, 1 at the break
+                                let mut x = end.0 + (c.0 - end.0) * f * (1.0 - fe);
+                                let mut y = end.1 + (c.1 - end.1) * f * (1.0 - fe);
+                                let curl = 18.0 * dmath::exp(-u * 2.2) * f * f * f;
+                                x += dmath::cos(f * 9.0 + u * 12.0) * curl * sg;
+                                y += dmath::sin(f * 9.0 + u * 12.0) * curl;
+                                (x, y)
+                            })
+                            .collect();
+                        taper(img, &pts, col, (1.0 - u).max(0.0), 1.8);
+                    }
+                    burst(
+                        img,
+                        c,
+                        u,
+                        seed * 7 + 3,
+                        30,
+                        [230.0, 210.0, 255.0],
+                        240.0,
+                        90.0,
+                        0.8,
+                        None,
+                    );
                 }
             }
             Style::Trombone => {
-                // a motion-blurred thrust from the bell, then a brass halo
-                if (-0.06..0.15).contains(&u) {
-                    let k = if u < 0.0 { 1.0 + u / 0.06 } else { 1.0 - u / 0.15 };
-                    for j in 0..5 {
-                        line(img, a, c, col, 0.06 * k, 0.25 * k, 14.0 - j as f64 * 3.0);
+                // the piston thrust: a ghost slide fires out, overshoots and springs back
+                let lmax = (dist - 6.0).max(10.0);
+                let ov = 4.0 + 12.0 * s;
+                let len = |u: f64| -> f64 {
+                    if u < -0.05 {
+                        0.0
+                    } else if u < 0.0 {
+                        lmax * ((u + 0.05) / 0.05).powi(2)
+                    } else {
+                        lmax + ov * dmath::exp(-u * 7.0) * dmath::cos(u * 34.0)
                     }
-                    line(img, a, c, WHITE, 0.3 * k, 0.9 * k, 2.0);
+                };
+                if (-0.05..0.45).contains(&u) {
+                    let k = 1.0 - ss(0.25, 0.45, u);
+                    let brass = mix([236.0, 198.0, 108.0], col, 0.3);
+                    let draw = |img: &mut Img<f64>, l: f64, kk: f64| {
+                        for o in [-3.0, 3.0] {
+                            let s0 = (a.0 + nx * o, a.1 + ny * o);
+                            line(img, s0, (s0.0 + dx * l, s0.1 + dy * l), brass, 0.6 * kk, 0.9 * kk, 2.0);
+                        }
+                        ring(
+                            img,
+                            a.0 + dx * l,
+                            a.1 + dy * l,
+                            3.5,
+                            1.0,
+                            mix(brass, WHITE, 0.4),
+                            kk,
+                            2.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                        );
+                    };
+                    if u < 0.03 {
+                        for j in 1..6 {
+                            draw(img, len(u - j as f64 * 0.007), 0.14 * k);
+                        }
+                        line(img, a, (a.0 + dx * len(u), a.1 + dy * len(u)), col, 0.0, 0.5 * k, 12.0);
+                    }
+                    draw(img, len(u), k);
                 }
-                if (0.0..0.4).contains(&u) {
-                    let v = u / 0.4;
+                // the brass halo: one ring for a tap, up to four for a heavy hit
+                let n = 1 + ((s - 0.25) / 0.75 * 3.0).round().clamp(0.0, 3.0) as usize;
+                for j in 0..n {
+                    let uj = u - j as f64 * 0.075;
+                    if !(0.0..0.7).contains(&uj) {
+                        continue;
+                    }
+                    let r = 8.0 + (30.0 + 16.0 * j as f64) * ease((uj / 0.45).min(1.0)) * (0.7 + 0.5 * s);
+                    let k = (1.0 - uj / 0.7) * (1.0 - j as f64 * 0.12);
+                    let jag = r * 0.14 * dmath::exp(-uj * 5.0);
+                    let tooth = 6.0 + j as f64;
                     ring(
                         img,
                         c.0,
                         c.1,
-                        10.0 + 70.0 * s * v,
-                        1.0,
-                        [255.0, 214.0, 120.0],
-                        1.0 - v,
-                        3.0,
-                        0.0,
-                        0.0,
-                        0.0,
+                        r,
+                        0.62,
+                        [255.0, 220.0, 140.0],
+                        k,
+                        2.5,
+                        jag,
+                        tooth,
+                        uj * 55.0,
                     );
+                    ring(img, c.0, c.1, r, 0.62, col, 0.35 * k, 5.0, jag, tooth, uj * 55.0);
                 }
+                // shock diamonds in a cone of air from the bell
+                if s >= 0.45 {
+                    let life = 0.25 + 0.4 * s;
+                    if (0.0..life).contains(&u) {
+                        let k = dmath::sin(dmath::PI * u / life).max(0.0).powf(0.6);
+                        let reach = (dist + 20.0) * ease((u / 0.08).min(1.0));
+                        for j in -3i32..=3 {
+                            let aa = ang + f64::from(j) * 0.07 * (0.6 + s);
+                            line(
+                                img,
+                                a,
+                                (a.0 + dmath::cos(aa) * reach, a.1 + dmath::sin(aa) * reach),
+                                col,
+                                0.22 * k,
+                                0.0,
+                                3.0,
+                            );
+                        }
+                        let nd = 2 + (3.0 * s).round() as usize;
+                        for i in 0..nd {
+                            let d = 14.0 + i as f64 * (dist / (nd as f64 + 0.5)).max(12.0);
+                            if d > reach {
+                                break;
+                            }
+                            let q = (a.0 + dx * d, a.1 + dy * d);
+                            let sz = (7.0 - i as f64 * 0.8) * (0.8 + 0.25 * dmath::sin(u * 90.0 + i as f64 * 2.0));
+                            let pts = [
+                                (q.0 - dx * sz * 1.5, q.1 - dy * sz * 1.5),
+                                (q.0 + nx * sz * 0.7, q.1 + ny * sz * 0.7),
+                                (q.0 + dx * sz * 1.5, q.1 + dy * sz * 1.5),
+                                (q.0 - nx * sz * 0.7, q.1 - ny * sz * 0.7),
+                                (q.0 - dx * sz * 1.5, q.1 - dy * sz * 1.5),
+                            ];
+                            for w in pts.windows(2) {
+                                line(img, w[0], w[1], mix(col, WHITE, 0.6), k, k, 1.5);
+                            }
+                            disc(img, q.0, q.1, sz * 1.2, WHITE, 0.6 * k);
+                        }
+                    }
+                }
+                if (0.0..0.08).contains(&u) {
+                    star(img, c, 12.0 + 30.0 * s, col, 1.0 - u / 0.08, 0.0);
+                }
+                burst(
+                    img,
+                    c,
+                    u,
+                    seed * 7 + 4,
+                    (8.0 + 30.0 * s) as usize,
+                    [200.0, 255.0, 220.0],
+                    140.0 + 120.0 * s,
+                    60.0,
+                    0.6,
+                    Some((ang, 2.2)),
+                );
             }
             Style::Accordion => {
-                if (-0.12..0.05).contains(&u) {
-                    let open = if u < 0.0 { -u / 0.12 } else { 0.0 };
-                    jaws(img, c.0, c.1, ang, 30.0 * s, open, col, 1.0 - (u.max(0.0) / 0.05));
+                // gouges left by heavy bites: they glow, cool and fade (on the canvas, so they stay put)
+                if s >= 0.6 && (0.0..2.2).contains(&u) {
+                    let k = (1.0 - u / 2.2).max(0.0);
+                    let heat = (1.0 - u / 0.9).max(0.0);
+                    let base = [h.x + h.dir[0] * 0.15, h.z + h.dir[1] * 0.15];
+                    for i in 0..5 {
+                        let aa = -0.75 + 0.37 * i as f64;
+                        let (ca, sa) = (dmath::cos(aa), dmath::sin(aa));
+                        let d = [h.dir[0] * ca - h.dir[1] * sa, h.dir[0] * sa + h.dir[1] * ca];
+                        let q = [base[0] + d[0] * 0.5, base[1] + d[1] * 0.5];
+                        let q0 = self.screen(cam, q[0] - d[0] * 0.12, q[1] - d[1] * 0.12, 0.0);
+                        let q1 = self.screen(cam, q[0] + d[0] * 0.12, q[1] + d[1] * 0.12, 0.0);
+                        darken_line(img, q0, q1, 0.6 * k);
+                        darken_line(img, (q0.0, q0.1 - 1.0), (q1.0, q1.1 - 1.0), 0.5 * k);
+                        line(img, q0, q1, col, 0.9 * heat, 0.4 * heat, 1.2);
+                    }
                 }
-                if (0.0..0.35).contains(&u) {
-                    let v = u / 0.35;
+                // the chomp: pleated jaws gape, slam shut past each other, bounce open
+                if (-0.15..0.4).contains(&u) {
+                    let open = if u < 0.0 {
+                        let f = (u + 0.15) / 0.15;
+                        if f < 0.85 {
+                            0.15 + 0.9 * ease(f / 0.85)
+                        } else {
+                            1.05 - 1.19 * ((f - 0.85) / 0.15).powi(2)
+                        }
+                    } else if u < 0.08 {
+                        -0.14 + 0.26 * ease(u / 0.08)
+                    } else {
+                        0.12 * dmath::exp(-(u - 0.08) * 6.0)
+                    };
+                    let k = 1.0 - ss(0.25, 0.4, u);
+                    let size = 24.0 + 22.0 * s;
+                    jaws(img, c.0, c.1, ang, size, open, col, k);
+                    jaws(img, c.0 + nx, c.1 + ny, ang, size, open, WHITE, 0.6 * k);
+                }
+                // inhale, exhale
+                if (-0.5..0.0).contains(&u) {
+                    let inh = ease((u + 0.5) / 0.5);
+                    let mut m = Mix(seed * 13 + 9);
+                    for _ in 0..(8.0 + 16.0 * s) as usize {
+                        let aa = m.next() * 2.0 * dmath::PI;
+                        let f = (u * 1.8 + m.next()).rem_euclid(1.0);
+                        let d = 100.0 * (1.0 - f) + 14.0;
+                        let p0 = (a.0 + dmath::cos(aa) * d, a.1 + dmath::sin(aa) * d * 0.7);
+                        let p1 = (
+                            a.0 + dmath::cos(aa) * (d + 16.0),
+                            a.1 + dmath::sin(aa) * (d + 16.0) * 0.7,
+                        );
+                        line(img, p1, p0, hot, 0.0, 0.7 * inh * dmath::sin(dmath::PI * f), 1.4);
+                    }
+                }
+                if (0.0..0.7).contains(&u) {
+                    let r = (30.0 + 100.0 * s) * ease((u / 0.35).min(1.0));
                     ring(
                         img,
-                        c.0,
-                        c.1,
-                        8.0 + 60.0 * s * v,
-                        0.6,
+                        a.0,
+                        a.1,
+                        r,
+                        0.62,
                         hot,
-                        1.0 - v,
-                        3.0,
-                        2.5,
-                        16.0,
+                        1.0 - u / 0.7,
+                        2.0 + 4.0 * s,
+                        2.0,
+                        9.0,
+                        u * 20.0,
+                    );
+                    ring(
+                        img,
+                        a.0,
+                        a.1,
+                        r * 0.75,
+                        0.62,
+                        col,
+                        0.5 * (1.0 - u / 0.5).max(0.0),
+                        3.0 + 6.0 * s,
+                        0.0,
+                        0.0,
                         0.0,
                     );
+                }
+                // button shrapnel, ricocheting off the ropes
+                if (0.0..1.1).contains(&u) {
+                    let n = 3 + (7.0 * s).round() as usize;
+                    let mut m = Mix(seed * 13 + 17);
+                    for _ in 0..n {
+                        let aa = (m.next() - 0.5) * (1.0 + 1.8 * s);
+                        let sp = 4.5 + 2.5 * m.next();
+                        let (ca, sa) = (dmath::cos(aa), dmath::sin(aa));
+                        let mut v = [
+                            (h.dir[0] * ca - h.dir[1] * sa) * sp,
+                            (h.dir[0] * sa + h.dir[1] * ca) * sp,
+                        ];
+                        let mut q = [h.x, h.z];
+                        let mut trail: Vec<[f64; 2]> = Vec::new();
+                        let mut sparks: Vec<([f64; 2], f64)> = Vec::new();
+                        let dt = 0.01;
+                        let mut tt = 0.0;
+                        while tt < u {
+                            q = [q[0] + v[0] * dt, q[1] + v[1] * dt];
+                            v = [v[0] * 0.993, v[1] * 0.993];
+                            for ax in 0..2 {
+                                if q[ax].abs() > scene::A - 0.1 && q[ax] * v[ax] > 0.0 {
+                                    v[ax] = -v[ax] * 0.7;
+                                    sparks.push((q, u - tt));
+                                }
+                            }
+                            trail.push(q);
+                            tt += dt;
+                        }
+                        let k = (1.0 - (u - 0.6) / 0.5).clamp(0.0, 1.0);
+                        let tl = &trail[trail.len().saturating_sub(12)..];
+                        let sc: Vec<(f64, f64)> = tl.iter().map(|q| self.screen(cam, q[0], q[1], R * 0.5)).collect();
+                        for (j, w) in sc.windows(2).enumerate() {
+                            let f = (j + 1) as f64 / sc.len() as f64;
+                            line(img, w[0], w[1], col, 0.8 * k * f, 0.8 * k * f, 2.0 * f + 0.5);
+                        }
+                        if let Some(&e) = sc.last() {
+                            disc(img, e.0, e.1, 4.0, [250.0, 245.0, 235.0], k);
+                        }
+                        for (sq, age) in sparks {
+                            if age < 0.2 {
+                                let ss_ = self.screen(cam, sq[0], sq[1], R * 0.5);
+                                star(img, ss_, 10.0, col, 1.0 - age / 0.2, age * 10.0);
+                            }
+                        }
+                    }
+                }
+                if (0.0..0.07).contains(&u) {
+                    star(img, c, 12.0 + 30.0 * s, col, 1.0 - u / 0.07, 0.4);
                 }
             }
             Style::Tuba => {
-                // suck lines into the bell before, a boom of rings after
-                if (-0.25..0.0).contains(&u) {
-                    let f = 1.0 + u / 0.25;
+                // suction lines into the bell before the gulp
+                if (-0.35..0.0).contains(&u) {
+                    let f0 = ease((u + 0.35) / 0.35);
                     let mut m = Mix(seed * 13 + 5);
-                    for _ in 0..14 {
-                        let aa = m.next() * 2.0 * dmath::PI;
-                        let d = 60.0 * (1.0 - ((f + m.next()) % 1.0)) + 8.0;
-                        let p0 = (a.0 + dmath::cos(aa) * d, a.1 + dmath::sin(aa) * d);
-                        let p1 = (
-                            a.0 + dmath::cos(aa + 0.4) * (d + 14.0),
-                            a.1 + dmath::sin(aa + 0.4) * (d + 14.0),
+                    for _ in 0..(8.0 + 12.0 * s) as usize {
+                        let off = (m.next() - 0.5) * 40.0;
+                        let f = (u * 2.4 + m.next()).rem_euclid(1.0);
+                        let x = c.0 + dx * 20.0 + (a.0 - c.0 - dx * 20.0) * f + nx * off * (1.0 - f);
+                        let y = c.1 + dy * 20.0 + (a.1 - c.1 - dy * 20.0) * f + ny * off * (1.0 - f);
+                        line(
+                            img,
+                            (x - dx * 16.0, y - dy * 16.0),
+                            (x, y),
+                            hot,
+                            0.0,
+                            0.8 * f0 * dmath::sin(dmath::PI * f),
+                            1.3,
                         );
-                        line(img, p1, p0, col, 0.0, 0.7 * f, 1.5);
                     }
                 }
-                if (0.0..0.5).contains(&u) {
-                    for j in 0..3 {
-                        let v = (u - j as f64 * 0.07) / 0.43;
-                        if (0.0..1.0).contains(&v) {
-                            ring(
-                                img,
-                                c.0,
-                                c.1,
-                                10.0 + 80.0 * s * v,
-                                0.6,
-                                hot,
-                                1.0 - v,
-                                3.0,
-                                0.0,
-                                0.0,
-                                0.0,
-                            );
-                        }
+                // the spit: a dark purple puff out of the bell
+                let su = u - 0.12;
+                if (0.0..0.7).contains(&su) {
+                    ring(
+                        img,
+                        a.0,
+                        a.1,
+                        10.0 + su * (70.0 + 100.0 * s),
+                        0.62,
+                        mix(col, [20.0, 10.0, 40.0], 0.5),
+                        (1.0 - su / 0.6).max(0.0),
+                        4.0 + 5.0 * s,
+                        0.0,
+                        0.0,
+                        0.0,
+                    );
+                    ring(
+                        img,
+                        a.0,
+                        a.1,
+                        6.0 + su * (55.0 + 80.0 * s),
+                        0.62,
+                        hot,
+                        (1.0 - su / 0.5).max(0.0),
+                        2.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                    );
+                    burst(
+                        img,
+                        a,
+                        su,
+                        seed * 7 + 5,
+                        (10.0 + 30.0 * s) as usize,
+                        [170.0, 160.0, 255.0],
+                        120.0 + 120.0 * s,
+                        30.0,
+                        0.6,
+                        Some((ang, 1.4)),
+                    );
+                }
+                // the sonic boom dome
+                if s >= 0.55 && (0.0..1.0).contains(&u) {
+                    let life = 0.45 + 0.5 * s;
+                    if u < life {
+                        let r = (30.0 + 100.0 * s) * ease((u / (life * 0.65)).min(1.0));
+                        let k = (1.0 - ((u - life * 0.65) / (life * 0.35)).max(0.0)).max(0.0);
+                        darken_ellipse(img, c, r, r * 0.66, 0.35 * k);
+                        ring(
+                            img,
+                            c.0,
+                            c.1,
+                            r,
+                            0.66,
+                            mix(col, WHITE, 0.5),
+                            0.9 * k,
+                            2.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                        );
+                        ring(img, c.0, c.1, r, 0.66, col, 0.45 * k, 7.0, 0.0, 0.0, 0.0);
                     }
+                }
+                if (0.0..0.08).contains(&u) {
+                    star(img, c, 12.0 + 26.0 * s, col, 1.0 - u / 0.08, 0.0);
                 }
             }
             Style::Cello => {
-                // four humming strings from the cello to the victim, then a snap
-                if (-0.22..0.05).contains(&u) {
-                    let k = if u < 0.0 { 1.0 + u / 0.22 } else { 1.0 - u / 0.05 };
+                // string tension: four strings pull taut and quiver, then snap (one for a tap, all four hard)
+                if (-0.6..1.0).contains(&u) {
+                    let tens = if u < 0.0 { ease((u + 0.6) / 0.6) } else { 1.0 };
+                    let n_snap = 1 + ((s - 0.25) / 0.75 * 3.0).round().clamp(0.0, 3.0) as usize;
                     for j in 0..4 {
                         let off = (j as f64 - 1.5) * 3.0;
-                        let (nx, ny) = (-dmath::sin(ang) * off, dmath::cos(ang) * off);
-                        let n = 16;
-                        let mut prev = (a.0 + nx, a.1 + ny);
-                        for i in 1..=n {
-                            let f = i as f64 / n as f64;
-                            let wob = dmath::sin(f * 18.0 + u * 90.0 + j as f64) * 2.5 * (1.0 - f) * f * 4.0;
-                            let q = (
-                                a.0 + (c.0 - a.0) * f + nx - dmath::sin(ang) * wob,
-                                a.1 + (c.1 - a.1) * f + ny + dmath::cos(ang) * wob,
+                        let p0 = (a.0 + nx * off, a.1 + ny * off);
+                        let p1 = (c.0 + nx * off * 0.6, c.1 + ny * off * 0.6);
+                        let us = u - j as f64 * 0.05;
+                        let snapped = j < n_snap && us >= 0.0;
+                        if u < 0.0 || (!snapped && u < 0.25) {
+                            let k = if u < 0.0 { 0.5 + 0.5 * tens } else { 1.0 - u / 0.25 };
+                            let sag = 14.0 * (1.0 - tens) + if u >= 0.0 { 10.0 * u / 0.25 } else { 0.0 };
+                            let pts: Vec<(f64, f64)> = (0..=24)
+                                .map(|i| {
+                                    let f = f64::from(i) / 24.0;
+                                    let o = sag * dmath::sin(dmath::PI * f)
+                                        + 1.6
+                                            * tens
+                                            * dmath::sin(f * 40.0 + u * 160.0 + j as f64)
+                                            * dmath::sin(dmath::PI * f);
+                                    (p0.0 + (p1.0 - p0.0) * f, p0.1 + (p1.1 - p0.1) * f + o)
+                                })
+                                .collect();
+                            taper(
+                                img,
+                                &pts,
+                                mix(col, [255.0, 170.0, 80.0], 0.4 + 0.6 * tens),
+                                k,
+                                1.2 + 1.4 * tens,
                             );
-                            line(img, prev, q, hot, 0.8 * k, 0.8 * k, 1.0);
-                            prev = q;
+                        } else if snapped && us < 1.0 {
+                            let fe = ease(us / 0.3);
+                            let mid = ((p0.0 + p1.0) / 2.0, (p0.1 + p1.1) / 2.0);
+                            for (end, sg) in [(p0, -1.0), (p1, 1.0)] {
+                                let pts: Vec<(f64, f64)> = (0..=20)
+                                    .map(|i| {
+                                        let f = f64::from(i) / 20.0;
+                                        let mut x = end.0 + (mid.0 - end.0) * f * (1.0 - fe * 0.8);
+                                        let mut y = end.1 + (mid.1 - end.1) * f * (1.0 - fe * 0.8);
+                                        let curl = 22.0 * dmath::exp(-us * 2.4) * f.powf(2.5);
+                                        x += dmath::cos(f * 8.0 + us * 14.0 + j as f64) * curl * sg;
+                                        y += dmath::sin(f * 8.0 + us * 14.0 + j as f64) * curl;
+                                        (x, y)
+                                    })
+                                    .collect();
+                                taper(img, &pts, [255.0, 170.0, 80.0], (1.0 - us).max(0.0), 2.0);
+                            }
+                            if us < 0.06 {
+                                star(img, mid, 22.0, [255.0, 170.0, 80.0], 1.0 - us / 0.06, 0.0);
+                            }
+                            burst(
+                                img,
+                                mid,
+                                us,
+                                seed * 7 + 6 + j as u64,
+                                14,
+                                [255.0, 210.0, 140.0],
+                                200.0,
+                                90.0,
+                                0.6,
+                                None,
+                            );
                         }
                     }
                 }
-                if (0.0..0.3).contains(&u) {
-                    let v = u / 0.3;
-                    for j in 0..6 {
-                        let aa = ang + (j as f64 - 2.5) * 0.5;
-                        let r = 10.0 + 70.0 * v;
-                        line(
-                            img,
-                            c,
-                            (c.0 + dmath::cos(aa) * r, c.1 + dmath::sin(aa) * r * 0.8),
-                            [255.0, 220.0, 150.0],
-                            1.0 - v,
-                            0.0,
-                            1.5,
+                // the heavy bow arc: one thick, painterly brush stroke of amber light, leaving embers
+                let sweep = 0.13;
+                let uu = u + sweep * 0.7;
+                if (0.0..0.9).contains(&uu) {
+                    let pr = ease(uu / sweep);
+                    let k = (1.0 - (uu - sweep - 0.1) / 0.6).clamp(0.0, 1.0);
+                    let r = 40.0 + 34.0 * s;
+                    let w = 6.0 + 14.0 * s;
+                    let ctr = (c.0, c.1 + r * 0.55);
+                    let len = 1.6 + 0.9 * s;
+                    let a0 = -dmath::PI / 2.0 - len / 2.0;
+                    let mut m = Mix(seed * 13 + 23);
+                    for j in 0..9 {
+                        let off = (j as f64 / 8.0 - 0.5) * w;
+                        let al = 0.35 + 0.65 * m.next();
+                        let cc = mix([255.0, 170.0, 80.0], [255.0, 236.0, 190.0], m.next());
+                        let pts = arc_pts(
+                            ctr,
+                            r + off,
+                            a0 + m.next() * 0.08,
+                            a0 + len * pr - m.next() * 0.12,
+                            0.62,
+                            30,
                         );
+                        for (i, wv) in pts.windows(2).enumerate() {
+                            let f = i as f64 / (pts.len() - 1) as f64;
+                            let ww = (w / 9.0 + 1.2) * dmath::sin(dmath::PI * f).max(0.0).sqrt() * (0.5 + 0.5 * f);
+                            line(
+                                img,
+                                wv[0],
+                                wv[1],
+                                cc,
+                                k * al * (0.25 + 0.75 * f),
+                                k * al * (0.25 + 0.75 * f),
+                                ww,
+                            );
+                        }
                     }
+                    let mut m = Mix(seed * 13 + 29);
+                    for _ in 0..(14.0 + 26.0 * s) as usize {
+                        let f = m.next();
+                        let aa = a0 + len * f;
+                        let age = uu - sweep * f;
+                        if age < 0.0 {
+                            continue;
+                        }
+                        let x = ctr.0 + dmath::cos(aa) * (r + (m.next() - 0.5) * w) + (m.next() - 0.5) * age * 30.0;
+                        let y = ctr.1 + dmath::sin(aa) * r * 0.62 - age * 30.0 - age * age * 20.0;
+                        disc(img, x, y, 2.2, [255.0, 200.0, 120.0], (1.0 - age / 0.8).max(0.0));
+                    }
+                }
+                // the suplex slam (the lift is drawn by the ball itself)
+                if s >= 0.7 && (0.0..0.9).contains(&u) {
+                    let f = self.screen(cam, h.x + h.dir[0] * 0.3, h.z + h.dir[1] * 0.3, 0.0);
+                    ring(
+                        img,
+                        f.0,
+                        f.1,
+                        20.0 + u * 200.0,
+                        0.5,
+                        [220.0, 210.0, 190.0],
+                        (1.0 - u / 0.7).max(0.0),
+                        6.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                    );
+                    cracks(
+                        img,
+                        f.0,
+                        f.1,
+                        150.0,
+                        ease((u / 0.25).min(1.0)) * (1.0 - u / 0.9),
+                        [255.0, 170.0, 80.0],
+                        seed + 41,
+                    );
+                    burst(
+                        img,
+                        f,
+                        u,
+                        seed * 7 + 11,
+                        50,
+                        [230.0, 215.0, 190.0],
+                        240.0,
+                        40.0,
+                        0.9,
+                        None,
+                    );
+                    if u < 0.08 {
+                        star(img, f, 56.0, [255.0, 170.0, 80.0], 1.0 - u / 0.08, 0.0);
+                    }
+                }
+                if (0.0..0.07).contains(&u) {
+                    star(img, c, 12.0 + 28.0 * s, [255.0, 170.0, 80.0], 1.0 - u / 0.07, 0.2);
                 }
             }
             Style::BariSax => {
-                // a heavy arc of the wrecking ball into the victim, then a crater
-                if (-0.14..0.06).contains(&u) {
-                    let k = if u < 0.0 { 1.0 + u / 0.14 } else { 1.0 - u / 0.06 };
-                    let r = hyp(c.0 - a.0, c.1 - a.1).max(20.0);
-                    smear(img, a.0, a.1, r, ang - 1.6, ang, col, k, 12.0);
-                }
-                if (0.0..0.7).contains(&u) {
-                    let v = u / 0.7;
+                // the crater: on the canvas, it stays a while; its cracks glow and cool
+                if (0.0..2.5).contains(&u) {
+                    let fade = (1.0 - (u - 2.1) / 0.4).clamp(0.0, 1.0);
+                    let heat = (1.0 - u / 1.3).max(0.0);
+                    let f = self.screen(cam, h.x, h.z, 0.0);
+                    let rr = 0.12 + 0.35 * s;
+                    let rx = (self.screen(cam, h.x + rr, h.z, 0.0).0 - f.0).abs().max(4.0);
+                    let rz = (self.screen(cam, h.x, h.z + rr, 0.0).1 - f.1).abs().max(2.5);
+                    let grow = ease((u / 0.08).min(1.0));
+                    darken_ellipse(img, f, rx * grow * 1.6, rz.max(rx * 0.5) * grow * 1.6, 0.6 * fade);
+                    ring(
+                        img,
+                        f.0,
+                        f.1 - 1.0,
+                        rx * grow * 1.6,
+                        rz.max(rx * 0.5) / rx,
+                        [255.0, 230.0, 210.0],
+                        0.25 * fade,
+                        1.5,
+                        0.0,
+                        0.0,
+                        0.0,
+                    );
+                    let cc = mix([110.0, 100.0, 110.0], [255.0, 150.0, 60.0], heat);
                     cracks(
                         img,
-                        c.0,
-                        c.1 + 6.0,
-                        70.0 * s,
-                        (u / 0.1).min(1.0) * (1.0 - v),
-                        [255.0, 150.0, 80.0],
+                        f.0,
+                        f.1,
+                        (50.0 + 90.0 * s) * ease((u / 0.15).min(1.0)),
+                        fade,
+                        cc,
                         seed + 3,
                     );
+                    // rubble bouncing out
+                    let mut m = Mix(seed * 13 + 31);
+                    for _ in 0..(5.0 + 9.0 * s) as usize {
+                        let aa = m.next() * 2.0 * dmath::PI;
+                        let d = (rx * 1.2 + 10.0 + m.next() * (20.0 + 30.0 * s)) * (1.0 - dmath::exp(-u * 5.0));
+                        let h0 = (12.0 + 18.0 * s) * (0.5 + m.next());
+                        let tb = 0.32 + 0.2 * m.next();
+                        let hh = h0 * dmath::sin(dmath::PI * u / tb).abs() * dmath::exp(-u * 2.6);
+                        let (sx, sy) = (f.0 + dmath::cos(aa) * d, f.1 + dmath::sin(aa) * d * 0.55);
+                        let sz = 1.5 + 2.5 * m.next();
+                        darken_ellipse(img, (sx, sy + 2.0), sz * 1.2, sz * 0.6, 0.3 * fade);
+                        disc(
+                            img,
+                            sx,
+                            sy - hh,
+                            sz * 1.5,
+                            mix([96.0, 84.0, 110.0], [255.0, 150.0, 80.0], heat * 0.6),
+                            0.9 * fade,
+                        );
+                    }
+                }
+                // the pendulum smear: a heavy hot arc through the swing into the victim
+                if (-0.16..0.05).contains(&u) {
+                    let k = if u < 0.0 { 1.0 + u / 0.16 } else { 1.0 - u / 0.05 };
+                    let r = dist.max(20.0);
+                    smear(img, a.0, a.1, r, ang - 1.6, ang, col, k, 10.0 + 18.0 * s);
+                    smear(
+                        img,
+                        a.0,
+                        a.1,
+                        r,
+                        ang - 1.2,
+                        ang,
+                        [255.0, 190.0, 110.0],
+                        0.6 * k,
+                        4.0 + 8.0 * s,
+                    );
+                }
+                if (0.0..0.6).contains(&u) {
+                    let v = u / 0.6;
                     ring(
                         img,
                         c.0,
@@ -787,10 +1546,26 @@ impl Punch {
                         0.0,
                         0.0,
                     );
+                    burst(
+                        img,
+                        c,
+                        u,
+                        seed * 7 + 8,
+                        (14.0 + 40.0 * s) as usize,
+                        [255.0, 160.0, 90.0],
+                        160.0 + 160.0 * s,
+                        140.0,
+                        0.8,
+                        None,
+                    );
+                }
+                if (0.0..0.08).contains(&u) {
+                    star(img, c, 16.0 + 36.0 * s, col, 1.0 - u / 0.08, 0.0);
                 }
             }
             Style::Plain => {}
         }
+        let _ = ball;
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1221,5 +1996,350 @@ fn bend(img: &mut Img<f64>, u: f64, k: f64) {
                 img.data[(y * w + x) * 3 + c] = src[(y * w + sx) * 3 + c];
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------- the round-2 kit: picture-wide passes and strokes
+
+/// A pass over the whole picture after the marks.
+#[derive(Clone, Copy, Debug)]
+pub enum Post {
+    /// The Violin's slice: the side of the line through `c` at `ang` slides `d` px along it.
+    Slice((f64, f64), f64, f64),
+    /// A radial blur rushing to `c`, strength `k`.
+    Radial((f64, f64), f64),
+}
+
+/// A PEDAL TONE bell that leaves the picture while it is still standing: it bursts at `t`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Bell {
+    pub t: f64,
+    pub k: usize,
+    pub at: [f64; 2],
+    pub h: f64,
+    pub rad: f64,
+}
+
+/// The picture's colour at `(x, y)`, bilinear, clamped to the edges.
+fn sample(src: &[f64], w: usize, h: usize, x: f64, y: f64) -> [f64; 3] {
+    let x = x.clamp(0.0, w as f64 - 1.001);
+    let y = y.clamp(0.0, h as f64 - 1.001);
+    let (x0, y0) = (x.floor() as usize, y.floor() as usize);
+    let (fx, fy) = (x - x0 as f64, y - y0 as f64);
+    let at = |xx: usize, yy: usize, c: usize| src[(yy * w + xx) * 3 + c];
+    std::array::from_fn(|c| {
+        let a = at(x0, y0, c) * (1.0 - fx) + at(x0 + 1, y0, c) * fx;
+        let b = at(x0, y0 + 1, c) * (1.0 - fx) + at(x0 + 1, y0 + 1, c) * fx;
+        a * (1.0 - fy) + b * fy
+    })
+}
+
+/// Remaps the pixels in the box `(xa..xb, ya..yb)`: `f(x, y)` gives the source point, or `None` to keep it.
+fn remap(img: &mut Img<f64>, xa: f64, xb: f64, ya: f64, yb: f64, f: impl Fn(f64, f64) -> Option<(f64, f64)>) {
+    let (w, h) = (img.w, img.h);
+    let xa = xa.floor().max(0.0) as usize;
+    let xb = (xb.ceil().max(0.0) as usize).min(w - 1);
+    let ya = ya.floor().max(0.0) as usize;
+    let yb = (yb.ceil().max(0.0) as usize).min(h - 1);
+    if xa > xb || ya > yb {
+        return;
+    }
+    let src = img.data.clone();
+    for y in ya..=yb {
+        for x in xa..=xb {
+            if let Some((sx, sy)) = f(x as f64, y as f64) {
+                let c = sample(&src, w, h, sx, sy);
+                img.data[(y * w + x) * 3..(y * w + x) * 3 + 3].copy_from_slice(&c);
+            }
+        }
+    }
+}
+
+/// Motion blur: a ball drawn at `now` that was at `prev` 1.5 frames ago leaves a ghost trail behind it.
+fn motion_blur(img: &mut Img<f64>, now: (f64, f64), prev: (f64, f64), rp: f64) {
+    let v = (now.0 - prev.0, now.1 - prev.1);
+    let len = hyp(v.0, v.1);
+    if len < 4.0 || len > 200.0 {
+        return;
+    }
+    let (w, h) = (img.w, img.h);
+    let src = img.data.clone();
+    let n = 8;
+    let (xa, xb) = (now.0.min(prev.0) - rp - 1.0, now.0.max(prev.0) + rp + 1.0);
+    let (ya, yb) = (now.1.min(prev.1) - rp - 1.0, now.1.max(prev.1) + rp + 1.0);
+    let xa = xa.floor().max(0.0) as usize;
+    let xb = (xb.ceil().max(0.0) as usize).min(w - 1);
+    let ya = ya.floor().max(0.0) as usize;
+    let yb = (yb.ceil().max(0.0) as usize).min(h - 1);
+    for y in ya..=yb {
+        for x in xa..=xb {
+            let (px, py) = (x as f64, y as f64);
+            if hyp(px - now.0, py - now.1) < rp {
+                continue;
+            }
+            let mut acc = [0.0; 3];
+            let mut hits = 0.0;
+            for j in 1..=n {
+                let f = j as f64 / n as f64;
+                let (qx, qy) = (px + v.0 * f, py + v.1 * f);
+                if hyp(qx - now.0, qy - now.1) < rp - 0.5 {
+                    let c = sample(&src, w, h, qx, qy);
+                    for i in 0..3 {
+                        acc[i] += c[i] * (1.0 - f * 0.6);
+                    }
+                    hits += 1.0 - f * 0.6;
+                }
+            }
+            if hits <= 0.0 {
+                continue;
+            }
+            let cover = (hits / n as f64 * 1.4).min(0.85);
+            let o = (y * w + x) * 3;
+            for i in 0..3 {
+                img.data[o + i] = img.data[o + i] * (1.0 - cover) + acc[i] / hits * cover;
+            }
+        }
+    }
+}
+
+/// The Tuba's drumhead floor: a ripple from `c`, `u` s after the hit, up to `amp` px.
+fn ripple(img: &mut Img<f64>, c: (f64, f64), u: f64, amp: f64) {
+    let front = u * 260.0;
+    let env = dmath::exp(-u * 1.7);
+    if env * amp < 0.25 {
+        return;
+    }
+    let reach = front + 10.0;
+    remap(
+        img,
+        c.0 - reach,
+        c.0 + reach,
+        c.1 - reach / 1.6,
+        c.1 + reach / 1.6,
+        |x, y| {
+            let d = hyp(x - c.0, (y - c.1) * 1.6);
+            if d > reach {
+                return None;
+            }
+            let e = env * dmath::exp(-d / 150.0) * ((front - d) / 30.0 + 1.0).clamp(0.0, 1.0);
+            Some((x, y + amp * e * dmath::sin(d * 0.11 - u * 26.0)))
+        },
+    );
+}
+
+/// The Tuba's sonic boom: everything near the dome's edge (radius `r` around `c`) bends outward by up to `b` px.
+fn dome_bend(img: &mut Img<f64>, c: (f64, f64), r: f64, b: f64) {
+    if b < 0.3 || r < 2.0 {
+        return;
+    }
+    let reach = r + 40.0;
+    remap(
+        img,
+        c.0 - reach,
+        c.0 + reach,
+        c.1 - reach / 1.5,
+        c.1 + reach / 1.5,
+        |x, y| {
+            let (dx, dy) = (x - c.0, (y - c.1) * 1.5);
+            let d = hyp(dx, dy) + 1e-6;
+            let q = (d - r) / 14.0;
+            let e = dmath::exp(-(q * q));
+            if e < 0.01 {
+                return None;
+            }
+            Some((x - dx / d * b * e, y - dy / d * b * e / 1.5))
+        },
+    );
+}
+
+/// The Tuba's gulp: the ball at `c` (radius `rp`) stretched toward `dir` by `amt` (0 = round).
+fn stretch(img: &mut Img<f64>, c: (f64, f64), rp: f64, dir: (f64, f64), amt: f64) {
+    let n = hyp(dir.0, dir.1);
+    if amt < 0.03 || n < 1e-6 {
+        return;
+    }
+    let (ux, uy) = (dir.0 / n, dir.1 / n);
+    let st = 1.0 + amt;
+    let reach = rp * st * 1.6 + 2.0;
+    remap(img, c.0 - reach, c.0 + reach, c.1 - reach, c.1 + reach, |x, y| {
+        let (dx, dy) = (x - c.0, y - c.1);
+        let along = dx * ux + dy * uy;
+        let side = -dx * uy + dy * ux;
+        // the stretch leans toward the bell: the far side grows more
+        let s_al = if along > 0.0 { st * 1.6 } else { st };
+        let (sa, ss_) = (along / s_al, side * st.sqrt());
+        if hyp(sa, ss_) > rp + 1.0 {
+            return None;
+        }
+        Some((c.0 + sa * ux - ss_ * uy, c.1 + sa * uy + ss_ * ux))
+    });
+}
+
+/// The Violin's slice: the half of the picture on one side of the line through `c` at `ang` slides `d` px along
+/// the line, with a bright seam.
+fn slice(img: &mut Img<f64>, c: (f64, f64), ang: f64, d: f64) {
+    if d.abs() < 0.3 {
+        return;
+    }
+    let (lx, ly) = (dmath::cos(ang), dmath::sin(ang));
+    let (w, h) = (img.w as f64, img.h as f64);
+    remap(img, 0.0, w, 0.0, h, |x, y| {
+        let side = -(x - c.0) * ly + (y - c.1) * lx;
+        if side <= 0.0 {
+            None
+        } else {
+            Some((x - lx * d, y - ly * d))
+        }
+    });
+    let far = 900.0;
+    line(
+        img,
+        (c.0 - lx * far, c.1 - ly * far),
+        (c.0 + lx * far, c.1 + ly * far),
+        WHITE,
+        0.7 * (d / 7.0).min(1.0),
+        0.7 * (d / 7.0).min(1.0),
+        1.0,
+    );
+}
+
+/// A radial blur rushing to `c`: each pixel averages the picture along the line toward `c`.
+fn radial_blur(img: &mut Img<f64>, c: (f64, f64), k: f64) {
+    if k < 0.03 {
+        return;
+    }
+    let (w, h) = (img.w, img.h);
+    let src = img.data.clone();
+    let n = 8;
+    let reach = 0.09 * k;
+    for y in 0..h {
+        for x in 0..w {
+            let (dx, dy) = (x as f64 - c.0, y as f64 - c.1);
+            let mut acc = [0.0; 3];
+            for j in 0..n {
+                let f = 1.0 - reach * j as f64 / (n - 1) as f64;
+                let s = sample(&src, w, h, c.0 + dx * f, c.1 + dy * f);
+                for i in 0..3 {
+                    acc[i] += s[i];
+                }
+            }
+            let o = (y * w + x) * 3;
+            for i in 0..3 {
+                img.data[o + i] = acc[i] / n as f64;
+            }
+        }
+    }
+}
+
+/// Darkens a soft ellipse at `c` (radii `rx`, `ry`) by up to `k`.
+fn darken_ellipse(img: &mut Img<f64>, c: (f64, f64), rx: f64, ry: f64, k: f64) {
+    if k <= 0.01 || rx < 0.5 || ry < 0.5 {
+        return;
+    }
+    let (xa, xb) = (
+        (c.0 - rx).floor().max(0.0) as i64,
+        (c.0 + rx).ceil().min(img.w as f64 - 1.0) as i64,
+    );
+    let (ya, yb) = (
+        (c.1 - ry).floor().max(0.0) as i64,
+        (c.1 + ry).ceil().min(img.h as f64 - 1.0) as i64,
+    );
+    for y in ya..=yb {
+        for x in xa..=xb {
+            let d = hyp((x as f64 - c.0) / rx, (y as f64 - c.1) / ry);
+            if d < 1.0 {
+                let a = k * (1.0 - d * d);
+                for v in img.px_mut(x as usize, y as usize).iter_mut().take(3) {
+                    *v *= 1.0 - a;
+                }
+            }
+        }
+    }
+}
+
+/// Points on an ellipse arc around `c` (radius `r`, squashed by `sq`) from `a0` to `a1`.
+fn arc_pts(c: (f64, f64), r: f64, a0: f64, a1: f64, sq: f64, n: usize) -> Vec<(f64, f64)> {
+    (0..=n)
+        .map(|i| {
+            let a = a0 + (a1 - a0) * i as f64 / n as f64;
+            (c.0 + dmath::cos(a) * r, c.1 + dmath::sin(a) * r * sq)
+        })
+        .collect()
+}
+
+/// A glowing stroke through `pts` that tapers at both ends: a wide coloured glow, a bright core, a white centre.
+fn taper(img: &mut Img<f64>, pts: &[(f64, f64)], col: V3, k: f64, w: f64) {
+    if k <= 0.01 || pts.len() < 2 {
+        return;
+    }
+    let n = pts.len() - 1;
+    for (mul, c, al) in [(2.6, col, 0.35), (1.0, mix(col, WHITE, 0.55), 0.8), (0.4, WHITE, 0.9)] {
+        for i in 0..n {
+            let f = (i as f64 + 0.5) / n as f64;
+            let ww = (w * dmath::sin(dmath::PI * f) * mul).max(0.6);
+            line(img, pts[i], pts[i + 1], c, k * al, k * al, ww);
+        }
+    }
+}
+
+/// A four-point star flash at `c`: a soft core and two crossed spikes, `r` px, turned by `rot`.
+fn star(img: &mut Img<f64>, c: (f64, f64), r: f64, col: V3, k: f64, rot: f64) {
+    if k <= 0.01 {
+        return;
+    }
+    disc(img, c.0, c.1, r * 0.55, mix(col, WHITE, 0.6), 0.9 * k);
+    disc(img, c.0, c.1, r * 0.25, WHITE, k);
+    for j in 0..2 {
+        let a = rot + j as f64 * dmath::PI / 2.0;
+        let (ca, sa) = (dmath::cos(a) * r, dmath::sin(a) * r);
+        line(img, (c.0 - ca, c.1 - sa), c, mix(col, WHITE, 0.7), 0.0, k, 2.0);
+        line(img, c, (c.0 + ca, c.1 + sa), mix(col, WHITE, 0.7), k, 0.0, 2.0);
+    }
+}
+
+/// A closed-form spray of `n` streaks from `c`, `u` s after it started: speed `speed` px/s, gravity `grav`, life
+/// `life` s, inside a cone `(angle, spread)` or all round.
+#[allow(clippy::too_many_arguments)]
+fn burst(
+    img: &mut Img<f64>,
+    c: (f64, f64),
+    u: f64,
+    seed: u64,
+    n: usize,
+    col: V3,
+    speed: f64,
+    grav: f64,
+    life: f64,
+    cone: Option<(f64, f64)>,
+) {
+    if !(0.0..life).contains(&u) {
+        return;
+    }
+    let mut m = Mix(seed.wrapping_mul(2654435761) | 1);
+    for _ in 0..n {
+        let a = match cone {
+            Some((ang, sp)) => ang + (m.next() - 0.5) * sp,
+            None => m.next() * 2.0 * dmath::PI,
+        };
+        let sp = speed * (0.3 + 0.9 * m.next());
+        let lf = life * (0.5 + 0.5 * m.next());
+        let white = m.next() < 0.3;
+        if u > lf {
+            continue;
+        }
+        let (ca, sa) = (dmath::cos(a), dmath::sin(a));
+        let x = c.0 + ca * sp * u;
+        let y = c.1 + sa * sp * u * 0.7 + grav * u * u;
+        let k = 1.0 - u / lf;
+        let tail = (x - ca * sp * 0.035, y - (sa * sp * 0.7 * 0.035 + grav * u * 0.07));
+        line(
+            img,
+            tail,
+            (x, y),
+            if white { WHITE } else { col },
+            0.0,
+            k,
+            1.0 + 1.2 * k,
+        );
     }
 }

@@ -182,6 +182,11 @@ impl PictureCtx {
                         } else if fk > 0.3 && on_b {
                             y -= 1.0 + 1.5 * fk;
                         }
+                        // big hits make the whole crowd jump
+                        let ak = pu.arena_kick(t);
+                        if ak > 0.02 {
+                            y -= 3.5 * ak * (0.6 + 0.4 * q.ph);
+                        }
                     }
                     let rh = 0.15 * cam.f / dh[j];
                     // (opt-in crowd_laugh) heads bob "ha-ha-ha", bodies rock and lean back, each at its own phase

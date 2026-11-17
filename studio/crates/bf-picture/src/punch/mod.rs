@@ -110,7 +110,6 @@ impl Punch {
                 dir,
             });
         }
-        let clock = PunchClock::new(&hits.iter().map(|h| (h.t, h.s)).collect::<Vec<_>>(), g.t_fight, p.t_ko);
         // low HP and lead changes, sampled frame by frame through the fight
         let mut t_low = [None, None];
         let mut leads = Vec::new();
@@ -183,6 +182,12 @@ impl Punch {
             }
         }
         let anime = anime::Anime::new(p, &hits);
+        let clock = PunchClock::with_slows(
+            &hits.iter().map(|h| (h.t, h.s)).collect::<Vec<_>>(),
+            &anime.specials.iter().map(|s| s.t_hit).collect::<Vec<_>>(),
+            g.t_fight,
+            p.t_ko,
+        );
         for sp in &anime.specials {
             let pos = scene::to_world(sp.at[0], sp.at[1], R);
             let hot = p.col[sp.k].map(|c| c * 0.5 + 128.0);
@@ -262,7 +267,99 @@ impl Punch {
             o[0] += h.dir[0] * a;
             o[1] += h.dir[1] * a;
         }
+        // the attacker winds up (pulls back), snaps through and recoils
+        let lo = self.hits.partition_point(|h| h.t < t - 0.4);
+        let hi = self.hits.partition_point(|h| h.t <= t + 0.25);
+        for h in &self.hits[lo..hi] {
+            if h.att != k {
+                continue;
+            }
+            let u = t - h.t;
+            let a = if u < -0.06 {
+                -0.10 * h.s * ss(-0.25, -0.08, u)
+            } else if u < 0.0 {
+                -0.10 * h.s + 0.16 * h.s * ((u + 0.06) / 0.06)
+            } else {
+                0.06 * h.s * dmath::exp(-u / 0.05) - 0.05 * h.s * dmath::sin(dmath::PI * (u / 0.4).min(1.0))
+            };
+            o[0] += h.dir[0] * a;
+            o[1] += h.dir[1] * a;
+        }
         o
+    }
+
+    /// The extra height of fighter `k`'s ball at `t`: the CELLO's suplex lifts the enemy before a heavy hit and
+    /// slams it down on the hit.
+    pub fn lift(&self, k: usize, t: f64) -> f64 {
+        let lo = self.hits.partition_point(|h| h.t < t);
+        let hi = self.hits.partition_point(|h| h.t <= t + 0.6);
+        let mut l: f64 = 0.0;
+        for h in &self.hits[lo..hi] {
+            if h.vic != k || h.s < 0.7 || self.anime.style[h.att] != Some(anime::Style::Cello) {
+                continue;
+            }
+            let u = t - h.t;
+            let v = if u < -0.12 {
+                ease(((u + 0.6) / 0.48).clamp(0.0, 1.0))
+            } else {
+                let f = (-u / 0.12).clamp(0.0, 1.0);
+                f * f
+            };
+            l = l.max(1.1 * h.s * v);
+        }
+        l
+    }
+
+    /// The camera's roll at `t` (radians): a slight tilt through a special's wind-up, snapping back on impact.
+    pub fn tilt(&self, t: f64) -> f64 {
+        let mut a: f64 = 0.0;
+        for (i, sp) in self.anime.specials.iter().enumerate() {
+            let u = t - sp.t_hit;
+            let side = if i % 2 == 0 { 1.0 } else { -1.0 };
+            let k = if u < 0.0 {
+                ss(-1.0, -0.3, u)
+            } else {
+                (1.0 - u / 0.1).max(0.0) * dmath::cos(u * 40.0)
+            };
+            if k.abs() > a.abs() {
+                a = side * 0.045 * k;
+            }
+        }
+        a
+    }
+
+    /// How hard the arena reacts at `t` (0..1): heavy hits and specials' impacts, decaying.
+    pub fn arena_kick(&self, t: f64) -> f64 {
+        let mut a: f64 = 0.0;
+        for (h, u) in self.recent(t, 0.6) {
+            if h.s >= 0.55 {
+                a = a.max(h.s * dmath::exp(-u / 0.18));
+            }
+        }
+        for sp in &self.anime.specials {
+            let u = t - sp.t_hit;
+            if (0.0..0.9).contains(&u) {
+                a = a.max(dmath::exp(-u / 0.3));
+            }
+        }
+        a.min(1.0)
+    }
+
+    /// The ropes' extra wave at `t` (ring units, along the rope's outward normal): heavy hits shake them.
+    pub fn rope_wave(&self, t: f64) -> f64 {
+        let mut w = 0.0;
+        for (h, u) in self.recent(t, 0.9) {
+            if h.s >= 0.55 && u > 0.05 {
+                w += 0.09 * h.s * dmath::exp(-(u - 0.05) / 0.25) * dmath::sin(2.0 * dmath::PI * 6.0 * (u - 0.05));
+            }
+        }
+        for sp in &self.anime.specials {
+            let u = t - sp.t_hit - 0.05;
+            if (0.0..1.2).contains(&u) {
+                w += 0.16 * dmath::exp(-u / 0.35) * dmath::sin(2.0 * dmath::PI * 5.0 * u);
+            }
+        }
+        w
     }
 
     /// The K.O. zoom's strength at `t`, 0..1.
@@ -300,6 +397,12 @@ impl Punch {
         }
         let ko = self.ko_zoom(t);
         key.dist *= 1.0 - self.zoom_of(push, t);
+        if let Some((sp, own, w)) = self.special_aim(t) {
+            let pt = if own { sp.0 } else { sp.1 };
+            for c in 0..3 {
+                key.target[c] = key.target[c] * (1.0 - w) + pt[c] * w;
+            }
+        }
         let kp = scene::to_world(self.ko_pt[0], self.ko_pt[1], 0.4);
         let w_hit = aim_w.min(0.25) * (1.0 - ko);
         let w_ko = 0.75 * ko;
@@ -317,7 +420,43 @@ impl Punch {
         } else {
             0.0
         };
-        (push + 0.07 * final_k + 0.42 * self.ko_zoom(t)).min(0.5)
+        (push + 0.07 * final_k + 0.42 * self.ko_zoom(t) + self.special_zoom(t)).min(0.5)
+    }
+
+    /// A special's push-in at `t`: in on the attacker through the wind-up, a little back out on the impact.
+    fn special_zoom(&self, t: f64) -> f64 {
+        let mut z: f64 = 0.0;
+        for sp in &self.anime.specials {
+            if sp.t_hit >= CAM_END - 1.5 {
+                continue;
+            }
+            let u = t - sp.t_hit;
+            let v = if u < 0.0 {
+                0.16 * ss(-1.2, -0.25, u)
+            } else {
+                0.16 * (1.0 - ss(0.0, 0.12, u)) + 0.06 * (ss(0.0, 0.12, u) - ss(0.3, 1.0, u))
+            };
+            z = z.max(v);
+        }
+        z
+    }
+
+    /// Where a special aims the camera at `t`: the attacker (`true`) through the wind-up or the impact after it,
+    /// with the weight to give it. Returns the attacker's and the impact's world points.
+    fn special_aim(&self, t: f64) -> Option<(([f64; 3], [f64; 3]), bool, f64)> {
+        let sp = self
+            .anime
+            .specials
+            .iter()
+            .find(|sp| t >= sp.t_hit - 1.2 && t < sp.t_hit + 1.0 && sp.t_hit < CAM_END - 1.5)?;
+        let u = t - sp.t_hit;
+        let own = scene::to_world(sp.own[0], sp.own[1], 0.3);
+        let hit = scene::to_world(sp.at[0], sp.at[1], 0.3);
+        if u < 0.0 {
+            Some(((own, hit), true, 0.45 * ss(-1.2, -0.3, u)))
+        } else {
+            Some(((own, hit), false, 0.45 * (1.0 - ss(0.2, 1.0, u))))
+        }
     }
 
     /// The hits' push-in at `t`.
@@ -393,6 +532,12 @@ impl Punch {
                 for i in 0..3 {
                     c[i] = c[i] * (1.0 - band) + (nc[i] * 0.7 + 90.0) * band;
                 }
+            }
+        }
+        let ak = self.arena_kick(t);
+        if ak > 0.02 {
+            for v in &mut c {
+                *v = *v * (1.0 - 0.5 * ak) + 255.0 * 0.5 * ak;
             }
         }
         c.map(|v| v.clamp(0.0, 255.0))

@@ -141,6 +141,15 @@ impl PictureCtx {
                 }
             }
         }
+        // (Punchy) heavy hits shake the ropes
+        if let Some(pu) = &self.punch {
+            let w = pu.rope_wave(t) * (1.0 - (y - 0.4) * 0.3);
+            if w != 0.0 {
+                for (dv, &uv) in disp.iter_mut().zip(&u) {
+                    *dv += w * dmath::sin(dmath::PI * uv) * (1.0 + 0.3 * f64::from(s as u8 % 2));
+                }
+            }
+        }
         // the bass thud
         let thud = 0.012 * self.show.grid.beat_pulse(t, 0.1, 0.12);
         // P = a + (b - a) * u; yy = y - sag, then the looks' press (opt-in `rope_press`); P = P + outn * disp

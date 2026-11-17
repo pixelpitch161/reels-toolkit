@@ -343,6 +343,7 @@ impl PictureCtx {
         if let Some(pu) = &self.punch {
             let o = pu.kick(k, t);
             st.p = [st.p[0] + o[0], st.p[1] + o[1]];
+            st.lift += pu.lift(k, t);
         }
         st
     }

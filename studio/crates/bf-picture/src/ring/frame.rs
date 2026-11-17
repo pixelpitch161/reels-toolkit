@@ -488,6 +488,7 @@ impl Picture {
         if let Some(pu) = &p.punch {
             pu.ko_grade(&mut img64, &cam, t);
             pu.anime(p, &mut img64, &cam, t, &drawn);
+            pu.roll(&mut img64, t);
         }
         stage!(Stage::Scrim, StagePic::F64(img64), None);
         let mut img = Pic::F64(img64);
