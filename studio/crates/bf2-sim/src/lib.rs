@@ -5,3 +5,11 @@
 //! strike, recovery) with hitboxes on the rig's bones; hit results with freeze-on-hit, knockback, launches, juggles,
 //! slams and bounces; behaviour profiles that pick moves from the seeded generator; a recording of every step and
 //! the typed events v2 that the director, effects, sound, captions and HUD read. Milestone E1 builds it.
+
+#![forbid(unsafe_code)]
+
+pub mod rules;
+pub mod v3;
+
+pub use rules::{Rules2, SimError2};
+pub use v3::V3;

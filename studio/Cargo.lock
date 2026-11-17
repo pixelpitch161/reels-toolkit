@@ -664,6 +664,9 @@ version = "1.5.0"
 [[package]]
 name = "bf2-sim"
 version = "1.5.0"
+dependencies = [
+ "bf-core",
+]
 
 [[package]]
 name = "bit-set"
