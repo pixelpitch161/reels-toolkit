@@ -259,14 +259,23 @@ struct Job2<'a> {
     cancel: &'a AtomicBool,
 }
 
-/// Sends every result; fails with the first that did not pass and is not advisory.
+/// What an advisory check that did not pass adds to its summary when it is sent as passed.
+const NOT_REQUIRED: &str = " Engine 2 does not require this check yet.";
+
+/// Sends every result; fails with the first that did not pass and is not advisory. An advisory result that did not
+/// pass is sent as passed, its summary saying so, so the job's check list shows no failed line for a job that went
+/// on.
 fn report2(results: Vec<CheckResult>, on: &(dyn Fn(JobEvent) + Sync)) -> Result<(), ExportError> {
     let mut failed = None;
-    for r in results {
+    for mut r in results {
         if NOT_RUN.contains(&r.name) {
             continue;
         }
-        if !r.pass && failed.is_none() && !ADVISORY.contains(&r.name) {
+        if !r.pass && ADVISORY.contains(&r.name) {
+            r.pass = true;
+            r.summary.push_str(NOT_REQUIRED);
+        }
+        if !r.pass && failed.is_none() {
             failed = Some(r.clone());
         }
         on(JobEvent::Check(r));
@@ -730,6 +739,34 @@ mod tests {
         assert!(report2(results, &on).is_ok());
         let stops = vec![CheckResult::failed("safezone", "out".into())];
         assert!(report2(stops, &on).is_err(), "a failed safe zone still stops the job");
+    }
+
+    /// An advisory check that did not pass is sent as passed, with its own summary and a note that Engine 2 does
+    /// not require it yet: a job that went on past it must not show a failed line once it is saved.
+    #[test]
+    fn engine2_advisory_failures_are_sent_as_passed() {
+        let events = std::sync::Mutex::new(Vec::new());
+        let on = |e: JobEvent| events.lock().unwrap().push(e);
+        let results = vec![
+            CheckResult::failed("loop_picture", "A jump at the seam.".into()),
+            CheckResult::failed("mp4_loop_audio", "A click at the seam.".into()),
+            CheckResult::new("mp4_frames", true, "ok".into(), &[]),
+        ];
+        assert!(report2(results, &on).is_ok());
+        let sent: Vec<(&str, bool, String)> = events
+            .into_inner()
+            .unwrap()
+            .into_iter()
+            .filter_map(|e| match e {
+                JobEvent::Check(r) => Some((r.name, r.pass, r.summary)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(sent.len(), 3);
+        assert!(sent.iter().all(|(_, pass, _)| *pass), "{sent:?}");
+        assert!(sent[0].2.starts_with("A jump at the seam."), "{}", sent[0].2);
+        assert!(sent[0].2.contains("Engine 2"), "{}", sent[0].2);
+        assert_eq!(sent[2].2, "ok");
     }
 
     /// No flash check on Engine 2: none before the render (`pre_render2` has none) and the finished file's is not
