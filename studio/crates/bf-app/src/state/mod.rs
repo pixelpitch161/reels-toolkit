@@ -288,6 +288,11 @@ impl ViewModel {
         })
     }
 
+    /// Whether the render gets the Punchy picture look: the owner's pick, else Punchy.
+    pub fn punchy(&self) -> bool {
+        self.draft.look.as_deref().unwrap_or(PUNCHY) == PUNCHY
+    }
+
     /// Whether the take plays the Composed arrangement: the owner's pick, else the fight file's own (Classic when
     /// it names none).
     pub fn composed(&self) -> bool {
@@ -319,6 +324,8 @@ impl ViewModel {
 
 /// The arrangement played from the theme's classic bed and the fighters' written lines.
 pub const CLASSIC: &str = "classic";
+/// The Punchy picture look: the look a render gets unless the owner picks Classic.
+pub const PUNCHY: &str = "punchy";
 /// The arrangement that follows the fight, with lines written for each take.
 pub const COMPOSED: &str = "composed";
 
@@ -383,6 +390,8 @@ pub enum Action {
     SetBass(usize),
     /// The Music screen's "Arrangement": `classic` or `composed`.
     SetArrangement(String),
+    /// The picture look (`classic` or `punchy`) on the Render screen.
+    SetLook(String),
     /// "Re-roll music": a new music seed, nothing else.
     RerollMusic,
     /// "Keep this fighter's line": the fighter on `side` keeps its written line and solo under Composed.
@@ -630,6 +639,7 @@ impl AppState {
             Action::SetChordLoop(i) => self.set_chord_loop(i),
             Action::SetBass(side) => self.set_bass(side),
             Action::SetArrangement(name) => self.set_arrangement(&name),
+            Action::SetLook(name) => self.set_look(&name),
             Action::RerollMusic => self.reroll_music(),
             Action::SetPinned { side, keep } => self.set_pinned(side, keep),
             Action::SetCaptionTab(platform) => self.vm.caption_tab = platform,
@@ -791,6 +801,7 @@ fn empty_draft() -> Draft {
         },
         captions_edited: false,
         arrangement: None,
+        look: None,
         pinned: None,
         base: None,
     }

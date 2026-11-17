@@ -208,6 +208,12 @@ pub struct Key {
 /// key before it, the last after it, and in between each value eased from one key to the next. `ease_fn` `None`
 /// is `config::ease`. Panics on an empty list.
 pub fn interp_keys(keys: &[Key], t: f64, ease_fn: Option<fn(f64) -> f64>) -> Cam {
+    let k = interp_key(keys, t, ease_fn);
+    Cam::new(k.target, k.dist, k.yaw, k.pitch, k.fov, Some(k.sy), 0.0, NEAR)
+}
+
+/// The key [`interp_keys`] builds its camera from.
+pub fn interp_key(keys: &[Key], t: f64, ease_fn: Option<fn(f64) -> f64>) -> Key {
     let (first, last) = (keys[0], keys[keys.len() - 1]);
     // (A `t` that is not a number takes the last key here; Python raises.)
     let mut k = if t <= first.t { first } else { last };
@@ -234,7 +240,7 @@ pub fn interp_keys(keys: &[Key], t: f64, ease_fn: Option<fn(f64) -> f64>) -> Cam
             }
         }
     }
-    Cam::new(k.target, k.dist, k.yaw, k.pitch, k.fov, Some(k.sy), 0.0, NEAR)
+    k
 }
 
 #[cfg(test)]

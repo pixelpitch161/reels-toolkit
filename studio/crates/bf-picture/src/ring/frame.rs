@@ -210,6 +210,8 @@ impl Picture {
         }
         let mut report = FrameReport::default();
         let t = f as f64 / f64::from(FPS);
+        // the Punchy look's micro hit-stop: the picture's clock
+        let t = p.punch.as_ref().map_or(t, |pu| pu.clock.at(t));
         let cam = p.camera(t);
         let l = p.lights(t, &cam);
         let fs = [p.fighter(0, t), p.fighter(1, t)];
@@ -308,12 +310,18 @@ impl Picture {
         late_items.sort_by(by_depth);
         paint(&mut fr, &late_items, &mut drawn);
         let (mut arr, mut depth) = (fr.array(), fr.depth());
+        if let Some(pu) = &p.punch {
+            pu.cracks(&mut arr, &drawn, t, p.fx_seed);
+        }
         stage!(Stage::Painter, StagePic::F32(arr), Some(depth));
         // ---------------- the fighters' effects over the ring, shards, sparks
         for look in &p.looks {
             look.over_ring(p, &fc, &mut fr, &mut arr, &mut depth);
         }
         p.draw_shards(&mut arr, &cam, t);
+        if let Some(pu) = &p.punch {
+            pu.shockwaves(&mut arr, &cam, t);
+        }
         stage!(Stage::OverRing, StagePic::F32(arr), None);
         p.sparks(&mut arr, &cam, t);
         stage!(Stage::Sparks, StagePic::F32(arr), None);
@@ -329,6 +337,11 @@ impl Picture {
         if let Some(new) = p.fx.pa.draw(&arr, &cam, tc, Some(&light)) {
             arr = new;
         }
+        if let Some(pu) = &p.punch
+            && let Some(new) = pu.debris.draw(&arr, &cam, tc, Some(&light))
+        {
+            arr = new;
+        }
         // the countdown's spot in the ring
         let cs = cam.wp(&[[0.0, 0.3, 0.0]])[0];
         stage!(Stage::Particles, StagePic::F32(arr), Some(depth));
@@ -336,7 +349,9 @@ impl Picture {
         // ---------------- lens (focus locked on the ring), glows, the spot beam, bloom, grade
         let (img32, depth) = (fr.array(), fr.depth());
         let zf = cam.depth(&[SUBJECT])[0];
-        let coc = lens::coc_map(&depth, zf, 26.0, 0.17);
+        // (Punchy) the crisp band widens as the camera pushes in, so the ring stays sharp
+        let sharp = p.punch.as_ref().map_or(0.17, |pu| pu.sharp(t, 0.17));
+        let coc = lens::coc_map(&depth, zf, 26.0, sharp);
         stage!(Stage::Coc, StagePic::F64(coc), None);
         let mut img = match lens::dof(&img32, &coc) {
             Some(blurred) => Pic::F64(blurred),
@@ -363,6 +378,9 @@ impl Picture {
         }
         for look in &p.looks {
             look.glows(p, &fc, &mut fr, &drawn);
+        }
+        if let Some(pu) = &p.punch {
+            pu.glows(&mut fr, &cam, t, g.bar, [p.scene.red_light, p.scene.blue_light]);
         }
         for ei in p.events_between(t - 0.15, t, &["hit"]) {
             let e = &p.rec.events[ei];
@@ -467,6 +485,9 @@ impl Picture {
         for (i, c) in img64.data.iter_mut().enumerate() {
             *c = crate::np::clip(*c * vig.data[i / 3] * scrim.data[i / 3], 0.0, 255.0);
         }
+        if let Some(pu) = &p.punch {
+            pu.ko_grade(&mut img64, &cam, t);
+        }
         stage!(Stage::Scrim, StagePic::F64(img64), None);
         let mut img = Pic::F64(img64);
         // crisp status overlays (after the grade)
@@ -487,7 +508,10 @@ impl Picture {
         stage!(Stage::Countdown, StagePic::U8(out), None);
         // the title card covers the HUD: skip it
         let card_closed = self.card.door_offset(t) == 0.0;
-        p.draw_ui(&mut out, &mut log, t, &fs, &drawn, card_closed);
+        let bars = p.draw_ui(&mut out, &mut log, t, &fs, &drawn, card_closed);
+        if let (Some(pu), Some(bars)) = (&p.punch, bars) {
+            pu.heartbeat(&mut out, &bars, [p.hp_at(0, t), p.hp_at(1, t)], t);
+        }
         stage!(Stage::Hud, StagePic::U8(out), None);
         // the VS title card, over everything
         self.card.draw_logged(&mut out, &mut log, t);
@@ -502,8 +526,11 @@ impl Picture {
         let p = &self.p;
         let f = f.min(self.nf().saturating_sub(1));
         let t = f as f64 / f64::from(FPS);
+        // the Punchy look's micro hit-stop: the picture's clock
+        let t = p.punch.as_ref().map_or(t, |pu| pu.clock.at(t));
         let cam = p.camera(t);
         let zf = cam.depth(&[SUBJECT])[0];
+        let sharp = p.punch.as_ref().map_or(0.17, |pu| pu.sharp(t, 0.17));
         let mut pts: Vec<(V3, String)> = Vec::new();
         // corners = [S.to_world(sx, sz, y) for sx in (-AP, AP) for sz in (-AP, AP) for y in (0.0, POST_H)]
         for sx in [-scene::AP, scene::AP] {
@@ -534,7 +561,7 @@ impl Picture {
             .map(|(w, name)| {
                 // coc_map on float64 depths: np.clip(K * np.maximum(0.0, np.abs(1 - zf / np.maximum(d, 1e-3)) - sharp), 0, top)
                 let d = crate::np::maximum(cam.depth(&[w])[0], 1e-3);
-                let off = crate::np::maximum(0.0, (1.0 - zf / d).abs() - 0.17);
+                let off = crate::np::maximum(0.0, (1.0 - zf / d).abs() - sharp);
                 (crate::np::clip(26.0 * off, 0.0, top), name)
             })
             .collect()

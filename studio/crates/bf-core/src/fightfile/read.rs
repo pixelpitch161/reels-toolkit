@@ -103,7 +103,8 @@ const MUSIC_KEYS: [(&str, u32); 15] = [
 ];
 
 /// The `[picture]` keys, in the canonical order, each with the format it came in.
-const PICTURE_KEYS: [(&str, u32); 5] = [
+const PICTURE_KEYS: [(&str, u32); 6] = [
+    ("look", 2),
     ("shard_seed", 1),
     ("fx_seed", 1),
     ("title_balls", 2),
@@ -334,6 +335,7 @@ impl PictureSeeds {
             title_lines,
             title_balls,
             middle,
+            look: opt_str(t, p, "look")?.unwrap_or_else(|| PICTURE_LOOKS[0].to_string()),
         })
     }
 }

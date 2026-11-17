@@ -59,6 +59,10 @@ pub const ARENAS: [&str; 1] = ["ring"];
 /// file gives none) and `composed` (milestone 5: the theme's layered bed with composed lines and solos).
 pub const ARRANGEMENTS: [&str; 2] = ["classic", "composed"];
 
+/// The picture looks (`picture.look`): `classic`, the kit's own picture (what a file naming no look gets), and
+/// `punchy`, the Studio's extra layer of hit impact, camera, low-HP drama, arena and K.O. effects.
+pub const PICTURE_LOOKS: [&str; 2] = ["classic", "punchy"];
+
 /// How many fighters a fight has.
 pub const FIGHTERS: usize = 2;
 
@@ -281,6 +285,8 @@ pub struct PictureSeeds {
     pub title_balls: Option<[[f64; 3]; 2]>,
     /// The kit's `MIDDLE` (format 2): another word instead of VS, and how it is turned. `None` is VS.
     pub middle: Option<(String, Middle)>,
+    /// The picture look, one of [`PICTURE_LOOKS`] (format 2; a file naming none is `classic`).
+    pub look: String,
 }
 
 /// How the title card's middle word is turned (the second value of the kit's `MIDDLE`).
@@ -647,7 +653,22 @@ pub fn is_extra_line(line: &str, fighter: &str) -> bool {
 }
 
 impl PictureSeeds {
+    /// Whether the picture is the Punchy look.
+    pub fn punchy(&self) -> bool {
+        self.look == PICTURE_LOOKS[1]
+    }
+
     fn check(&self, fighters: &[String]) -> Result<(), FightFileError> {
+        if !PICTURE_LOOKS.contains(&self.look.as_str()) {
+            return Err(err(
+                "picture.look",
+                format!(
+                    "{:?} is not a picture look (this app has: {})",
+                    self.look,
+                    PICTURE_LOOKS.join(", ")
+                ),
+            ));
+        }
         for (name, (a, b)) in &self.title_lines {
             let field = path("picture.title_lines", name);
             if !fighters.iter().any(|f| f == name) {

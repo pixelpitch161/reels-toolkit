@@ -35,6 +35,7 @@ pub mod ndimage;
 pub mod np;
 pub mod pil;
 pub mod post;
+pub mod punch;
 pub mod raster;
 pub mod ring;
 pub mod scene;

@@ -87,7 +87,11 @@ impl PictureCtx {
         let base = if u < 2.0 { side } else { side.map(|c| c * 0.42 + 40.0) };
         let k = 0.55 + 0.45 * g.beat_pulse(t, 0.18, 0.12);
         let gold = [255.0, 200.0, 90.0];
-        std::array::from_fn(|c| (base[c] * (1.0 - wk) + gold[c] * wk) * k)
+        let c: V3 = std::array::from_fn(|c| (base[c] * (1.0 - wk) + gold[c] * wk) * k);
+        match &self.punch {
+            None => c,
+            Some(pu) => pu.led(c, am, t, [self.hp_at(0, t), self.hp_at(1, t)], g.bar, g.beat),
+        }
     }
 
     /// `arena(fr, cam, L, t)`: tiers, people and LED boards in one painter pass (far to near).
@@ -169,6 +173,15 @@ impl PictureCtx {
                     let hop = (even && on_b) || (wk > 0.3 && q.ph < wk && on_b);
                     if hop {
                         y -= 1.0;
+                    }
+                    // (Punchy) the crowd jumps higher, all of it, through the final exchange
+                    if let Some(pu) = &self.punch {
+                        let fk = pu.final_k(t);
+                        if hop {
+                            y -= 1.5 * fk;
+                        } else if fk > 0.3 && on_b {
+                            y -= 1.0 + 1.5 * fk;
+                        }
                     }
                     let rh = 0.15 * cam.f / dh[j];
                     // (opt-in crowd_laugh) heads bob "ha-ha-ha", bodies rock and lean back, each at its own phase

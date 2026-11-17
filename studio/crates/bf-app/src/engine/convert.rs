@@ -132,6 +132,8 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
     if let Some(arrangement) = &draft.arrangement {
         ff.music.arrangement.clone_from(arrangement);
     }
+    // the picture look: the owner's pick, else Punchy (every new render's look)
+    ff.picture.look = draft.look.clone().unwrap_or_else(|| crate::state::PUNCHY.to_string());
     if let Some(pinned) = &draft.pinned {
         ff.music.pinned = pinned.iter().filter(|p| draft.fighters.contains(p)).cloned().collect();
     } else {
@@ -205,6 +207,7 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
         captions: caption_texts(&ff.captions),
         captions_edited: true,
         arrangement: None,
+        look: None,
         pinned: None,
         base: Some(toml.to_string()),
         fighters,

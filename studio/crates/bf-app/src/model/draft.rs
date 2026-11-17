@@ -32,6 +32,10 @@ pub struct Draft {
     /// own.
     #[serde(default)]
     pub arrangement: Option<String>,
+    /// The picture look the owner picked on the Render screen (`classic` or `punchy`); `None` is Punchy, the look
+    /// new renders get.
+    #[serde(default)]
+    pub look: Option<String>,
     /// The fighters (roster names) whose lines and solos are kept as written under Composed, when the owner has
     /// said; `None` keeps the fight file's own list.
     #[serde(default)]
@@ -72,6 +76,7 @@ mod tests {
             },
             captions_edited: false,
             arrangement: None,
+            look: None,
             pinned: None,
             base: None,
         }

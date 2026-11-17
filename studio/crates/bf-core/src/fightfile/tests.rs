@@ -1130,3 +1130,25 @@ fn a_format_1_file_cannot_hold_a_chord_in_a_solo() {
          file with it says format = 2)"
     );
 }
+
+#[test]
+fn look_defaults_to_classic() {
+    let ff = episode();
+    assert_eq!(ff.picture.look, "classic");
+    assert!(!ff.picture.punchy());
+    assert!(!ff.to_toml().contains("look ="), "a classic file writes no look");
+}
+
+#[test]
+fn look_round_trips() {
+    let ff = FightFile::parse(&with("[picture]\n", "[picture]\nlook = \"punchy\"\n")).expect("parses");
+    assert!(ff.picture.punchy());
+    let again = FightFile::parse(&ff.to_toml()).expect("round trips");
+    assert_eq!(again, ff);
+}
+
+#[test]
+fn unknown_look_is_refused() {
+    let e = parse_err(&with("[picture]\n", "[picture]\nlook = \"wild\"\n"));
+    assert!(e.contains("picture.look"), "{e}");
+}

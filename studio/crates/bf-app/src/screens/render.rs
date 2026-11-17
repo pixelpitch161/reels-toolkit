@@ -27,7 +27,7 @@ use crate::model::library::FolderState;
 use crate::model::queue::{FailHint, Job, JobState, STEP_ORDER, StepKey, StepLine, StepState};
 use crate::model::{JobId, Platform, Step, View};
 use crate::state::queue_run::why_not_add;
-use crate::state::{Action, PICK_THEME, QueueAction, ViewModel};
+use crate::state::{Action, CLASSIC, PICK_THEME, PUNCHY, QueueAction, ViewModel};
 use crate::theme::{
     CONTROL_H, FAINT, GROUND, HAIRLINE, LINE, LINE_SOFT, MUTED, ON_LIGHT, RADIUS, RADIUS_ROW, RAISED, TEXT,
     TEXT_STRONG, body, rgb, section, small, value as mono,
@@ -92,6 +92,11 @@ pub const NO_CHECKS: &str = "Nothing is rendering. A video's checks show here wh
 pub const NOTHING_QUEUED: &str = "Nothing is queued. Add this fight to render it.";
 /// The header's hint with two or more waiting.
 pub const DRAG_HINT: &str = "Drag a waiting video to change the order";
+
+/// The Look row's hint under Punchy.
+pub const PUNCHY_LINE: &str = "Heavier hits, a livelier camera and a bigger K.O.";
+/// The Look row's hint under Classic.
+pub const CLASSIC_LOOK_LINE: &str = "The series' original picture.";
 
 /// A check line's name (interface reference, 5.5).
 pub fn step_title(key: StepKey) -> &'static str {
@@ -223,6 +228,28 @@ fn this_fight(ui: &mut Ui, vm: &ViewModel, column: Rect, out: &mut Vec<Action>) 
     };
     plain(&mut c, RichText::new(take).font(small()).color(MUTED));
     y += heading_h + HEADING_GAP;
+
+    // The picture look.
+    let mut c = child(ui, row(y, CONTROL_H), "look", centred);
+    c.spacing_mut().item_spacing.x = 0.0;
+    label_cell(&mut c, "Look");
+    c.add_space(LABEL_GAP);
+    let punchy = vm.punchy();
+    let looks = [("Classic", None), ("Punchy", None)];
+    let width = SEGMENTS_W.min(c.available_width());
+    if let Some(i) = buttons::segmented(&mut c, "Look", &looks, Some(usize::from(punchy)), width)
+        && (i == 1) != punchy
+    {
+        out.push(Action::SetLook(if i == 1 { PUNCHY } else { CLASSIC }.to_string()));
+    }
+    c.add_space(LABEL_GAP);
+    plain(
+        &mut c,
+        RichText::new(if punchy { PUNCHY_LINE } else { CLASSIC_LOOK_LINE })
+            .font(small())
+            .color(MUTED),
+    );
+    y += CONTROL_H + ROW_GAP;
 
     // The caption tabs.
     let mut c = child(ui, row(y, CONTROL_H), "caption tabs", centred);

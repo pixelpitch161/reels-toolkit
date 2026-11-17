@@ -97,6 +97,9 @@ impl FightFile {
         }
         let p = &self.picture;
         o.push_str("\n[picture]\n");
+        if p.look != PICTURE_LOOKS[0] {
+            let _ = writeln!(o, "look = {}", w_str(&p.look));
+        }
         let _ = writeln!(o, "shard_seed = {}", p.shard_seed);
         if let Some(fx) = p.fx_seed {
             let _ = writeln!(o, "fx_seed = {fx}");

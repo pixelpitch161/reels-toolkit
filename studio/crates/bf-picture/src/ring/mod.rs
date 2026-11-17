@@ -178,6 +178,8 @@ pub struct PictureCtx {
     /// `FL`, `BU`, `PA`, `MK`, `MO`. Empty while the effects are being built: the build hooks get the effects as
     /// their own argument.
     pub fx: Fx,
+    /// The Punchy look's layer (`None`: the kit's own picture, bit for bit).
+    pub punch: Option<crate::punch::Punch>,
     /// `LOOKS`. Empty during [`Look::setup`].
     pub looks: Vec<Box<dyn Look>>,
     /// The fighters' models.
@@ -523,6 +525,7 @@ impl Picture {
             abil: hud::abilities(&cfg, &rec.events, t_ko, g.beat, g.bar)?,
             flash_t: Vec::new(),
             fx: Fx::new(fx_seed),
+            punch: None,
             looks: Vec::new(),
             meshes,
             sprites: SpriteCache::new(),
@@ -557,6 +560,9 @@ impl Picture {
         let mut fx = std::mem::replace(&mut p.fx, Fx::new(fx_seed));
         effects::fx_build(&p, &mut fx);
         p.fx = fx;
+        if ff.picture.punchy() {
+            p.punch = Some(crate::punch::Punch::new(&p));
+        }
         // the looks' rope events (opt-in `rope_events`), sorted with the recording's as Python sorts the tuples
         let more: Vec<ropes::RopeEv> = p.looks.iter().flat_map(|l| l.rope_events(&p)).collect();
         if !more.is_empty() {

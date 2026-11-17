@@ -417,6 +417,13 @@ impl AppState {
         }
     }
 
+    /// The picture look, `classic` or `punchy`.
+    pub(super) fn set_look(&mut self, name: &str) {
+        if bf_core::fightfile::PICTURE_LOOKS.contains(&name) {
+            self.vm.draft.look = Some(name.to_string());
+        }
+    }
+
     /// A new music seed; everything else stays.
     pub(super) fn reroll_music(&mut self) {
         self.vm.draft.music_seed = super::next_music_seed(self.vm.draft.music_seed);

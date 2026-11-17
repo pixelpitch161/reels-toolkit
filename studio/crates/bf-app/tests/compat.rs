@@ -606,6 +606,7 @@ fn make_this_versions_files() {
         },
         captions_edited: false,
         arrangement: None,
+        look: None,
         pinned: None,
         base: None,
     };

@@ -331,7 +331,7 @@ impl PictureCtx {
         fs: &[BallState; 2],
         drawn: &[DrawnBall],
         card_closed: bool,
-    ) {
+    ) -> Option<[crate::ui::hud::PxBox; 2]> {
         let g = &self.show.grid;
         if !card_closed {
             for d in drawn {
@@ -396,9 +396,10 @@ impl PictureCtx {
                 t,
             }
         });
+        let mut bars = None;
         if !card_closed {
             let rows = [self.ability_rows(0, t), self.ability_rows(1, t)];
-            ui::fight_hud(
+            let drawn_hud = ui::fight_hud(
                 img,
                 log,
                 &hud[0],
@@ -406,6 +407,7 @@ impl PictureCtx {
                 Some([&rows[0], &rows[1]]),
                 &HudOptions::default(),
             );
+            bars = Some(drawn_hud.bars);
         }
         // tuple(int(v) for v in COL[k])
         let ink = |c: [f64; 3]| -> [u8; 3] { [c[0] as u8, c[1] as u8, c[2] as u8] };
@@ -437,5 +439,6 @@ impl PictureCtx {
         };
         ui::draw_captions(img, log, t, &self.show.cap_wins, &wins);
         ui::draw_captions(img, log, t, &self.show.cap_comment, &hi_gold);
+        bars
     }
 }

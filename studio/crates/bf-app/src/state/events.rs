@@ -159,6 +159,7 @@ impl AppState {
             captions: self.vm.draft.captions.clone(),
             captions_edited: false,
             arrangement: None,
+            look: None,
             pinned: None,
             base: None,
         };

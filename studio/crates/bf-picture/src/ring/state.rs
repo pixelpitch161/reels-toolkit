@@ -11,7 +11,7 @@ use bf_core::py::{self, py_max, py_min};
 use bf_core::recording::{Array, Recording};
 
 use super::PictureCtx;
-use crate::camera::{Cam, Key, V3, interp_keys};
+use crate::camera::{Cam, Key, NEAR, V3, interp_key, interp_keys};
 use crate::config::{ease, ss};
 use crate::lighting::Lights;
 use crate::look::Phase;
@@ -339,6 +339,16 @@ impl PictureCtx {
 
     /// `fighter(k, t)`: the picture state of fighter `k` at time `t`; each look adds its own fields.
     pub fn fighter(&self, k: usize, t: f64) -> BallState {
+        let mut st = self.fighter_kit(k, t);
+        if let Some(pu) = &self.punch {
+            let o = pu.kick(k, t);
+            st.p = [st.p[0] + o[0], st.p[1] + o[1]];
+        }
+        st
+    }
+
+    /// The kit's `fighter(k, t)`, before the Punchy kick.
+    fn fighter_kit(&self, k: usize, t: f64) -> BallState {
         let g = &self.show.grid;
         let mut st = BallState {
             p: [0.0, 0.0],
@@ -485,7 +495,17 @@ impl PictureCtx {
 
     /// `camera(t)`: the camera between its keys, with the shake's offset.
     pub fn camera(&self, t: f64) -> Cam {
-        let mut cam = interp_keys(&self.keys, t, None);
+        let mut cam = match &self.punch {
+            None => interp_keys(&self.keys, t, None),
+            Some(pu) => {
+                let k = pu.camera_key(interp_key(&self.keys, t, None), t);
+                let mut cam = Cam::new(k.target, k.dist, k.yaw, k.pitch, k.fov, Some(k.sy), 0.0, NEAR);
+                let (dx, dy) = pu.shake(t);
+                cam.cx += dx;
+                cam.cy += dy;
+                cam
+            }
+        };
         let (dx, dy) = self.shk.offset(t);
         cam.cx += dx;
         cam.cy += dy;
