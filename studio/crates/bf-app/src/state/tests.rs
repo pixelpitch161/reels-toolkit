@@ -1457,3 +1457,163 @@ fn only_a_piano_pairs_music_restarts_its_search() {
         );
     }
 }
+
+// ---------------------------------------------------------------- engines (E6 Task 7)
+
+/// The real roster with the developer switch on, and FLUTE given an Engine 2 version (a test `MOVED`).
+fn dev_roster_with_flute_moved() -> crate::model::roster::Roster {
+    let mut r = crate::engine::content::roster_for(true);
+    for f in &mut r.fighters {
+        if f.name == "FLUTE" {
+            f.engines = vec![bf_core::Engine::One, bf_core::Engine::Two];
+        }
+    }
+    r
+}
+
+/// A new app on `roster`, with the developer switch `dev`.
+fn ready_on(roster: crate::model::roster::Roster, dev: bool) -> AppState {
+    let (mut s, _) = AppState::new(settings(), queue(), Vec::new(), 8);
+    s.vm.dev = dev;
+    s.apply(Event::Roster(roster));
+    s
+}
+
+/// Whether both of the draft's fighters are offered on the draft's engine.
+fn on_its_engine(s: &AppState) -> bool {
+    let d = &s.vm.draft;
+    let offered = s.vm.roster.as_ref().expect("a roster").offered(d.engine);
+    d.fighters.iter().all(|n| offered.iter().any(|f| &f.name == n))
+}
+
+#[test]
+fn no_action_sequence_makes_a_mixed_pair() {
+    use bf_core::Engine;
+    let roster = dev_roster_with_flute_moved();
+    let names: Vec<String> = roster.fighters.iter().map(|f| f.name.clone()).collect();
+    let mut rng: u64 = 0x9e37_79b9_7f4a_7c15;
+    let mut next = |n: usize| {
+        rng ^= rng << 13;
+        rng ^= rng >> 7;
+        rng ^= rng << 17;
+        (rng % n as u64) as usize
+    };
+    let folder = PathBuf::from("Videos").join("BALLFIGHT").join("opened");
+    for run in 0..2_000 {
+        let mut s = ready_on(roster.clone(), true);
+        s.vm.library.entries = vec![crate::model::library::LibraryEntry {
+            folder: folder.clone(),
+            title: "Opened".to_string(),
+            colors: [[0; 3]; 2],
+            seed: Some(1),
+            modified: 0,
+            fight_path: Some(folder.join("opened.toml")),
+            problem: None,
+            engine: Engine::One,
+        }];
+        assert!(on_its_engine(&s), "run {run}: the start");
+        for step in 0..12 {
+            let action = match next(6) {
+                0 | 1 => pick(next(2), &names[next(names.len())]),
+                2 => Action::SwapSides,
+                3 => Action::SetEngine(if next(2) == 0 { Engine::One } else { Engine::Two }),
+                4 => {
+                    // a fight file opened: any engine, any two fighters (a mixed one is not opened)
+                    s.dispatch(Action::Reopen(folder.clone()));
+                    let mut draft = s.vm.draft.clone();
+                    draft.engine = if next(2) == 0 { Engine::One } else { Engine::Two };
+                    draft.fighters = [names[next(names.len())].clone(), names[next(names.len())].clone()];
+                    s.apply(Event::FightOpened {
+                        draft,
+                        title: "Opened".to_string(),
+                    });
+                    assert!(on_its_engine(&s), "run {run}, step {step}: an opened fight");
+                    continue;
+                }
+                _ => Action::SelectFight(next(4) as u64),
+            };
+            s.dispatch(action.clone());
+            assert!(
+                on_its_engine(&s),
+                "run {run}, step {step}: {action:?} gave {:?}",
+                s.vm.draft.fighters
+            );
+        }
+    }
+}
+
+#[test]
+fn switch_to_engine2_keeps_a_pair_with_a_notice() {
+    use bf_core::Engine;
+    let mut s = ready_on(dev_roster_with_flute_moved(), true);
+    assert_eq!(s.vm.draft.fighters, ["FLUTE".to_string(), "TROMBONE".to_string()]);
+    s.vm.draft.seed = Some(7);
+    s.dispatch(Action::SetEngine(Engine::Two));
+    assert_eq!(s.vm.draft.engine, Engine::Two);
+    assert_eq!(s.vm.draft.fighters, ["FLUTE".to_string(), "TEST DUMMY".to_string()]);
+    assert_eq!(s.vm.draft.seed, None);
+    assert_eq!(s.vm.draft.base, None);
+    let notices: Vec<&str> = s.vm.notices.iter().map(|n| n.text.as_str()).collect();
+    assert!(
+        notices.contains(&"Trombone has no Engine 2 version yet, so Test dummy takes its place."),
+        "{notices:?}"
+    );
+    // the dummy's twin makes the mirror: TEST DUMMY 2 for the left side
+    s.dispatch(pick(0, "TEST DUMMY 2"));
+    assert_eq!(
+        s.vm.draft.fighters,
+        ["TEST DUMMY 2".to_string(), "TEST DUMMY".to_string()]
+    );
+    // a fighter not on Engine 2 cannot be picked there
+    s.dispatch(pick(0, "TROMBONE"));
+    assert_eq!(s.vm.draft.fighters[0], "TEST DUMMY 2");
+    // back on the current engine the dummies have no version: the match-up starts over from the start
+    s.dispatch(Action::SetEngine(Engine::One));
+    assert_eq!(s.vm.draft.engine, Engine::One);
+    assert_eq!(s.vm.draft.fighters, s.vm.roster.as_ref().unwrap().start);
+    // without a moved fighter, the developer's Engine 2 starts from the dummy mirror
+    let mut s = ready_on(crate::engine::content::roster_for(true), true);
+    s.dispatch(Action::SetEngine(Engine::Two));
+    assert_eq!(
+        s.vm.draft.fighters,
+        ["TEST DUMMY".to_string(), "TEST DUMMY 2".to_string()]
+    );
+    let last = s.vm.notices.last().map(|n| n.text.as_str());
+    assert_eq!(
+        last,
+        Some("Flute and Trombone have no Engine 2 version, so the match-up starts over as Test dummy vs Test dummy 2.")
+    );
+}
+
+#[test]
+fn dummy_absent_without_dev() {
+    use bf_core::Engine;
+    let roster = crate::engine::content::roster_for(false);
+    let dummy = |n: &str| bf_content::dev_only(n);
+    assert!(!roster.fighters.iter().any(|f| dummy(&f.name)));
+    assert!(
+        roster.offered(Engine::Two).is_empty(),
+        "no Engine 2 fighter without the switch"
+    );
+    for engine in [Engine::One, Engine::Two] {
+        assert!(
+            !crate::screens::matchup::picker(&roster, engine)
+                .iter()
+                .any(|f| dummy(&f.name))
+        );
+    }
+    for t in &roster.themes {
+        assert!(!t.refuses.iter().any(|n| dummy(n)), "{}", t.name);
+    }
+    // the switch does nothing without an Engine 2 fighter, and the dummy cannot be picked
+    let mut s = ready_on(roster.clone(), false);
+    let before = s.vm.draft.clone();
+    s.dispatch(Action::SetEngine(Engine::Two));
+    s.dispatch(pick(1, "TEST DUMMY"));
+    assert_eq!(s.vm.draft, before);
+    // the current engine's picker is as before: every fighter of the roster
+    assert_eq!(
+        crate::screens::matchup::picker(&roster, Engine::One).len(),
+        roster.fighters.len()
+    );
+}

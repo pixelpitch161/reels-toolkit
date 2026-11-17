@@ -15,6 +15,8 @@ pub struct LibraryEntry {
     pub fight_path: Option<std::path::PathBuf>,
     /// Why this video cannot be reopened, in words ("Made by a newer version of the app.").
     pub problem: Option<String>,
+    /// The engine its fight file names (the current engine when it has none, or cannot be read).
+    pub engine: bf_core::Engine,
 }
 
 /// What the app knows about the output folder (or a video's folder in it).

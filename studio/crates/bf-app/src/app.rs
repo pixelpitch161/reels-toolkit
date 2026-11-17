@@ -60,6 +60,8 @@ pub struct Boot {
     pub notices: Vec<Notice>,
     /// The PC's cores.
     pub cores: usize,
+    /// The developer switch the engine was started with (`EngineConfig::dev`, ruling E6-R2).
+    pub dev: bool,
 }
 
 /// Where the shell's regions were drawn in the last frame, in points.
@@ -149,14 +151,16 @@ fn fallback_paths() -> Paths {
 }
 
 /// What the real engine is started with: the settings' workers, the app's storage `paths` (or, when the PC gives the
-/// app none, a folder under the system temp folder for the shortlists), every frame of a video and no limit on a
-/// search.
+/// app none, a folder under the system temp folder for the shortlists), every frame of a video, no limit on a
+/// search, and the developer switch from `BALLFIGHT_DEV` (ruling E6-R2).
 pub fn real_config(settings: &Settings, paths: Option<Paths>) -> EngineConfig {
     EngineConfig {
         workers: settings.workers,
         paths: paths.unwrap_or_else(fallback_paths),
         clip: None,
         search_limit: None,
+        dev: crate::engine::dev_from_env(),
+        gpu: None,
     }
 }
 
@@ -214,9 +218,14 @@ pub fn start_with(
             (default_settings(cores), Queue::new(), starter_history(), None)
         }
     };
-    let engine = match kind {
-        EngineKind::Real => engine::spawn(waker(&cc.egui_ctx), real_config(&settings, paths)),
-        EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
+    let (engine, dev) = match kind {
+        EngineKind::Real => {
+            let mut config = real_config(&settings, paths);
+            config.gpu = crate::preview::gpu_frames::shared_gpu(cc);
+            let dev = config.dev;
+            (engine::spawn(waker(&cc.egui_ctx), config), dev)
+        }
+        EngineKind::Sample => (fake::spawn(waker(&cc.egui_ctx), Pace::Live), false),
     };
     notices.extend(started.notices.into_iter().map(|text| Notice { text }));
     let boot = Boot {
@@ -228,10 +237,21 @@ pub fn start_with(
         history,
         notices,
         cores,
+        dev,
     };
     let mut app = BfApp::new(cc, boot);
     app.adapter = started.adapter;
     app
+}
+
+/// How the preview texture is sampled: the current engine's 360 x 640 pixel picture stays crisp (nearest); any
+/// other size (Engine 2's 540 x 960) is smoothed (linear, ruling E6-R4).
+pub fn preview_filter(w: u32, h: u32) -> TextureOptions {
+    if (w, h) == (360, 640) {
+        TextureOptions::NEAREST
+    } else {
+        TextureOptions::LINEAR
+    }
 }
 
 /// Has the window draw with DirectX 12 alone on a PC that has a DirectX 12 graphics card, keeping wgpu's default
@@ -324,6 +344,7 @@ impl BfApp {
         let workers = boot.settings.workers;
         let (mut state, pending) = AppState::new(boot.settings, boot.queue, boot.notices, boot.cores);
         state.vm.history = boot.history;
+        state.vm.dev = boot.dev;
         let started = Instant::now();
         let now: Now = Box::new(move || started.elapsed());
         let player = Player::new(workers, boot.audio, now, waker(&cc.egui_ctx));
@@ -382,17 +403,18 @@ impl BfApp {
         }
     }
 
-    /// Loads `frame` into the preview texture (one upload, nearest sampling). A frame whose pixels do not fill it
-    /// is ignored.
+    /// Loads `frame` into the preview texture (one upload, sampled as [`preview_filter`] says). A frame whose pixels
+    /// do not fill it is ignored.
     pub fn show_frame(&mut self, frame: Frame) {
         let (w, h) = (frame.w as usize, frame.h as usize);
         if w == 0 || h == 0 || frame.rgb.len() != w * h * 3 {
             return;
         }
         let image = egui::ColorImage::from_rgb([w, h], &frame.rgb);
+        let filter = preview_filter(frame.w, frame.h);
         match &mut self.texture {
-            Some(texture) => texture.set(image, TextureOptions::NEAREST),
-            None => self.texture = Some(self.ctx.load_texture("preview", image, TextureOptions::NEAREST)),
+            Some(texture) => texture.set(image, filter),
+            None => self.texture = Some(self.ctx.load_texture("preview", image, filter)),
         }
     }
 
@@ -675,6 +697,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn preview_texture_filter_follows_size() {
+        assert_eq!(preview_filter(360, 640), TextureOptions::NEAREST);
+        assert_eq!(preview_filter(540, 960), TextureOptions::LINEAR);
+        assert_eq!(preview_filter(1080, 1920), TextureOptions::LINEAR);
+    }
+
+    #[test]
     fn the_real_engine_renders_whole_videos_with_the_settings_workers() {
         let settings = Settings {
             output_folder: std::path::PathBuf::from("Videos"),
@@ -690,6 +719,9 @@ mod tests {
                 paths,
                 clip: None,
                 search_limit: None,
+                // BALLFIGHT_DEV, read at start-up
+                dev: crate::engine::dev_from_env(),
+                gpu: None,
             }
         );
         // No folder from the PC: the shortlists go under the temp folder.

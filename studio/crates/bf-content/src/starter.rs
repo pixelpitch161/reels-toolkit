@@ -10,10 +10,11 @@
 
 use std::sync::OnceLock;
 
+use bf_core::Engine;
 use bf_core::fightfile::{Captions, FightFile, OptionValue};
 
 use crate::themes::{PORTED_THEMES, themes_for};
-use crate::{ContentError, available, card, pair_rules};
+use crate::{ContentError, available, card, dev_only, offered, pair_rules};
 
 /// The series' kit configs as fight files (plan Table S4 and milestone 1's `flute_vs_trombone`): the pair's folder
 /// name, the episode number of the kit config (the first line of its notes), whether it is a kit example (a config
@@ -453,6 +454,11 @@ fn own_home_config(name: &str) -> Option<&'static str> {
 }
 
 fn home(name: &str) -> Option<&'static FightFile> {
+    home_of(name)
+}
+
+/// A fighter's home config as its fight file ([`home_config`]), for the Engine 2 starters.
+pub(crate) fn home_of(name: &str) -> Option<&'static FightFile> {
     let pair = home_config(name)?;
     kit_pairs()
         .iter()
@@ -508,6 +514,41 @@ pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
     } else {
         crossover(left, right)?
     };
+    finish(&mut ff, left, right);
+    Ok(ff)
+}
+
+/// The fight a new match-up of `left` and `right` begins from on `engine`. The current engine is [`starter`]. On
+/// Engine 2 both must be different fighters [`offered`] there (with the developer switch on): a moved fighter pair
+/// starts from its current-engine starter (music, theme and parts) with `engine = 2` and no pair rules; a pair with
+/// the TEST DUMMY starts from the dummy's starter (the big top on its first chord loop, or the other fighter's home
+/// theme when it has one, and the dummy on the melody).
+///
+/// # Errors
+/// [`ContentError::NoMusic`] for a pair with no starter on `engine` (as [`starter`]).
+pub fn starter_on(engine: Engine, left: &str, right: &str) -> Result<FightFile, ContentError> {
+    if engine == Engine::One {
+        return starter(left, right);
+    }
+    let offered = offered(Engine::Two, true);
+    if left == right || !offered.contains(&left) || !offered.contains(&right) {
+        return Err(no_music(left, right));
+    }
+    if dev_only(left) || dev_only(right) {
+        let mut ff = crate::fighters2::dummy_starter(left, right);
+        finish(&mut ff, left, right);
+        ff.pair_rules.clear();
+        return Ok(ff);
+    }
+    let mut ff = starter(left, right)?;
+    ff.engine = Engine::Two;
+    ff.pair_rules.clear();
+    Ok(ff)
+}
+
+/// What every starter sets: the fighters' own title lines, this app's version, no seed, no series tag, the kit's
+/// default particle seed, the pair's rules and drafted captions.
+fn finish(ff: &mut FightFile, left: &str, right: &str) {
     // a fighter whose name is too long for one line on the VS card brings its own two lines
     for name in [left, right] {
         if let Some((a, b)) = crate::fighters::title_lines(name) {
@@ -523,7 +564,6 @@ pub fn starter(left: &str, right: &str) -> Result<FightFile, ContentError> {
     ff.picture.fx_seed = None;
     ff.pair_rules = pair_rules(left, right);
     ff.captions = draft_captions(left, right);
-    Ok(ff)
 }
 
 fn no_music(left: &str, right: &str) -> ContentError {
@@ -583,7 +623,14 @@ fn episode_pair(left: &str, right: &str) -> Option<FightFile> {
 }
 
 /// `ff` (a home or episode config) as `left` vs `right` on `theme` with the parts `rl` and `rr` (see [`starter`]).
-fn arrange(mut ff: FightFile, left: &str, right: &str, theme: &str, rl: String, mut rr: String) -> FightFile {
+pub(crate) fn arrange(
+    mut ff: FightFile,
+    left: &str,
+    right: &str,
+    theme: &str,
+    rl: String,
+    mut rr: String,
+) -> FightFile {
     if rr == rl {
         rr = if card(right).is_some_and(|c| c.can_play_bass) && rl != "bass" {
             "bass"
@@ -785,6 +832,68 @@ mod tests {
             r.instagram
                 .starts_with("#ballfight #trombone #flute #bandkids #marchingband #musicmemes")
         );
+    }
+
+    #[test]
+    fn dummy_starter_validates() {
+        let ff = starter_on(Engine::Two, "TEST DUMMY", "TEST DUMMY 2").expect("the dummy mirror has a starter");
+        assert_eq!(crate::validate(&ff), Ok(()));
+        assert_eq!(ff.engine, Engine::Two);
+        assert_eq!(ff.fighters, ["TEST DUMMY", "TEST DUMMY 2"]);
+        assert_eq!(ff.music.theme, "big_top");
+        let big_top = crate::theme_card("big_top").expect("the big top");
+        assert_eq!(ff.music.chord_loop, big_top.chord_loops[0]);
+        assert_eq!(ff.music.roles.get("TEST DUMMY").map(String::as_str), Some("melody"));
+        assert!(ff.pair_rules.is_empty());
+        assert_eq!(ff.seed, None);
+        assert_eq!(ff.app_version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(FightFile::parse(&ff.to_toml()).as_ref(), Ok(&ff));
+        // a fight file never names one fighter twice: the mirror is TEST DUMMY against TEST DUMMY 2
+        assert!(starter_on(Engine::Two, "TEST DUMMY", "TEST DUMMY").is_err());
+        // no mixed pairs, and nothing on Engine 2 for a fighter that has not moved
+        assert!(starter_on(Engine::Two, "FLUTE", "TEST DUMMY").is_err());
+        assert!(starter_on(Engine::Two, "FLUTE", "TROMBONE").is_err());
+        assert!(starter_on(Engine::One, "TEST DUMMY", "FLUTE").is_err());
+    }
+
+    #[test]
+    fn moved_fighters_start_on_engine_two() {
+        crate::fighters2::with_moved(&["FLUTE", "TROMBONE"], || {
+            let ff = starter_on(Engine::Two, "FLUTE", "TROMBONE").expect("two moved fighters");
+            let one = starter("FLUTE", "TROMBONE").unwrap();
+            assert_eq!(ff.engine, Engine::Two);
+            assert!(ff.pair_rules.is_empty());
+            assert_eq!(ff.music, one.music);
+            let d = starter_on(Engine::Two, "TEST DUMMY", "FLUTE").expect("the dummy against a moved fighter");
+            assert_eq!(d.engine, Engine::Two);
+            assert_eq!(d.music.theme, home_fight("FLUTE").unwrap().music.theme);
+            assert_eq!(d.music.roles.get("TEST DUMMY").map(String::as_str), Some("melody"));
+            assert_ne!(d.music.roles.get("FLUTE").map(String::as_str), Some("melody"));
+            assert!(d.pair_rules.is_empty());
+        });
+    }
+
+    #[test]
+    fn engine_one_starters_unchanged() {
+        let names = available();
+        let mut pairs: Vec<(&str, &str)> = kit_pair_fights()
+            .iter()
+            .map(|(_, ff)| (ff.fighters[0].as_str(), ff.fighters[1].as_str()))
+            .collect();
+        // the older episodes' pairs and crossovers too
+        pairs.extend(episode_pairs().iter().map(|[a, b]| (*a, *b)));
+        pairs.extend([
+            ("FLUTE", "PIANO"),
+            ("BASS DRUM", "ALTO SAX"),
+            (names[0], names[names.len() - 1]),
+        ]);
+        for (l, r) in pairs {
+            for (a, b) in [(l, r), (r, l)] {
+                let old = starter(a, b).map(|f| f.to_toml());
+                let new = starter_on(Engine::One, a, b).map(|f| f.to_toml());
+                assert_eq!(old, new, "{a} vs {b}");
+            }
+        }
     }
 
     #[test]

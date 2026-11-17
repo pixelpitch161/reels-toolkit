@@ -24,9 +24,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
-use bf_sim::Setup;
+use bf_engine::Prepared;
 use bf_story::balance::CONFIRM_OFFSET;
-use bf_story::{BALANCE_SEED0, BalancePlan, BalanceProgress, BeatSheet, Halt, Stats};
+use bf_story::{BALANCE_SEED0, BalancePlan, BalanceProgress, Halt, Stats};
 
 use super::{Ctx, convert};
 use crate::model::Gen;
@@ -119,26 +119,19 @@ fn send(ctx: &Ctx, cancel: &AtomicBool, e: Event) {
     }
 }
 
-/// The fight of the draft at seed 0 and its beat sheet, as `bf-cli`'s `balance` builds them; or why there is none,
-/// as a sentence.
-fn fight_of(draft: &Draft, what: &str) -> Result<(Setup<'static>, BeatSheet), String> {
+/// The draft's fight made ready on its engine (with its beat sheet), as `bf-cli`'s `balance` builds it; or why there
+/// is none, as a sentence. A developer fighter needs the developer switch (`dev`).
+fn fight_of(draft: &Draft, what: &str, dev: bool) -> Result<Prepared, String> {
     if !draft.handicap.iter().all(|x| x.is_finite() && *x > 0.0) {
         return Err(format!(
             "This handicap cannot be {what}: each fighter's handicap must be a number above 0."
         ));
     }
-    let ff = convert::fight_file(draft)?;
-    let base = bf_sim::setup_from(&ff, bf_content::roster(), 0)
-        .map_err(|e| convert::plain(&format!("this fight cannot be {what}: {e}")))?;
-    let sheet = BeatSheet::series(base.fighters);
-    Ok((base, sheet))
-}
-
-/// The fight of `seed` under handicap `h`: only the damage handicap and the seed change.
-fn under(base: &Setup<'static>, h: [f64; 2], seed: u64) -> Setup<'static> {
-    let mut s = Setup { seed, ..base.clone() };
-    s.rules.dmg_side = Some(h);
-    s
+    let ff = convert::fight_file_dev(draft, dev)?;
+    bf_engine::prepare(&ff).map_err(|e| match e {
+        bf_engine::EngineError::Dev(words) => words,
+        e => convert::plain(&format!("this fight cannot be {what}: {e}")),
+    })
 }
 
 /// Why a run that was not stopped gave no figures, as a sentence.
@@ -148,11 +141,12 @@ fn failed(what: &str, why: &str) -> String {
 
 fn balance(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
     let t0 = Instant::now();
-    let (base, sheet) = match fight_of(draft, "balanced") {
+    let prepared = match fight_of(draft, "balanced", ctx.config.dev) {
         Ok(f) => f,
         Err(text) => return send(ctx, cancel, Event::BalanceFailed { r#gen, text }),
     };
-    let setup_for = |h: [f64; 2], seed: u64| under(&base, h, seed);
+    // Only the damage handicap and the seed change between fights.
+    let fight_for = |h: [f64; 2], seed: u64| prepared.candidate(seed, Some(h));
     let progress = |p: BalanceProgress| {
         send(
             ctx,
@@ -164,7 +158,14 @@ fn balance(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
             },
         );
     };
-    match bf_story::auto_balance(&setup_for, &sheet, draft.handicap, ctx.workers(), &progress, cancel) {
+    match bf_story::auto_balance_by(
+        &BalancePlan::default(),
+        &fight_for,
+        draft.handicap,
+        ctx.workers(),
+        &progress,
+        cancel,
+    ) {
         Ok(found) => send(
             ctx,
             cancel,
@@ -188,13 +189,13 @@ fn balance(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
 
 fn measure(ctx: &Ctx, r#gen: Gen, draft: &Draft, cancel: &AtomicBool) {
     let t0 = Instant::now();
-    let (base, sheet) = match fight_of(draft, "measured") {
+    let prepared = match fight_of(draft, "measured", ctx.config.dev) {
         Ok(f) => f,
         Err(text) => return send(ctx, cancel, Event::BalanceFailed { r#gen, text }),
     };
     let h = draft.handicap;
-    let setup_for = |seed: u64| under(&base, h, seed);
-    match bf_story::stats_until(&setup_for, &sheet, confirm_seeds(), ctx.workers(), cancel) {
+    let fight_for = |seed: u64| prepared.candidate(seed, Some(h));
+    match bf_story::stats_by(&fight_for, confirm_seeds(), ctx.workers(), cancel) {
         Ok(s) => send(
             ctx,
             cancel,
@@ -426,6 +427,28 @@ mod tests {
         wait_for(&engine, 120.0, |e| matches!(e, Event::Measured { r#gen: 2, .. }));
         engine.send(Command::Shutdown);
         std::fs::remove_dir(&root).expect("the engine left its temp folder empty");
+    }
+
+    #[test]
+    fn engine2_balance_runs() {
+        let draft = crate::engine::tests::dummy_draft();
+        let prepared = fight_of(&draft, "balanced", true).expect("the dummy mirror is ready");
+        assert_eq!(prepared.engine(), bf_core::Engine::Two);
+        let plan = BalancePlan {
+            eval_seeds: 40,
+            steps: 2,
+            confirm_seeds: 40,
+        };
+        let fight_for = |h: [f64; 2], seed: u64| prepared.candidate(seed, Some(h));
+        let found = bf_story::auto_balance_by(&plan, &fight_for, draft.handicap, 4, &|_| {}, &AtomicBool::new(false))
+            .expect("a result, not a failure");
+        assert_eq!(found.confirm.n, 40);
+        assert!(found.handicap.iter().all(|h| h.is_finite() && *h > 0.0), "{found:?}");
+        // without the developer switch the dummy is refused in words
+        assert_eq!(
+            fight_of(&draft, "balanced", false).err().as_deref(),
+            Some(bf_content::DEV_ONLY)
+        );
     }
 
     #[test]

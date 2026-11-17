@@ -151,6 +151,8 @@ fn start_engine(root: &Path) -> EngineHandle {
             paths: Paths::under(root),
             clip: None,
             search_limit: None,
+            dev: false,
+            gpu: None,
         },
     )
 }
@@ -608,6 +610,7 @@ fn make_this_versions_files() {
         arrangement: None,
         pinned: None,
         base: None,
+        engine: bf_core::Engine::One,
     };
     assert_eq!(draft.fighters, ["FLUTE", "TROMBONE"], "the starting pair");
     engine.send(Command::DescribeFight {

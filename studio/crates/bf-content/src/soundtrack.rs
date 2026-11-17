@@ -53,9 +53,18 @@ struct Player {
 /// play the part on the wrong instrument.
 fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> {
     let missing = || ContentError::field(format!("fighters[{k}]"), format!("{name} has no part in the score yet"));
-    let cfg = roster().iter().find(|f| f.name == name).ok_or_else(missing)?;
-    let voice = fighters::voice(name).ok_or_else(missing)?;
-    let part = fighters::sound(name, k, ff).ok_or_else(missing)?;
+    // an Engine 2 fighter's place in the score is in `fighters2` (it is never in the roster)
+    let cfg = roster()
+        .iter()
+        .find(|f| f.name == name)
+        .or_else(|| crate::fighters2::cfg(name))
+        .ok_or_else(missing)?;
+    let voice = fighters::voice(name)
+        .or_else(|| crate::fighters2::voice(name))
+        .ok_or_else(missing)?;
+    let part = fighters::sound(name, k, ff)
+        .or_else(|| crate::fighters2::sound(name, k, ff))
+        .ok_or_else(missing)?;
     if voice.name() != cfg.pp {
         return Err(ContentError::field(
             format!("fighters[{k}]"),
@@ -86,6 +95,18 @@ fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> 
 /// `fighters[0]: PIANO has no part in the score yet`, `music.title_hits.FLUTE: the title hits are an empty list`).
 pub fn validate(ff: &FightFile) -> Result<(), ContentError> {
     ff.validate(&name_status)?;
+    if ff.engine == bf_core::Engine::Two {
+        // An Engine 2 fight's fighters must be Engine 2 fighters; then its music is checked as any fight's, with
+        // their places in the score (`fighters2`).
+        for (k, name) in ff.fighters.iter().enumerate() {
+            if crate::fighters2::def(name).is_none() {
+                return Err(ContentError::field(
+                    format!("fighters[{k}]"),
+                    format!("{name} has no Engine 2 version yet, so this Engine 2 fight cannot be fought"),
+                ));
+            }
+        }
+    }
     validate_with(ff, theme_of(ff)?)
 }
 
@@ -376,7 +397,7 @@ fn make_parts(ctx: &MusicCtx, sounds: [&dyn Sound; 2]) -> Result<(), MusicError>
 }
 
 /// What a caught panic said.
-fn panic_text(payload: Box<dyn Any + Send>) -> String {
+pub(crate) fn panic_text(payload: Box<dyn Any + Send>) -> String {
     match payload.downcast::<String>() {
         Ok(text) => *text,
         Err(payload) => match payload.downcast::<&'static str>() {

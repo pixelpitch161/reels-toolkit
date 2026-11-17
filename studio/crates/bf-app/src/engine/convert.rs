@@ -27,8 +27,9 @@ pub(crate) enum Unusable {
 }
 
 /// The fight file a draft is laid over: the file it was opened from (its `base`) while that is a fight of these two
-/// fighters (either way round), since its lines, solos and title hits are written for them by name; else the
-/// pair's starter (`bf_content::starter`: the kit config of a kit pair, the left fighter's home config otherwise).
+/// fighters (either way round) on the draft's engine, since its lines, solos and title hits are written for them by
+/// name; else the pair's starter on the draft's engine (`bf_content::starter_on`: on the current engine the kit
+/// config of a kit pair, the left fighter's home config otherwise).
 pub(crate) fn base_of(draft: &Draft) -> Result<FightFile, Unusable> {
     let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
     let base = match &draft.base {
@@ -42,9 +43,9 @@ pub(crate) fn base_of(draft: &Draft) -> Result<FightFile, Unusable> {
         b.sort_unstable();
         a == b
     };
-    match base.filter(same_pair) {
+    match base.filter(|ff| same_pair(ff) && ff.engine == draft.engine) {
         Some(ff) => Ok(ff),
-        None => bf_content::starter(left, right).map_err(|e| match e {
+        None => bf_content::starter_on(draft.engine, left, right).map_err(|e| match e {
             bf_content::ContentError::NoMusic { .. } => Unusable::NoMusic,
             other => unusable(&other),
         }),
@@ -113,17 +114,26 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
     let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
     let mut ff = base_of(draft)?;
     let written = written_parts(&ff, &draft.fighters);
+    ff.engine = draft.engine;
     ff.fighters = vec![left.to_string(), right.to_string()];
     ff.handicap = draft.handicap.to_vec();
     ff.tempo_bpm = draft.tempo_bpm();
-    ff.pair_rules = bf_content::pair_rules(left, right);
+    // the pair rules are the current engine's (Engine 2's fighters have none yet)
+    ff.pair_rules = match draft.engine {
+        bf_core::Engine::One => bf_content::pair_rules(left, right),
+        bf_core::Engine::Two => Default::default(),
+    };
     ff.seed = draft.seed;
     set_music(&mut ff.music, &draft.theme, draft.chord_loop);
     // The parts are the file's own; the one change the app makes is who plays bass (ruling M3-R8).
     let can = draft
         .fighters
         .clone()
-        .map(|name| bf_content::card(&name).is_some_and(|c| c.can_play_bass));
+        .map(|name| match draft.engine {
+            bf_core::Engine::One => bf_content::card(&name),
+            bf_core::Engine::Two => bf_content::fighters2::card(&name),
+        })
+        .map(|c| c.is_some_and(|c| c.can_play_bass));
     let parts = parts_with_bass(&written, draft.bass, can);
     for (name, part) in draft.fighters.iter().zip(parts) {
         ff.music.roles.insert(name.clone(), part);
@@ -162,6 +172,27 @@ pub fn fight_file(draft: &Draft) -> Result<FightFile, String> {
     })
 }
 
+/// [`fight_file`] for the engine's workers: a draft that names a developer fighter (the TEST DUMMY) while the
+/// developer switch (`dev`) is off is refused in `bf_content::DEV_ONLY`'s words (ruling E6-R2).
+///
+/// # Errors
+/// As [`fight_file`], or `DEV_ONLY`.
+pub fn fight_file_dev(draft: &Draft, dev: bool) -> Result<FightFile, String> {
+    dev_allowed(&draft.fighters, dev)?;
+    fight_file(draft)
+}
+
+/// `Err(DEV_ONLY)` when `fighters` names a developer fighter and the developer switch is off.
+///
+/// # Errors
+/// `bf_content::DEV_ONLY`.
+pub fn dev_allowed<S: AsRef<str>>(fighters: &[S], dev: bool) -> Result<(), String> {
+    if !dev && fighters.iter().any(|n| bf_content::dev_only(n.as_ref())) {
+        return Err(bf_content::DEV_ONLY.to_string());
+    }
+    Ok(())
+}
+
 /// "No music is written for Flute vs Piano yet.", from the roster names.
 fn no_music_sentence(fighters: &[String; 2]) -> String {
     format!("No music is written for {} yet.", wording::versus(fighters))
@@ -177,8 +208,8 @@ pub(crate) fn no_music_problem(fighters: &[String; 2]) -> String {
 
 /// The draft of a fight file read from `toml`: its fighters, theme, tempo as bars, handicap, seed, chord loop (its
 /// place among the theme's loops; one past the last when it is none of them, so the file's own loop is kept), who
-/// plays bass, music seed and captions; the captions count as the owner's own, and the text is kept as the draft's
-/// base.
+/// plays bass, music seed, captions and engine; the captions count as the owner's own, and the text is kept as the
+/// draft's base.
 pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
     let name = |i: usize| ff.fighters.get(i).cloned().unwrap_or_default();
     let fighters = [name(0), name(1)];
@@ -208,6 +239,7 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
         pinned: None,
         base: Some(toml.to_string()),
         fighters,
+        engine: ff.engine,
     }
 }
 
@@ -440,6 +472,37 @@ mod tests {
             tiktok: tiktok.to_string(),
             shorts: shorts.to_string(),
         }
+    }
+
+    #[test]
+    fn draft_engine_reaches_the_fight_file() {
+        let start = bf_content::starter_on(bf_core::Engine::Two, "TEST DUMMY", "TEST DUMMY 2").expect("a starter");
+        let toml = start.to_toml();
+        let draft = Draft {
+            base: None,
+            captions_edited: false,
+            seed: Some(26),
+            ..draft_of(&start, &toml)
+        };
+        assert_eq!(draft.engine, bf_core::Engine::Two);
+        let ff = build(&draft).unwrap_or_else(|_| panic!("an Engine 2 dummy draft builds"));
+        assert_eq!(ff.engine, bf_core::Engine::Two);
+        assert!(ff.pair_rules.is_empty());
+        let text = ff.to_toml();
+        assert!(text.contains("engine = 2"), "{text}");
+        let back = draft_of(&FightFile::parse(&text).unwrap(), &text);
+        assert_eq!(
+            Draft {
+                base: None,
+                captions_edited: false,
+                ..back
+            },
+            draft
+        );
+        // a current-engine draft builds a file without an engine line, as before
+        let one = build(&starting_draft()).unwrap_or_else(|_| panic!("the starting draft builds"));
+        assert_eq!(one.engine, bf_core::Engine::One);
+        assert!(!one.to_toml().contains("engine"));
     }
 
     #[test]

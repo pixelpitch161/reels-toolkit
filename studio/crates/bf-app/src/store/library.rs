@@ -46,6 +46,8 @@ pub struct FightSummary {
     /// The two fighters' colours, left then right.
     pub colors: [[u8; 3]; 2],
     pub seed: Option<u64>,
+    /// The engine the fight file names.
+    pub engine: bf_core::Engine,
 }
 
 /// One entry for each video under `root`, newest first (by the cover's modified time, then by folder).
@@ -124,6 +126,7 @@ fn video(folder: PathBuf, name: &str, read: &dyn Fn(&str) -> Result<FightSummary
         modified,
         fight_path: None,
         problem: None,
+        engine: bf_core::Engine::One,
     };
     let problem = match fight_files(&entry.folder).as_deref() {
         None => FOLDER_UNREADABLE.to_string(),
@@ -140,6 +143,7 @@ fn video(folder: PathBuf, name: &str, read: &dyn Fn(&str) -> Result<FightSummary
                     }
                     entry.colors = summary.colors;
                     entry.seed = summary.seed;
+                    entry.engine = summary.engine;
                     return Some(entry);
                 }
                 Err(problem) => problem,
@@ -376,6 +380,7 @@ mod tests {
             title: text.trim().to_string(),
             colors: COLORS,
             seed: Some(text.len() as u64),
+            engine: bf_core::Engine::One,
         })
     }
 
@@ -609,6 +614,7 @@ mod tests {
                     modified: 1_794_312_000,
                     fight_path: Some(newer.join("flute_vs_trombone.toml")),
                     problem: None,
+                    engine: bf_core::Engine::One,
                 },
                 LibraryEntry {
                     folder: older.clone(),
@@ -618,6 +624,7 @@ mod tests {
                     modified: 1_794_225_600,
                     fight_path: Some(older.join("tuba_vs_bass_drum.toml")),
                     problem: None,
+                    engine: bf_core::Engine::One,
                 },
             ]
         );
@@ -656,6 +663,7 @@ mod tests {
                     modified: 1_794_000_100,
                     fight_path: Some(kept.join("flute_vs_trombone.toml")),
                     problem: None,
+                    engine: bf_core::Engine::One,
                 },
                 LibraryEntry {
                     folder: first.clone(),
@@ -665,6 +673,7 @@ mod tests {
                     modified: 1_794_000_000,
                     fight_path: Some(first.join("flute_vs_trombone.toml")),
                     problem: None,
+                    engine: bf_core::Engine::One,
                 },
             ]
         );

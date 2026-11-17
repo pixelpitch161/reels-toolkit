@@ -202,6 +202,8 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
             paths: paths.clone(),
             clip: None,
             search_limit: None,
+            dev: false,
+            gpu: None,
         };
         let (engine, w) = Watched::start(Arc::new(move || ctx.request_repaint()), config);
         let refused = w.refused.clone();
@@ -219,6 +221,7 @@ fn real_app<'a>(temp: &Temp, workers: usize) -> (Harness<'a, BfApp>, Relay) {
                 queue: Queue::new(),
                 notices: Vec::new(),
                 cores: cores(),
+                dev: false,
             },
         )
     });

@@ -7,6 +7,7 @@
 
 use std::sync::OnceLock;
 
+use bf_core::Engine;
 use bf_core::fightfile::NameStatus;
 use bf_core::roster::{FighterCfg, parse_roster};
 
@@ -93,14 +94,83 @@ pub fn music_feeds_fight(name: &str) -> bool {
 }
 
 /// What the registry says about a fighter name, for `FightFile::validate`: `Retired` for [`RETIRED`], `Known` for a
-/// roster fighter (ported or not: [`available`] is what the app offers), `Unknown` for anything else.
+/// roster fighter (ported or not: [`available`] is what the app offers) or an Engine 2 fighter
+/// ([`crate::fighters2::NAMES`], never offered), `Unknown` for anything else.
 pub fn name_status(name: &str) -> NameStatus {
     if RETIRED.contains(&name) {
         NameStatus::Retired
-    } else if roster().iter().any(|f| f.name == name) {
+    } else if roster().iter().any(|f| f.name == name) || crate::fighters2::NAMES.contains(&name) {
         NameStatus::Known
     } else {
         NameStatus::Unknown
+    }
+}
+
+/// The engines a fighter can fight on, in order (Engine 2 design section 6): `[One, Two]` for an offered fighter
+/// that has moved to Engine 2 ([`crate::fighters2::MOVED`]), `[One]` for any other offered fighter, and none for an
+/// unknown or retired name. It never names the developer fighter ([`engines_dev`] does, with the switch on).
+///
+/// A fighter session that moves a fighter to Engine 2 adds its name to `MOVED` and never takes [`Engine::One`]
+/// away: both versions stay until every fighter has moved (Aedan, 2026-11-17).
+pub fn engines(name: &str) -> &'static [Engine] {
+    const CURRENT: &[Engine] = &[Engine::One];
+    const BOTH: &[Engine] = &[Engine::One, Engine::Two];
+    if !PORTED.contains(&name) || RETIRED.contains(&name) {
+        &[]
+    } else if crate::fighters2::moved().contains(&name) {
+        BOTH
+    } else {
+        CURRENT
+    }
+}
+
+/// The engines two fighters can fight each other on: the ones both have, in order (no mixed-engine matchups).
+pub fn pair_engines(a: &str, b: &str) -> Vec<Engine> {
+    let theirs = engines(b);
+    engines(a).iter().copied().filter(|e| theirs.contains(e)).collect()
+}
+
+/// The words a developer fighter's file is refused with when the developer switch is off (ruling E6-R2).
+pub const DEV_ONLY: &str = "TEST DUMMY is a developer fighter. Start the app with BALLFIGHT_DEV=1 to open it.";
+
+/// Whether `name` is a developer fighter: the TEST DUMMY (under either of its names), offered only with the
+/// developer switch on (`BALLFIGHT_DEV=1`).
+pub fn dev_only(name: &str) -> bool {
+    crate::fighters2::DUMMIES.contains(&name)
+}
+
+/// [`engines`], plus Engine 2 for the developer fighter when `dev` is on.
+pub fn engines_dev(name: &str, dev: bool) -> Vec<Engine> {
+    if dev_only(name) {
+        if dev { vec![Engine::Two] } else { Vec::new() }
+    } else {
+        engines(name).to_vec()
+    }
+}
+
+/// [`pair_engines`] with the developer switch: the engines both fighters have under [`engines_dev`], in order.
+pub fn pair_engines_dev(a: &str, b: &str, dev: bool) -> Vec<Engine> {
+    let theirs = engines_dev(b, dev);
+    engines_dev(a, dev).into_iter().filter(|e| theirs.contains(e)).collect()
+}
+
+/// The fighters offered on `engine`: the current engine offers [`available`]; Engine 2 offers the moved fighters
+/// in roster order, then (with `dev` on) the TEST DUMMY under both its names.
+pub fn offered(engine: Engine, dev: bool) -> Vec<&'static str> {
+    match engine {
+        Engine::One => available(),
+        Engine::Two => {
+            let moved = crate::fighters2::moved();
+            let mut names: Vec<&'static str> = roster()
+                .iter()
+                .map(|f| f.name.as_str())
+                .filter(|n| moved.contains(n) && PORTED.contains(n))
+                .collect();
+            if dev {
+                names.extend(crate::fighters2::DUMMIES);
+            }
+            names
+        }
     }
 }
 
@@ -132,6 +202,85 @@ mod tests {
         "TRUMPET",
         "TUBA",
     ];
+
+    #[test]
+    fn every_offered_fighter_has_the_current_engine_only() {
+        for n in available() {
+            assert_eq!(engines(n), [Engine::One], "{n}");
+        }
+    }
+
+    #[test]
+    fn unknown_and_retired_names_have_no_engine() {
+        for n in ["GUITAR", "SAX", "NOPE"] {
+            assert!(engines(n).is_empty(), "{n}");
+        }
+    }
+
+    #[test]
+    fn pairs_share_engines() {
+        assert_eq!(pair_engines("FLUTE", "TROMBONE"), vec![Engine::One]);
+        assert!(pair_engines("FLUTE", "NOPE").is_empty());
+    }
+
+    #[test]
+    fn engines_of_a_moved_fighter_keep_one() {
+        assert_eq!(engines("FLUTE"), [Engine::One]);
+        crate::fighters2::with_moved(&["FLUTE"], || {
+            assert_eq!(engines("FLUTE"), [Engine::One, Engine::Two]);
+            assert_eq!(engines("TROMBONE"), [Engine::One]);
+            assert_eq!(offered(Engine::Two, false), ["FLUTE"]);
+            assert_eq!(pair_engines("FLUTE", "TROMBONE"), [Engine::One]);
+            assert_eq!(pair_engines_dev("FLUTE", "TEST DUMMY", true), [Engine::Two]);
+            assert!(pair_engines_dev("FLUTE", "TEST DUMMY", false).is_empty());
+            // the current engine still offers it
+            assert!(offered(Engine::One, true).contains(&"FLUTE"));
+        });
+        assert_eq!(engines("FLUTE"), [Engine::One]);
+    }
+
+    #[test]
+    fn dummy_only_with_dev() {
+        let dummies = crate::fighters2::DUMMIES;
+        assert!(offered(Engine::Two, false).iter().all(|n| !dummies.contains(n)));
+        assert!(offered(Engine::Two, true).ends_with(&dummies));
+        assert_eq!(offered(Engine::Two, true).first(), Some(&"TEST DUMMY"));
+        for name in dummies {
+            assert!(dev_only(name));
+            assert!(engines(name).is_empty());
+            assert!(!available().contains(&name));
+            assert!(!offered(Engine::One, true).contains(&name));
+            assert!(engines_dev(name, false).is_empty());
+            assert_eq!(engines_dev(name, true), [Engine::Two]);
+        }
+        assert!(!dev_only("FLUTE") && !dev_only("TEST DUMMY 3"));
+        assert_eq!(
+            DEV_ONLY,
+            "TEST DUMMY is a developer fighter. Start the app with BALLFIGHT_DEV=1 to open it."
+        );
+    }
+
+    #[test]
+    fn no_pair_is_mixed() {
+        let check = || {
+            let mut all = offered(Engine::One, true);
+            all.extend(offered(Engine::Two, true));
+            all.dedup();
+            for a in &all {
+                for b in &all {
+                    let (ea, eb) = (engines_dev(a, true), engines_dev(b, true));
+                    for e in pair_engines_dev(a, b, true) {
+                        assert!(ea.contains(&e) && eb.contains(&e), "{a} vs {b} on {e}");
+                    }
+                    for e in pair_engines_dev(a, b, false) {
+                        assert!(engines_dev(a, false).contains(&e) && engines_dev(b, false).contains(&e));
+                    }
+                }
+            }
+        };
+        check();
+        crate::fighters2::with_moved(&["FLUTE", "PIANO"], check);
+    }
 
     #[test]
     fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {

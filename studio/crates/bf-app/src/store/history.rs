@@ -139,7 +139,13 @@ mod tests {
         let root = TempRoot::new("a_saved_history_loads_back");
         let path = root.paths().history();
         let mut h = starter();
-        h.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_763_208_000);
+        h.record(
+            ["FLUTE".to_string(), "TROMBONE".to_string()],
+            bf_core::Engine::One,
+            2210,
+            None,
+            1_763_208_000,
+        );
         h.set_uploaded(3, false);
         save_history(&path, &h).unwrap();
         assert_eq!(load_history(&path), (h, None));
@@ -185,7 +191,13 @@ made = 3
         let paths = root.paths();
         let path = paths.history();
         let mut own = starter();
-        own.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_794_744_000);
+        own.record(
+            ["FLUTE".to_string(), "TROMBONE".to_string()],
+            bf_core::Engine::One,
+            2210,
+            None,
+            1_794_744_000,
+        );
         save_history(&path, &own).unwrap();
         let before = fs::read(&path).unwrap();
         let held = fs::OpenOptions::new().read(true).share_mode(0).open(&path).unwrap();

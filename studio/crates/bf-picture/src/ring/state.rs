@@ -557,7 +557,7 @@ const AIM: V3 = [0.12, 0.25, 0.0];
 const SY: f64 = 288.0;
 
 /// `KEYS`: a gentle drift, a slight push-in for the final exchange, back for the win.
-pub(super) fn camera_keys(t_ko: f64) -> Vec<Key> {
+pub fn camera_keys(t_ko: f64) -> Vec<Key> {
     [
         (0.0, 27.5, 0.0, 58.0),
         (8.0, 27.6, -0.8, 58.4),

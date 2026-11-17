@@ -9,12 +9,11 @@ use std::sync::Mutex;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use bf_sim::Setup;
-use bf_story::{BeatSheet, Candidate, SearchEnd, SearchOpts, SearchProgress, search};
+use bf_story::{Candidate, SearchEnd, SearchOpts, SearchProgress, search_by};
 use serde_json::{Value, json};
 
 use crate::cmd::story::story_json;
-use crate::{Ctx, Done, Fail, fighters, json_text, load_fight, new_file, note, say, say_json, secs, write_new};
+use crate::{Ctx, Done, Fail, json_text, load_fight, new_file, note, say, say_json, secs, write_new};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -42,11 +41,8 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     if let Some(out) = &a.out {
         new_file(out)?;
     }
-    let cfg = fighters(&ff)?;
-    let sheet = BeatSheet::series(cfg);
-    let base =
-        bf_sim::setup_from(&ff, bf_content::roster(), 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
-    let setup_for = |seed: u64| Setup { seed, ..base.clone() };
+    let prepared = bf_engine::prepare(&ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let fight_for = |seed: u64| prepared.candidate(seed, None);
     let opts = SearchOpts {
         from: a.from,
         stop_fits: a.stop,
@@ -62,7 +58,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         }
     };
     let t0 = Instant::now();
-    let found = search(&setup_for, &sheet, &opts, &progress, ctx.cancel);
+    let found = search_by(&fight_for, &opts, &progress, ctx.cancel);
     let fits = found.candidates.iter().filter(|c| c.verdict.fits).count();
     let end = match &found.end {
         SearchEnd::Failed(why) => return Err(Fail(format!("{}: {why}.", a.fight.display()))),
@@ -130,4 +126,33 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
 /// A candidate as a JSON object: its story and verdict.
 fn candidate_json(c: &Candidate, names: &[String]) -> Value {
     story_json(&c.story, &c.verdict, names)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::AtomicBool;
+
+    use super::*;
+
+    #[test]
+    fn search_runs_an_engine2_file() {
+        static CANCEL: AtomicBool = AtomicBool::new(false);
+        let fight = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fights/engine2/test_dummy.toml"
+        ));
+        let a = Args {
+            fight,
+            from: 1,
+            stop: 3,
+            max: Some(400),
+            out: None,
+        };
+        let ctx = Ctx {
+            workers: 4,
+            json: true,
+            cancel: &CANCEL,
+        };
+        run(&a, &ctx).expect("an Engine 2 file searches");
+    }
 }

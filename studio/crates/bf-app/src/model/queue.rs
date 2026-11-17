@@ -21,6 +21,29 @@ pub const STEP_ORDER: [StepKey; 10] = [
     StepKey::Verify,
 ];
 
+/// The lines of an Engine 2 job's check list (ruling E6-R7): the lines whose checks its job runs. With E5's sound
+/// and picture checks that is every line of the current engine's but the flashes (no flash check on Engine 2); the
+/// K.O. window has no line of its own: a failure is told as the job's.
+pub const STEPS2: [StepKey; 9] = [
+    StepKey::Soundtrack,
+    StepKey::SafeZone,
+    StepKey::Focus,
+    StepKey::Loudness,
+    StepKey::Band,
+    StepKey::LoopPoint,
+    StepKey::Frames,
+    StepKey::Encode,
+    StepKey::Verify,
+];
+
+/// The lines of a job's check list on `engine`: [`STEP_ORDER`] for the current engine, [`STEPS2`] for Engine 2.
+pub fn steps_of(engine: bf_core::Engine) -> &'static [StepKey] {
+    match engine {
+        bf_core::Engine::One => &STEP_ORDER,
+        bf_core::Engine::Two => &STEPS2,
+    }
+}
+
 /// How many finished jobs the queue keeps.
 const KEEP_FINISHED: usize = 20;
 
@@ -42,6 +65,14 @@ pub struct JobSpec {
     /// the history was kept; such a job records nothing when it finishes.
     #[serde(default)]
     pub fighters: Option<[String; 2]>,
+}
+
+impl JobSpec {
+    /// The engine the job's fight file names (the current engine for a file that names none, or one that no longer
+    /// reads).
+    pub fn engine(&self) -> bf_core::Engine {
+        bf_core::fightfile::FightFile::parse(&self.fight_toml).map_or(bf_core::Engine::One, |ff| ff.engine)
+    }
 }
 
 /// One line of a job's check list.
@@ -258,7 +289,7 @@ impl Queue {
             return;
         }
         job.state = JobState::Rendering { done: 0, total: NF };
-        job.steps = STEP_ORDER
+        job.steps = steps_of(job.spec.engine())
             .iter()
             .map(|&key| StepLine {
                 key,

@@ -71,6 +71,22 @@ pub struct EngineConfig {
     pub clip: Option<Range<usize>>,
     /// Tests: a search stops once this many seeds are checked.
     pub search_limit: Option<u64>,
+    /// The developer switch (`BALLFIGHT_DEV=1` at start-up, ruling E6-R2): the TEST DUMMY is offered on Engine 2,
+    /// and its fight files open.
+    pub dev: bool,
+    /// The window's wgpu device, shared with Engine 2's preview (ruling E6-R4); `None` when the window draws
+    /// without wgpu, or in a test: a take then makes a headless device once.
+    pub gpu: Option<crate::preview::gpu_frames::SharedGpu>,
+}
+
+/// The developer switch from the environment: exactly `BALLFIGHT_DEV=1` turns it on.
+pub fn dev_from_env() -> bool {
+    dev_from(std::env::var_os("BALLFIGHT_DEV").as_deref())
+}
+
+/// The developer switch for a `BALLFIGHT_DEV` value: on only for exactly `1`.
+pub(crate) fn dev_from(value: Option<&std::ffi::OsStr>) -> bool {
+    value.is_some_and(|v| v == "1")
 }
 
 /// What every handler is given: the way to answer, the configuration, the shared settings, and the way to start
@@ -291,7 +307,7 @@ fn route(h: &mut Handlers, describer: &Describer, ctx: &Ctx, command: Command) {
             ctx.spawn(
                 "engine: roster",
                 "loading the fighters",
-                |ctx| ctx.emit(Event::Roster(content::roster())),
+                |ctx| ctx.emit(Event::Roster(content::roster_for(ctx.config.dev))),
                 problem,
             );
         }
@@ -420,6 +436,12 @@ pub(crate) fn wait_for(handle: &EngineHandle, seconds: f64, want: impl Fn(&Event
 /// test removes it), a waker that does nothing.
 #[cfg(test)]
 pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf) {
+    test_engine_with(false)
+}
+
+/// [`test_engine`] with the developer switch `dev` (the TEST DUMMY's fights).
+#[cfg(test)]
+pub(crate) fn test_engine_with(dev: bool) -> (EngineHandle, std::path::PathBuf) {
     static N: AtomicUsize = AtomicUsize::new(0);
     let n = N.fetch_add(1, Ordering::SeqCst);
     let root = std::env::temp_dir().join(format!("bf-app-engine-{}-{n}", std::process::id()));
@@ -429,6 +451,8 @@ pub(crate) fn test_engine() -> (EngineHandle, std::path::PathBuf) {
         paths: Paths::under(&root),
         clip: None,
         search_limit: None,
+        dev,
+        gpu: None,
     };
     (spawn(Arc::new(|| {}), config), root)
 }
@@ -450,6 +474,20 @@ pub(crate) mod tests {
         let (mut s, _) = AppState::new(settings, Queue::new(), Vec::new(), 8);
         s.apply(Event::Roster(content::roster()));
         s.vm.draft.clone()
+    }
+
+    /// The TEST DUMMY's mirror on Engine 2 (TEST DUMMY vs TEST DUMMY 2) as a new match-up, under handicap 0.9 each:
+    /// the dummy's file deals 2.0 damage, so its K.O.s come before the series window; at 0.9 some seeds fit.
+    pub(crate) fn dummy_draft() -> Draft {
+        let start = bf_content::starter_on(bf_core::Engine::Two, "TEST DUMMY", "TEST DUMMY 2").expect("a starter");
+        let toml = start.to_toml();
+        Draft {
+            base: None,
+            captions_edited: false,
+            seed: None,
+            handicap: [0.9, 0.9],
+            ..convert::draft_of(&start, &toml)
+        }
     }
 
     /// Waits up to 5 s until nothing but the test holds `probe`, so every engine thread has ended.
@@ -551,6 +589,8 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
+            gpu: None,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::LoadRoster);
@@ -572,6 +612,8 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
+            gpu: None,
         };
         let engine = spawn(waker.clone(), config);
         engine.send(Command::DescribeFight {
@@ -697,6 +739,8 @@ pub(crate) mod tests {
             paths: Paths::under(std::path::Path::new("unused")),
             clip: None,
             search_limit: None,
+            dev: false,
+            gpu: None,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         assert_eq!(ctx.workers(), 1, "at least one worker");
