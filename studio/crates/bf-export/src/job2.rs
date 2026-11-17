@@ -339,13 +339,6 @@ impl Scene2 {
         let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
         bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
             .map_err(|e| fx_error("the fight", &e))?;
-        // TEMP-DIAG
-        if let Ok(skip) = std::env::var("BF2_FX_SKIP") {
-            timeline.records.retain(|r| {
-                let k = format!("{:?}", r.kind);
-                !skip.split(',').any(|w| !w.is_empty() && k.contains(w))
-            });
-        }
         let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
         let dref = [&*defs[0], &*defs[1]];
         let (show, shadow) = bf_content::video_show2(&rec, dref, map, ff)?;

@@ -1,6 +1,7 @@
 //! Event wiring: the fight's events v2 become preset records on the timeline. Contacts by tier (a `Tag::Special`
-//! move or a strength above 0.85 is a special), blocks, clashes, launches, landings, slams, projectiles thrown and
-//! gone, the K.O., and the `Flash` and `Shake` cues. Each record's seed comes from its event's step and index.
+//! move or a strength above 0.85 is a special; a multi-hit special impacts once, on its last contact, and its
+//! earlier hits are heavy), blocks, clashes, launches, landings, slams, projectiles thrown and gone, the K.O., and
+//! the `Flash` and `Shake` cues. Each record's seed comes from its event's step and index.
 
 use bf2_sim::{EvKind, FighterDef, Recording2, Tag};
 
@@ -76,7 +77,11 @@ pub fn wire(
                 ..
             } => {
                 let special = defs[who].moves.get(*mv).is_some_and(|m| m.tags.contains(&Tag::Special));
-                let tier = Tier::of(*strength as f32, special);
+                let tier = match Tier::of(*strength as f32, special) {
+                    // a multi-hit special impacts once, on its last contact: the hits before it are heavy
+                    Tier::Special if special && more_of_the_same(rec, i, *mv) => Tier::Heavy,
+                    tier => tier,
+                };
                 presets::hit(&hit(*point, *normal, colours[who], *strength as f32), tier)
             }
             EvKind::Block { target, point } => {
@@ -125,11 +130,11 @@ pub fn wire(
             }
             EvKind::Cue(bf2_sim::Cue::Flash) => vec![cue(
                 &hit([0.0; 3], [0.0; 3], colours[who], 1.0),
-                0.3,
+                0.1,
                 ScreenFx::Flash {
                     colour: [5.0, 5.0, 5.0],
                 },
-                0.55,
+                0.35,
             )],
             EvKind::Cue(bf2_sim::Cue::Shake(x)) => {
                 vec![cue(
@@ -147,6 +152,18 @@ pub fn wire(
         }
     }
     Ok(made)
+}
+
+/// How close (in steps) two contacts of one special move by one fighter are to be one multi-hit special.
+pub const SPECIAL_CHAIN_STEPS: u32 = 60;
+
+/// Whether the same fighter lands move `mv` again within [`SPECIAL_CHAIN_STEPS`] after event `i`.
+fn more_of_the_same(rec: &Recording2, i: usize, mv: usize) -> bool {
+    let e = &rec.events[i];
+    rec.events[i + 1..]
+        .iter()
+        .take_while(|f| f.step <= e.step + SPECIAL_CHAIN_STEPS)
+        .any(|f| f.who == e.who && matches!(f.kind, EvKind::Contact { mv: m, .. } if m == mv))
 }
 
 fn cue(h: &Hit, life: f32, effect: ScreenFx, amount: f32) -> FxRecord {

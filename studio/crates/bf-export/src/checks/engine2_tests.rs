@@ -96,7 +96,7 @@ fn ko_window_bounds() {
     assert!(!ko_window(Some(b + 0.01), &sheet).pass);
     let none = ko_window(None, &sheet);
     assert!(!none.pass && none.summary.contains("no K.O."), "{}", none.summary);
-    // the dummy's review seed: its K.O. comes at 48.85 s of video, just before the window (ledgered)
+    // the dummy's review seed: its K.O. comes at 49.57 s of video, inside the window
     let t = fixture().directed.map.ko_video_t().unwrap();
     let real = ko_window(Some(t), &sheet);
     assert_eq!(real.pass, (a..=b).contains(&t), "{}", real.summary);

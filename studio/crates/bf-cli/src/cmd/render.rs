@@ -223,7 +223,7 @@ mod tests {
             Some(JobEvent::Stage(bf_export::stage::SOUNDTRACK)),
             "an Engine 2 file reaches run_job2"
         );
-        assert_eq!(ff.seed, Some(26));
+        assert_eq!(ff.seed, Some(576));
         let _ = std::fs::remove_dir_all(&out);
     }
 }

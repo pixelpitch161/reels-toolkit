@@ -218,3 +218,50 @@ fn a_wired_hit_lights_its_frame() {
     );
     assert!(again.data == lit.data);
 }
+
+/// A special that lands several times in quick succession (a multi-hit move) is drawn as one special impact, on
+/// its last contact; the hits before it are drawn as heavy hits, so three special impacts do not stack (three
+/// flashes, three hot lights) and wash the frame white.
+#[test]
+fn a_multi_hit_special_impacts_once_on_its_last_contact() {
+    let (mut rec, _) = fight();
+    let mut special = fixture();
+    special.moves[0].tags = vec![Tag::Special, Tag::Melee];
+    let contact = |step: u32, who: usize| Ev {
+        step,
+        who,
+        kind: EvKind::Contact {
+            mv: 0,
+            target: 1 - who,
+            point: [0.0, 0.0, 0.6],
+            normal: [1.0, 0.0, 0.0],
+            strength: 0.8,
+            damage: 5.0,
+            bones: vec![0],
+        },
+    };
+    // a three-hit special by fighter 0, the other fighter's own special in the middle of it, then a lone one
+    rec.events = vec![
+        contact(100, 0),
+        contact(105, 0),
+        contact(108, 1),
+        contact(112, 0),
+        contact(400, 0),
+    ];
+    let to_t = |s: u32| f64::from(s) / 120.0;
+    let mut tl = FxTimeline::new();
+    wire(&rec, [&special, &special], [[1.0; 3], [1.0; 3]], &to_t, &mut tl).unwrap();
+    let flash_at = |s: u32| {
+        tl.records.iter().any(|r| {
+            r.t0 == to_t(s) && matches!(&r.kind, FxKind::Screen(d) if matches!(d.effect, ScreenFx::Flash { .. }))
+        })
+    };
+    let drawn_at = |s: u32| tl.records.iter().any(|r| r.t0 == to_t(s) && matches!(r.kind, FxKind::Burst(_)));
+    for s in [100, 105, 108, 112, 400] {
+        assert!(drawn_at(s), "contact at step {s} has its sparks");
+    }
+    assert!(!flash_at(100) && !flash_at(105), "the special's first hits are heavy hits");
+    assert!(flash_at(112), "its last hit is the special impact");
+    assert!(flash_at(108), "the other fighter's special is its own");
+    assert!(flash_at(400), "a lone special is a special impact");
+}

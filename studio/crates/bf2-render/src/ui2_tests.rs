@@ -192,3 +192,29 @@ fn ui_log_inside_safe_zone() {
     }
     let _ = &fixture().ff;
 }
+
+/// The loop's run-up: the card dims the arena to 0.55 as its doors start to shut, so the UI layer dims the
+/// picture to the same level over the half second before, in even steps; the first dimmed frame is no longer a
+/// one-off jump that the loop check reads as the video starting over early.
+#[test]
+fn the_card_dim_is_ramped_in() {
+    let g = &fixture().show.grid;
+    let ui = ui();
+    // the median alpha of the layer: the dim, not the HUD's or the doors' own pixels
+    let dim = |f: usize| {
+        let mut a: Vec<u8> = ui.draw(f).0.rgba.iter().map(|p| p[3]).collect();
+        a.sort_unstable();
+        i32::from(a[a.len() / 2])
+    };
+    let close = ((g.dur - g.t_close) * FPS).round() as usize;
+    let start = close - (PRE_CLOSE_DIM_S * FPS).round() as usize;
+    assert_eq!(dim(start - 1), 0, "no dim before the run-up");
+    let card = dim(close + 1);
+    assert!((110..=120).contains(&card), "the card's own dim: {card}");
+    let mut last = 0;
+    for f in start..=close + 1 {
+        let d = dim(f);
+        assert!(d >= last && d - last <= 12, "frame {f}: {last} to {d}");
+        last = d;
+    }
+}

@@ -27,6 +27,23 @@ const UP: f64 = 3.0;
 /// Frames per second of the video.
 const FPS: f64 = 30.0;
 
+/// How long before the card's doors start to shut the picture starts dimming toward the card's own dim
+/// ([`CARD_DIM`]), so the loop's run-up has no one-frame jump.
+pub const PRE_CLOSE_DIM_S: f64 = 0.5;
+/// How much the card dims the arena behind it (`TitleCard::draw_logged` keeps 0.55 of it).
+const CARD_DIM: f64 = 0.45;
+
+/// The share of the picture dimmed at `t` in the run-up to the card's close: 0 until [`PRE_CLOSE_DIM_S`] before
+/// the doors start to move, rising evenly to [`CARD_DIM`] on the last frame before the card dims it itself.
+fn pre_close_dim(g: &bf_core::grid::Grid, t: f64) -> f64 {
+    let close = g.dur - g.t_close;
+    let start = close - PRE_CLOSE_DIM_S;
+    if t <= start || t > close + 0.5 / FPS {
+        return 0.0;
+    }
+    CARD_DIM * ((t - start) / PRE_CLOSE_DIM_S).min(1.0)
+}
+
 /// Python's `int(round(x))` for a pixel coordinate: the nearest whole number, ties to even.
 fn round_i32(x: f64) -> i32 {
     bf_core::py::round_half_even(x) as i32
@@ -267,6 +284,12 @@ impl<'a> Ui2<'a> {
             );
         }
         draw_show_captions(img, log, t, self.show, self.colours);
+        let dim = pre_close_dim(g, t);
+        if dim > 0.0 {
+            for p in &mut img.data {
+                *p = (f64::from(*p) * (1.0 - dim)).round() as u8;
+            }
+        }
         self.card.draw_logged(img, log, t);
     }
 
