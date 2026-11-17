@@ -25,7 +25,7 @@ pub const NAMES: [&str; 3] = ["TEST DUMMY", "TEST DUMMY 2", "TRUMPET"];
 
 /// The real fighters with an Engine 2 version (each also keeps its current-engine version). A fighter session adds
 /// its fighter's name here, and its name to [`NAMES`].
-pub const MOVED: [&str; 1] = ["TRUMPET"];
+pub const MOVED: [&str; 0] = [];
 
 /// The developer fighter's two names (TEST DUMMY and its mirror twin), offered only with the developer switch on.
 pub const DUMMIES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn dummy_is_not_offered() {
-        for name in NAMES {
+        for name in DUMMIES {
             assert!(crate::engines(name).is_empty());
             assert!(!crate::available().contains(&name));
             assert!(!crate::PORTED.contains(&name));
@@ -264,7 +264,7 @@ mod tests {
         let ff = bf_core::fightfile::FightFile::parse(include_str!("../../../../fights/engine2/test_dummy.toml"))
             .expect("the dummy's fight file parses");
         let marimba = crate::roster().iter().find(|f| f.name == "MARIMBA").unwrap();
-        for (k, name) in NAMES.into_iter().enumerate() {
+        for (k, name) in DUMMIES.into_iter().enumerate() {
             let c = cfg(name).expect("a roster entry");
             assert_eq!(c.name, name);
             assert_eq!((c.pp.as_str(), c.register), (marimba.pp.as_str(), marimba.register));
@@ -302,7 +302,7 @@ mod tests {
 
     #[test]
     fn dummy_still_hidden() {
-        for name in NAMES {
+        for name in DUMMIES {
             assert!(crate::roster().iter().all(|f| f.name != name), "{name}");
             assert!(crate::fighters::entry(name).is_none(), "{name}");
         }

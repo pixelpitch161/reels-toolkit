@@ -225,7 +225,11 @@ fn lead_pipe_lance() -> MoveDef {
         let mut p = [Joint::REST; BONES];
         p[LANCE] = j(0.0, 0.0, reach(len));
         // HORN: yaw is the turn (a quarter turn = mouthpiece first), pitch a small dip on the thrust
-        p[HORN] = j(turn * std::f64::consts::FRAC_PI_2, if act >= 0.0 && act < 6.0 { 0.06 } else { 0.0 }, 1.0);
+        p[HORN] = j(
+            turn * std::f64::consts::FRAC_PI_2,
+            if (0.0..6.0).contains(&act) { 0.06 } else { 0.0 },
+            1.0,
+        );
         p
     });
     MoveDef {
@@ -266,20 +270,36 @@ fn valve_cap_yoyos() -> MoveDef {
             (0.6 + 0.25 * out_back(x), -0.35 * smooth(x) + wobble, 0.9 * smooth(x))
         } else if act <= af {
             let x = act / af;
-            (0.85 + 0.5 * smooth(act / 4.0), std::f64::consts::TAU * smooth(x) * 1.0 - 0.35 * (1.0 - smooth(act / 4.0)), 0.9 * (1.0 - smooth(act / 5.0)) + 0.12)
+            (
+                0.85 + 0.5 * smooth(act / 4.0),
+                std::f64::consts::TAU * smooth(x) * 1.0 - 0.35 * (1.0 - smooth(act / 4.0)),
+                0.9 * (1.0 - smooth(act / 5.0)) + 0.12,
+            )
         } else {
             let x = (act - af) / rf;
-            (1.35 - 0.75 * smooth(x / 0.6), std::f64::consts::TAU + 0.8 * smooth(x), 0.12 + 0.8 * smooth(x))
+            (
+                1.35 - 0.75 * smooth(x / 0.6),
+                std::f64::consts::TAU + 0.8 * smooth(x),
+                0.12 + 0.8 * smooth(x),
+            )
         };
         let mut p = [Joint::REST; BONES];
         // the hub turns back into the ball's centre (0.6 behind the surface point)
         let hub_on = if s <= 1.0 || s >= f64::from(total) { 0.0 } else { 1.0 };
-        p[HUB] = j(std::f64::consts::PI * hub_on, 0.0, if hub_on > 0.0 { reach(0.6) } else { 1.0 });
+        p[HUB] = j(
+            std::f64::consts::PI * hub_on,
+            0.0,
+            if hub_on > 0.0 { reach(0.6) } else { 1.0 },
+        );
         for (i, b) in [CAP1, CAP2, CAP3].into_iter().enumerate() {
             // relative to the hub's yaw (pi): the caps' own angle round the ball is spin + i * third
             let ang = spin + f64::from(i as u32) * third;
             let l = if hub_on > 0.0 { len } else { STUB };
-            p[b] = j(ang - std::f64::consts::PI * hub_on, lift.min(1.2) * (0.35 + 0.15 * f64::from(i as u32 % 2)), reach(l));
+            p[b] = j(
+                ang - std::f64::consts::PI * hub_on,
+                lift.min(1.2) * (0.35 + 0.15 * f64::from(i as u32 % 2)),
+                reach(l),
+            );
         }
         p
     });

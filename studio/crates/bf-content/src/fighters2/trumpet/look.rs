@@ -52,15 +52,28 @@ fn along(a: V3, b: V3, r: f32) -> M4 {
     let d = maths::sub(b, a);
     let len = maths::length(d).max(1e-5);
     let y = maths::scale(d, 1.0 / len);
-    let helper = if y[1].abs() < 0.9 { [0.0, 1.0, 0.0] } else { [1.0, 0.0, 0.0] };
+    let helper = if y[1].abs() < 0.9 {
+        [0.0, 1.0, 0.0]
+    } else {
+        [1.0, 0.0, 0.0]
+    };
     let x = maths::normalize(maths::cross(helper, y));
     let z = maths::cross(x, y);
-    basis(maths::scale(x, r), d, maths::scale(z, r), maths::scale(maths::add(a, b), 0.5))
+    basis(
+        maths::scale(x, r),
+        d,
+        maths::scale(z, r),
+        maths::scale(maths::add(a, b), 0.5),
+    )
 }
 
 /// A sphere squashed to `flat` along `axis` (unit), radius `r`, at `c`.
 fn disc(c: V3, axis: V3, r: f32, flat: f32) -> M4 {
-    let helper = if axis[1].abs() < 0.9 { [0.0, 1.0, 0.0] } else { [1.0, 0.0, 0.0] };
+    let helper = if axis[1].abs() < 0.9 {
+        [0.0, 1.0, 0.0]
+    } else {
+        [1.0, 0.0, 0.0]
+    };
     let x = maths::normalize(maths::cross(helper, axis));
     let z = maths::cross(x, axis);
     basis(maths::scale(x, r), maths::scale(axis, r * flat), maths::scale(z, r), c)
@@ -120,7 +133,10 @@ impl Look2 for TrumpetLook {
         let turn = facing - horn.yaw;
         let d = floor_dir(turn);
         let e1 = floor_dir(turn - std::f64::consts::FRAC_PI_2);
-        let (sp, cp) = (bf_core::dmath::sinf(horn.pitch as f32), bf_core::dmath::cosf(horn.pitch as f32));
+        let (sp, cp) = (
+            bf_core::dmath::sinf(horn.pitch as f32),
+            bf_core::dmath::cosf(horn.pitch as f32),
+        );
         let dy = maths::add(maths::scale(d, cp), maths::scale(UP, sp));
         let up = maths::sub(maths::scale(UP, cp), maths::scale(d, sp));
         let s = BALL_R * 0.84;
@@ -152,15 +168,26 @@ impl Look2 for TrumpetLook {
             // starts a little inside the glass, at the valve
             let a0 = maths::sub(a, maths::scale(dir, 0.12));
             out.instances.push(
-                Instance::new(m.cyl, toon(), along(a0, maths::add(a0, maths::scale(dir, 0.1)), 0.062)).coloured(brass()),
+                Instance::new(m.cyl, toon(), along(a0, maths::add(a0, maths::scale(dir, 0.1)), 0.062))
+                    .coloured(brass()),
             );
-            out.instances.push(Instance::new(m.cyl, toon(), along(a0, tip, 0.032)).coloured(silver()));
+            out.instances
+                .push(Instance::new(m.cyl, toon(), along(a0, tip, 0.032)).coloured(silver()));
             out.instances.push(
-                Instance::new(m.cyl, toon(), along(tip, maths::add(tip, maths::scale(dir, 0.045)), 0.09)).coloured(yellow()),
+                Instance::new(
+                    m.cyl,
+                    toon(),
+                    along(tip, maths::add(tip, maths::scale(dir, 0.045)), 0.09),
+                )
+                .coloured(yellow()),
             );
             out.instances.push(
-                Instance::new(m.sphere, toon(), disc(maths::add(tip, maths::scale(dir, 0.05)), dir, 0.07, 0.45))
-                    .coloured(pearl()),
+                Instance::new(
+                    m.sphere,
+                    toon(),
+                    disc(maths::add(tip, maths::scale(dir, 0.05)), dir, 0.07, 0.45),
+                )
+                .coloured(pearl()),
             );
         }
 
@@ -178,20 +205,34 @@ impl Look2 for TrumpetLook {
                     let to = total * (i as f32 + 1.0) / 3.0;
                     let p0 = maths::add(a0, maths::scale(dir, from));
                     let p1 = maths::add(a0, maths::scale(dir, to));
-                    out.instances.push(Instance::new(m.cyl, toon(), along(p0, p1, r)).coloured(brass()));
+                    out.instances
+                        .push(Instance::new(m.cyl, toon(), along(p0, p1, r)).coloured(brass()));
                     // a ferrule at the section's mouth
                     out.instances.push(
-                        Instance::new(m.cyl, toon(), along(maths::sub(p1, maths::scale(dir, 0.03)), p1, r + 0.014))
-                            .coloured(yellow()),
+                        Instance::new(
+                            m.cyl,
+                            toon(),
+                            along(maths::sub(p1, maths::scale(dir, 0.03)), p1, r + 0.014),
+                        )
+                        .coloured(yellow()),
                     );
                 }
                 // the mouthpiece: a silver shank and cup
                 out.instances.push(
-                    Instance::new(m.cyl, toon(), along(tip, maths::add(tip, maths::scale(dir, 0.1)), 0.035)).coloured(silver()),
+                    Instance::new(
+                        m.cyl,
+                        toon(),
+                        along(tip, maths::add(tip, maths::scale(dir, 0.1)), 0.035),
+                    )
+                    .coloured(silver()),
                 );
                 out.instances.push(
-                    Instance::new(m.sphere, toon(), disc(maths::add(tip, maths::scale(dir, 0.13)), dir, 0.075, 0.6))
-                        .coloured(silver()),
+                    Instance::new(
+                        m.sphere,
+                        toon(),
+                        disc(maths::add(tip, maths::scale(dir, 0.13)), dir, 0.075, 0.6),
+                    )
+                    .coloured(silver()),
                 );
             }
         }
@@ -206,13 +247,27 @@ impl Look2 for TrumpetLook {
             }
             let dir = maths::scale(v, 1.0 / len);
             let from = maths::add(a, maths::scale(dir, BALL_R * 0.85));
-            out.instances.push(Instance::new(m.cyl, toon(), along(from, tip, 0.012)).coloured(silver()));
+            out.instances
+                .push(Instance::new(m.cyl, toon(), along(from, tip, 0.012)).coloured(silver()));
             out.instances.push(
-                Instance::new(m.cyl, toon(), along(maths::sub(tip, maths::scale(UP, 0.035)), maths::add(tip, maths::scale(UP, 0.035)), 0.1))
-                    .coloured(brass()),
+                Instance::new(
+                    m.cyl,
+                    toon(),
+                    along(
+                        maths::sub(tip, maths::scale(UP, 0.035)),
+                        maths::add(tip, maths::scale(UP, 0.035)),
+                        0.1,
+                    ),
+                )
+                .coloured(brass()),
             );
             out.instances.push(
-                Instance::new(m.sphere, toon(), disc(maths::add(tip, maths::scale(UP, 0.04)), UP, 0.065, 0.5)).coloured(pearl()),
+                Instance::new(
+                    m.sphere,
+                    toon(),
+                    disc(maths::add(tip, maths::scale(UP, 0.04)), UP, 0.065, 0.5),
+                )
+                .coloured(pearl()),
             );
         }
         Vec::new()
