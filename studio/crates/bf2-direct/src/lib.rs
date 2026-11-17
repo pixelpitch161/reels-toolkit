@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod arena;
 pub mod camera;
 pub mod cfg;
 pub mod project;
@@ -18,6 +19,7 @@ pub mod shots;
 mod testkit;
 pub mod time;
 
+pub use arena::{ArenaFrame, ArenaTrack};
 pub use camera::CameraTrack;
 pub use cfg::{DirectCfg, FPS, FRAMES};
 pub use project::{CamPose, project, to_render};
