@@ -295,8 +295,21 @@ const COMMON: &str = include_str!("shaders/common.wgsl");
 fn module(gpu: &Gpu, label: &str, body: &str) -> wgpu::ShaderModule {
     gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(label),
-        source: wgpu::ShaderSource::Wgsl(format!("{COMMON}\n{body}").into()),
+        source: wgpu::ShaderSource::Wgsl(format!("{}\n{COMMON}\n{body}", px_consts()).into()),
     })
+}
+
+/// The pixel-style spike's settings, from the environment (BF2_PX_MODE, BF2_PX_CELL, BF2_PX_WORLD, BF2_PX_STEPS).
+fn px_consts() -> String {
+    let get = |k: &str, d: &str| std::env::var(k).unwrap_or_else(|_| d.to_string());
+    format!(
+        "const PX_MODE: u32 = {}u;\nconst PX_CELL: f32 = {:?};\nconst PX_WORLD: f32 = {:?};\nconst PX_STEPS: f32 = {:?};\nconst PX_DITHER: f32 = {:?};",
+        get("BF2_PX_MODE", "0").parse::<u32>().unwrap_or(0),
+        get("BF2_PX_CELL", "3").parse::<f32>().unwrap_or(3.0),
+        get("BF2_PX_WORLD", "0.03").parse::<f32>().unwrap_or(0.03),
+        get("BF2_PX_STEPS", "5").parse::<f32>().unwrap_or(5.0),
+        get("BF2_PX_DITHER", "0.35").parse::<f32>().unwrap_or(0.35),
+    )
 }
 
 fn layout_entry(binding: u32, visibility: wgpu::ShaderStages, ty: wgpu::BindingType) -> wgpu::BindGroupLayoutEntry {
