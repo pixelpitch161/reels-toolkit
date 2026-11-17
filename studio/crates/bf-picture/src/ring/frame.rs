@@ -487,6 +487,7 @@ impl Picture {
         }
         if let Some(pu) = &p.punch {
             pu.ko_grade(&mut img64, &cam, t);
+            pu.anime(p, &mut img64, &cam, t, &drawn);
         }
         stage!(Stage::Scrim, StagePic::F64(img64), None);
         let mut img = Pic::F64(img64);
@@ -508,6 +509,9 @@ impl Picture {
         stage!(Stage::Countdown, StagePic::U8(out), None);
         // the title card covers the HUD: skip it
         let card_closed = self.card.door_offset(t) == 0.0;
+        if let Some(pu) = &p.punch {
+            pu.cut_in(&mut out, &mut log, t);
+        }
         let bars = p.draw_ui(&mut out, &mut log, t, &fs, &drawn, card_closed);
         if let (Some(pu), Some(bars)) = (&p.punch, bars) {
             pu.heartbeat(&mut out, &bars, [p.hp_at(0, t), p.hp_at(1, t)], t);

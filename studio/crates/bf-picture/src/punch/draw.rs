@@ -81,7 +81,7 @@ impl Punch {
             let sp = cam.wp(&pts);
             for i in 0..sp.len() {
                 let (a, b) = (sp[i], sp[(i + 1) % sp.len()]);
-                let steps = ((b.0 - a.0).hypot(b.1 - a.1)).ceil().max(1.0) as usize;
+                let steps = (hyp(b.0 - a.0, b.1 - a.1)).ceil().max(1.0) as usize;
                 for s in 0..steps {
                     let f = s as f64 / steps as f64;
                     splat(arr, a.0 + (b.0 - a.0) * f, a.1 + (b.1 - a.1) * f, col, 0.85 * k);
@@ -126,7 +126,7 @@ impl Punch {
                     for s in 0..steps {
                         let f = s as f64 / steps as f64;
                         let (x, y) = (p.0 + (q.0 - p.0) * f, p.1 + (q.1 - p.1) * f);
-                        if (x - d.s.0).hypot(y - d.s.1) > d.rp * 0.93 {
+                        if hyp(x - d.s.0, y - d.s.1) > d.rp * 0.93 {
                             break;
                         }
                         darken(arr, x, y, 0.55);
@@ -152,7 +152,7 @@ impl Punch {
         if amt > 0.01 {
             for y in 0..img.h {
                 for x in 0..img.w {
-                    let d = (x as f64 - c.0).hypot(y as f64 - c.1);
+                    let d = hyp(x as f64 - c.0, y as f64 - c.1);
                     let a = amt * ss(keep_r * 0.8, keep_r * 1.6, d);
                     if a <= 0.0 {
                         continue;
@@ -229,6 +229,10 @@ impl Punch {
             }
         }
     }
+}
+
+fn hyp(x: f64, y: f64) -> f64 {
+    (x * x + y * y).sqrt()
 }
 
 /// Darkens the pixel at `(x, y)` by `k` (a crack's line).

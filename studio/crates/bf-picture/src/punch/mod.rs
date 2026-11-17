@@ -7,6 +7,7 @@
 //! number. A fight file with `picture.look = "classic"` (or none) never builds a [`Punch`]: its frames are the
 //! kit's, bit for bit.
 
+pub mod anime;
 pub mod clock;
 mod draw;
 
@@ -55,6 +56,8 @@ pub struct Punch {
     pub leads: Vec<(f64, usize)>,
     /// Debris, embers and smoke.
     pub debris: Particles,
+    /// The anime layer: specials, ability spans, styles.
+    pub anime: anime::Anime,
     t_fight: f64,
     t_ko: f64,
     t_hs: f64,
@@ -146,20 +149,20 @@ impl Punch {
                 pos,
                 "chips",
                 &Emit {
-                    n: Some((3.0 + 6.0 * h.s).round() as i64),
+                    n: Some((10.0 + 18.0 * h.s).round() as i64),
                     dir: [push[0], 0.9, push[2]],
                     col: Some(vec![p.col[h.vic], p.dark[h.vic], [235.0, 230.0, 220.0]]),
                     scale: 0.7 + 0.5 * h.s,
                     ..Emit::default()
                 },
             );
-            if h.s >= 0.6 {
+            {
                 debris.emit(
                     h.t,
                     pos,
                     "sparks",
                     &Emit {
-                        n: Some((6.0 * h.s).round() as i64),
+                        n: Some((8.0 + 16.0 * h.s).round() as i64),
                         dir: [push[0], 0.5, push[2]],
                         col: Some(vec![p.col[h.att].map(|c| c * 0.5 + 128.0)]),
                         scale: 0.8,
@@ -174,6 +177,30 @@ impl Punch {
                     "embers",
                     &Emit {
                         n: Some(5),
+                        ..Emit::default()
+                    },
+                );
+            }
+        }
+        let anime = anime::Anime::new(p, &hits);
+        for sp in &anime.specials {
+            let pos = scene::to_world(sp.at[0], sp.at[1], R);
+            let hot = p.col[sp.k].map(|c| c * 0.5 + 128.0);
+            for (kind, n, col) in [
+                ("sparks", 40, hot),
+                ("embers", 30, [255.0, 190.0, 110.0]),
+                ("chips", 30, p.col[1 - sp.k]),
+                ("shards", 16, p.col[sp.k]),
+                ("smoke", 10, [90.0, 86.0, 96.0]),
+            ] {
+                debris.emit(
+                    sp.t_hit,
+                    pos,
+                    kind,
+                    &Emit {
+                        n: Some(n),
+                        col: Some(vec![col, [255.0, 250.0, 235.0]]),
+                        scale: 1.3,
                         ..Emit::default()
                     },
                 );
@@ -204,6 +231,7 @@ impl Punch {
             t_low,
             leads,
             debris,
+            anime,
             t_fight: g.t_fight,
             t_ko: p.t_ko,
             t_hs: p.t_hs,
