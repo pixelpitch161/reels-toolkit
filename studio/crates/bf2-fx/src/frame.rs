@@ -31,6 +31,13 @@ pub trait LookFx: Send + Sync {
         let _ = (k, rec, step_to_t, out);
         Ok(())
     }
+
+    /// How the shared presets' records of this fighter's event `e` are turned down (`tone::Restraint::NONE`: as
+    /// they are). The K.O. event is the winner's.
+    fn tone(&self, e: &bf2_sim::EvKind) -> crate::tone::Restraint {
+        let _ = e;
+        crate::tone::Restraint::NONE
+    }
 }
 
 /// Where `a` is in frame `f` (sim space).

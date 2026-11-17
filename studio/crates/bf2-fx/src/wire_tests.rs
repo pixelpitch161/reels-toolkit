@@ -256,11 +256,18 @@ fn a_multi_hit_special_impacts_once_on_its_last_contact() {
             r.t0 == to_t(s) && matches!(&r.kind, FxKind::Screen(d) if matches!(d.effect, ScreenFx::Flash { .. }))
         })
     };
-    let drawn_at = |s: u32| tl.records.iter().any(|r| r.t0 == to_t(s) && matches!(r.kind, FxKind::Burst(_)));
+    let drawn_at = |s: u32| {
+        tl.records
+            .iter()
+            .any(|r| r.t0 == to_t(s) && matches!(r.kind, FxKind::Burst(_)))
+    };
     for s in [100, 105, 108, 112, 400] {
         assert!(drawn_at(s), "contact at step {s} has its sparks");
     }
-    assert!(!flash_at(100) && !flash_at(105), "the special's first hits are heavy hits");
+    assert!(
+        !flash_at(100) && !flash_at(105),
+        "the special's first hits are heavy hits"
+    );
     assert!(flash_at(112), "its last hit is the special impact");
     assert!(flash_at(108), "the other fighter's special is its own");
     assert!(flash_at(400), "a lone special is a special impact");

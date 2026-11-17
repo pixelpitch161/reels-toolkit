@@ -346,10 +346,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
     let mut o = Out { h, recs: Vec::new() };
     let d = dir_of(h.normal);
     let at = Anchor::World(h.at);
-    o.burst(
-        1.0,
-        sparks(22_000, (6.0, 26.0), d, 1.6, spark(h.colour, 12.0), 0.04),
-    );
+    o.burst(1.0, sparks(22_000, (6.0, 26.0), d, 1.6, spark(h.colour, 12.0), 0.04));
     o.burst(
         0.8,
         sparks(

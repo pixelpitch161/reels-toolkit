@@ -10,6 +10,7 @@ use crate::presets::{self, Hit, Tier};
 use crate::record::{Anchor, Env, Exit, FxError, FxKind, FxRecord};
 use crate::screen::{ScreenDef, ScreenFx};
 use crate::timeline::FxTimeline;
+use crate::tone::Restraint;
 
 /// Fighter `k`'s ball centre at step `s` (sim space), held at the last step past the end.
 fn centre(rec: &Recording2, defs: [&FighterDef; 2], k: usize, s: usize) -> [f64; 3] {
@@ -54,6 +55,23 @@ pub fn wire(
     defs: [&FighterDef; 2],
     colours: [[f32; 3]; 2],
     step_to_t: &dyn Fn(u32) -> f64,
+    out: &mut FxTimeline,
+) -> Result<Vec<usize>, FxError> {
+    let none = |_: &EvKind| Restraint::NONE;
+    wire_toned(rec, defs, colours, step_to_t, [&none, &none], out)
+}
+
+/// [`wire`], each event's records turned down by its fighter's restraint (`tones[who]`, e.g. a look's
+/// [`crate::frame::LookFx::tone`]); a record the restraint drops is left out.
+///
+/// # Errors
+/// As [`wire`].
+pub fn wire_toned(
+    rec: &Recording2,
+    defs: [&FighterDef; 2],
+    colours: [[f32; 3]; 2],
+    step_to_t: &dyn Fn(u32) -> f64,
+    tones: [&dyn Fn(&EvKind) -> Restraint; 2],
     out: &mut FxTimeline,
 ) -> Result<Vec<usize>, FxError> {
     let mut made = Vec::new();
@@ -146,6 +164,13 @@ pub fn wire(
             }
             _ => Vec::new(),
         };
+        // the K.O. is the winner's moment
+        let toner = match e.kind {
+            EvKind::Ko { target } => 1 - target.min(1),
+            _ => who,
+        };
+        let k = tones[toner](&e.kind);
+        let recs: Vec<FxRecord> = recs.into_iter().filter_map(|r| k.apply(r)).collect();
         if !recs.is_empty() {
             made.push(i);
             out.extend(recs)?;

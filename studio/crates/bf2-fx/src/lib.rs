@@ -18,6 +18,7 @@ pub mod screen;
 #[cfg(test)]
 mod testkit;
 pub mod timeline;
+pub mod tone;
 pub mod trail;
 pub mod wire;
 

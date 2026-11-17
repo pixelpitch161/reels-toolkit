@@ -315,6 +315,7 @@ impl Scene2 {
         let names = [ff.fighters[0].as_str(), ff.fighters[1].as_str()];
         let mut looks = Vec::new();
         let mut defs = Vec::new();
+        let mut fxs = Vec::new();
         let mut colours = [[0.0; 3]; 2];
         let mut timeline = FxTimeline::new();
         // Directed once for the whole fight: the frames, the effects (in video time), the camera and the arena
@@ -335,10 +336,23 @@ impl Scene2 {
                 .map_err(|e| fx_error(name, &e))?;
             looks.push(look);
             defs.push(def);
+            fxs.push(fx);
         }
         let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
-        bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
-            .map_err(|e| fx_error("the fight", &e))?;
+        // each fighter's events wired to the shared presets, turned down as its look says
+        let (t0, t1) = (
+            |e: &bf2_sim::EvKind| fxs[0].tone(e),
+            |e: &bf2_sim::EvKind| fxs[1].tone(e),
+        );
+        bf2_fx::wire::wire_toned(
+            &rec,
+            [&defs[0], &defs[1]],
+            colours,
+            &step_to_t,
+            [&t0, &t1],
+            &mut timeline,
+        )
+        .map_err(|e| fx_error("the fight", &e))?;
         let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
         let dref = [&*defs[0], &*defs[1]];
         let (show, shadow) = bf_content::video_show2(&rec, dref, map, ff)?;

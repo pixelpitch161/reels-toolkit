@@ -15,9 +15,9 @@ use std::sync::atomic::AtomicBool;
 use std::time::Instant;
 
 use bf_content::{build_soundtrack2, fighters2};
+use bf_core::fightfile::FightFile;
 use bf_export::checks::BandPlan;
 use bf_export::checks::engine2::{focus2, pre_render2};
-use bf_core::fightfile::FightFile;
 use bf_export::job2::{Frames2, Scene2, ko_check};
 use bf2_fx::presets::Tier;
 use bf2_render::Gpu;

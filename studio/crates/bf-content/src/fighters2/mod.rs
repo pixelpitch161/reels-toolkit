@@ -365,4 +365,50 @@ mod tests {
         // Smears and lightning (trails), the dome, the beam and the decals all appear.
         assert!(kinds.len() >= 4, "{} kinds of record", kinds.len());
     }
+
+    /// Aedan, E7: the dummy's attack effects toned down by a lot. Wired through its restraint, a real fight keeps
+    /// under a third of the presets' sparks, no lens effects outside the K.O., and every record still fades out.
+    #[test]
+    fn dummy_effects_are_toned_down() {
+        use bf2_fx::presets::{MIN_FALL, particle_count};
+        use bf2_fx::screen::ScreenFx;
+        use bf2_fx::{FxKind, FxTimeline};
+        let defs = [def("TEST DUMMY").unwrap(), def("TEST DUMMY 2").unwrap()];
+        let fx = [look_fx("TEST DUMMY").unwrap(), look_fx("TEST DUMMY 2").unwrap()];
+        let mut rules = bf2_sim::Rules2::new(4.5);
+        rules.dmg_scale = 2.0;
+        let rec = bf2_sim::run(
+            &bf2_sim::Setup2 {
+                fighters: defs.clone(),
+                rules,
+                seed: 576,
+            },
+            true,
+        )
+        .unwrap();
+        let to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+        let colours = [[0.6; 3], [1.0, 0.4, 0.1]];
+        let (mut full, mut toned) = (FxTimeline::new(), FxTimeline::new());
+        bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &to_t, &mut full).unwrap();
+        let (a, b) = (|e: &bf2_sim::EvKind| fx[0].tone(e), |e: &bf2_sim::EvKind| fx[1].tone(e));
+        bf2_fx::wire::wire_toned(&rec, [&defs[0], &defs[1]], colours, &to_t, [&a, &b], &mut toned).unwrap();
+        let (pf, pt) = (particle_count(&full.records), particle_count(&toned.records));
+        assert!(pt * 3 < pf, "{pf} -> {pt}");
+        let t_ko = rec
+            .events
+            .iter()
+            .find(|e| matches!(e.kind, bf2_sim::EvKind::Ko { .. }))
+            .map(|e| to_t(e.step));
+        for r in &toned.records {
+            assert!(r.env.release >= MIN_FALL, "{r:?}");
+            if let FxKind::Screen(s) = &r.kind {
+                let lens = matches!(
+                    s.effect,
+                    ScreenFx::SpeedLines { .. } | ScreenFx::RadialBlur { .. } | ScreenFx::Chroma { .. }
+                );
+                let at_ko = t_ko.is_some_and(|t| (r.t0 - t).abs() < 0.05);
+                assert!(!lens || at_ko, "a lens effect off the K.O.: {r:?}");
+            }
+        }
+    }
 }

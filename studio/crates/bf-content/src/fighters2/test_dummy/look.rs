@@ -9,6 +9,7 @@ use std::sync::Arc;
 use bf2_fx::decal::{DECAL_LIFE, DecalDef, DecalKind, Surface};
 use bf2_fx::frame::LookFx;
 use bf2_fx::meshfx::{BeamDef, DomeDef};
+use bf2_fx::tone::Restraint;
 use bf2_fx::trail::{PROJ, TrailDef, TrailStyle};
 use bf2_fx::{Anchor, Env, Exit, FxError, FxKind, FxRecord, FxTimeline};
 use bf2_render::maths::{self, M4, V3};
@@ -225,8 +226,9 @@ impl Look2 for DummyLook {
 }
 
 /// The dummy's grey as HDR light, and its orange accent, hot.
-const GREY_HOT: [f32; 3] = [2.0, 2.05, 2.2];
-const ORANGE_HOT: [f32; 3] = [9.0, 3.6, 0.7];
+/// (E7: Aedan asked for the dummy's attack effects toned down by a lot: these are half what they were.)
+const GREY_HOT: [f32; 3] = [1.0, 1.02, 1.1];
+const ORANGE_HOT: [f32; 3] = [4.5, 1.8, 0.35];
 
 fn record(t0: f64, life: f32, exit: Exit, env: Env, seed: u32, anchor: Anchor, kind: FxKind) -> FxRecord {
     FxRecord {
@@ -269,8 +271,8 @@ impl LookFx for DummyLook {
                         FxKind::Trail(TrailDef {
                             k,
                             bone: FIST,
-                            width: (0.3, 0.05),
-                            length_s: 0.12,
+                            width: (0.2, 0.04),
+                            length_s: 0.1,
                             colour: GREY_HOT,
                             core: ORANGE_HOT,
                             style: TrailStyle::Smear,
@@ -290,10 +292,10 @@ impl LookFx for DummyLook {
                         FxKind::Trail(TrailDef {
                             k,
                             bone: FIST,
-                            width: (0.22, 0.04),
-                            length_s: 0.22,
-                            colour: [4.0, 2.2, 0.8],
-                            core: [5.0, 3.6, 2.0],
+                            width: (0.15, 0.03),
+                            length_s: 0.18,
+                            colour: [2.0, 1.1, 0.4],
+                            core: [2.5, 1.8, 1.0],
                             style: TrailStyle::Lightning,
                         }),
                     ))?;
@@ -312,22 +314,22 @@ impl LookFx for DummyLook {
                     }
                     out.push(record(
                         t0,
-                        1.0,
+                        0.6,
                         Exit::Burst,
                         Env::new(0.04, 0.15, 0.5),
                         seed,
                         Anchor::World(*point),
                         FxKind::Dome(DomeDef {
-                            r: (0.3, 2.4),
-                            colour: [2.0, 0.9, 0.2],
+                            r: (0.3, 1.3),
+                            colour: [1.0, 0.45, 0.1],
                             fresnel: 0.85,
                         }),
                     ))?;
                     out.push(record(
                         t0,
-                        0.55,
+                        0.4,
                         Exit::Fade,
-                        Env::new(0.02, 0.1, 0.35),
+                        Env::new(0.02, 0.08, 0.25),
                         seed ^ 1,
                         Anchor::Bone { k, bone: FIST },
                         FxKind::Beam(BeamDef {
@@ -336,10 +338,10 @@ impl LookFx for DummyLook {
                                 k: (*target).min(1),
                                 offset: [0.0; 3],
                             },
-                            width: 0.35,
-                            colour: [4.0, 1.7, 0.4],
-                            core: [6.0, 4.4, 2.4],
-                            jitter: 0.18,
+                            width: 0.2,
+                            colour: [2.0, 0.85, 0.2],
+                            core: [3.0, 2.2, 1.2],
+                            jitter: 0.12,
                         }),
                     ))?;
                 }
@@ -361,10 +363,10 @@ impl LookFx for DummyLook {
                         FxKind::Trail(TrailDef {
                             k,
                             bone: PROJ + *proj,
-                            width: (0.3, 0.02),
-                            length_s: 0.25,
-                            colour: [5.0, 2.0, 0.4],
-                            core: [9.0, 8.0, 6.0],
+                            width: (0.2, 0.02),
+                            length_s: 0.2,
+                            colour: [2.5, 1.0, 0.2],
+                            core: [4.5, 4.0, 3.0],
                             style: TrailStyle::Ribbon,
                         }),
                     ))?;
@@ -378,7 +380,7 @@ impl LookFx for DummyLook {
                     let p = st.pos[(*target).min(1)];
                     for (j, (kind, r, colour)) in [
                         (DecalKind::Scorch, 1.1, [0.02, 0.015, 0.012]),
-                        (DecalKind::Glow, 0.8, [6.0, 2.0, 0.3]),
+                        (DecalKind::Glow, 0.6, [3.0, 1.0, 0.15]),
                     ]
                     .into_iter()
                     .enumerate()
@@ -403,5 +405,31 @@ impl LookFx for DummyLook {
             }
         }
         Ok(())
+    }
+
+    /// The shared presets turned well down for the dummy's events (Aedan, E7: "tone down their attack effects by
+    /// a lot ... very subtle for now"): a fifth of the sparks, a third of the glow and flash, shorter rings and
+    /// lights, smaller marks on the canvas, and no lens effects (speed lines, radial blur, chroma, shockwaves) on
+    /// its hits. The K.O. stays readable: more of everything than a hit, its lens effects kept but turned down.
+    fn tone(&self, e: &EvKind) -> Restraint {
+        if matches!(e, EvKind::Ko { .. }) {
+            Restraint {
+                particles: 0.35,
+                glow: 0.5,
+                life: 0.8,
+                marks: 0.8,
+                screen: 0.45,
+                lens: true,
+            }
+        } else {
+            Restraint {
+                particles: 0.2,
+                glow: 0.35,
+                life: 0.6,
+                marks: 0.55,
+                screen: 0.3,
+                lens: false,
+            }
+        }
     }
 }

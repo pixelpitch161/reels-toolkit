@@ -39,14 +39,26 @@ fn main() {
     let colours = [0, 1].map(|k| bf_export::job2::linear(defs[k].colour));
     let mut timeline = FxTimeline::new();
     let mut looks: Vec<Box<dyn Look2>> = Vec::new();
+    let mut fxs = Vec::new();
     for (k, name) in ff.fighters.iter().enumerate() {
-        fighters2::look_fx(name)
-            .expect("an Engine 2 look")
-            .fx(k, &rec, &step_to_t, &mut timeline)
-            .expect("the look's effects");
+        let fx = fighters2::look_fx(name).expect("an Engine 2 look");
+        fx.fx(k, &rec, &step_to_t, &mut timeline).expect("the look's effects");
+        fxs.push(fx);
         looks.push(fighters2::look(name).expect("an Engine 2 look"));
     }
-    bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline).expect("the effects");
+    let (t0, t1) = (
+        |e: &bf2_sim::EvKind| fxs[0].tone(e),
+        |e: &bf2_sim::EvKind| fxs[1].tone(e),
+    );
+    bf2_fx::wire::wire_toned(
+        &rec,
+        [&defs[0], &defs[1]],
+        colours,
+        &step_to_t,
+        [&t0, &t1],
+        &mut timeline,
+    )
+    .expect("the effects");
     let mut looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
 
     println!(
