@@ -117,3 +117,8 @@ away, and what Engine 2 now does instead, each taken from how the current engine
 | No dithered haze: smooth gradients | The spot's beam (a dithered tenth over the can-to-pool outline), the vignette in fifths and the top scrim in sixths, all on the 4 x 4 Bayer dither | `Scene::beam` (`scene::Beam`), outlined on the CPU (`post::beam_outline`) and painted in `tonemap.wgsl` before the grade; the vignette and scrim banded and dithered there too |
 
 Before/after stills: `/mnt/project-files/ballfight-studio/engine2/arena-flat/`.
+
+Sharper still (Aedan: "still a little soft/blurry, maybe motion blur?"): speed no longer opens the shutter
+(`bf2_fx::screen::SPEED_BLUR = false`; a `MotionBlur` cue still does), the screen chain has no lens dirt and no
+grain (`ScreenLook::default`), and albedo maps are read texel for texel with no filtering (`common.wgsl`
+`read_maps`), as the current engine works the canvas out per pixel.

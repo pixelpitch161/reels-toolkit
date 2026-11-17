@@ -347,7 +347,8 @@ fn subframes_rise_with_speed() {
     let slow = swing(200, 0.3, 10);
     assert_eq!(n_for(&slow, 100, &tl), 1);
     let fast = swing(12, std::f64::consts::PI, 20);
-    assert_eq!(n_for(&fast, 8, &tl), 8);
+    // speed alone blurs only with SPEED_BLUR (off: frames stay sharp, as the current engine's)
+    assert_eq!(n_for(&fast, 8, &tl), if SPEED_BLUR { 8 } else { 1 });
     let mut last = 0;
     for steps in [400, 120, 60, 30, 12] {
         let rec = swing(steps, std::f64::consts::PI, 20);
