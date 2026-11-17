@@ -108,6 +108,29 @@ pub fn render(
     }
 }
 
+/// When the K.O. of `seed` under `ff` comes in video time, after slow-mo and the K.O. cinematic (Engine 2's beat
+/// sheet's K.O. window), or `None` without a K.O. Engine 2 fights without keeping its steps and builds the time map
+/// from the events alone, which is cheap enough for the seed search. The current engine has no time map, so its
+/// K.O. time is the recording's.
+///
+/// # Errors
+/// The set-up's sentence.
+pub fn ko_video_t(ff: &FightFile, seed: u64) -> Result<Option<f64>, EngineError> {
+    match fight(ff, seed, false)? {
+        Fought::One(rec) => Ok(rec.t_ko),
+        Fought::Two(rec) => {
+            let Some(ko) = rec.events.iter().find(|e| matches!(e.kind, bf2_sim::EvKind::Ko { .. })) else {
+                return Ok(None);
+            };
+            // No steps were kept: the map covers the fight up to its last event, which holds the K.O.
+            let steps = rec.events.last().map_or(0, |e| e.step + 1);
+            let cfg = bf2_direct::DirectCfg::default();
+            let map = bf2_direct::TimeMap::build(&rec.events, steps, rec.dt, rec.t_fight, Some(ko.step), &cfg);
+            Ok(map.ko_video_t())
+        }
+    }
+}
+
 /// Engine 2's set-up of `seed` under `ff`.
 fn engine_two_setup(ff: &FightFile, seed: u64) -> Result<Setup2, EngineError> {
     let def = |i: usize| {
@@ -255,5 +278,52 @@ mod tests {
         };
         let theirs = bf_sim::run(&classic_setup(&ff, 7).unwrap(), false).unwrap();
         assert_eq!(format!("{ours:?}"), format!("{theirs:?}"));
+    }
+
+    #[test]
+    fn ko_video_t_includes_slowmo() {
+        use bf2_sim::{Cue, EvKind};
+        let ff = dummy_file();
+        let mut checked = 0;
+        for seed in 1..=40 {
+            let r = two(fight(&ff, seed, false).expect("fights"));
+            let Some(t_ko) = r.outcome.t_ko else { continue };
+            let ko_step = r
+                .events
+                .iter()
+                .find(|e| matches!(e.kind, EvKind::Ko { .. }))
+                .map(|e| e.step);
+            let slowed = r
+                .events
+                .iter()
+                .any(|e| matches!(e.kind, EvKind::Cue(Cue::SlowMo { .. })) && Some(e.step) < ko_step);
+            let v = ko_video_t(&ff, seed)
+                .expect("fights")
+                .expect("a K.O. in video time too");
+            if slowed {
+                assert!(
+                    v > t_ko + 0.1,
+                    "seed {seed}: the K.O. at {v} s of video, {t_ko} s of fight"
+                );
+                checked += 1;
+            } else {
+                assert!(v >= t_ko - 1e-9, "seed {seed}");
+            }
+        }
+        assert!(checked > 0, "no seed has a special before its K.O.");
+        // The same K.O. time as the render job's map, built from the whole recording.
+        for seed in 1..=10 {
+            let r = two(fight(&ff, seed, true).expect("fights"));
+            let map = bf2_direct::TimeMap::from_recording(&r, &bf2_direct::DirectCfg::default());
+            assert_eq!(
+                ko_video_t(&ff, seed).unwrap(),
+                map.ko_video_t().filter(|_| r.outcome.t_ko.is_some())
+            );
+        }
+        let none = FightFile {
+            dmg_scale: 0.0,
+            ..dummy_file()
+        };
+        assert_eq!(ko_video_t(&none, 3).expect("fights"), None);
     }
 }

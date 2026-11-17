@@ -151,6 +151,7 @@ fn a_wired_hit_lights_its_frame() {
     use crate::frame::FxFrame;
     let (rec, f) = fight();
     let map = bf2_direct::TimeMap::from_recording(&rec, &bf2_direct::DirectCfg::default());
+    let dir = crate::frame::Direction::time_only(&map);
     let to_t = |s: u32| map.step_video_t(s);
     let mut tl = FxTimeline::new();
     wire(&rec, [&f, &f], [[1.0, 0.5, 0.2], [0.2, 0.5, 1.0]], &to_t, &mut tl).unwrap();
@@ -174,7 +175,7 @@ fn a_wired_hit_lights_its_frame() {
         &looks,
         [&f, &f],
         &rec,
-        &map,
+        &dir,
         &tl,
         colours,
         frame,
@@ -187,7 +188,7 @@ fn a_wired_hit_lights_its_frame() {
         &looks,
         [&f, &f],
         &rec,
-        &map,
+        &dir,
         &FxTimeline::new(),
         colours,
         frame,
@@ -209,7 +210,7 @@ fn a_wired_hit_lights_its_frame() {
         &looks,
         [&f, &f],
         &rec,
-        &map,
+        &dir,
         &tl,
         colours,
         frame,
