@@ -22,7 +22,18 @@ fn spec_step(n: vec3<f32>, l: vec3<f32>, v: vec3<f32>) -> f32 {
     return step(0.5, pow(max(dot(n, h), 0.0), SHININESS));
 }
 
-fn toon(in: VOut, i: InstanceG, maps: Maps) -> vec3<f32> {
+// The pixel spike's light cut: the toon bands (or PX_STEPS on the smooth set) with the ordered dither.
+fn lband(x: f32, bands: f32, cell: vec2<i32>) -> f32 {
+    if PX_MODE == 0u {
+        return band(x, bands);
+    }
+    return px_steps(x, select(PX_STEPS, bands, bands > 0.0), cell);
+}
+
+fn toon(in0: VOut, i: InstanceG, maps: Maps, px: PxAt) -> vec3<f32> {
+    var in = in0;
+    in.world = px.world;
+    in.nrm = px.nrm;
     let n = perturb(normalize(in.nrm), in.tan, maps.normal, i.mat_b.z);
     let v = normalize(frame.eye.xyz - in.world);
     let bands = f32(i.kind.y);
@@ -32,7 +43,7 @@ fn toon(in: VOut, i: InstanceG, maps: Maps) -> vec3<f32> {
     let reach = spot_reach(in.world, n);
     if reach > 0.0 {
         let l = normalize(frame.spot_pos.xyz - in.world);
-        diffuse += frame.spot_col.rgb * band(max(dot(n, l), 0.0) * reach, bands);
+        diffuse += frame.spot_col.rgb * lband(max(dot(n, l), 0.0) * reach, bands, px.cell);
         spec += frame.spot_col.rgb * spec_step(n, l, v) * step(0.5, reach);
     }
     for (var k = 0u; k < frame.info.x; k++) {
@@ -42,7 +53,7 @@ fn toon(in: VOut, i: InstanceG, maps: Maps) -> vec3<f32> {
             continue;
         }
         let l = normalize(lg.pos_range.xyz - in.world);
-        diffuse += lg.colour.rgb * band(max(dot(n, l), 0.0) * r, bands);
+        diffuse += lg.colour.rgb * lband(max(dot(n, l), 0.0) * r, bands, px.cell);
         spec += lg.colour.rgb * spec_step(n, l, v) * step(0.5, r);
     }
     let rim_amount = pow(1.0 - saturate(dot(n, v)), max(i.mat_a.w, 0.001));
@@ -53,6 +64,7 @@ fn toon(in: VOut, i: InstanceG, maps: Maps) -> vec3<f32> {
 @fragment
 fn fs_main(in: VOut) -> @location(0) vec4<f32> {
     let maps = read_maps(in);
+    let px = px_at(in);
     let i = instances[in.inst];
     if (in.flags & FLAG_EMIT) != 0u {
         return vec4<f32>(in.rgb.rgb, 1.0);
@@ -65,7 +77,7 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
             return vec4<f32>(in.rgb.rgb, 1.0);
         }
         default: {
-            return vec4<f32>(toon(in, i, maps), 1.0);
+            return vec4<f32>(toon(in, i, maps, px), 1.0);
         }
     }
 }

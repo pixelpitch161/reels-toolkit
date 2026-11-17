@@ -411,6 +411,35 @@ fn fit(ov: Overlay, (w, h): (u32, u32)) -> Overlay {
     Overlay { w, h, rgba }
 }
 
+/// How many times the pixel art is blown up at `w x h`: 2 for the video (540 x 960 art), 1 when the size is not a
+/// whole multiple of the art size (the preview draws at 540 x 960 itself, smaller sizes directly).
+fn pixel_scale((w, h): (u32, u32)) -> u32 {
+    let s = w / bf2_render::renderer::ART_W;
+    if s >= 2 && w == s * bf2_render::renderer::ART_W && h == s * bf2_render::renderer::ART_H {
+        s
+    } else {
+        1
+    }
+}
+
+/// `img` with each pixel made `k x k`.
+fn blow_up(img: &Rgb8, k: usize) -> Rgb8 {
+    let (w, c) = (img.w * k, img.c);
+    let mut data = Vec::with_capacity(w * img.h * k * c);
+    for row in img.data.chunks_exact(img.w * c) {
+        let mut line = Vec::with_capacity(w * c);
+        for px in row.chunks_exact(c) {
+            for _ in 0..k {
+                line.extend_from_slice(px);
+            }
+        }
+        for _ in 0..k {
+            data.extend_from_slice(&line);
+        }
+    }
+    Rgb8::from_vec(w, img.h * k, c, data)
+}
+
 /// The frames of an Engine 2 fight, drawn on demand in any order at any size by `bf2-fx`'s frame path (motion-blur
 /// sub-frames, effects, the screen chain) with the fight's UI layer composited after the tone map, exactly as the
 /// render job draws them: the job draws through it at 1080 x 1920, the app's preview at a smaller size on the
@@ -482,9 +511,14 @@ impl Frames2 {
         let defs = [&*sc.defs[0], &*sc.defs[1]];
         let dir = sc.directed.direction();
         // every frame: the UI layer of that frame, then the GPU frame with it composited after the tone map
+        // The pixel look: on a whole multiple of the art size (the video: 2x) the frame is drawn at 540 x 960, its
+        // pixels blown up, and the UI layer put over the big frame so it keeps its own exact 3x pixels.
+        let art = pixel_scale(*size);
         let mut draw = |f: usize| {
-            r.set_overlay(gpu, Some(&fit(ui.draw(f).0, *size)));
-            fx.render(
+            let ov = fit(ui.draw(f).0, *size);
+            let at = (size.0 / art, size.1 / art);
+            r.set_overlay(gpu, if art == 1 { Some(&ov) } else { None });
+            let img = fx.render(
                 r,
                 gpu,
                 stage,
@@ -495,8 +529,14 @@ impl Frames2 {
                 &sc.timeline,
                 sc.colours,
                 f,
-                *size,
-            )
+                at,
+            );
+            if art == 1 {
+                return img;
+            }
+            let mut big = blow_up(&img, art as usize);
+            bf2_render::overlay::composite_cpu(&mut big, &ov);
+            big
         };
         body(&ui, &mut draw)
     }

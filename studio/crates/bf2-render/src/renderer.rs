@@ -22,6 +22,11 @@ use crate::post::{Post, PostPass};
 use crate::scene::{MAX_LIGHTS, Material, Scene};
 use crate::target::{DEPTH_FORMAT, H, HDR_FORMAT, SAMPLES, Targets, W, read_back};
 
+/// The pixel art's size: an Engine 2 frame is drawn at 540 x 960 and each pixel blown up to 2 x 2 for the video
+/// (Aedan's pick of the pixel-style options, 2026-11-17: "Finer pixels").
+pub const ART_W: u32 = 540;
+pub const ART_H: u32 = 960;
+
 /// The spot's shadow map, in texels a side.
 pub const SHADOW_SIZE: u32 = 2048;
 
@@ -295,8 +300,25 @@ const COMMON: &str = include_str!("shaders/common.wgsl");
 fn module(gpu: &Gpu, label: &str, body: &str) -> wgpu::ShaderModule {
     gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(label),
-        source: wgpu::ShaderSource::Wgsl(format!("{COMMON}\n{body}").into()),
+        source: wgpu::ShaderSource::Wgsl(format!("{}\n{COMMON}\n{body}", px_consts()).into()),
     })
+}
+
+/// The pixel look's settings for the scene shaders (`px_at`, `px_steps` in common.wgsl). Default (Aedan's pick,
+/// 2026-11-17): mode 1 with one art pixel per drawn pixel, as the frame is drawn at 540 x 960 and blown up 2x
+/// ([`ART_W`], [`ART_H`]); the light is cut into dithered steps inside the shaders, not by a filter afterwards.
+/// The environment can override them for experiments: BF2_PX_MODE (0 smooth, 1 screen grid, 2 a grid fixed to the
+/// surfaces), BF2_PX_CELL, BF2_PX_WORLD, BF2_PX_STEPS, BF2_PX_DITHER.
+fn px_consts() -> String {
+    let get = |k: &str, d: &str| std::env::var(k).unwrap_or_else(|_| d.to_string());
+    format!(
+        "const PX_MODE: u32 = {}u;\nconst PX_CELL: f32 = {:?};\nconst PX_WORLD: f32 = {:?};\nconst PX_STEPS: f32 = {:?};\nconst PX_DITHER: f32 = {:?};",
+        get("BF2_PX_MODE", "1").parse::<u32>().unwrap_or(1),
+        get("BF2_PX_CELL", "1").parse::<f32>().unwrap_or(1.0),
+        get("BF2_PX_WORLD", "0.03").parse::<f32>().unwrap_or(0.03),
+        get("BF2_PX_STEPS", "5").parse::<f32>().unwrap_or(5.0),
+        get("BF2_PX_DITHER", "0.35").parse::<f32>().unwrap_or(0.35),
+    )
 }
 
 fn layout_entry(binding: u32, visibility: wgpu::ShaderStages, ty: wgpu::BindingType) -> wgpu::BindGroupLayoutEntry {

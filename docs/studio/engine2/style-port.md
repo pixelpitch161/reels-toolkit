@@ -66,7 +66,7 @@ cargo build -p bf-export --example engine2_style
 |---|---|
 | sRGB 0..255 everywhere, light multiplying colour directly, no tone map | Colours in linear light, `(c / 255)^2.2` (`stage::linear`). Off-spot set pieces (stands, crowd, skirt) take the current engine's shaded colour divided by the ambient, so the ambient alone reproduces the palette and effect lights still light them. `Post::ring` uses straight light under a soft shoulder (`knee` 0.7) and a 2.2 gamma, so a colour lit to `(c / 255)^2.2` comes out as `c`: the shadows are not crushed as ACES would crush them |
 | `grade(contrast 0.18, sat 1.18)`, `vignette(0.45, 0.55, cap 0.5, cy 0.47)`, `top_scrim(0.45, 100, 90)` | The same grade, vignette and scrim in the tone-map shader (`post::grade_cpu`, tested against `bf_picture::post::grade`); the screen chain's own vignette is off |
-| Bloom over 225, k 0.22; dither; nearest x3 upscale | Engine 2's bloom (threshold 1.0, 0.1); no dither or pixel upscale: those are the low fidelity being raised |
+| Bloom over 225, k 0.22; dither; nearest x3 upscale | Engine 2's bloom (threshold 1.0, 0.1). The pixel look (below) replaces the current dither and x3 upscale |
 
 ## Theme
 
@@ -91,3 +91,14 @@ already uses the same visual theme as every current fight; its fighters' colours
   not reach.
 - During the K.O. the arena picks up a soft haze from the remaining bloom and grade; it reads restrained but softer
   than the current K.O.
+
+## The pixel look (Aedan's pick, 2026-11-17: "Finer pixels")
+
+The video frame is drawn at 540 x 960 (`renderer::ART_W`, `ART_H`) and each pixel blown up to 2 x 2
+(`job2::pixel_scale`, `blow_up`); the UI layer is put over the big frame afterwards, so it keeps its own exact 3x
+pixels. The preview draws at 540 x 960 itself. The light is cut into steps inside the scene shaders (`px_at`,
+`px_steps` in `common.wgsl`; `lit.wgsl`, `glass.wgsl`): the toon bands, five steps on the set, four on the glass,
+with a 4 x 4 ordered dither only where two steps meet (`PX_DITHER` 0.35 of a step), and the glass highlight a hard
+dot. It is not a filter after the picture (the reverted E8), so the lighting and effects stay as they are.
+Comparison stills of the four options: `/mnt/project-files/ballfight-studio/engine2/pixel-style/`. The
+environment can switch it for experiments (`BF2_PX_MODE=0` is the smooth look; see `renderer::px_consts`).
