@@ -956,7 +956,7 @@ impl Punch {
                     if u < -0.05 {
                         0.0
                     } else if u < 0.0 {
-                        lmax * ((u + 0.05) / 0.05).powi(2)
+                        lmax * ((u + 0.05) / 0.05) * ((u + 0.05) / 0.05)
                     } else {
                         lmax + ov * dmath::exp(-u * 7.0) * dmath::cos(u * 34.0)
                     }
@@ -1021,7 +1021,7 @@ impl Punch {
                 if s >= 0.45 {
                     let life = 0.25 + 0.4 * s;
                     if (0.0..life).contains(&u) {
-                        let k = dmath::sin(dmath::PI * u / life).max(0.0).powf(0.6);
+                        let k = dmath::pow(dmath::sin(dmath::PI * u / life).max(0.0), 0.6);
                         let reach = (dist + 20.0) * ease((u / 0.08).min(1.0));
                         for j in -3i32..=3 {
                             let aa = ang + f64::from(j) * 0.07 * (0.6 + s);
@@ -1098,7 +1098,7 @@ impl Punch {
                         if f < 0.85 {
                             0.15 + 0.9 * ease(f / 0.85)
                         } else {
-                            1.05 - 1.19 * ((f - 0.85) / 0.15).powi(2)
+                            1.05 - 1.19 * ((f - 0.85) / 0.15) * ((f - 0.85) / 0.15)
                         }
                     } else if u < 0.08 {
                         -0.14 + 0.26 * ease(u / 0.08)
@@ -1337,7 +1337,7 @@ impl Punch {
                                         let f = f64::from(i) / 20.0;
                                         let mut x = end.0 + (mid.0 - end.0) * f * (1.0 - fe * 0.8);
                                         let mut y = end.1 + (mid.1 - end.1) * f * (1.0 - fe * 0.8);
-                                        let curl = 22.0 * dmath::exp(-us * 2.4) * f.powf(2.5);
+                                        let curl = 22.0 * dmath::exp(-us * 2.4) * dmath::pow(f, 2.5);
                                         x += dmath::cos(f * 8.0 + us * 14.0 + j as f64) * curl * sg;
                                         y += dmath::sin(f * 8.0 + us * 14.0 + j as f64) * curl;
                                         (x, y)
