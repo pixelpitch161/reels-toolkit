@@ -566,9 +566,9 @@ impl Worker {
 
 impl Worker {
     /// An Engine 2 take (ruling E6-R4): the fight recorded, its story on the video clock (as the search judged it),
-    /// its frames drawn by `bf2-render` on the window's device (or a headless one) at 540 x 960, then the sound.
-    /// Until E5 brings Engine 2's soundtrack, the sound is silent, as the render job's is, with no check lines and
-    /// no lanes; the markers are the title card, FIGHT!, the lead changes and the K.O. (video time).
+    /// its frames drawn by `bf2-render` on the window's device (or a headless one) at 540 x 960, then the sound
+    /// ([`sound2`]: the render job's soundtrack, one at a time as the current engine's, with its check lines and
+    /// lanes); the markers are the title card, FIGHT!, the lead changes and the K.O. (video time).
     fn make_two(&self, ctx: &Ctx, ff: &bf_core::fightfile::FightFile, seed: u64, key: String) -> Result<(), String> {
         use crate::preview::gpu_frames::{Engine2Frames, headless_once, take_gpu};
         let (me, take) = (&*self.me, self.take);
@@ -591,8 +591,9 @@ impl Worker {
         if !me.heard(ctx) {
             return Ok(());
         }
+        let rec = Arc::new(rec);
         let frames: Arc<dyn FrameSource> =
-            Arc::new(Engine2Frames::new(&gpu.0, ff, Arc::new(rec)).map_err(|e| plain(&e))?);
+            Arc::new(Engine2Frames::new(&gpu.0, ff, Arc::clone(&rec)).map_err(|e| plain(&e))?);
         let sent = me.say(
             ctx,
             Event::TakePicture {
@@ -604,12 +605,18 @@ impl Worker {
         if !sent {
             return Ok(());
         }
-        let audio = AudioTake {
-            samples: vec![[0.0f32; 2]; bf_sound::NA].into(),
+        let Some(turn) = SoundTurn::take(&self.sound_turn, me, ctx) else {
+            return Ok(());
         };
+        let (audio, checks, lanes) = sound2(ff, &rec)?;
+        drop(turn);
+        if !me.heard(ctx) {
+            // finished, and thrown away
+            return Ok(());
+        }
         let music = MusicView {
-            checks: Vec::new(),
-            lanes: Vec::new(),
+            checks,
+            lanes,
             markers: markers2(&candidate.story, t_fight),
         };
         let gone = keep(
@@ -626,6 +633,42 @@ impl Worker {
         me.say(ctx, Event::TakeSound { take, audio, music });
         Ok(())
     }
+}
+
+/// The sound of the Engine 2 take `rec` of `ff`, as the render job hears it: `bf_content::build_soundtrack2` on the
+/// take's time map (the director's, `bf_export::job2::direct`) and the two fighters' Engine 2 definitions, then the
+/// Music screen's check lines and lanes ([`sound_views`], on the video-clock show), in the fighters' roster colours.
+///
+/// # Errors
+/// A fighter with no Engine 2 definition or roster entry, or what the soundtrack refuses, in one sentence.
+fn sound2(
+    ff: &bf_core::fightfile::FightFile,
+    rec: &bf2_sim::Recording2,
+) -> Result<(AudioTake, Vec<CheckLine>, Vec<Lane>), String> {
+    let no = |name: &str| plain(&format!("This fight cannot be heard: {name} has no Engine 2 sound yet"));
+    let mut defs = Vec::new();
+    let mut colors = [[0u8; 3]; 2];
+    for (k, name) in ff.fighters.iter().take(2).enumerate() {
+        defs.push(bf_content::fighters2::def(name).ok_or_else(|| no(name))?);
+        colors[k] = bf_content::fighters2::cfg(name).ok_or_else(|| no(name))?.color;
+    }
+    let [a, b] = &defs[..] else {
+        return Err(plain(&"This fight cannot be heard: it does not name two fighters"));
+    };
+    let map = bf_export::job2::direct(ff, rec).map;
+    let sound = bf_content::build_soundtrack2(rec, [a, b], &map, ff).map_err(|e| plain(&e))?;
+    let show = &sound.show;
+    let names = [show.names[0].as_str(), show.names[1].as_str()];
+    let (checks, lanes) = sound_views(&sound.soundtrack, show, ff, names, colors);
+    let audio = AudioTake {
+        samples: sound
+            .soundtrack
+            .master
+            .iter()
+            .map(|f| [f[0] as f32, f[1] as f32])
+            .collect(),
+    };
+    Ok((audio, checks, lanes))
 }
 
 /// An Engine 2 fight's moments on the Music screen, in time order: the title card at 0, "Fight" at FIGHT!
@@ -1194,7 +1237,7 @@ mod tests {
         let f = frames.draw(900);
         assert_eq!((f.w, f.h, f.rgb.len()), (540, 960, 540 * 960 * 3));
         assert_eq!(audio.samples.len(), bf_sound::NA);
-        assert!(music.checks.is_empty() && music.lanes.is_empty());
+        assert!(!music.checks.is_empty() && !music.lanes.is_empty());
         let ko = music.markers.iter().find(|m| m.1 == "K.O.").expect("a K.O. marker");
         assert_eq!(ko.0, t_ko as f32);
         // going back to it is instant: the kept take
@@ -1205,6 +1248,34 @@ mod tests {
             [Event::TakePicture { take: 2, .. }, Event::TakeSound { take: 2, .. }]
         ));
         close(engine, root);
+    }
+
+    /// An Engine 2 take has its soundtrack (`bf_content::build_soundtrack2` on the take's time map), with the
+    /// Music screen's check lines and lanes, as the render job hears it.
+    #[test]
+    fn engine2_take_has_sound_checks_and_lanes() {
+        let (d, seed) = dummy_fit();
+        let ff = convert::fight_file(&d).expect("a fight file");
+        let bf_engine::Fought::Two(rec) = bf_engine::fight(&ff, seed, true).expect("fights") else {
+            panic!("an Engine 2 fight");
+        };
+        let (audio, checks, lanes) = sound2(&ff, &rec).expect("the take's sound");
+        assert_eq!(audio.samples.len(), bf_sound::NA);
+        assert!(audio.samples.iter().any(|s| s[0] != 0.0 || s[1] != 0.0), "not silent");
+        let defs = [0, 1].map(|k| bf_content::fighters2::def(&ff.fighters[k]).expect("an Engine 2 fighter"));
+        let map = bf_export::job2::direct(&ff, &rec).map;
+        let want = bf_content::build_soundtrack2(&rec, [&defs[0], &defs[1]], &map, &ff).expect("the soundtrack");
+        assert!(
+            audio
+                .samples
+                .iter()
+                .zip(&want.soundtrack.master)
+                .all(|(a, b)| a[0] == b[0] as f32 && a[1] == b[1] as f32),
+            "the render job's soundtrack"
+        );
+        let titles: Vec<&str> = checks.iter().map(|c| c.title.as_str()).collect();
+        assert!(titles.contains(&"Loudness"), "{titles:?}");
+        assert!(!lanes.is_empty());
     }
 
     #[test]
