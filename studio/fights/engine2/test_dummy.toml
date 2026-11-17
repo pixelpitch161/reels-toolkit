@@ -12,7 +12,7 @@ seed = 26
 
 [music]
 theme = "big_top"
-arrangement = "classic"
+arrangement = "composed"
 key = "E"
 scale = "harmonic minor"
 chords_intro = ["Em", "B7"]
@@ -27,6 +27,7 @@ music_seed = 1
 [music.solos]
 
 [music.title_hits]
+"TEST DUMMY" = [0, 4, 7]
 
 [music.mix]
 

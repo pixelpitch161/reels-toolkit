@@ -9,6 +9,7 @@
 //! boundaries are noted beside each move.
 
 pub mod look;
+pub mod sound;
 
 use bf2_sim::{
     Bone, Brain, Choice, Cue, CueAt, Ease, FighterDef, Grab, HitDef, Joint, Key, MoveDef, Phase, ProjDef, Rig, Spawn,
