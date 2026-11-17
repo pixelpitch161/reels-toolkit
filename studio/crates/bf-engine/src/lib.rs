@@ -15,7 +15,8 @@ use bf_core::Engine;
 use bf_core::fightfile::FightFile;
 use bf_export::{ExportError, JobEvent, JobOpts};
 use bf_sim::{Setup, SimError};
-use bf2_sim::{Recording2, Rules2, Setup2, SimError2};
+use bf_story::{BeatSheet, Candidate};
+use bf2_sim::{EvKind, Recording2, Rules2, Setup2, SimError2};
 
 mod prepared;
 
@@ -133,6 +134,54 @@ pub fn render(
             Ok(bf_export::job2::run_job2(&ffmpeg, ff, Arc::new(rec), opts, on, cancel)?)
         }
     }
+}
+
+/// The series beat sheet of an Engine 2 file: `BeatSheet::series` with its two fighters' Engine 2 roster entries
+/// (`bf_content::fighters2::cfg`), so the caption targets name their own moves. A fighter with none is
+/// [`EngineError::NotYet`].
+pub fn beat_sheet2(ff: &FightFile) -> Result<BeatSheet, EngineError> {
+    let cfg = |i: usize| {
+        ff.fighters
+            .get(i)
+            .and_then(|n| bf_content::fighters2::cfg(n))
+            .ok_or(EngineError::NotYet(Engine::Two))
+    };
+    Ok(BeatSheet::series([cfg(0)?, cfg(1)?]))
+}
+
+/// One Engine 2 seed, read and judged for the seed search, on the video clock: the fight without its steps, the
+/// time map from its events (the default `DirectCfg`), the video-clock shadow (events only, no `HP`), then
+/// `bf_story::story_at` and `bf_story::score`. Every window of the beat sheet (the K.O. 49 to 53 s, the caption
+/// targets, the longest gap) is read in video seconds, as the video shows the fight. A fight with no K.O. is a
+/// candidate that does not fit.
+///
+/// # Errors
+/// What [`fight`]'s Engine 2 set-up or run refuses.
+pub fn candidate2(ff: &FightFile, seed: u64, sheet: &BeatSheet) -> Result<Candidate, EngineError> {
+    let setup = engine_two_setup(ff, seed)?;
+    let mut rec = bf2_sim::run(&setup, false)?;
+    let map = bf2_direct::TimeMap::from_recording(&rec, &bf2_direct::DirectCfg::default());
+    let defs = [setup.fighters[0].as_ref(), setup.fighters[1].as_ref()];
+    let grid = ff.grid();
+    // Only the events the story reads go through the shadow (`hit`, `ability`; the K.O. is the map's), with those
+    // they are read from (a projectile's move, a ProjHit's Contact or Block): the shadow writes every time it keeps
+    // as Python's `round(t, 5)` does, through text, which would otherwise cost the search more than the story.
+    rec.events.retain(|e| {
+        matches!(
+            e.kind,
+            EvKind::Contact { .. }
+                | EvKind::ProjHit { .. }
+                | EvKind::Block { .. }
+                | EvKind::Active { .. }
+                | EvKind::Spawn { .. }
+                | EvKind::Ability { .. }
+        )
+    });
+    let sv = bf2_direct::shadow(&rec, defs, &map, bf2_direct::Clock::Video, &grid);
+    let lows = [bf2_direct::low_name(defs[0]), bf2_direct::low_name(defs[1])];
+    let story = bf_story::story_at(&sv, grid.t_fight, sheet, lows);
+    let verdict = bf_story::score(&story, sheet);
+    Ok(Candidate { seed, story, verdict })
 }
 
 /// When the K.O. of `seed` under `ff` comes in video time, after slow-mo and the K.O. cinematic (Engine 2's beat
@@ -282,6 +331,105 @@ mod tests {
             ..dummy_file()
         };
         assert_eq!(fight(&ff, 1, false).unwrap_err(), EngineError::NotYet(Engine::Two));
+    }
+
+    /// The TEST DUMMY's own fight file (the dummy against TEST DUMMY 2).
+    fn dummy_toml() -> FightFile {
+        FightFile::parse(include_str!("../../../fights/engine2/test_dummy.toml")).expect("the dummy's file")
+    }
+
+    fn slows_before_ko(r: &bf2_sim::Recording2) -> bool {
+        use bf2_sim::{Cue, EvKind};
+        let ko = r
+            .events
+            .iter()
+            .find(|e| matches!(e.kind, EvKind::Ko { .. }))
+            .map(|e| e.step);
+        ko.is_some_and(|ko| {
+            r.events
+                .iter()
+                .any(|e| e.step < ko && matches!(e.kind, EvKind::Cue(Cue::SlowMo { .. })))
+        })
+    }
+
+    #[test]
+    fn beat_sheet2_names_the_dummys_moves() {
+        let sheet = beat_sheet2(&dummy_toml()).expect("a sheet");
+        assert_eq!(sheet.cap_targets.get("DUMMY BUSTER"), Some(&12.0));
+        assert_eq!(sheet.cap_targets.get("SECOND WIND"), Some(&40.0));
+        assert_eq!(sheet.t_ko, (49.0, 53.0));
+        assert_eq!(beat_sheet2(&example()).unwrap_err(), EngineError::NotYet(Engine::Two));
+    }
+
+    #[test]
+    fn candidate2_times_are_video_times() {
+        let ff = dummy_toml();
+        let sheet = beat_sheet2(&ff).unwrap();
+        let seed = (1..=200)
+            .find(|&s| slows_before_ko(&two(fight(&ff, s, false).unwrap())))
+            .expect("a seed with a slow-mo before its K.O.");
+        let rec = two(fight(&ff, seed, false).unwrap());
+        let map = bf2_direct::TimeMap::from_recording(&rec, &bf2_direct::DirectCfg::default());
+        let c = candidate2(&ff, seed, &sheet).expect("a candidate");
+        assert_eq!(c.seed, seed);
+        assert_eq!(c.story.t_ko, map.ko_video_t());
+        assert!(c.story.t_ko.unwrap() > rec.outcome.t_ko.unwrap());
+        assert_eq!(c.verdict, bf_story::score(&c.story, &sheet));
+    }
+
+    #[test]
+    fn candidate2_matches_recorded() {
+        let ff = dummy_toml();
+        let sheet = beat_sheet2(&ff).unwrap();
+        for seed in 1..=12 {
+            let c = candidate2(&ff, seed, &sheet).unwrap();
+            let rec = two(fight(&ff, seed, true).unwrap());
+            let map = bf2_direct::TimeMap::from_recording(&rec, &bf2_direct::DirectCfg::default());
+            let defs = [0, 1].map(|k| bf_content::fighters2::def(&ff.fighters[k]).unwrap());
+            let sv = bf2_direct::shadow(&rec, [&defs[0], &defs[1]], &map, bf2_direct::Clock::Video, &ff.grid());
+            let lows = [bf2_direct::low_name(&defs[0]), bf2_direct::low_name(&defs[1])];
+            let recorded = bf_story::story_at(&sv, ff.grid().t_fight, &sheet, lows);
+            assert_eq!(c.story, recorded, "seed {seed}");
+        }
+    }
+
+    /// Review Focus 4: a fight with no K.O. is a misfit, never a panic.
+    #[test]
+    fn candidate2_without_ko_does_not_fit() {
+        let ff = FightFile {
+            dmg_scale: 0.01,
+            ..dummy_toml()
+        };
+        let sheet = beat_sheet2(&ff).unwrap();
+        let c = candidate2(&ff, 3, &sheet).unwrap();
+        assert_eq!(c.story.t_ko, None);
+        assert!(!c.verdict.fits);
+    }
+
+    /// The story costs little next to the fight: over 200 seeds, at most 1.1x `fight(.., false)` alone (release; per
+    /// seed the best of five each).
+    #[test]
+    #[cfg_attr(debug_assertions, ignore = "a timing, for release builds")]
+    fn candidate2_is_cheap() {
+        use std::time::Instant;
+        let ff = dummy_toml();
+        let sheet = beat_sheet2(&ff).unwrap();
+        // per seed, the best of five of each, taken in turn (so a busy machine slows both alike)
+        let (mut alone, mut with) = (0.0, 0.0);
+        for seed in 1..=200 {
+            let (mut a, mut w) = (f64::INFINITY, f64::INFINITY);
+            for _ in 0..5 {
+                let t = Instant::now();
+                fight(&ff, seed, false).unwrap();
+                a = a.min(t.elapsed().as_secs_f64());
+                let t = Instant::now();
+                candidate2(&ff, seed, &sheet).unwrap();
+                w = w.min(t.elapsed().as_secs_f64());
+            }
+            alone += a;
+            with += w;
+        }
+        assert!(with <= 1.1 * alone, "{with} s against {alone} s");
     }
 
     #[test]

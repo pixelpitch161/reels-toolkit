@@ -17,7 +17,7 @@ One folder, `studio/crates/bf-content/src/fighters2/<slug>/`, shaped like `test_
 | `mod.rs` | `pub fn def() -> FighterDef`: the rig, the moves, the brain. It can also hold the moves inline, as the dummy's does. | `test_dummy/mod.rs` |
 | `moves.rs` | One `fn` per move, each giving a `MoveDef`. This is optional when `mod.rs` stays short. | the move `fn`s in `test_dummy/mod.rs` |
 | `look.rs` | A struct that implements `bf2_render::Look2` (the models) and `bf2_fx::frame::LookFx` (its own effects) | `DummyLook` |
-| `sound.rs` (and `voice.rs` if it needs one) | Its part in the score (E5) | `test_dummy/sound.rs`, once E5 merges |
+| `sound.rs` (and `voice.rs` if it needs one) | Its part in the score (E5) | `test_dummy/sound.rs` |
 | `card.rs` | Its VS card panel: `pub static CARD: FighterCard`, `pub const MOVES`, `pub const RANGE` | `test_dummy/card.rs` |
 
 Then make these edits in `studio/crates/bf-content/src/fighters2/mod.rs`, and nowhere else:
@@ -298,21 +298,22 @@ in all. Use `SlowMo` on the meter special only, as the dummy does. Give heavy mo
 
 ### 3.5 Sound
 
-Engine 2 sound is milestone E5 (`docs/superpowers/plans/2026-11-17-engine2-e5.md`). Until E5 merges, Engine 2 fights
-are silent in the app and the job; the step is called SILENCE. Once it merges:
+Engine 2 sound is milestone E5 (`docs/superpowers/plans/2026-11-17-engine2-e5.md`), merged: the render job builds
+the soundtrack with `bf_content::build_soundtrack2` (its step is the Soundtrack line; the app's preview take is
+still silent):
 
 - **The shared events.** `bf-sound` plays them on the time map for every fighter (`bf_sound::music::v2`):
   - `impact(strength, tag, seed)`, light, heavy or special by strength;
   - `freeze_swell` under hitstop;
-  - the varispeed `warp` through slow motion;
-  - `splice` at the K.O.
+  - the varispeed `warp` through slow motion (`bf_sound::warp`);
+  - `splice` at the K.O. (`bf_sound::warp`).
 - **The fighter's part** lives in `fighters2/<slug>/sound.rs`, in the shape of `test_dummy/sound.rs`. It has a type
   that implements `Sound`, which reads only the shadow recording (`play`, `title_blast`, `count_in`, `stinger`,
   `solo`, `fall_apart`, `reassemble`, `last_bar`).
 - **The fighter's identity.** `fighters2::{cfg, voice, sound, personality, card_mesh}` get an arm for the fighter.
   A moved fighter can reuse its current-engine voice and personality (`crate::fighters::voice(name)`).
 
-Check the names against `test_dummy/sound.rs` after E5 merges.
+The names above are checked against `test_dummy/sound.rs`.
 
 ### 3.6 The card
 
@@ -409,7 +410,7 @@ Paste this into the session's progress checklist.
 ○ Photo references saved to refs/<slug>/ (Remote Control)
 ○ fighters2/<slug>/: def() with rig, moves, brain; <slug>_checks green
 ○ look.rs: Look2 model, LookFx signature; exit audit green
-○ sound.rs (after E5) and card.rs; card test green
+○ sound.rs and card.rs; card test green
 ○ fighters2/mod.rs: mod, MOVED, NAMES, def/look/look_fx/card arms; registry tests green
 ○ fights/engine2/<slug>_vs_test_dummy.toml
 ○ Lenient balance: win share 30-70 %, K.O. in window >= 10 % of seeds

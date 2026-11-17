@@ -4,9 +4,15 @@
 
 use std::sync::{Arc, OnceLock};
 
+use bf_core::fightfile::FightFile;
+use bf_core::roster::{FighterCfg, parse_roster};
+use bf_picture::sprite::Mesh;
+use bf_sound::traits::Sound;
+use bf_sound::voice::Voice;
 use bf2_sim::FighterDef;
 
 use crate::FighterCard;
+use crate::personality::Personality;
 
 mod test_dummy;
 
@@ -126,6 +132,54 @@ pub fn def(name: &str) -> Option<Arc<FighterDef>> {
     }
 }
 
+/// The dummy's roster entries (`test_dummy/roster.json`, both names), read once. They are never appended to
+/// [`crate::roster`]: the dummy stays hidden.
+fn entries() -> &'static [FighterCfg] {
+    static ENTRIES: OnceLock<Vec<FighterCfg>> = OnceLock::new();
+    ENTRIES.get_or_init(|| {
+        parse_roster(include_str!("test_dummy/roster.json")).unwrap_or_else(|e| panic!("the dummy's compiled-in {e}"))
+    })
+}
+
+/// The roster entry of the Engine 2 fighter `name`, for its place in the score: TEST DUMMY plays MARIMBA's voice
+/// in MARIMBA's register, in its own colour, and its abilities name its own moves (unlock1 and unlock2 its two
+/// `Special` moves, low its `Low` move). `None` for any other name.
+pub fn cfg(name: &str) -> Option<&'static FighterCfg> {
+    entries().iter().find(|f| f.name == name)
+}
+
+/// The instrument voice of the Engine 2 fighter `name`: the dummy's is MARIMBA's.
+pub fn voice(name: &str) -> Option<Arc<dyn Voice>> {
+    cfg(name).and_then(|c| crate::fighters::voice(&c.pp))
+}
+
+/// The part in the score of the Engine 2 fighter `name` on side `k` of the fight `ff`.
+pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
+    let _ = ff;
+    match name {
+        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::sound::DummySound::new(k))),
+        _ => None,
+    }
+}
+
+/// The musical personality of the Engine 2 fighter `name` (the composer writes it a line): the dummy borrows
+/// MARIMBA's.
+pub fn personality(name: &str) -> Option<&'static Personality> {
+    match name {
+        "TEST DUMMY" | "TEST DUMMY 2" => Some(&crate::fighters::marimba::personality::PERSONALITY),
+        _ => None,
+    }
+}
+
+/// The VS card's close-up model of the Engine 2 fighter `name`: the dummy's is a small metronome
+/// (`test_dummy/metronome.json`).
+pub fn card_mesh(name: &str) -> Option<Mesh> {
+    match name {
+        "TEST DUMMY" | "TEST DUMMY 2" => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,6 +246,80 @@ mod tests {
         assert_eq!(ff.engine, bf_core::Engine::Two);
         assert_eq!(crate::validate(&ff), Ok(()));
         assert!(look("FLUTE").is_none());
+    }
+
+    #[test]
+    fn dummy_has_a_score_identity() {
+        let ff = bf_core::fightfile::FightFile::parse(include_str!("../../../../fights/engine2/test_dummy.toml"))
+            .expect("the dummy's fight file parses");
+        let marimba = crate::roster().iter().find(|f| f.name == "MARIMBA").unwrap();
+        for (k, name) in NAMES.into_iter().enumerate() {
+            let c = cfg(name).expect("a roster entry");
+            assert_eq!(c.name, name);
+            assert_eq!((c.pp.as_str(), c.register), (marimba.pp.as_str(), marimba.register));
+            let d = def(name).unwrap();
+            assert_eq!(c.color, d.colour);
+            let special: Vec<&str> = d
+                .moves
+                .iter()
+                .filter(|m| m.has(bf2_sim::Tag::Special))
+                .map(|m| m.name)
+                .collect();
+            assert_eq!([c.unlock1.name.as_str(), c.unlock2.name.as_str()], special[..]);
+            let low = d.moves.iter().find(|m| m.has(bf2_sim::Tag::Low)).unwrap();
+            assert_eq!(c.low.name, low.name);
+            let v = voice(name).expect("a voice");
+            assert_eq!(v.name(), c.pp);
+            let part = sound(name, k, &ff).expect("a part");
+            assert_eq!(part.k(), k);
+            assert_eq!(part.band(), crate::fighters::sound("MARIMBA", k, &ff).unwrap().band());
+            assert!(std::ptr::eq(
+                personality(name).unwrap(),
+                crate::personality("MARIMBA").unwrap()
+            ));
+            assert!(std::ptr::eq(
+                crate::personality(name).unwrap(),
+                crate::personality("MARIMBA").unwrap()
+            ));
+            assert_eq!(card_mesh(name).expect("a card model").faces.len(), 3);
+        }
+        assert!(cfg("MARIMBA").is_none() && voice("MARIMBA").is_none() && personality("FLUTE").is_none());
+        assert!(sound("FLUTE", 0, &ff).is_none() && card_mesh("FLUTE").is_none());
+        // parsed once
+        assert!(std::ptr::eq(cfg("TEST DUMMY").unwrap(), cfg("TEST DUMMY").unwrap()));
+    }
+
+    #[test]
+    fn dummy_still_hidden() {
+        for name in NAMES {
+            assert!(crate::roster().iter().all(|f| f.name != name), "{name}");
+            assert!(crate::fighters::entry(name).is_none(), "{name}");
+        }
+    }
+
+    #[test]
+    fn dummy_fight_file_validates() {
+        let ff = bf_core::fightfile::FightFile::parse(include_str!("../../../../fights/engine2/test_dummy.toml"))
+            .expect("the dummy's fight file parses");
+        assert_eq!(ff.music.arrangement, crate::themes::COMPOSED);
+        assert_eq!(ff.music.title_hits.get("TEST DUMMY"), Some(&vec![0, 4, 7]));
+        assert_eq!(crate::soundtrack::validate(&ff), Ok(()));
+        // the music is checked now: a theme that does not exist is refused
+        let mut bad = ff.clone();
+        bad.music.theme = "polka".into();
+        assert_eq!(
+            crate::validate(&bad).unwrap_err().to_string(),
+            r#"music.theme: "polka" is not a theme"#
+        );
+        // and a current-engine fighter in an Engine 2 file still is, first
+        let mut bad = ff;
+        bad.fighters[1] = "FLUTE".into();
+        assert!(
+            crate::validate(&bad)
+                .unwrap_err()
+                .to_string()
+                .contains("no Engine 2 version yet")
+        );
     }
 
     #[test]

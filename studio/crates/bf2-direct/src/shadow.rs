@@ -164,10 +164,10 @@ fn events(rec: &Recording2, defs: [&FighterDef; 2], at_step: &dyn Fn(u32) -> f64
     for (i, e) in rec.events.iter().enumerate() {
         let who = e.who.min(1);
         let def = defs[who];
-        let t = py::round_nd(at_step(e.step), 5);
+        // rounded (through text, as Python's `round(t, 5)`) only for an event that is kept
         let mut put = |kind: &str, fields: Vec<Value>| {
             out.push(Event {
-                t,
+                t: py::round_nd(at_step(e.step), 5),
                 kind: kind.to_string(),
                 fields,
             })

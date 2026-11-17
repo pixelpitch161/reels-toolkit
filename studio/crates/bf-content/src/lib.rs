@@ -19,6 +19,7 @@ pub mod personality;
 mod picture;
 mod registry;
 mod soundtrack;
+mod soundtrack2;
 mod starter;
 pub mod themes;
 
@@ -33,5 +34,6 @@ pub use registry::{
     pair_engines, pair_engines_dev, roster,
 };
 pub use soundtrack::{SoundBuild, build_soundtrack, validate};
+pub use soundtrack2::{Sound2, build_soundtrack2, video_show2};
 pub use starter::{draft_captions, episode_pairs, home_config, home_fight, kit_pair_fights, starter, starter_on};
 pub use themes::{theme_names, themes_for};

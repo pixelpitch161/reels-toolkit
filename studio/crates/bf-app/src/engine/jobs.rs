@@ -378,8 +378,7 @@ pub fn step_of_check(name: &str) -> Option<StepKey> {
 /// finished file. The checks before the render fill six lines at once, and the save has none: `None`.
 pub fn step_of_stage(name: &str) -> Option<StepKey> {
     Some(match name {
-        // Engine 2's soundtrack stage (silent until E5 brings its sound).
-        stage::SOUNDTRACK | bf_export::job2::SILENCE => StepKey::Soundtrack,
+        stage::SOUNDTRACK => StepKey::Soundtrack,
         stage::FRAMES => StepKey::Frames,
         stage::ENCODE => StepKey::Encode,
         stage::VERIFY => StepKey::Verify,
@@ -784,8 +783,19 @@ mod tests {
         };
         let mut s = Steps::new(Engine::Two);
         let t = Instant::now();
-        let mut all = s.on(JobEvent::Stage(bf_export::job2::SILENCE), t);
+        let mut all = s.on(JobEvent::Stage(stage::SOUNDTRACK), t);
         all.extend(s.on(JobEvent::Stage(stage::CHECKS), t));
+        for name in [
+            "safezone",
+            "levels",
+            "band",
+            "loudness",
+            "loop_picture",
+            "loop_audio",
+            "focus",
+        ] {
+            all.extend(s.on(JobEvent::Check(result(name, true, "fine")), t));
+        }
         all.extend(s.on(JobEvent::Check(result("ko_window", true, "K.O. window: fine.")), t));
         all.extend(s.on(JobEvent::Stage(stage::FRAMES), t));
         all.extend(s.on(JobEvent::Check(result("mp4_flash", true, "fine")), t));

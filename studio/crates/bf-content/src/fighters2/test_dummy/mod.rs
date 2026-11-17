@@ -10,6 +10,7 @@
 
 pub mod card;
 pub mod look;
+pub mod sound;
 pub mod starter;
 
 use bf2_sim::{

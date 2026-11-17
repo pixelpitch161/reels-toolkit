@@ -526,10 +526,13 @@ dependencies = [
  "bf-core",
  "bf-picture",
  "bf-sound",
+ "bf-story",
  "bf-testdata",
+ "bf2-direct",
  "bf2-fx",
  "bf2-render",
  "bf2-sim",
+ "rayon",
  "serde_json",
  "sha2",
  "toml",
@@ -689,6 +692,8 @@ dependencies = [
 name = "bf2-render"
 version = "1.5.0"
 dependencies = [
+ "bf-content",
+ "bf-core",
  "bf-picture",
  "bf2-direct",
  "bf2-sim",

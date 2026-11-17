@@ -1,0 +1,13 @@
+{
+ "about": "TEST DUMMY's VS card close-up: a small low-poly metronome (Engine 2 E5, Task 5). Three fan polygons facing the camera, drawn from both sides: a trapezoid body and its arm in the dummy's grey, and an orange weight on the arm. Centred and inside a unit sphere.",
+ "format": 1,
+ "name": "TEST DUMMY",
+ "faces": [
+  {"P": [[-0.55, -0.8, 0.0], [0.55, -0.8, 0.0], [0.25, 0.75, 0.0], [-0.25, 0.75, 0.0]],
+   "n": [0.0, 0.0, 1.0], "rgb": [200.0, 200.0, 200.0], "two": true, "emit": false, "gid": 2, "spec": 0.2},
+  {"P": [[-0.04, -0.55, 0.05], [0.04, -0.55, 0.05], [0.26, 0.9, 0.05], [0.18, 0.9, 0.05]],
+   "n": [0.0, 0.0, 1.0], "rgb": [150.0, 150.0, 150.0], "two": true, "emit": false, "gid": 2, "spec": 0.3},
+  {"P": [[0.03, 0.2, 0.1], [0.23, 0.2, 0.1], [0.27, 0.42, 0.1], [0.07, 0.42, 0.1]],
+   "n": [0.0, 0.0, 1.0], "rgb": [240.0, 140.0, 40.0], "two": true, "emit": false, "gid": 2, "spec": 0.4}
+ ]
+}

@@ -28,9 +28,13 @@ pub use renderer::Renderer;
 pub mod fight_frame;
 pub mod fx;
 pub mod look2;
+pub mod overlay;
 pub mod stage;
+pub mod ui2;
 
 pub use fight_frame::{FightFrame, StepSnapLerp, frame_at, frame_at_time, render_frame, scene_at};
 pub use fx::{FxCamera, FxCtx, FxPass, NoFx, PostChain, PostCtx};
 pub use look2::Look2;
+pub use overlay::{Overlay, composite_cpu, matte, opaque};
 pub use stage::Stage;
+pub use ui2::{RowDef, Ui2, rows_of};
