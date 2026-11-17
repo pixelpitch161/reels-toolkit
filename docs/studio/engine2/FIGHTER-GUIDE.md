@@ -377,6 +377,10 @@ for the tier you mean: the dummy's jab is 0.25, its haymaker 0.7, and its specia
 - **The colour.** The fighter's colour is unique (`docs/ballfight/RULES.md`) and is used: on the weapon, in the
   signature effects, and in the card's `colour`.
 - **Aedan's batch-1 notes apply.** Nothing cuts off, and the impact frames look good.
+- **Hit impact: tone it down from the dummy's.** Aedan reviewed the TEST DUMMY renders (2026-11-17): the camera,
+  slow-mo, K.O. and everything else feel good, but the hit impact is a little too over the top. Each fighter's hits
+  should land a notch lighter than the dummy's presets (fewer sparks, shorter flash and shake), saving the big
+  moments for specials and the K.O.
 
 ## 6. Tests to run, only these
 
