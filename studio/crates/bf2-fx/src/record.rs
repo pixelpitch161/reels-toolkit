@@ -22,13 +22,6 @@ pub enum Exit {
     Ember,
 }
 
-impl Exit {
-    /// The shaders' code for it.
-    pub fn code(self) -> u32 {
-        self as u32
-    }
-}
-
 /// An envelope over a record's life, in seconds: rise, hold, fall. When the three add up to more than the life
 /// they are scaled down to fit; when less, the hold takes up the rest.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -6,9 +6,11 @@
 //! presets. Every effect has an exit: nothing just disappears. Milestone E3 builds it.
 
 pub mod decal;
+pub mod hash;
 pub mod lights;
 pub mod meshfx;
 pub mod particles;
+pub(crate) mod pipe;
 pub mod record;
 pub mod screen;
 pub mod timeline;

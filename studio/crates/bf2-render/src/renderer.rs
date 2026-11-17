@@ -13,6 +13,7 @@
 
 use bf_picture::img::Rgb8;
 
+use crate::fx::{FxCamera, FxCtx, FxPass};
 use crate::gpu::Gpu;
 use crate::maths::{self, M4};
 use crate::mesh::{MeshId, Meshes, Vertex};
@@ -423,9 +424,41 @@ impl Renderer {
 
     /// Draws `scene` at `w x h`. The targets are made on the first frame of a size and kept.
     pub fn render_sized(&mut self, gpu: &Gpu, scene: &Scene, post: &Post, w: u32, h: u32) -> Rgb8 {
+        self.render_sized_with(gpu, scene, post, w, h, None)
+    }
+
+    /// Draws `scene` and then `fx` (effects, after the glass) at the video's size.
+    pub fn render_with(&mut self, gpu: &Gpu, scene: &Scene, post: &Post, fx: &mut dyn FxPass) -> Rgb8 {
+        self.render_sized_with(gpu, scene, post, W, H, Some(fx))
+    }
+
+    /// Draws `scene`, then `fx` if given, at `w x h`.
+    pub fn render_sized_with(
+        &mut self,
+        gpu: &Gpu,
+        scene: &Scene,
+        post: &Post,
+        w: u32,
+        h: u32,
+        fx: Option<&mut dyn FxPass>,
+    ) -> Rgb8 {
         self.ensure_size(gpu, w, h);
-        let aspect = w as f32 / h as f32;
-        let shadowed = self.write_frame(gpu, scene, aspect);
+        self.draw_scene(gpu, scene, fx, 0);
+        let sized = self.sized.as_ref().expect("targets were just made");
+        let mut enc = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("post") });
+        self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post);
+        gpu.queue.submit([enc.finish()]);
+        read_back(gpu, &sized.targets)
+    }
+
+    /// The scene (shadow, opaque, glass), then the effects, resolved into the targets' single-sample HDR colour.
+    /// Submits, so the next call may rewrite the frame's buffers.
+    fn draw_scene(&mut self, gpu: &Gpu, scene: &Scene, fx: Option<&mut dyn FxPass>, sub: usize) {
+        let sized = self.sized.as_ref().expect("ensure_size first");
+        let (w, h) = (sized.targets.w, sized.targets.h);
+        let shadowed = self.write_frame(gpu, scene, w as f32 / h as f32);
         self.write_instances(gpu, scene);
 
         let mut enc = gpu
@@ -434,11 +467,25 @@ impl Renderer {
         if shadowed {
             self.encode_shadow(&mut enc);
         }
-        let sized = self.sized.as_ref().expect("targets were just made");
-        self.encode_scene(&mut enc, &sized.targets);
-        self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post);
+        let t = &self.sized.as_ref().expect("ensure_size first").targets;
+        match fx {
+            None => self.encode_scene(&mut enc, t, true),
+            Some(fx) => {
+                self.encode_scene(&mut enc, t, false);
+                let mut ctx = FxCtx {
+                    gpu,
+                    encoder: &mut enc,
+                    colour: &t.hdr_msaa,
+                    depth: &t.depth_msaa,
+                    camera: FxCamera::of(&scene.camera, w, h),
+                    scene,
+                    sub,
+                };
+                fx.draw(&mut ctx);
+                encode_resolve(&mut enc, t);
+            }
+        }
         gpu.queue.submit([enc.finish()]);
-        read_back(gpu, &sized.targets)
     }
 
     fn ensure_size(&mut self, gpu: &Gpu, w: u32, h: u32) {
@@ -602,23 +649,30 @@ impl Renderer {
         }
     }
 
-    fn encode_scene(&self, enc: &mut wgpu::CommandEncoder, t: &Targets) {
+    /// The scene pass. With `resolve`, it resolves into the single-sample HDR colour as it ends; without, it keeps
+    /// the multisampled colour and depth for the effects.
+    fn encode_scene(&self, enc: &mut wgpu::CommandEncoder, t: &Targets, resolve: bool) {
+        let keep = if resolve {
+            wgpu::StoreOp::Discard
+        } else {
+            wgpu::StoreOp::Store
+        };
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("scene"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &t.hdr_msaa,
                 depth_slice: None,
-                resolve_target: Some(&t.hdr_resolved),
+                resolve_target: resolve.then_some(&t.hdr_resolved),
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                    store: wgpu::StoreOp::Discard,
+                    store: keep,
                 },
             })],
             depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: &t.depth_msaa,
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Clear(1.0),
-                    store: wgpu::StoreOp::Discard,
+                    store: keep,
                 }),
                 stencil_ops: None,
             }),
@@ -639,6 +693,26 @@ impl Renderer {
             self.draw(&mut pass, d);
         }
     }
+}
+
+/// Resolves the multisampled HDR colour into the single-sample one.
+fn encode_resolve(enc: &mut wgpu::CommandEncoder, t: &Targets) {
+    enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("resolve"),
+        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+            view: &t.hdr_msaa,
+            depth_slice: None,
+            resolve_target: Some(&t.hdr_resolved),
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Load,
+                store: wgpu::StoreOp::Discard,
+            },
+        })],
+        depth_stencil_attachment: None,
+        timestamp_writes: None,
+        occlusion_query_set: None,
+        multiview_mask: None,
+    });
 }
 
 #[cfg(test)]

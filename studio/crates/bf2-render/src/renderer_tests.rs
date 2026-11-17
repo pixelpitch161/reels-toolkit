@@ -235,3 +235,18 @@ fn same_scene_same_pixels_on_one_device() {
     let b = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
     assert!(a.data == b.data, "two renders of one scene differ");
 }
+
+#[test]
+fn an_empty_fx_pass_changes_nothing() {
+    let (gpu, mut r) = setup();
+    let mut scene = floor_scene(&mut r, &gpu);
+    let ball = r.meshes.add(&gpu, geom::icosphere(1.0, 3));
+    scene.instances.push(Instance::new(
+        ball,
+        Material::glass([1.0, 0.5, 0.2]),
+        maths::translation([0.0, 1.0, 0.0]),
+    ));
+    let plain = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
+    let hooked = r.render_sized_with(&gpu, &scene, &Post::default(), TW, TH, Some(&mut crate::fx::NoFx));
+    assert!(plain.data == hooked.data);
+}
