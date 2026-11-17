@@ -232,6 +232,9 @@ impl Look2 for DummyLook {
                 Instance::new(m.sphere, Material::Emissive { strength: 4.0 }, maths::at_scaled(p, 0.2))
                     .coloured(ORANGE),
             );
+            // inked, as the current engine's projectiles are
+            out.instances
+                .push(Instance::new(m.sphere_ink, Material::Unlit, maths::at_scaled(p, 0.2 + INK_W)).coloured(INK));
             out.lights.push(Light {
                 pos: p,
                 colour: [3.0, 1.3, 0.3],
