@@ -540,6 +540,7 @@ pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
         paths: Paths::under(&root.0),
         clip: None,
         search_limit: None,
+        dev: false,
     };
     let handle = engine::spawn(Arc::new(|| {}), config);
     const TAKE: TakeId = 1;

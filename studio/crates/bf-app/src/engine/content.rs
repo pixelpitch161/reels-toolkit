@@ -42,11 +42,25 @@ const START: [&str; 2] = ["FLUTE", "TROMBONE"];
 /// It is made once and kept (making it takes about a tenth of a second: each fighter's themes and portrait), so
 /// every later call is a copy.
 pub fn roster() -> Roster {
-    static ROSTER: OnceLock<Roster> = OnceLock::new();
-    ROSTER.get_or_init(make_roster).clone()
+    roster_for(false)
 }
 
-fn make_roster() -> Roster {
+/// [`roster`] with the developer switch `dev` (ruling E6-R2): on, it also holds the TEST DUMMY (under both its
+/// names), which only Engine 2 offers. Each of the two rosters is made once and kept.
+pub fn roster_for(dev: bool) -> Roster {
+    static ROSTER: OnceLock<Roster> = OnceLock::new();
+    static DEV_ROSTER: OnceLock<Roster> = OnceLock::new();
+    if dev {
+        DEV_ROSTER.get_or_init(|| make_roster(true)).clone()
+    } else {
+        ROSTER.get_or_init(|| make_roster(false)).clone()
+    }
+}
+
+/// The developer fighter's roster entries, in `bf_content::fighters2::DUMMIES` order: (name, colour).
+const DUMMY_COLOURS: [(&str, [u8; 3]); 2] = [("TEST DUMMY", [150, 150, 150]), ("TEST DUMMY 2", [230, 150, 90])];
+
+pub(crate) fn make_roster(dev: bool) -> Roster {
     let cfgs = bf_content::roster();
     let available = bf_content::available();
     let fighters = bf_content::shown_order()
@@ -73,8 +87,15 @@ fn make_roster() -> Roster {
                 parts: parts_of(name),
                 traits: fit.map_or_else(Vec::new, |f| f.traits.iter().map(|t| t.to_string()).collect()),
                 energy: fit.map_or(0, |f| f.energy),
+                engines: bf_content::engines_dev(name, dev),
             })
         })
+        .chain(
+            DUMMY_COLOURS
+                .iter()
+                .filter(|_| dev)
+                .filter_map(|&(name, color)| dummy_entry(name, color)),
+        )
         .collect();
     // each offered fighter with the themes it can be played in (against itself: see `refused_by`); a roster fighter
     // not offered yet (an older fighter before its port) refuses nothing, since nobody can pick it
@@ -310,6 +331,49 @@ fn card(cfg: &FighterCfg, c: &ContentCard) -> FighterCard {
     }
 }
 
+/// The roster entry of the developer fighter `name` (with the switch on): in the percussion, in `color`, offered
+/// on Engine 2 only, with its own card; no home config, parts or traits.
+fn dummy_entry(name: &str, color: [u8; 3]) -> Option<RosterEntry> {
+    let c = bf_content::fighters2::card(name)?;
+    let moves = bf_content::fighters2::card_moves(name)?;
+    let ability = |tag: &str, name: &str, text: &str| AbilityLine {
+        tag: tag.to_string(),
+        name: wording::display_name(name),
+        text: text.to_string(),
+        key: name.to_string(),
+    };
+    Some(RosterEntry {
+        name: name.to_string(),
+        display: wording::display_name(name),
+        section: Section::Percussion,
+        color,
+        available: true,
+        music_feeds_fight: false,
+        mask: mask(name),
+        card: Some(FighterCard {
+            weapon: c.weapon.to_string(),
+            text: c.text.to_string(),
+            abilities: [
+                ability("MOVE", moves[0], c.abilities[0]),
+                ability("METER", moves[1], c.abilities[1]),
+                ability("LOW", moves[2], c.abilities[2]),
+            ],
+            range: bf_content::fighters2::card_range(name).unwrap_or_default().to_string(),
+            usually_plays: c.usually_plays.to_string(),
+            colour_name: c.colour.to_string(),
+            music_title: c.music_title.to_string(),
+            music_text: c.music_text.to_string(),
+            can_play_bass: c.can_play_bass,
+            portrait: None,
+        }),
+        home: None,
+        parts: Vec::new(),
+        traits: Vec::new(),
+        energy: 0,
+        engines: bf_content::engines_dev(name, true),
+    })
+}
+
 /// The fighter's ball with its instrument inside, as the VS title card draws it (`draw_big_ball`, with the same
 /// close-up: the look's own, else the model at its roster view's yaw and roll at 0.8 of the ball's radius, or at
 /// its `PORTRAIT_VIEWS` entry; the
@@ -437,6 +501,50 @@ mod tests {
     use super::*;
     use crate::engine::tests::starting_draft;
     use crate::seam::sample;
+
+    #[test]
+    fn the_dummy_is_in_the_roster_only_with_dev() {
+        use bf_core::Engine;
+        let plain = roster();
+        assert_eq!(plain, roster_for(false));
+        assert!(plain.fighters.iter().all(|f| !bf_content::dev_only(&f.name)));
+        assert!(plain.offered(Engine::Two).is_empty());
+        let offered_one: Vec<&str> = plain.offered(Engine::One).iter().map(|f| f.name.as_str()).collect();
+        let mut available = bf_content::available();
+        available.sort_unstable();
+        let mut sorted = offered_one.clone();
+        sorted.sort_unstable();
+        assert_eq!(sorted, available);
+        for f in &plain.fighters {
+            assert_eq!(f.engines, bf_content::engines(&f.name), "{}", f.name);
+        }
+        let dev = roster_for(true);
+        assert_eq!(dev.fighters.len(), plain.fighters.len() + 2);
+        assert_eq!(dev.fighters[..plain.fighters.len()], plain.fighters[..]);
+        let two: Vec<&str> = dev.offered(Engine::Two).iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(two, ["TEST DUMMY", "TEST DUMMY 2"]);
+        let dummy = &dev.offered(Engine::Two)[0];
+        assert_eq!(dummy.section, Section::Percussion);
+        assert_eq!(dummy.color, [150, 150, 150]);
+        assert_eq!(dummy.engines, [Engine::Two]);
+        let card = dummy.card.as_ref().expect("the dummy's card");
+        assert_eq!(card.weapon, "Fist on an arm");
+        assert_eq!(
+            card.abilities.each_ref().map(|a| a.key.as_str()),
+            ["HAYMAKER", "DUMMY BUSTER", "SECOND WIND"]
+        );
+        assert!(!dev.offered(Engine::One).iter().any(|f| bf_content::dev_only(&f.name)));
+    }
+
+    #[test]
+    fn the_dev_switch_is_exactly_one() {
+        use std::ffi::OsStr;
+        assert!(crate::engine::dev_from(Some(OsStr::new("1"))));
+        for v in ["", "0", "true", "1 ", "yes"] {
+            assert!(!crate::engine::dev_from(Some(OsStr::new(v))), "{v:?}");
+        }
+        assert!(!crate::engine::dev_from(None));
+    }
 
     #[test]
     fn the_real_roster() {

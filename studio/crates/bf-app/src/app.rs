@@ -60,6 +60,8 @@ pub struct Boot {
     pub notices: Vec<Notice>,
     /// The PC's cores.
     pub cores: usize,
+    /// The developer switch the engine was started with (`EngineConfig::dev`, ruling E6-R2).
+    pub dev: bool,
 }
 
 /// Where the shell's regions were drawn in the last frame, in points.
@@ -149,14 +151,15 @@ fn fallback_paths() -> Paths {
 }
 
 /// What the real engine is started with: the settings' workers, the app's storage `paths` (or, when the PC gives the
-/// app none, a folder under the system temp folder for the shortlists), every frame of a video and no limit on a
-/// search.
+/// app none, a folder under the system temp folder for the shortlists), every frame of a video, no limit on a
+/// search, and the developer switch from `BALLFIGHT_DEV` (ruling E6-R2).
 pub fn real_config(settings: &Settings, paths: Option<Paths>) -> EngineConfig {
     EngineConfig {
         workers: settings.workers,
         paths: paths.unwrap_or_else(fallback_paths),
         clip: None,
         search_limit: None,
+        dev: crate::engine::dev_from_env(),
     }
 }
 
@@ -214,9 +217,13 @@ pub fn start_with(
             (default_settings(cores), Queue::new(), starter_history(), None)
         }
     };
-    let engine = match kind {
-        EngineKind::Real => engine::spawn(waker(&cc.egui_ctx), real_config(&settings, paths)),
-        EngineKind::Sample => fake::spawn(waker(&cc.egui_ctx), Pace::Live),
+    let (engine, dev) = match kind {
+        EngineKind::Real => {
+            let config = real_config(&settings, paths);
+            let dev = config.dev;
+            (engine::spawn(waker(&cc.egui_ctx), config), dev)
+        }
+        EngineKind::Sample => (fake::spawn(waker(&cc.egui_ctx), Pace::Live), false),
     };
     notices.extend(started.notices.into_iter().map(|text| Notice { text }));
     let boot = Boot {
@@ -228,6 +235,7 @@ pub fn start_with(
         history,
         notices,
         cores,
+        dev,
     };
     let mut app = BfApp::new(cc, boot);
     app.adapter = started.adapter;
@@ -324,6 +332,7 @@ impl BfApp {
         let workers = boot.settings.workers;
         let (mut state, pending) = AppState::new(boot.settings, boot.queue, boot.notices, boot.cores);
         state.vm.history = boot.history;
+        state.vm.dev = boot.dev;
         let started = Instant::now();
         let now: Now = Box::new(move || started.elapsed());
         let player = Player::new(workers, boot.audio, now, waker(&cc.egui_ctx));
@@ -690,6 +699,8 @@ mod tests {
                 paths,
                 clip: None,
                 search_limit: None,
+                // BALLFIGHT_DEV, read at start-up
+                dev: crate::engine::dev_from_env(),
             }
         );
         // No folder from the PC: the shortlists go under the temp folder.

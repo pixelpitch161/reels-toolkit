@@ -44,6 +44,14 @@ pub struct JobSpec {
     pub fighters: Option<[String; 2]>,
 }
 
+impl JobSpec {
+    /// The engine the job's fight file names (the current engine for a file that names none, or one that no longer
+    /// reads).
+    pub fn engine(&self) -> bf_core::Engine {
+        bf_core::fightfile::FightFile::parse(&self.fight_toml).map_or(bf_core::Engine::One, |ff| ff.engine)
+    }
+}
+
 /// One line of a job's check list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StepKey {

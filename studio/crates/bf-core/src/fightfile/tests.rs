@@ -1145,6 +1145,17 @@ fn engine_is_the_current_one_when_absent_and_never_written() {
 }
 
 #[test]
+fn engine_numbers_and_is_one() {
+    assert!(Engine::One.is_one() && !Engine::Two.is_one());
+    assert!(Engine::default().is_one());
+    for e in [Engine::One, Engine::Two] {
+        assert_eq!(Engine::from_number(e.number()), Some(e));
+    }
+    assert_eq!(Engine::from_number(0), None);
+    assert_eq!(Engine::from_number(3), None);
+}
+
+#[test]
 fn engine_two_reads_and_writes() {
     let text = with("app_version = ", "engine = 2\napp_version = ");
     let ff = FightFile::parse(&text).expect("an Engine 2 file parses");

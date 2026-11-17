@@ -652,6 +652,7 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(CLIP),
             search_limit: None,
+            dev: false,
         };
         (super::super::spawn(Arc::new(|| {}), config), root)
     }
@@ -1376,6 +1377,7 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(0..900),
             search_limit: None,
+            dev: false,
         };
         let engine = super::super::spawn(Arc::new(|| {}), config);
         let out = root.join("Videos");
@@ -1458,6 +1460,7 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(CLIP),
             search_limit: None,
+            dev: false,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         let mut state = State::default();

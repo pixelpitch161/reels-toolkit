@@ -70,6 +70,20 @@ impl Engine {
             Engine::Two => 2,
         }
     }
+
+    /// Whether this is the current engine (the engine a file names by writing nothing).
+    pub fn is_one(&self) -> bool {
+        *self == Engine::One
+    }
+
+    /// The engine a fight file's `engine` number names: 1 or 2, `None` for any other number.
+    pub fn from_number(n: u32) -> Option<Engine> {
+        match n {
+            1 => Some(Engine::One),
+            2 => Some(Engine::Two),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for Engine {
