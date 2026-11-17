@@ -10,7 +10,7 @@ pub const FLAG_EMIT: u32 = 1;
 /// `Vertex::flags` bit: the face is drawn from both sides (the mesh holds both windings).
 pub const FLAG_TWO_SIDED: u32 = 2;
 
-/// One vertex, as the shaders read it (44 bytes, no padding).
+/// One vertex, as the shaders read it (68 bytes, no padding).
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -22,17 +22,26 @@ pub struct Vertex {
     pub flags: u32,
     /// The specular strength (0: none).
     pub spec: f32,
+    /// Texture coordinates: where the albedo and normal maps are read (0..1 across a map; a material's
+    /// `uv_scale` tiles them).
+    pub uv: [f32; 2],
+    /// The tangent (`xyz`, unit, at right angles to `nrm`, along +u) and its handedness `w` (±1): the bitangent,
+    /// along +v, is `w * nrm x tan`. A normal map is read in this frame.
+    pub tan: [f32; 4],
 }
 
 impl Vertex {
-    /// A plain white vertex.
+    /// A plain white vertex: uv 0, and some tangent at right angles to `nrm`.
     pub fn new(pos: V3, nrm: V3) -> Vertex {
+        let t = any_tangent(nrm);
         Vertex {
             pos,
             nrm,
             rgb: [1.0; 3],
             flags: 0,
             spec: 0.0,
+            uv: [0.0; 2],
+            tan: [t[0], t[1], t[2], 1.0],
         }
     }
 
@@ -41,9 +50,24 @@ impl Vertex {
         array_stride: std::mem::size_of::<Vertex>() as u64,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &wgpu::vertex_attr_array![
-            0 => Float32x3, 1 => Float32x3, 2 => Float32x3, 3 => Uint32, 4 => Float32
+            0 => Float32x3, 1 => Float32x3, 2 => Float32x3, 3 => Uint32, 4 => Float32, 5 => Float32x2, 6 => Float32x4
         ],
     };
+}
+
+/// A unit vector at right angles to `n` (any one; `+X` for a zero `n`).
+pub fn any_tangent(n: V3) -> V3 {
+    let helper = if n[0].abs() < 0.9 {
+        [1.0, 0.0, 0.0]
+    } else {
+        [0.0, 1.0, 0.0]
+    };
+    let t = maths::sub(helper, maths::scale(n, maths::dot(helper, n)));
+    if maths::length(t) < 1e-6 {
+        [1.0, 0.0, 0.0]
+    } else {
+        maths::normalize(t)
+    }
 }
 
 /// A triangle list on the CPU. Triangles wind counter-clockwise seen from the side they face.
@@ -66,6 +90,49 @@ impl MeshData {
         for v in &mut self.verts {
             v.rgb = rgb;
             v.spec = spec;
+        }
+        self
+    }
+
+    /// The tangents worked out from the triangles' uvs (the usual per-triangle sum, then made at right angles to
+    /// each vertex's normal). A vertex whose triangles give no tangent (no uv change) keeps one at right angles to
+    /// its normal.
+    pub fn with_tangents(mut self) -> MeshData {
+        let n = self.verts.len();
+        let mut tan = vec![[0.0f32; 3]; n];
+        let mut bit = vec![[0.0f32; 3]; n];
+        for t in self.idx.as_chunks::<3>().0 {
+            let [a, b, c] = [t[0], t[1], t[2]].map(|i| i as usize);
+            let (pa, pb, pc) = (self.verts[a].pos, self.verts[b].pos, self.verts[c].pos);
+            let (ua, ub, uc) = (self.verts[a].uv, self.verts[b].uv, self.verts[c].uv);
+            let (e1, e2) = (maths::sub(pb, pa), maths::sub(pc, pa));
+            let (d1, d2) = ([ub[0] - ua[0], ub[1] - ua[1]], [uc[0] - ua[0], uc[1] - ua[1]]);
+            let det = d1[0] * d2[1] - d2[0] * d1[1];
+            if det.abs() < 1e-12 {
+                continue;
+            }
+            let r = 1.0 / det;
+            let sdir = maths::scale(maths::sub(maths::scale(e1, d2[1]), maths::scale(e2, d1[1])), r);
+            let tdir = maths::scale(maths::sub(maths::scale(e2, d1[0]), maths::scale(e1, d2[0])), r);
+            for i in [a, b, c] {
+                tan[i] = maths::add(tan[i], sdir);
+                bit[i] = maths::add(bit[i], tdir);
+            }
+        }
+        for (i, v) in self.verts.iter_mut().enumerate() {
+            let nv = v.nrm;
+            let t = maths::sub(tan[i], maths::scale(nv, maths::dot(nv, tan[i])));
+            let t = if maths::length(t) < 1e-8 {
+                any_tangent(nv)
+            } else {
+                maths::normalize(t)
+            };
+            let w = if maths::dot(maths::cross(nv, t), bit[i]) < 0.0 {
+                -1.0
+            } else {
+                1.0
+            };
+            v.tan = [t[0], t[1], t[2], w];
         }
         self
     }

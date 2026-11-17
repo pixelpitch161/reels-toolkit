@@ -37,9 +37,11 @@ struct InstanceG {
     colour: vec4<f32>,
     // Toon: rim rgb, rim power. Glass: tint rgb, opacity. Emissive: strength.
     mat_a: vec4<f32>,
-    // Glass: x fresnel.
+    // x: glass fresnel; y: the maps' uv scale; z: the normal map's strength.
     mat_b: vec4<f32>,
-    // x: kind; y: toon bands.
+    // Glass: the far side's tint and opacity (w < 0: none).
+    mat_c: vec4<f32>,
+    // x: kind; y: toon bands; z: albedo map slot; w: normal map slot (0: none).
     kind: vec4<u32>,
 }
 
@@ -47,6 +49,9 @@ struct InstanceG {
 @group(0) @binding(1) var<storage, read> lights: array<LightG>;
 @group(0) @binding(2) var shadow_map: texture_depth_2d;
 @group(0) @binding(3) var shadow_cmp: sampler_comparison;
+@group(0) @binding(4) var albedo_maps: texture_2d_array<f32>;
+@group(0) @binding(5) var normal_maps: texture_2d_array<f32>;
+@group(0) @binding(6) var map_sampler: sampler;
 @group(1) @binding(0) var<storage, read> instances: array<InstanceG>;
 
 struct VIn {
@@ -55,6 +60,8 @@ struct VIn {
     @location(2) rgb: vec3<f32>,
     @location(3) flags: u32,
     @location(4) spec: f32,
+    @location(5) uv: vec2<f32>,
+    @location(6) tan: vec4<f32>,
 }
 
 struct VOut {
@@ -65,6 +72,8 @@ struct VOut {
     @location(3) spec: f32,
     @location(4) @interpolate(flat) flags: u32,
     @location(5) @interpolate(flat) inst: u32,
+    @location(6) uv: vec2<f32>,
+    @location(7) tan: vec4<f32>,
 }
 
 @vertex
@@ -80,7 +89,40 @@ fn vs_main(v: VIn, @builtin(instance_index) inst: u32) -> VOut {
     o.spec = v.spec;
     o.flags = v.flags;
     o.inst = inst;
+    o.uv = v.uv;
+    // The tangent turns with the model (it lies in the surface), its handedness kept.
+    o.tan = vec4<f32>((i.model * vec4<f32>(v.tan.xyz, 0.0)).xyz, v.tan.w);
     return o;
+}
+
+// The instance's maps, read in uniform control flow (every fragment samples, the slot picks): the albedo
+// (white with no map) and the tangent-space normal (+Z with no map).
+struct Maps {
+    albedo: vec3<f32>,
+    normal: vec3<f32>,
+}
+
+fn read_maps(in: VOut) -> Maps {
+    let i = instances[in.inst];
+    let uv = in.uv * i.mat_b.y;
+    let a = textureSample(albedo_maps, map_sampler, uv, i32(max(i.kind.z, 1u) - 1u)).rgb;
+    let n = textureSample(normal_maps, map_sampler, uv, i32(max(i.kind.w, 1u) - 1u)).xyz * 2.0 - 1.0;
+    var m: Maps;
+    m.albedo = select(vec3<f32>(1.0), a, i.kind.z > 0u);
+    m.normal = select(vec3<f32>(0.0, 0.0, 1.0), n, i.kind.w > 0u);
+    return m;
+}
+
+// The shading normal: the geometric normal `n` (unit) tilted by the map's tangent-space normal `m`, `k` of the
+// way, in the frame of the interpolated tangent.
+fn perturb(n: vec3<f32>, tan: vec4<f32>, m: vec3<f32>, k: f32) -> vec3<f32> {
+    let t0 = tan.xyz - n * dot(n, tan.xyz);
+    if dot(t0, t0) < 1e-10 || k <= 0.0 {
+        return n;
+    }
+    let t = normalize(t0);
+    let b = cross(n, t) * tan.w;
+    return normalize(t * (m.x * k) + b * (m.y * k) + n * m.z);
 }
 
 // The spot's shadow at `world` (1: lit, 0: shadowed): 3 x 3 PCF on hardware 2 x 2 compares, with the sample

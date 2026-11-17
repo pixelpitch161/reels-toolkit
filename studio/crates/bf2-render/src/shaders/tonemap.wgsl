@@ -3,6 +3,10 @@
 
 struct PostU {
     exposure: f32,
+    contrast: f32,
+    saturation: f32,
+    vignette: f32,
+    scrim: f32,
     _pad0: f32,
     _pad1: f32,
     _pad2: f32,
@@ -28,9 +32,16 @@ fn aces(x: vec3<f32>) -> vec3<f32> {
     return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3<f32>(0.0), vec3<f32>(1.0));
 }
 
-// The grade hook: display-referred linear in, the same out. E3 puts the per-theme grade (LUT) here.
-fn grade(c: vec3<f32>) -> vec3<f32> {
-    return c;
+// The current engine's grade on the encoded picture (`post::grade_cpu` is its CPU reference): the S-curve, the
+// saturation about the mean, the vignette and the top scrim.
+fn grade(c0: vec3<f32>, p: vec2<f32>, size: vec2<f32>) -> vec3<f32> {
+    let v = saturate(c0);
+    let s = v + u.contrast * (v * v * (3.0 - 2.0 * v) - v);
+    let g = (s.r + s.g + s.b) / 3.0;
+    let r = length(vec2<f32>((p.x - 0.5 * size.x) / (0.62 * size.x), (p.y - 0.47 * size.y) / (0.62 * size.y)));
+    let vig = 1.0 - min(saturate(r - 0.55) * u.vignette, 0.5);
+    let scrim = 1.0 - saturate(1.0 - (p.y - size.y * 100.0 / 640.0) / (size.y * 90.0 / 640.0)) * u.scrim;
+    return saturate(saturate(vec3<f32>(g) + (s - vec3<f32>(g)) * u.saturation) * vig * scrim);
 }
 
 fn srgb_encode(c: vec3<f32>) -> vec3<f32> {
@@ -42,5 +53,6 @@ fn srgb_encode(c: vec3<f32>) -> vec3<f32> {
 @fragment
 fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
     let c = textureLoad(hdr, vec2<i32>(p.xy), 0).rgb * u.exposure;
-    return vec4<f32>(srgb_encode(grade(aces(max(c, vec3<f32>(0.0))))), 1.0);
+    let size = vec2<f32>(textureDimensions(hdr));
+    return vec4<f32>(grade(srgb_encode(aces(max(c, vec3<f32>(0.0)))), p.xy, size), 1.0);
 }

@@ -54,18 +54,23 @@ struct LightG {
 
 /// `InstanceG` in common.wgsl.
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct InstanceG {
-    model: M4,
-    nrm: [[f32; 4]; 3],
-    colour: [f32; 4],
-    mat_a: [f32; 4],
-    mat_b: [f32; 4],
-    kind: [u32; 4],
+#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct InstanceG {
+    pub(crate) model: M4,
+    pub(crate) nrm: [[f32; 4]; 3],
+    pub(crate) colour: [f32; 4],
+    /// Toon: rim rgb, rim power. Glass: tint rgb, opacity. Emissive: strength.
+    pub(crate) mat_a: [f32; 4],
+    /// x: glass fresnel; y: the maps' uv scale; z: the normal map's strength.
+    pub(crate) mat_b: [f32; 4],
+    /// Glass: the far side's tint and opacity (w < 0: none).
+    pub(crate) mat_c: [f32; 4],
+    /// x: kind; y: toon bands; z: albedo map slot; w: normal map slot (0: no map).
+    pub(crate) kind: [u32; 4],
 }
 
 impl InstanceG {
-    fn new(i: &crate::scene::Instance) -> InstanceG {
+    pub(crate) fn new(i: &crate::scene::Instance) -> InstanceG {
         let (kind, bands, mat_a, mat_b) = match i.material {
             Material::Toon { bands, rim, rim_power } => {
                 (KIND_TOON, bands, [rim[0], rim[1], rim[2], rim_power], [0.0; 4])
@@ -79,13 +84,23 @@ impl InstanceG {
             Material::Emissive { strength } => (KIND_EMISSIVE, 0, [strength, 0.0, 0.0, 0.0], [0.0; 4]),
             Material::Unlit => (KIND_UNLIT, 0, [0.0; 4], [0.0; 4]),
         };
+        let sf = &i.surface;
+        let mut mat_b = mat_b;
+        mat_b[1] = sf.uv_scale;
+        mat_b[2] = sf.normal_strength;
+        let mat_c = match sf.back {
+            Some((t, a)) => [t[0], t[1], t[2], a],
+            None => [0.0, 0.0, 0.0, -1.0],
+        };
+        let slot = |t: Option<crate::texture::TexId>| t.map_or(0, |t| t.slot());
         InstanceG {
             model: i.model,
             nrm: maths::normal_matrix(&i.model),
             colour: i.colour,
             mat_a,
             mat_b,
-            kind: [kind, bands, 0, 0],
+            mat_c,
+            kind: [kind, bands, slot(sf.albedo), slot(sf.normal)],
         }
     }
 }
@@ -246,6 +261,8 @@ impl Accum {
 
 pub struct Renderer {
     pub meshes: Meshes,
+    /// The material maps (albedo and normal) instances may name in their `Surface`.
+    pub textures: crate::texture::Textures,
     opaque: wgpu::RenderPipeline,
     glass_back: wgpu::RenderPipeline,
     glass_front: wgpu::RenderPipeline,
@@ -286,6 +303,14 @@ fn layout_entry(binding: u32, visibility: wgpu::ShaderStages, ty: wgpu::BindingT
         visibility,
         ty,
         count: None,
+    }
+}
+
+fn map_array() -> wgpu::BindingType {
+    wgpu::BindingType::Texture {
+        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+        view_dimension: wgpu::TextureViewDimension::D2Array,
+        multisampled: false,
     }
 }
 
@@ -341,6 +366,13 @@ impl Renderer {
                     3,
                     wgpu::ShaderStages::FRAGMENT,
                     wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                ),
+                layout_entry(4, wgpu::ShaderStages::FRAGMENT, map_array()),
+                layout_entry(5, wgpu::ShaderStages::FRAGMENT, map_array()),
+                layout_entry(
+                    6,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 ),
             ],
         });
@@ -399,6 +431,7 @@ impl Renderer {
             compare: Some(wgpu::CompareFunction::LessEqual),
             ..Default::default()
         });
+        let textures = crate::texture::Textures::new(gpu);
         let frame_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("frame"),
             layout: &frame_layout,
@@ -418,6 +451,18 @@ impl Renderer {
                 wgpu::BindGroupEntry {
                     binding: 3,
                     resource: wgpu::BindingResource::Sampler(&shadow_cmp),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&textures.albedo_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(&textures.normal_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Sampler(&textures.sampler),
                 },
             ],
         });
@@ -533,6 +578,7 @@ impl Renderer {
         let (inst_buf, inst_bind) = new_instance_buffer(gpu, &inst_layout, inst_cap);
         Renderer {
             meshes: Meshes::default(),
+            textures,
             opaque,
             glass_back,
             glass_front,

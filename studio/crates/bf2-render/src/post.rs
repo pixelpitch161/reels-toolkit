@@ -1,5 +1,7 @@
-//! The post stack: exposure, the tone map (ACES fitted, Narkowicz 2015), a neutral grade hook and the sRGB
-//! encode, from the resolved HDR colour into the 8-bit picture. Bloom, flashes and the rest are E3.
+//! The post stack: exposure, the tone map (ACES fitted, Narkowicz 2015), the sRGB encode, then the current
+//! engine's grade on the encoded picture (contrast, saturation, vignette, top scrim; `bf_picture::post`'s
+//! `grade`, `vignette` and `top_scrim` without their dither), from the resolved HDR colour into the 8-bit picture.
+//! Bloom, flashes and the rest are E3.
 
 use crate::gpu::Gpu;
 use crate::target::{LDR_FORMAT, Targets};
@@ -9,12 +11,60 @@ use crate::target::{LDR_FORMAT, Targets};
 pub struct Post {
     /// Multiplies the HDR colour before the tone map.
     pub exposure: f32,
+    /// The grade's S-curve: `c + contrast * (smoothstep(c) - c)` on the encoded 0..1 value.
+    pub contrast: f32,
+    /// The grade's saturation about the channels' mean (1: none).
+    pub saturation: f32,
+    /// The vignette's strength (0: none): `1 - min(strength * clamp(r - 0.55, 0, 1), 0.5)`, `r` the distance from
+    /// (0.5 w, 0.47 h) in units of 0.62 of the width and height.
+    pub vignette: f32,
+    /// The top scrim (0: none): darkens by this much above 100/640 of the height, fading out over 90/640.
+    pub scrim: f32,
 }
 
 impl Default for Post {
+    /// Neutral: the tone map alone.
     fn default() -> Self {
-        Post { exposure: 1.0 }
+        Post {
+            exposure: 1.0,
+            contrast: 0.0,
+            saturation: 1.0,
+            vignette: 0.0,
+            scrim: 0.0,
+        }
     }
+}
+
+impl Post {
+    /// The fight's look: the current engine's grade (`grade(contrast=0.18, sat=1.18)`, `vignette(0.45)`,
+    /// `top_scrim(0.45, 100, 90)` of `bf_picture::ring::frame`) after the tone map, at the exposure the stage is
+    /// lit for.
+    pub fn ring() -> Post {
+        Post {
+            exposure: RING_EXPOSURE,
+            contrast: 0.18,
+            saturation: 1.18,
+            vignette: 0.45,
+            scrim: 0.45,
+        }
+    }
+}
+
+/// The exposure of [`Post::ring`].
+pub const RING_EXPOSURE: f32 = 1.0;
+
+/// The CPU reference of the grade the shader applies after the encode: `c` an encoded 0..1 colour at pixel
+/// `(x, y)` (centres) of a `w x h` picture.
+pub fn grade_cpu(c: [f32; 3], x: f32, y: f32, w: f32, h: f32, post: &Post) -> [f32; 3] {
+    let s = c.map(|v| {
+        let v = v.clamp(0.0, 1.0);
+        v + post.contrast * (v * v * (3.0 - 2.0 * v) - v)
+    });
+    let g = (s[0] + s[1] + s[2]) / 3.0;
+    let r = ((x - 0.5 * w) / (0.62 * w)).hypot((y - 0.47 * h) / (0.62 * h));
+    let vig = 1.0 - ((r - 0.55).clamp(0.0, 1.0) * post.vignette).min(0.5);
+    let scrim = 1.0 - (1.0 - (y - h * 100.0 / 640.0) / (h * 90.0 / 640.0)).clamp(0.0, 1.0) * post.scrim;
+    s.map(|v| ((g + (v - g) * post.saturation).clamp(0.0, 1.0) * vig * scrim).clamp(0.0, 1.0))
 }
 
 /// The CPU reference of the shader's curve for one channel: exposure, ACES fitted, sRGB encode, to 0..255.
@@ -41,6 +91,10 @@ fn srgb_encode(c: f32) -> f32 {
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct PostU {
     exposure: f32,
+    contrast: f32,
+    saturation: f32,
+    vignette: f32,
+    scrim: f32,
     _pad: [f32; 3],
 }
 
@@ -147,6 +201,10 @@ impl PostPass {
     pub fn encode(&self, gpu: &Gpu, enc: &mut wgpu::CommandEncoder, t: &Targets, bind: &wgpu::BindGroup, post: &Post) {
         let u = PostU {
             exposure: post.exposure,
+            contrast: post.contrast,
+            saturation: post.saturation,
+            vignette: post.vignette,
+            scrim: post.scrim,
             _pad: [0.0; 3],
         };
         gpu.queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&u));
@@ -230,6 +288,40 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn neutral_grade_changes_nothing() {
+        let p = Post::default();
+        for c in [[0.0, 0.5, 1.0], [0.2, 0.3, 0.9]] {
+            for (x, y) in [(0.5, 0.5), (539.5, 959.5), (1079.5, 1919.5)] {
+                let g = grade_cpu(c, x, y, 1080.0, 1920.0, &p);
+                assert!(g.iter().zip(c).all(|(a, b)| (a - b).abs() < 1e-6), "{g:?} {c:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn ring_grade_is_the_current_engines() {
+        let p = Post::ring();
+        // the middle of the picture: only the curve and the saturation (bf_picture::post::grade)
+        let c = [0.2f32, 0.4, 0.8];
+        let got = grade_cpu(c, 540.0, 0.47 * 1920.0, 1080.0, 1920.0, &p);
+        let img = bf_picture::img::Img::from_vec(1, 1, 3, c.iter().map(|&v| f64::from(v) * 255.0).collect());
+        let want = bf_picture::post::grade(&img, 0.18, 1.18, 0.0, 1.0);
+        for k in 0..3 {
+            assert!(
+                (f64::from(got[k]) * 255.0 - want.data[k]).abs() < 0.01,
+                "{got:?} {:?}",
+                want.data
+            );
+        }
+        // a corner darkens by the vignette's cap, the top by the scrim
+        let corner = grade_cpu([0.5; 3], 0.5, 1919.5, 1080.0, 1920.0, &p);
+        assert!(corner[0] < 0.4, "{corner:?}");
+        let top = grade_cpu([0.5; 3], 540.0, 10.0, 1080.0, 1920.0, &p);
+        let mid = grade_cpu([0.5; 3], 540.0, 0.47 * 1920.0, 1080.0, 1920.0, &p);
+        assert!(top[0] < 0.6 * mid[0], "{top:?} {mid:?}");
     }
 
     #[test]

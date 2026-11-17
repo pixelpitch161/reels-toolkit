@@ -76,7 +76,21 @@ pub fn icosphere(r: f32, subdiv: u32) -> MeshData {
             .iter()
             .map(|p| {
                 let n = [p[0] as f32, p[1] as f32, p[2] as f32];
-                Vertex::new([(p[0] * r) as f32, (p[1] * r) as f32, (p[2] * r) as f32], n)
+                let mut v = Vertex::new([(p[0] * r) as f32, (p[1] * r) as f32, (p[2] * r) as f32], n);
+                // uv by longitude and latitude (a seam at -X: an icosphere is for surfaces with no map); the
+                // tangent runs east.
+                v.uv = [
+                    0.5 + n[2].atan2(n[0]) / std::f32::consts::TAU,
+                    0.5 - n[1].clamp(-1.0, 1.0).asin() / std::f32::consts::PI,
+                ];
+                let east = [-n[2], 0.0, n[0]];
+                let t = if maths::length(east) < 1e-6 {
+                    [1.0, 0.0, 0.0]
+                } else {
+                    maths::normalize(east)
+                };
+                v.tan = [t[0], t[1], t[2], 1.0];
+                v
             })
             .collect(),
         idx: tris.into_iter().flatten().collect(),
@@ -86,10 +100,15 @@ pub fn icosphere(r: f32, subdiv: u32) -> MeshData {
 /// One flat quad centred at `c`, spanning `±u` and `±v`, facing `u x v`.
 fn quad(m: &mut MeshData, c: V3, u: V3, v: V3) {
     let n = maths::normalize(maths::cross(u, v));
+    let t = maths::normalize(u);
     let base = m.verts.len() as u32;
-    for (a, b) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
+    for (a, b) in [(-1.0f32, -1.0f32), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
         let p = maths::add(c, maths::add(maths::scale(u, a), maths::scale(v, b)));
-        m.verts.push(Vertex::new(p, n));
+        let mut vx = Vertex::new(p, n);
+        // u along `u`, v along `v`: the bitangent `n x t` is along `v`, so the handedness is +1.
+        vx.uv = [(a + 1.0) / 2.0, (b + 1.0) / 2.0];
+        vx.tan = [t[0], t[1], t[2], 1.0];
+        m.verts.push(vx);
     }
     m.idx.extend([base, base + 1, base + 2, base, base + 2, base + 3]);
 }
@@ -126,14 +145,25 @@ struct Ring {
 fn lathe(rings: &[Ring], n: u32) -> MeshData {
     let n = n.max(3);
     let mut m = MeshData::default();
-    for ring in rings {
+    // v by the length along the profile, top (0) to bottom (1).
+    let mut along = vec![0.0f32; rings.len()];
+    for i in 1..rings.len() {
+        let (a, b) = (&rings[i - 1], &rings[i]);
+        along[i] = along[i - 1] + (b.rho - a.rho).hypot(b.y - a.y);
+    }
+    let total = along.last().copied().unwrap_or(0.0).max(1e-6);
+    for (ring, &d) in rings.iter().zip(&along) {
         for j in 0..=n {
             let th = j as f32 / n as f32 * std::f32::consts::TAU;
             let (s, c) = th.sin_cos();
-            m.verts.push(Vertex::new(
+            let mut v = Vertex::new(
                 [ring.rho * c, ring.y, ring.rho * s],
                 maths::normalize([ring.n[0] * c, ring.n[1], ring.n[0] * s]),
-            ));
+            );
+            v.uv = [j as f32 / n as f32, d / total];
+            // u grows with the angle: along (-sin, 0, cos), which is at right angles to every normal of the ring.
+            v.tan = [-s, 0.0, c, 1.0];
+            m.verts.push(v);
         }
     }
     let row = n + 1;
@@ -153,7 +183,30 @@ fn lathe(rings: &[Ring], n: u32) -> MeshData {
             }
         }
     }
+    // the handedness: v runs down the profile
+    for v in &mut m.verts {
+        let b = maths::cross(v.nrm, [v.tan[0], v.tan[1], v.tan[2]]);
+        v.tan[3] = if b[1] > 0.0 { -1.0 } else { 1.0 };
+    }
     m
+}
+
+/// A sphere of radius `r` from `lon` segments round and `lat` from pole to pole, with uvs by longitude and
+/// latitude (seamless: the seam's vertices are doubled) and tangents running east: for surfaces with a map.
+pub fn uv_sphere(r: f32, lon: u32, lat: u32) -> MeshData {
+    let lat = lat.max(2);
+    let rings: Vec<Ring> = (0..=lat)
+        .map(|k| {
+            let phi = k as f32 / lat as f32 * std::f32::consts::PI;
+            let (s, c) = phi.sin_cos();
+            Ring {
+                rho: if k == 0 || k == lat { 0.0 } else { r * s },
+                y: r * c,
+                n: [s, c],
+            }
+        })
+        .collect();
+    lathe(&rings, lon)
 }
 
 /// A closed cylinder of radius `r` and height `h` along Y, centred, with `n` sides (smooth sides, flat caps).
@@ -249,6 +302,8 @@ pub fn capsule(a: V3, b: V3, r: f32, n: u32) -> MeshData {
     for v in &mut m.verts {
         v.pos = maths::add(centre, to(v.pos));
         v.nrm = to(v.nrm);
+        let t = to([v.tan[0], v.tan[1], v.tan[2]]);
+        v.tan = [t[0], t[1], t[2], v.tan[3]];
     }
     m
 }
@@ -280,11 +335,10 @@ pub fn from_sprite_mesh(m: &bf_picture::sprite::Mesh, scale: f32) -> MeshData {
         let mut emit_side = |n: V3, reverse: bool| {
             let base = out.verts.len() as u32;
             out.verts.extend(p.iter().map(|&pos| Vertex {
-                pos,
-                nrm: n,
                 rgb,
                 flags,
                 spec: face.spec as f32,
+                ..Vertex::new(pos, n)
             }));
             for i in 1..p.len() as u32 - 1 {
                 if reverse {
@@ -353,6 +407,74 @@ mod tests {
         assert!(winds_outward(&capsule([0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 0.3, 8)));
         // The plane faces up.
         assert!(plane(1.0, 1.0).verts.iter().all(|v| v.nrm == [0.0, 1.0, 0.0]));
+    }
+
+    /// Every vertex has a unit tangent at right angles to its normal and a handedness of ±1.
+    fn tangents_ok(m: &MeshData) -> bool {
+        m.verts.iter().all(|v| {
+            let t = [v.tan[0], v.tan[1], v.tan[2]];
+            (maths::length(t) - 1.0).abs() < 1e-3 && maths::dot(t, v.nrm).abs() < 1e-3 && v.tan[3].abs() == 1.0
+        })
+    }
+
+    #[test]
+    fn plane_maps_uv_along_x_and_z() {
+        let m = plane(4.0, 2.0);
+        for v in &m.verts {
+            // u runs 0..1 along +X, v 0..1 along -Z (from the near edge to the far one)
+            assert!((v.uv[0] - (v.pos[0] / 4.0 + 0.5)).abs() < 1e-6, "{v:?}");
+            assert!((v.uv[1] - (0.5 - v.pos[2] / 2.0)).abs() < 1e-6, "{v:?}");
+            assert_eq!(v.tan, [1.0, 0.0, 0.0, 1.0], "{v:?}");
+        }
+    }
+
+    #[test]
+    fn primitives_have_tangent_frames() {
+        assert!(tangents_ok(&box_([1.0, 2.0, 3.0])));
+        assert!(tangents_ok(&plane(4.0, 2.0)));
+        assert!(tangents_ok(&cylinder(0.5, 2.0, 12)));
+        assert!(tangents_ok(&capsule([0.0, 0.0, 0.0], [1.0, 2.0, -0.5], 0.3, 12)));
+        assert!(tangents_ok(&uv_sphere(0.6, 32, 16)));
+        assert!(tangents_ok(&icosphere(1.0, 2)));
+    }
+
+    #[test]
+    fn uv_sphere_is_round_and_wraps_its_uvs() {
+        let m = uv_sphere(0.6, 24, 12);
+        assert!(winds_outward(&m));
+        for v in &m.verts {
+            assert!((maths::length(v.pos) - 0.6).abs() < 1e-5);
+            assert!((0.0..=1.0).contains(&v.uv[0]) && (0.0..=1.0).contains(&v.uv[1]));
+        }
+        // The tangent runs east, the way u grows: around +Y.
+        let eq = m
+            .verts
+            .iter()
+            .find(|v| v.pos[1].abs() < 1e-4 && v.pos[2].abs() < 1e-4 && v.pos[0] > 0.0);
+        let eq = eq.expect("a vertex on +X at the equator");
+        assert!(eq.tan[2].abs() > 0.99, "{eq:?}");
+    }
+
+    #[test]
+    fn compute_tangents_follows_the_uvs() {
+        // A quad in the XY plane facing +Z with u along +Y: the tangent is +Y.
+        let mut m = MeshData::default();
+        for (p, uv) in [
+            ([0.0, 0.0, 0.0], [0.0, 0.0]),
+            ([0.0, 1.0, 0.0], [1.0, 0.0]),
+            ([-1.0, 1.0, 0.0], [1.0, 1.0]),
+        ] {
+            let mut v = Vertex::new(p, [0.0, 0.0, 1.0]);
+            v.uv = uv;
+            m.verts.push(v);
+        }
+        m.idx = vec![0, 1, 2];
+        let m = m.with_tangents();
+        for v in &m.verts {
+            assert!((v.tan[1] - 1.0).abs() < 1e-5 && v.tan[0].abs() < 1e-5, "{v:?}");
+            // bitangent = w * n x t = w * (+Z x +Y) = w * (-X); v grows along -X, so w = +1
+            assert_eq!(v.tan[3], 1.0);
+        }
     }
 
     #[test]

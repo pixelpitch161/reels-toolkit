@@ -2,6 +2,7 @@
 
 use crate::maths::{self, M4, V3};
 use crate::mesh::MeshId;
+use crate::texture::TexId;
 
 /// The most point lights a frame carries to the GPU.
 pub const MAX_LIGHTS: usize = 64;
@@ -58,6 +59,35 @@ impl Material {
     }
 }
 
+/// A material's optional maps and glass extras (E7). The default has none: the instance draws as it always has.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Surface {
+    /// An albedo map (sRGB) multiplying the vertex and instance colour: Toon only.
+    pub albedo: Option<TexId>,
+    /// A tangent-space normal map, lit by the spot and the point lights: Toon and Glass.
+    pub normal: Option<TexId>,
+    /// The maps repeat this many times across the mesh's uvs.
+    pub uv_scale: f32,
+    /// How far the normal map tilts the normal (0: flat, 1: as the map says).
+    pub normal_strength: f32,
+    /// Glass: the far side's own tint (linear) and opacity, shaded in four bands from the spot as if it faced the
+    /// camera (the current engine's ball fill, behind what the ball holds). `None`: the near side's tint at half
+    /// its opacity.
+    pub back: Option<([f32; 3], f32)>,
+}
+
+impl Default for Surface {
+    fn default() -> Self {
+        Surface {
+            albedo: None,
+            normal: None,
+            uv_scale: 1.0,
+            normal_strength: 1.0,
+            back: None,
+        }
+    }
+}
+
 /// One mesh drawn once.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Instance {
@@ -67,6 +97,8 @@ pub struct Instance {
     pub model: M4,
     /// Multiplies the vertex colour; `a` is the alpha.
     pub colour: [f32; 4],
+    /// Maps and extras; the default has none.
+    pub surface: Surface,
 }
 
 impl Instance {
@@ -76,7 +108,13 @@ impl Instance {
             material,
             model,
             colour: [1.0; 4],
+            surface: Surface::default(),
         }
+    }
+
+    pub fn with_surface(mut self, surface: Surface) -> Instance {
+        self.surface = surface;
+        self
     }
 
     pub fn coloured(mut self, rgb: [f32; 3]) -> Instance {

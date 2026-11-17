@@ -22,11 +22,11 @@ fn spec_step(n: vec3<f32>, l: vec3<f32>, v: vec3<f32>) -> f32 {
     return step(0.5, pow(max(dot(n, h), 0.0), SHININESS));
 }
 
-fn toon(in: VOut, i: InstanceG) -> vec3<f32> {
-    let n = normalize(in.nrm);
+fn toon(in: VOut, i: InstanceG, maps: Maps) -> vec3<f32> {
+    let n = perturb(normalize(in.nrm), in.tan, maps.normal, i.mat_b.z);
     let v = normalize(frame.eye.xyz - in.world);
     let bands = f32(i.kind.y);
-    let base = in.rgb.rgb;
+    let base = in.rgb.rgb * maps.albedo;
     var diffuse = frame.ambient.rgb;
     var spec = vec3<f32>(0.0);
     let reach = spot_reach(in.world, n);
@@ -52,6 +52,7 @@ fn toon(in: VOut, i: InstanceG) -> vec3<f32> {
 
 @fragment
 fn fs_main(in: VOut) -> @location(0) vec4<f32> {
+    let maps = read_maps(in);
     let i = instances[in.inst];
     if (in.flags & FLAG_EMIT) != 0u {
         return vec4<f32>(in.rgb.rgb, 1.0);
@@ -64,7 +65,7 @@ fn fs_main(in: VOut) -> @location(0) vec4<f32> {
             return vec4<f32>(in.rgb.rgb, 1.0);
         }
         default: {
-            return vec4<f32>(toon(in, i), 1.0);
+            return vec4<f32>(toon(in, i, maps), 1.0);
         }
     }
 }

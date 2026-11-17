@@ -253,3 +253,81 @@ fn an_empty_fx_pass_changes_nothing() {
     let hooked = r.render_sized_with(&gpu, &scene, &Post::default(), TW, TH, Some(&mut crate::fx::NoFx));
     assert!(plain.data == hooked.data);
 }
+
+#[test]
+fn instance_encodes_its_surface() {
+    use crate::scene::Surface;
+    use crate::texture::TexId;
+    let mesh = crate::mesh::MeshId(0);
+    let plain = InstanceG::new(&Instance::new(mesh, Material::toon(), maths::IDENTITY));
+    assert_eq!((plain.kind[2], plain.kind[3]), (0, 0), "no maps");
+    assert_eq!(plain.mat_c[3], -1.0, "no glass back fill");
+    let mapped = Instance::new(mesh, Material::glass([1.0; 3]), maths::IDENTITY).with_surface(Surface {
+        albedo: Some(TexId(2)),
+        normal: Some(TexId(0)),
+        uv_scale: 6.0,
+        normal_strength: 0.5,
+        back: Some(([0.8, 0.7, 0.6], 0.9)),
+    });
+    let g = InstanceG::new(&mapped);
+    assert_eq!((g.kind[2], g.kind[3]), (3, 1));
+    assert_eq!((g.mat_b[0], g.mat_b[1], g.mat_b[2]), (0.9, 6.0, 0.5));
+    assert_eq!(g.mat_c, [0.8, 0.7, 0.6, 0.9]);
+}
+
+/// A lit floor: a flat normal map draws the same picture as none; a dimpled one breaks the light up.
+#[test]
+fn normal_map_breaks_up_the_light() {
+    use crate::scene::Surface;
+    use crate::texture::{TEX_SIZE, flat_normals, hammered_height, normals_from_height};
+    let (gpu, mut r) = setup();
+    let mut scene = floor_scene(&mut r, &gpu);
+    scene.instances[0].material = Material::matte();
+    scene.spot = Some(Spot {
+        pos: [0.0, 12.0, 4.0],
+        target: [0.0; 3],
+        colour: [0.4; 3],
+        angle_deg: 40.0,
+        shadow: false,
+    });
+    let flat = r.textures.add_normal(&gpu, &flat_normals(TEX_SIZE)).unwrap();
+    let bumps = normals_from_height(&hammered_height(TEX_SIZE, 8, 1), TEX_SIZE, 40.0);
+    let dimpled = r.textures.add_normal(&gpu, &bumps).unwrap();
+    let spread = |img: &Rgb8| {
+        let c = [TW as usize / 2, TH as usize / 2];
+        let l: Vec<f32> = (0..40)
+            .flat_map(|y| (0..40).map(move |x| (x, y)))
+            .map(|(x, y)| lum(img.px(c[0] - 20 + x, c[1] - 20 + y)))
+            .collect();
+        let mean = l.iter().sum::<f32>() / l.len() as f32;
+        (l.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>() / l.len() as f32).sqrt()
+    };
+    let none = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
+    let with = |r: &mut Renderer, scene: &mut Scene, id| {
+        scene.instances[0] = scene.instances[0].with_surface(Surface {
+            normal: Some(id),
+            uv_scale: 16.0,
+            ..Surface::default()
+        });
+        r.render_sized(&gpu, scene, &Post::default(), TW, TH)
+    };
+    let flat_img = with(&mut r, &mut scene, flat);
+    // (8-bit 128 is a hair off zero, so a toon band edge may move by a pixel: count the pixels that change.)
+    let changed = none
+        .data
+        .chunks(3)
+        .zip(flat_img.data.chunks(3))
+        .filter(|(a, b)| a.iter().zip(*b).any(|(x, y)| (i32::from(*x) - i32::from(*y)).abs() > 1))
+        .count();
+    assert!(
+        changed * 200 < none.data.len() / 3,
+        "a flat map changes {changed} pixels"
+    );
+    let bumpy = with(&mut r, &mut scene, dimpled);
+    assert!(
+        spread(&bumpy) > spread(&none) + 2.0,
+        "{} {}",
+        spread(&bumpy),
+        spread(&none)
+    );
+}
