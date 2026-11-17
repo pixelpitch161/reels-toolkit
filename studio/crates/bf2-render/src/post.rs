@@ -25,7 +25,8 @@ pub struct Post {
     /// comes out as `c` (E7).
     pub knee: f32,
     /// The pixel pass (E8): output pixels per art pixel across a 1080-wide frame, so 3 draws the current engine's
-    /// 360 x 640 grid. Each art pixel takes the colour at its centre, and every output pixel inside it is that one
+    /// 360 x 640 grid. Each art pixel takes the mean HDR colour of the output pixels it covers (a box filter: thin
+    /// lines stay whole, as faint lines), and every output pixel inside it is that one
     /// colour (nearest neighbour), whatever came before: the scene, the effects' glow and the screen chain all
     /// land on the grid. A narrower frame keeps the same art grid (1.5 output pixels each at 540 wide), never
     /// finer than its own pixels. 0 or 1: off.
@@ -463,6 +464,98 @@ mod tests {
             }
         }
         assert_eq!(seen.len(), 2, "a flat value dithers between two neighbouring steps: {seen:?}");
+    }
+
+    /// One output column in three lit (`x % 3 == 1`, HDR 1.0), the rest black, drawn into the resolved HDR.
+    fn thin_lines(gpu: &Gpu, t: &Targets) -> wgpu::CommandEncoder {
+        let module = gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("thin lines"),
+            source: wgpu::ShaderSource::Wgsl(
+                r#"
+@vertex
+fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
+    let uv = vec2<f32>(f32((i << 1u) & 2u), f32(i & 2u));
+    return vec4<f32>(uv * 2.0 - 1.0, 0.0, 1.0);
+}
+@fragment
+fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
+    let on = select(0.0, 1.0, u32(p.x) % 3u == 1u);
+    return vec4<f32>(on, on, on, 1.0);
+}
+"#
+                .into(),
+            ),
+        });
+        let pipeline = gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("thin lines"),
+            layout: None,
+            vertex: wgpu::VertexState {
+                module: &module,
+                entry_point: Some("vs"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &module,
+                entry_point: Some("fs"),
+                compilation_options: Default::default(),
+                targets: &[Some(crate::target::HDR_FORMAT.into())],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let mut enc = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        {
+            let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("thin lines"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &t.hdr_resolved,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            pass.set_pipeline(&pipeline);
+            pass.draw(0..3, 0..1);
+        }
+        enc
+    }
+
+    #[test]
+    fn an_art_pixel_is_the_mean_of_what_it_covers() {
+        let gpu = Gpu::headless().unwrap();
+        let t = Targets::new(&gpu, 1080, 24);
+        let pass = PostPass::new(&gpu);
+        let bind = pass.bind(&gpu, &t);
+        let post = Post {
+            pixel: 3,
+            knee: 0.7,
+            ..Post::default()
+        };
+        let mut enc = thin_lines(&gpu, &t);
+        pass.encode(&gpu, &mut enc, &t, &bind, &post);
+        gpu.queue.submit([enc.finish()]);
+        let img = read_back(&gpu, &t);
+        // a line a third of an art pixel wide stays, as a third of its light: it does not break up or vanish
+        let want = (curve_cpu(1.0 / 3.0, &post) * 255.0).round() as u8;
+        for y in 0..img.h {
+            for x in 0..img.w {
+                let got = img.px(x, y)[0];
+                assert!(got.abs_diff(want) <= 1, "({x}, {y}): {got} against {want}");
+            }
+        }
     }
 
     #[test]

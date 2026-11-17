@@ -1,8 +1,9 @@
 // The tone map: resolved HDR colour -> exposure -> the curve (ACES fitted and the sRGB encode, or the current
 // engine's straight light and 2.2 gamma) -> grade -> the value steps and Bayer dither -> Rgba8Unorm.
 // One full-screen triangle, no sampler and no filtering. With the pixel pass on (`pixel` above 1), each fragment
-// finds its art pixel and reads the texel at that art pixel's centre, and grades and dithers at the art pixel, so
-// every output pixel of one art pixel is the same colour (`post::Post::pixel`, `post::dither_cpu`).
+// finds its art pixel, takes the mean of the HDR texels the art pixel covers (so a line thinner than an art pixel
+// stays a faint line instead of breaking into dots), and grades and dithers at the art pixel, so every output
+// pixel of one art pixel is the same colour (`post::Post::pixel`, `post::dither_cpu`).
 
 struct PostU {
     exposure: f32,
@@ -83,8 +84,17 @@ fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
     // the pixel's index over s, as the UI layer's nearest fit counts it (`job2::fit`), so the HUD shares the grid
     let q = floor(floor(p.xy) / s);
     let centre = (q + 0.5) * s;
-    let texel = min(floor(centre), size - 1.0);
-    let c = textureLoad(hdr, vec2<i32>(texel), 0).rgb * u.exposure;
+    // the art pixel's colour: the mean of the texels it covers
+    let lo = vec2<i32>(floor(q * s));
+    let hi = min(vec2<i32>(ceil((q + 1.0) * s)), vec2<i32>(size)) - vec2<i32>(1);
+    var sum = vec3<f32>(0.0);
+    for (var y = lo.y; y <= hi.y; y++) {
+        for (var x = lo.x; x <= hi.x; x++) {
+            sum += textureLoad(hdr, vec2<i32>(x, y), 0).rgb;
+        }
+    }
+    let n = f32((hi.x - lo.x + 1) * (hi.y - lo.y + 1));
+    let c = sum / n * u.exposure;
     let g = grade(curve(max(c, vec3<f32>(0.0))), centre, size);
     return vec4<f32>(dither(g, vec2<u32>(q)), 1.0);
 }
