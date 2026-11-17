@@ -2,7 +2,6 @@
 
 struct Cam {
     view_proj: mat4x4<f32>,
-    // w: output pixels per art pixel (1: no pixel look).
     eye: vec4<f32>,
 }
 
@@ -58,11 +57,6 @@ fn fs_ring(in: VOut) -> @location(0) vec4<f32> {
     let ends = smoothstep(0.0, 0.15, s) * (1.0 - smoothstep(0.96, 1.0, s));
     let seed = u32(i.extra.y);
     let br = 0.7 + 0.3 * vnoise(vec2<f32>(in.a.y * 5.0 + 20.0, i.extra.x * 4.0), seed);
-    if cam.eye.w > 1.0 {
-        // the pixel look: the front a hard band, the wake in dithered thirds
-        let k = select(0.0, 1.0, s > 0.8) + art_steps(wake, 3.0, in.clip.xy, cam.eye.w);
-        return vec4<f32>(in.colour * k * select(0.0, 1.0, ends > 0.5), 0.0);
-    }
     return vec4<f32>(in.colour * (edge + wake) * ends * br, 0.0);
 }
 
@@ -88,11 +82,7 @@ fn fs_dome(in: VOut) -> @location(0) vec4<f32> {
     let seed = u32(i.extra.y);
     // Energy bands drifting over the shell.
     let bands = 0.75 + 0.25 * vnoise(vec2<f32>(atan2(n.z, n.x) * 3.0, n.y * 6.0 - i.extra.x * 8.0), seed);
-    var k = mix(1.0, rim, clamp(i.axis.w, 0.0, 1.0)) * bands;
-    if cam.eye.w > 1.0 {
-        // the pixel look: the shell's light in dithered thirds
-        k = art_steps(k, 3.0, in.clip.xy, cam.eye.w);
-    }
+    let k = mix(1.0, rim, clamp(i.axis.w, 0.0, 1.0)) * bands;
     // Both sides add, so each counts half.
     return vec4<f32>(in.colour * k * 0.5, 0.0);
 }

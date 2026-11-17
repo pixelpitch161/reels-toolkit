@@ -39,16 +39,6 @@ impl Material {
         }
     }
 
-    /// The current engine's low-poly models (`bf_picture::sprite`): seven bands of light on flat faces and no
-    /// rim, so each face of a faceted mesh ([`crate::geom::faceted`]) reads as one flat tone.
-    pub fn low_poly() -> Material {
-        Material::Toon {
-            bands: 7,
-            rim: [0.0; 3],
-            rim_power: 1.0,
-        }
-    }
-
     /// Smooth shading with no rim: the set (canvas, floor, stands), which should not read as cel bands.
     pub fn matte() -> Material {
         Material::Toon {

@@ -44,6 +44,4 @@ GPU rendering, heavy particles, dramatic lighting, camera work and time control.
 | E4 | Director and time: `bf2-direct` (time map, camera director, arena reactions) wired into the render job; `bf_engine::ko_video_t` for the K.O. window in video time | done |
 | E5 | Sound and music on the time map; HUD, captions and VS card. Then a full video for Aedan's review | done in the cloud (stills and a K.O. clip; the full-length follow and steady renders run on the PC: `e5-measurements.md`) |
 | E6 | App integration and the fighter guide ([`FIGHTER-GUIDE.md`](FIGHTER-GUIDE.md)) | done (PC check 2026-11-17: GPU tests pass on the 9070 XT, full video ~45 fps, 6443 fights/s on 15 workers) |
-| E7 | Style port: the current ring, arena, balls and grade in Engine 2 ([`style-port.md`](style-port.md)) | done |
-| E8 | Pixel look: the 360 x 640 art grid, value steps and Bayer dither (`Post::pixel`, `Post::step`), low-poly faceted models | done |
 | F1..F40 | One session per fighter | not started |

@@ -26,9 +26,6 @@ fn fs_glass(in: VOut, @builtin(front_facing) front: bool) -> @location(0) vec4<f
     if !front && i.mat_c.w >= 0.0 {
         return back_fill(in, i, n, v);
     }
-    if frame.info.w == 1u {
-        return flat_glass(in, i, front, v);
-    }
     if !front {
         n = -n;
     }
@@ -63,43 +60,6 @@ fn fs_glass(in: VOut, @builtin(front_facing) front: bool) -> @location(0) vec4<f
     return vec4<f32>(body * alpha + spec * side, alpha);
 }
 
-// The pixel look (the current engine's ball): the near glass is a flat faint tint, lit in four bands, with one
-// small hard highlight per light and no fresnel haze; the rim band and the fill (`back_fill`) do the rest.
-fn flat_glass(in: VOut, i: InstanceG, front: bool, v: vec3<f32>) -> vec4<f32> {
-    var n = normalize(in.nrm);
-    if !front {
-        n = -n;
-    }
-    let side = select(0.5, 1.0, front);
-    let alpha = saturate(i.mat_a.w * side * in.rgb.a);
-    var light = frame.ambient.rgb;
-    var spec = vec3<f32>(0.0);
-    let reach = spot_reach(in.world, n);
-    if reach > 0.0 {
-        let l = normalize(frame.spot_pos.xyz - in.world);
-        light += frame.spot_col.rgb * ceil(saturate(max(dot(n, l), 0.0) * reach) * 4.0 - 0.001) / 4.0;
-        let h = normalize(l + v);
-        spec += vec3<f32>(1.0) * step(0.985, max(dot(n, h), 0.0)) * step(0.5, reach);
-    }
-    for (var k = 0u; k < frame.info.x; k++) {
-        let lg = lights[k];
-        let r = point_reach(lg, in.world);
-        if r <= 0.0 {
-            continue;
-        }
-        let l = normalize(lg.pos_range.xyz - in.world);
-        light += lg.colour.rgb * ceil(saturate(max(dot(n, l), 0.0) * r) * 3.0 - 0.001) / 3.0;
-        let h = normalize(l + v);
-        spec += lg.colour.rgb * 0.5 * step(0.99, max(dot(n, h), 0.0)) * step(0.5, r);
-    }
-    let body = i.mat_a.rgb * in.rgb.rgb * (0.5 + light);
-    return vec4<f32>(body * alpha + spec * side * front_only(front), alpha);
-}
-
-fn front_only(front: bool) -> f32 {
-    return select(0.0, 1.0, front);
-}
-
 // The far side as a fill: its own tint and opacity, lit as the near side at the same place on the screen would be
 // (the outward normal mirrored toward the camera), the spot's light cut into four bands as the current engine's
 // ball fill is.
@@ -123,11 +83,7 @@ fn back_fill(in: VOut, i: InstanceG, n_out: vec3<f32>, v: vec3<f32>) -> vec4<f32
             continue;
         }
         let l = normalize(lg.pos_range.xyz - in.world);
-        var d = max(dot(n, l), 0.0) * r;
-        if frame.info.w == 1u {
-            d = ceil(saturate(d) * 3.0 - 0.001) / 3.0;
-        }
-        light += lg.colour.rgb * d;
+        light += lg.colour.rgb * max(dot(n, l), 0.0) * r;
     }
     let alpha = saturate(i.mat_c.w * in.rgb.a);
     return vec4<f32>(i.mat_c.rgb * light * alpha, alpha);

@@ -41,25 +41,3 @@ fn fbm(p: vec2<f32>, seed: u32) -> f32 {
     }
     return s / 0.9375;
 }
-
-// The pixel look (E8b): effects drawn under the pixel pass (`FxCamera::art` above 1) are hard shapes whose fades
-// are dithered on the art grid, as the current engine draws its effects (`floor(m * 3 + BAYER * 0.9) / 3`).
-
-const BAYER4 = array<u32, 16>(0u, 8u, 2u, 10u, 12u, 4u, 14u, 6u, 3u, 11u, 1u, 9u, 15u, 7u, 13u, 5u);
-
-// The current engine's Bayer value (0..15/16) at the art pixel holding the fragment at `p`, for art pixels `art`
-// output pixels wide.
-fn art_bayer(p: vec2<f32>, art: f32) -> f32 {
-    let q = vec2<u32>(floor(floor(p) / max(art, 1.0)));
-    return f32(BAYER4[(q.y % 4u) * 4u + q.x % 4u]) / 16.0;
-}
-
-// `v` (0..1) banded into `n` steps with the dither at the art pixel: the current engine's stepped glow.
-fn art_steps(v: f32, n: f32, p: vec2<f32>, art: f32) -> f32 {
-    return clamp(floor(v * n + art_bayer(p, art) * 0.9) / n, 0.0, 1.0);
-}
-
-// A fade `v` (0..1) as all or nothing at the art pixel: a dithered fade (screen door) on the art grid.
-fn art_on(v: f32, p: vec2<f32>, art: f32) -> f32 {
-    return select(0.0, 1.0, v > art_bayer(p, art) + 1.0 / 32.0);
-}

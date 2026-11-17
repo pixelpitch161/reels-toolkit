@@ -126,9 +126,6 @@ pub struct FxFrame {
     pub meshfx: MeshFx,
     pub decals: Decals,
     pub screen: Screen,
-    /// The post settings every frame is drawn with: [`Post::ring`], the current engine's grade, value steps and
-    /// pixel grid (its `pixel` is the art pixel's size, 3 by default).
-    pub post: Post,
 }
 
 /// One sub-frame's records, anchors resolved.
@@ -170,7 +167,6 @@ impl FxFrame {
             meshfx: MeshFx::new(gpu),
             decals: Decals::new(gpu),
             screen: Screen::new(gpu),
-            post: Post::ring(),
         }
     }
 
@@ -202,13 +198,7 @@ impl FxFrame {
             r_ball: [defs[0].r, defs[1].r],
             step_to_t: &step_to_t,
         };
-        // the pixel look draws one moment, as the current engine does (no motion blur: its smears are effects);
-        // sub-frames would average into soft in-between tones the hard art pixels cannot hold
-        let n = if self.post.pixel > 1 {
-            1
-        } else {
-            subframes(&src, t, timeline)
-        };
+        let n = subframes(&src, t, timeline);
         let times = shutter_times(t, n);
         let mut idx = Vec::new();
         let mut subs = Vec::with_capacity(times.len());
@@ -257,7 +247,6 @@ impl FxFrame {
             meshfx,
             decals,
             screen,
-            post,
         } = self;
         let mut pass = Pass {
             particles,
@@ -268,6 +257,15 @@ impl FxFrame {
             src: &src,
             defs,
         };
-        r.render_accum_sized(gpu, &scenes, &weights, post, &mut pass, Some(screen), size.0, size.1)
+        r.render_accum_sized(
+            gpu,
+            &scenes,
+            &weights,
+            &Post::ring(),
+            &mut pass,
+            Some(screen),
+            size.0,
+            size.1,
+        )
     }
 }

@@ -24,16 +24,6 @@ pub struct Post {
     /// below this knee, a soft shoulder from it to white) and its 2.2 gamma, so a colour lit to `(c / 255)^2.2`
     /// comes out as `c` (E7).
     pub knee: f32,
-    /// The pixel pass (E8): output pixels per art pixel across a 1080-wide frame, so 3 draws the current engine's
-    /// 360 x 640 grid. Each art pixel takes the mean HDR colour of the output pixels it covers (a box filter: thin
-    /// lines stay whole, as faint lines), and every output pixel inside it is that one
-    /// colour (nearest neighbour), whatever came before: the scene, the effects' glow and the screen chain all
-    /// land on the grid. A narrower frame keeps the same art grid (1.5 output pixels each at 540 wide), never
-    /// finer than its own pixels. 0 or 1: off.
-    pub pixel: u32,
-    /// The value steps after the grade, on 0..255 (0: none): `floor(v / step + bayer) * step` with the 4 x 4
-    /// Bayer matrix on the art grid, the current engine's `np.floor(col / 5 + BAYER_FULL) * 5`.
-    pub step: f32,
 }
 
 impl Default for Post {
@@ -46,8 +36,6 @@ impl Default for Post {
             vignette: 0.0,
             scrim: 0.0,
             knee: 0.0,
-            pixel: 1,
-            step: 0.0,
         }
     }
 }
@@ -64,8 +52,6 @@ impl Post {
             vignette: 0.45,
             scrim: 0.45,
             knee: RING_KNEE,
-            pixel: RING_PIXEL,
-            step: RING_STEP,
         }
     }
 }
@@ -75,48 +61,6 @@ pub const RING_KNEE: f32 = 0.7;
 
 /// The exposure of [`Post::ring`].
 pub const RING_EXPOSURE: f32 = 1.0;
-
-/// [`Post::ring`]'s pixel size: 1080 x 1920 is drawn as 360 x 640 art pixels, as the current engine draws it.
-pub const RING_PIXEL: u32 = 3;
-
-/// [`Post::ring`]'s value step: the current engine's canvas and model shading step of 5.
-pub const RING_STEP: f32 = 5.0;
-
-/// The current engine's vignette at art pixel `q` of the 360 x 640 grid with the value steps on: the darkening
-/// `clip(r - 0.55, 0, 1) * strength` banded into fifths and dithered, capped at a half (`bf_picture::post::vignette`).
-/// Returns the multiplier.
-pub fn vignette_cpu(strength: f32, q: [u32; 2]) -> f32 {
-    let (x, y) = (q[0] as f32 + 0.5, q[1] as f32 + 0.5);
-    let r = ((x - 180.0) / (0.62 * 360.0)).hypot((y - 0.47 * 640.0) / (0.62 * 640.0));
-    let d = (r - 0.55).clamp(0.0, 1.0) * strength;
-    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
-    1.0 - ((d * 5.0 + b * 0.999).floor() / 5.0).min(0.5)
-}
-
-/// The current engine's top scrim at art pixel `q` with the value steps on: `amount` above row 100, fading over 90
-/// rows, banded into sixths and dithered (`bf_picture::post::top_scrim`). Returns the multiplier.
-pub fn scrim_cpu(amount: f32, q: [u32; 2]) -> f32 {
-    let y = q[1] as f32 + 0.5;
-    let d = (1.0 - (y - 100.0) / 90.0).clamp(0.0, 1.0) * amount;
-    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
-    1.0 - (d * 6.0 + b * 0.999).floor() / 6.0
-}
-
-/// The CPU reference of the pass's value steps: `v` an encoded 0..1 value at art pixel `q`, stepped by `step`
-/// (on 0..255) with the 4 x 4 Bayer matrix (`bf_picture::config::BAYER`), 0..1. No step leaves it as it is.
-pub fn dither_cpu(v: f32, step: f32, q: [u32; 2]) -> f32 {
-    if step <= 0.0 {
-        return v;
-    }
-    let b = bf_picture::config::BAYER[(q[1] % 4) as usize][(q[0] % 4) as usize] as f32;
-    ((v * 255.0 / step + b).floor() * step).clamp(0.0, 255.0) / 255.0
-}
-
-/// Output pixels per art pixel for `post` on a frame `w` wide: `pixel * w / 1080`, never under 1 (the tone map's
-/// `s`).
-pub fn art_scale(post: &Post, w: u32) -> f32 {
-    (post.pixel as f32 * w as f32 / 1080.0).max(1.0)
-}
 
 /// The CPU reference of the grade the shader applies after the encode: `c` an encoded 0..1 colour at pixel
 /// `(x, y)` (centres) of a `w x h` picture.
@@ -179,8 +123,7 @@ struct PostU {
     vignette: f32,
     scrim: f32,
     knee: f32,
-    pixel: f32,
-    step: f32,
+    _pad: [f32; 2],
 }
 
 /// The tone map pass: built once, its uniform rewritten each frame.
@@ -291,8 +234,7 @@ impl PostPass {
             vignette: post.vignette,
             scrim: post.scrim,
             knee: post.knee,
-            pixel: post.pixel as f32,
-            step: post.step,
+            _pad: [0.0; 2],
         };
         gpu.queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&u));
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -429,223 +371,6 @@ mod tests {
         assert!(last > 0.99);
         // the default stays ACES
         assert_eq!(curve_cpu(0.5, &Post::default()), srgb_encode(aces(0.5)));
-    }
-
-    #[test]
-    fn dither_lands_on_the_steps_and_keeps_the_mean() {
-        // the current engine's np.floor(v / 5 + BAYER_FULL) * 5, on 0..1 values
-        for v in [0.0f32, 0.2, 0.4, 0.5, 0.731, 0.99, 1.0] {
-            let mut sum = 0.0;
-            for y in 0..4 {
-                for x in 0..4 {
-                    let q = dither_cpu(v, 5.0, [x, y]);
-                    let b = (q * 255.0).round();
-                    assert!(
-                        (q * 255.0 - b).abs() < 1e-3 && (b as u32).is_multiple_of(5),
-                        "{v} -> {q}"
-                    );
-                    assert!((0.0..=1.0).contains(&q));
-                    let want = ((f64::from(v) * 255.0 / 5.0 + bf_picture::config::BAYER[y as usize][x as usize])
-                        .floor()
-                        * 5.0)
-                        .min(255.0);
-                    assert_eq!(b, want as f32, "{v} at ({x}, {y})");
-                    sum += q;
-                }
-            }
-            // a 4 x 4 tile averages back to the value (to within a sixteenth of a step)
-            if v < 0.98 {
-                assert!((sum / 16.0 - v).abs() <= 5.0 / 255.0 / 2.0, "{v}: mean {}", sum / 16.0);
-            }
-        }
-        // no steps: unchanged
-        assert_eq!(dither_cpu(0.4321, 0.0, [1, 2]), 0.4321);
-    }
-
-    #[test]
-    fn pixel_pass_dithers_a_flat_colour_in_the_bayer_pattern() {
-        let gpu = Gpu::headless().unwrap();
-        let t = Targets::new(&gpu, 1080, 48);
-        let pass = PostPass::new(&gpu);
-        let bind = pass.bind(&gpu, &t);
-        // the straight curve, no grade: a flat value whose steps sit well clear of the dither's thresholds
-        let post = Post {
-            pixel: 3,
-            step: 5.0,
-            knee: 0.7,
-            ..Post::default()
-        };
-        let c = 0.1875; // exact in f16
-        let v = curve_cpu(c, &post);
-        let frac = (v * 255.0 / 5.0).fract();
-        assert!((0..16).all(|k| (frac + k as f32 / 16.0).fract() > 0.01 && (frac + k as f32 / 16.0).fract() < 0.99));
-        let mut enc = clear_hdr(&gpu, &t, [c as f64; 3]);
-        pass.encode(&gpu, &mut enc, &t, &bind, &post);
-        gpu.queue.submit([enc.finish()]);
-        let img = read_back(&gpu, &t);
-        let mut seen = std::collections::BTreeSet::new();
-        for y in 0..img.h {
-            for x in 0..img.w {
-                let q = [(x / 3) as u32, (y / 3) as u32];
-                let want = (dither_cpu(v, 5.0, [q[0] % 4, q[1] % 4]) * 255.0).round() as u8;
-                assert_eq!(img.px(x, y)[0], want, "pixel ({x}, {y}), art pixel {q:?}");
-                seen.insert(want);
-            }
-        }
-        assert_eq!(
-            seen.len(),
-            2,
-            "a flat value dithers between two neighbouring steps: {seen:?}"
-        );
-    }
-
-    /// A pattern drawn into the resolved HDR: HDR 1.0 where the WGSL condition `on` (of the pixel `x`, `y`, as
-    /// `u32`) holds, black elsewhere.
-    fn hdr_pattern(gpu: &Gpu, t: &Targets, on: &str) -> wgpu::CommandEncoder {
-        let module = gpu.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("thin lines"),
-            source: wgpu::ShaderSource::Wgsl(
-                format!(
-                    r#"
-@vertex
-fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {{
-    let uv = vec2<f32>(f32((i << 1u) & 2u), f32(i & 2u));
-    return vec4<f32>(uv * 2.0 - 1.0, 0.0, 1.0);
-}}
-@fragment
-fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {{
-    let x = u32(p.x);
-    let y = u32(p.y);
-    let on = select(0.0, 1.0, {on});
-    return vec4<f32>(on, on, on, 1.0);
-}}
-"#
-                )
-                .into(),
-            ),
-        });
-        let pipeline = gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("thin lines"),
-            layout: None,
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs"),
-                compilation_options: Default::default(),
-                buffers: &[],
-            },
-            primitive: Default::default(),
-            depth_stencil: None,
-            multisample: Default::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs"),
-                compilation_options: Default::default(),
-                targets: &[Some(crate::target::HDR_FORMAT.into())],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
-        let mut enc = gpu
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        {
-            let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("thin lines"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &t.hdr_resolved,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
-            pass.set_pipeline(&pipeline);
-            pass.draw(0..3, 0..1);
-        }
-        enc
-    }
-
-    /// The pattern `on` through the pixel pass at pixel 3, no grade or steps: the output's first channel.
-    fn through_the_pass(on: &str) -> bf_picture::img::Rgb8 {
-        let gpu = Gpu::headless().unwrap();
-        let t = Targets::new(&gpu, 1080, 24);
-        let pass = PostPass::new(&gpu);
-        let bind = pass.bind(&gpu, &t);
-        let post = Post {
-            pixel: 3,
-            knee: 0.7,
-            ..Post::default()
-        };
-        let mut enc = hdr_pattern(&gpu, &t, on);
-        pass.encode(&gpu, &mut enc, &t, &bind, &post);
-        gpu.queue.submit([enc.finish()]);
-        read_back(&gpu, &t)
-    }
-
-    /// HDR 1.0 through `through_the_pass`'s curve.
-    fn lit() -> u8 {
-        let post = Post {
-            knee: 0.7,
-            ..Post::default()
-        };
-        (curve_cpu(1.0, &post) * 255.0).round() as u8
-    }
-
-    #[test]
-    fn a_thin_line_stays_a_whole_art_pixel_line() {
-        // one output column in six: the first column of every other art pixel
-        let img = through_the_pass("x % 6u == 0u");
-        for y in 0..img.h {
-            for x in 0..img.w {
-                let want = if (x / 3) % 2 == 0 { lit() } else { 0 };
-                assert_eq!(
-                    img.px(x, y)[0],
-                    want,
-                    "({x}, {y}): a thin line is one whole art pixel, at full light"
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn an_edge_is_hard_with_no_in_between_colour() {
-        // bright up to x = 540, the first column of art pixel 180: the edge lands on a whole art pixel, no blend
-        let img = through_the_pass("x <= 540u");
-        for y in 0..img.h {
-            for x in 0..img.w {
-                let want = if x < 540 { lit() } else { 0 };
-                assert_eq!(img.px(x, y)[0], want, "({x}, {y})");
-            }
-        }
-        // a diagonal edge: every art pixel is one side or the other
-        let img = through_the_pass("x + y < 500u");
-        assert!(img.data.iter().all(|&c| c == 0 || c == lit()));
-    }
-
-    #[test]
-    fn the_steps_band_the_vignette_and_scrim_as_the_current_engine() {
-        let cur_v = bf_picture::post::vignette(0.45, 0.55, 0.5, 0.47);
-        let cur_s = bf_picture::post::top_scrim(0.45, 100.0, 90.0);
-        let (mut n, mut same) = (0, 0);
-        for y in (0..640).step_by(3) {
-            for x in (0..360).step_by(2) {
-                let (v, s) = (vignette_cpu(0.45, [x, y]), scrim_cpu(0.45, [x, y]));
-                n += 1;
-                if (f64::from(v) - cur_v.px(x as usize, y as usize)[0]).abs() < 1e-6
-                    && (f64::from(s) - cur_s.px(x as usize, y as usize)[0]).abs() < 1e-6
-                {
-                    same += 1;
-                }
-            }
-        }
-        // the same bands and dither, but for a few art pixels on a band's edge (float32 against float64)
-        assert!(same * 1000 >= n * 995, "{same} of {n}");
     }
 
     #[test]

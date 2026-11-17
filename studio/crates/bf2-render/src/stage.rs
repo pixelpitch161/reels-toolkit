@@ -49,12 +49,6 @@ const FLOOR_Y: f32 = cur::FLOOR_Y as f32;
 pub const ROPE_HEIGHTS: [f32; 3] = [cur::ROPE_Y[0] as f32, cur::ROPE_Y[1] as f32, cur::ROPE_Y[2] as f32];
 /// A rope's radius: the current engine's 2 px line at the ring's distance.
 pub const ROPE_R: f32 = 0.028;
-
-/// The ball's ink outline, as a scale of the ball: 1.3 art pixels round a radius of about 21.5.
-pub const OUTLINE_SCALE: f32 = 1.06;
-
-/// The sides of the corner posts' poles, caps and cushions: the current engine's prisms (`prism(.., 6, ..)`).
-pub const POST_SIDES: u32 = 6;
 /// How far a rope sags in the middle (`rope_points`: `0.035 sin(pi u)`).
 pub const ROPE_SAG: f32 = 0.035;
 const POST_H: f32 = cur::POST_H as f32;
@@ -62,7 +56,7 @@ const PROJ_R: f32 = 0.15;
 /// The arena's reactions: how far the crowd hops at a full jump (the current engine's one-pixel hop, a little more), and how much brighter the LED boards are at
 /// a full flash (added strength; on the beat they pulse as the current engine's do).
 const CROWD_JUMP: f32 = 0.08;
-const LED_FLASH: f32 = 0.8;
+const LED_FLASH: f32 = 2.0;
 /// The LED boards round the ring floor.
 const BOARDS: usize = 64;
 /// The spot (`SPOT`, `SPOT_AIM`) and its cone (`SPOT_COS`: soft from 19 to 27 degrees).
@@ -465,28 +459,31 @@ impl Stage {
         let canvas = add(geom::plane(2.0 * APRON, 2.0 * APRON).painted([1.0; 3], 0.0));
         let skirt = add(skirt_mesh(&l));
         let stands = add(stands_mesh(&l, 160));
-        // the posts are the current engine's six-sided prisms (`post_faces`), faceted: low-poly as it draws them
-        let mut pole = geom::cylinder(0.085, POST_H, POST_SIDES).painted(lifted(STEEL), 0.6);
+        let mut pole = geom::cylinder(0.085, POST_H, 20).painted(lifted(STEEL), 0.6);
         for v in &mut pole.verts {
             v.pos[1] += POST_H / 2.0;
         }
-        let mut cap = geom::cylinder(0.11, 0.06, POST_SIDES).painted(lifted(CAP), 0.6);
+        let mut cap = geom::cylinder(0.11, 0.06, 20).painted(lifted(CAP), 0.6);
         for v in &mut cap.verts {
             v.pos[1] += POST_H + 0.03;
         }
         pole.append(&cap);
-        let pole = add(geom::faceted(&pole));
-        // a turnbuckle cushion: the current engine's prism, 0.22 tall, radius 0.16, six flat sides
-        let cushion = add(geom::faceted(
-            &geom::cylinder(0.16, 0.22, POST_SIDES).painted([1.0; 3], 0.25),
-        ));
+        let pole = add(pole);
+        // a turnbuckle cushion: rounded, 0.22 tall, radius 0.16
+        let cushion = add(geom::capsule([0.0, -0.05, 0.0], [0.0, 0.05, 0.0], 0.16, 24).painted([1.0; 3], 0.25));
         let ropes = [0, 1, 2, 3].map(|side| ROPE_HEIGHTS.map(|h| add(rope_mesh(side, h))));
         let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 10).painted([1.0; 3], 0.35));
         let person = add(person_mesh());
         let ball = add(geom::uv_sphere(BALL_R, 48, 24));
-        // the ink outline: the far side of a slightly bigger ball (wound inside out, so only it shows), the
-        // current engine's 1.3 art pixels outside a ball of about 21.5 (0.6 at the base camera, 640 rows)
-        let outline = add(geom::ink_shell(&geom::icosphere(BALL_R * OUTLINE_SCALE, 3)));
+        // the ink outline: the far side of a slightly bigger ball (wound inside out, so only it shows)
+        let mut shell = geom::icosphere(BALL_R * 1.045, 3);
+        for t in shell.idx.as_chunks_mut::<3>().0 {
+            t.swap(1, 2);
+        }
+        for v in &mut shell.verts {
+            v.nrm = maths::scale(v.nrm, -1.0);
+        }
+        let outline = add(shell);
         let disc = add(geom::cylinder(1.0, 0.004, 32));
         let spill = add(spill_mesh());
         let proj = add(geom::icosphere(PROJ_R, 2));
@@ -619,7 +616,7 @@ impl Stage {
         }
 
         // The LED boards: each fighter's colour on its own half, a chase stepping on the beat, brighter on the beat;
-        // the flashing fighter's half brighter while it flashes.
+        // in the flashing fighter's colour while it flashes.
         let step = (t * 2.2).floor();
         let k = 0.55 + 0.45 * beat;
         let flash = arena.led_flash.map(|(who, a)| (who.min(1), a as f32));
@@ -636,11 +633,8 @@ impl Stage {
                 c = c.map(|v| v * 0.42 + 40.0);
             }
             let mut strength = 1.0;
-            // a flash brightens the flashing fighter's own half; each half keeps its colour, as the current
-            // engine's boards do (E8b: a whole ring in one fighter's colour read as a white-out)
-            if let Some((who, a)) = flash
-                && who == side
-            {
+            if let Some((who, a)) = flash {
+                c = col255[who];
                 strength += LED_FLASH * a;
             }
             // `led_colour`'s pulse, then the board's fill and its top edge as the current engine paints them

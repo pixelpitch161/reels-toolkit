@@ -174,8 +174,7 @@ fn stage_crowd_leds_and_house_follow_the_arena() {
         "the crowd is up"
     );
     assert!((0..3).all(|c| (live.ambient[c] - AMBIENT[c] * 0.35).abs() < 1e-7));
-    // Each half of the boards is its fighter's colour, as the current engine's are, flash or not (E8b); a flash
-    // brightens the flashing fighter's own half.
+    // Each half of the boards is its fighter's colour; while fighter 1 flashes they are all its colour.
     let leds = |s: &Scene| -> Vec<([f32; 4], f32)> {
         s.instances
             .iter()
@@ -192,16 +191,11 @@ fn stage_crowd_leds_and_house_follow_the_arena() {
         l0.iter().any(|(c, _)| red(c)) && l0.iter().any(|(c, _)| !red(c)),
         "both colours"
     );
+    assert!(l1.iter().all(|(c, _)| !red(c)), "all fighter 1's");
     assert!(
-        l1.iter().any(|(c, _)| red(c)) && l1.iter().any(|(c, _)| !red(c)),
-        "both colours while one flashes"
+        l0.iter().zip(&l1).all(|(a, b)| b.1 > a.1 + 1.0),
+        "the flash and the beat brighten the boards"
     );
-    let mean = |l: &[([f32; 4], f32)], want_red: bool| {
-        let v: Vec<f32> = l.iter().filter(|(c, _)| red(c) == want_red).map(|(_, s)| *s).collect();
-        v.iter().sum::<f32>() / v.len() as f32
-    };
-    assert!(mean(&l1, false) > mean(&l1, true) + 0.3, "fighter 1's half is brighter");
-    assert!(mean(&l1, false) <= 2.0, "a flash, not a white-out");
 }
 
 /// The canvas map is the current engine's canvas: texel (i, j) is `canvas_albedo` at its centre, rows running

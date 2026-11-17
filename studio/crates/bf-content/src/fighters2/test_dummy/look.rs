@@ -27,15 +27,7 @@ struct Meshes {
     cyl: MeshId,
     sphere: MeshId,
     cube: MeshId,
-    /// The limb and joint inside out: the arm's ink outline.
-    cyl_ink: MeshId,
-    sphere_ink: MeshId,
 }
-
-/// The ink the current engine outlines its models with (`sprite`'s `INK` over the edge), linear.
-const INK: [f32; 3] = [0.008, 0.004, 0.012];
-/// How far the ink shell stands out round a limb: about one art pixel at the base camera (36 art pixels a unit).
-const INK_W: f32 = 0.03;
 
 pub struct DummyLook {
     def: Arc<FighterDef>,
@@ -115,13 +107,9 @@ fn owner(f: &FightFrame<'_>, id: u32) -> Option<usize> {
 impl Look2 for DummyLook {
     fn setup(&mut self, r: &mut Renderer, gpu: &Gpu) {
         self.meshes = Some(Meshes {
-            // low-poly and faceted, as the current engine's models are: eight flat sides to a limb, an 80-face
-            // ball to a joint and the fist
-            cyl: r.meshes.add(gpu, geom::faceted(&geom::cylinder(1.0, 1.0, 8))),
-            sphere: r.meshes.add(gpu, geom::faceted(&geom::icosphere(1.0, 1))),
+            cyl: r.meshes.add(gpu, geom::cylinder(1.0, 1.0, 20)),
+            sphere: r.meshes.add(gpu, geom::icosphere(1.0, 2)),
             cube: r.meshes.add(gpu, geom::box_([1.0, 1.0, 1.0])),
-            cyl_ink: r.meshes.add(gpu, geom::ink_shell(&geom::cylinder(1.0, 1.0, 8))),
-            sphere_ink: r.meshes.add(gpu, geom::ink_shell(&geom::icosphere(1.0, 1))),
         });
     }
 
@@ -129,8 +117,7 @@ impl Look2 for DummyLook {
         let Some(m) = &self.meshes else {
             return Vec::new();
         };
-        // flat faces in seven bands, as the current engine shades its models
-        let toon = Material::low_poly;
+        let toon = Material::toon;
         let pos = f.snap.pos[k];
         let facing = f.snap.facing[k];
         let r_ball = self.def.r;
@@ -151,13 +138,7 @@ impl Look2 for DummyLook {
                 .push(Instance::new(m.cyl, toon(), along(a, b, r)).coloured(GREY));
             out.instances
                 .push(Instance::new(m.sphere, toon(), maths::at_scaled(a, r * 1.05)).coloured(GREY));
-            let ink = |mesh, at| Instance::new(mesh, Material::Unlit, at).coloured(INK);
-            out.instances.push(ink(m.cyl_ink, along(a, b, r + INK_W)));
-            out.instances
-                .push(ink(m.sphere_ink, maths::at_scaled(a, r * 1.05 + INK_W)));
             if i == last {
-                out.instances
-                    .push(ink(m.sphere_ink, maths::at_scaled(b, r * 1.55 + INK_W)));
                 // The fist: a bigger ball with an orange knuckle band.
                 out.instances
                     .push(Instance::new(m.sphere, toon(), maths::at_scaled(b, r * 1.55)).coloured([0.7, 0.71, 0.73]));
@@ -232,9 +213,6 @@ impl Look2 for DummyLook {
                 Instance::new(m.sphere, Material::Emissive { strength: 4.0 }, maths::at_scaled(p, 0.2))
                     .coloured(ORANGE),
             );
-            // inked, as the current engine's projectiles are
-            out.instances
-                .push(Instance::new(m.sphere_ink, Material::Unlit, maths::at_scaled(p, 0.2 + INK_W)).coloured(INK));
             out.lights.push(Light {
                 pos: p,
                 colour: [3.0, 1.3, 0.3],

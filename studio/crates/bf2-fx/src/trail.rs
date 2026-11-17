@@ -323,8 +323,6 @@ pub struct TrailSource<'a> {
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct CamU {
     view_proj: [[f32; 4]; 4],
-    /// w: output pixels per art pixel (`FxCamera::art`).
-    art: [f32; 4],
 }
 
 /// The trail pass: one pipeline, a reused vertex buffer.
@@ -406,7 +404,6 @@ impl Trails {
             0,
             bytemuck::bytes_of(&CamU {
                 view_proj: camera.view_proj,
-                art: [0.0, 0.0, 0.0, camera.art],
             }),
         );
         self.verts.write(gpu, bytemuck::cast_slice(&self.data));

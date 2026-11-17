@@ -1,4 +1,4 @@
-# Engine 2 style port (E7, E8)
+# Engine 2 style port (E7)
 
 Aedan's rule (verbatim): "I want to make sure the art style stays the same, just higher fidelity and improved with
 normal maps for the lighting. The point of the new engine was more advanced effects, not revamping the entire
@@ -18,34 +18,8 @@ TEST DUMMY's stills:
 cargo build -p bf-export --example engine2_style
 ./target/debug/examples/engine2_style <folder>            # lists the heavy hits and the K.O.
 ./target/debug/examples/engine2_style <folder> 300 701 1490
-./target/debug/examples/engine2_style <folder> --pixel=2 700   # another art pixel size (engine2_f700_px2.png)
 ./target/debug/ballfight frame --frame 700 --up --out <file> fights/euphonium_vs_trombone.toml
 ```
-
-E8b stills (hard edges, flat glass, pixel effects, the LED halves): `e8b_calm_current_vs_engine2.png`,
-`e8b_hit_current_vs_engine2.png`, `e8b_ko_current_vs_engine2.png`, same folder.
-
-E8 stills (current | Engine 2 at pixel 3, full size with a 2x nearest crop; and pixel 3 against pixel 2):
-`e8_calm_current_vs_engine2.png`, `e8_hit_current_vs_engine2.png`, `e8_ko_current_vs_engine2.png`,
-`e8_pixel_size_options.png`, same folder.
-
-## The pixel look (E8)
-
-Aedan, after E7: "I do still want the pixel art/low-poly look as the original. Maybe a pixel filter over the whole
-scene?" The pixel look is part of the style, not the low fidelity being raised.
-
-| Current engine | Engine 2 |
-|---|---|
-| Every frame drawn at 360 x 640 with aliased (hard) edges, then `upscale3`: nearest neighbour to 1080 x 1920 | The pixel pass in the tone map (`Post::pixel`, `RING_PIXEL` 3): the scene, the effects and the screen chain are drawn at 1080 x 1920, then each 3 x 3 block becomes one art pixel, written to all nine output pixels. The resolve is hard-edged (E8b): a flat patch takes its mean; a block holding an edge splits into its bright and dark texels and takes one side only, the side covering more, unless the other side is a thin line or dot (no 2 x 2 square of it in the block and the ring of texels round it), which then fills the art pixel, so ropes, cracks, sparks and ink stay whole and no blended edge colour is left. `pixel` 2 gives a finer 540 x 960 grid; a narrower frame keeps the 360-wide grid. `Frames2::set_pixel` sets it |
-| Light in value steps with a 4 x 4 Bayer dither: `floor(col / 5 + BAYER_FULL) * 5` on the canvas and the models' shading, steps of 6 on the floor; the vignette in fifths and the scrim in sixths, dithered (the checker grain across the frame); glows `floor(m * 3 + BAYER * 0.9) / 3` | After the grade, every channel `floor(v / 5 + BAYER[y % 4][x % 4]) * 5` on 0..255 at the art pixel (`Post::step`, `RING_STEP` 5; `post::dither_cpu`). With the steps on, the vignette and scrim are banded and dithered exactly as the current tables (`vignette_cpu`, `scrim_cpu`, checked against `bf_picture::post`). The bloom's glow is banded in thirds of `m / (1 + m)` with the dither (`chroma.wgsl`) |
-| No motion blur (smears are drawn effects) | The pixel look draws one moment a frame: `FxFrame` takes no motion-blur sub-frames when `post.pixel` is above 1 (E8b) |
-| Effects: crisp shapes, puffs with hard edges, fades and glows dithered | `FxCamera::art` tells the effect passes the art pixel size; with it above 1, particles are hard shapes (sparks solid streaks, smoke hard-edged puffs see-through in flat thirds), their fades dithered on the art grid (`hash.wgsl`'s `art_on`, `art_steps`); rings a hard front with a dithered wake; domes, trails and beams in dithered thirds; decals hard-edged with a hard hot rim. Without the pass they draw as before |
-| Ball: flat fill, rim band, a few stepped tones, a small hard white highlight | Under the pass (`Frame.info.w`) the near glass is a flat faint tint lit in four bands with one small hard highlight per light and no fresnel haze; the fill's point lights are banded in thirds |
-| HUD and captions in pixel fonts at 360 x 640 | Unchanged: the UI layer is 360 x 640, composited after the pass at 3x nearest, on the same grid (at pixel 2 it keeps its own 3x grid) |
-| Low-poly models (`sprite`): flat faces in seven bands, ink edge | `geom::faceted` (each triangle its own normal), `Material::low_poly` (seven bands, no rim), `geom::ink_shell` for the ink edge; the dummy's limbs have 8 sides, its joints and fist 80 faces |
-| Posts: six-sided prisms (`prism(.., 6, ..)`) | `POST_SIDES` 6, faceted: pole, cap and the cushions (now prisms, as the current ones are, not rounded) |
-| Ball outline 1.3 art px | The ink shell at `OUTLINE_SCALE` 1.06 of the ball (1.3 of about 21.5 art pixels) |
-| Projectiles inked | The dummy's projectiles carry an ink shell (E8b) |
 
 ## Space and camera
 
@@ -71,7 +45,7 @@ scene?" The pixel look is part of the style, not the low fidelity being raised.
 | Element | Current engine | Engine 2 |
 |---|---|---|
 | Floor | `floor`: `ARENA_FLOOR [46, 40, 62]` x `[0.20, 0.18, 0.26] + 0.55 e^(-(r - 4.6) / 3)` | A disc at `FLOOR_Y -1.15`, unlit, its vertices coloured by the same formula (the faint checks left out) |
-| LED boards | Around `BARRIER_R 5.55`, `BARRIER_H 0.72`: each half in its fighter's colour (`sin(am) < 0`: fighter 0), a chase (`fmod(am / 2 pi x 16 + beat, 4) < 2` full, else `x 0.42 + 40`), pulse `0.55 + 0.45 beat`, fill `x 0.55 + 18`, top edge `x 0.9 + 60` | 64 emissive boards with the same colours, chase, pulse, fill and edge; a flash brightens the flashing fighter's own half (`LED_FLASH` 0.8; E8b: it had turned the whole ring one fighter's colour, which on the grey-white TEST DUMMY read as a white-out) |
+| LED boards | Around `BARRIER_R 5.55`, `BARRIER_H 0.72`: each half in its fighter's colour (`sin(am) < 0`: fighter 0), a chase (`fmod(am / 2 pi x 16 + beat, 4) < 2` full, else `x 0.42 + 40`), pulse `0.55 + 0.45 beat`, fill `x 0.55 + 18`, top edge `x 0.9 + 60` | 64 emissive boards with the same colours, chase, pulse, fill and edge; a flash in the flashing fighter's colour on top (Engine 2's arena reaction) |
 | Stands | `N_ROWS 10` tiers from `STAND_R0 6.2`, `ROW_W 0.82`, `ROW_H 0.40`; tops `[54, 46, 74]`, risers `[40, 34, 58]`, shaded then x 0.55 | The same tiers as one mesh (160 segments round), each face's colour the current `shade` result x 0.55, baked for the ambient (matte) |
 | Crowd | `Scene::new(col).crowd` (seeded): head r 0.15 at `0.55 ht`, body ellipse 3.8 x 2.8 head radii; body `CROWD_COLS[ci] x tone x 0.48`, tone `0.78 + 0.42 light_rgb` on each fighter's side; head x 0.62 of the body; phones for `ph < 0.07`; a one-pixel hop | The same people at the same seats (render positions via `from_world`), each a body ellipsoid and head turned to the base camera so it reads as the same figure, the same colours baked for the ambient (matte, so it keeps a little roundness); emissive phones twinkling; the arena's crowd jump at most 0.08 |
 | Spot | At `SPOT [0, 9.5, -1.4]`, aimed at `SPOT_AIM`, cone 19 to 27 degrees | A shadowed spot at the same place and cone, an emissive can above it |
@@ -82,7 +56,7 @@ scene?" The pixel look is part of the style, not the low fidelity being raised.
 |---|---|
 | Fill: `col x 0.3 + GLASS [236, 232, 226] x 0.7` in four bands of the spot, 88 % opaque, the instrument drawn on it | The glass's far side is the fill (`Surface::back`: that tone, 0.88), lit in four bands of the spot; the fighter's look draws its instrument inside |
 | Rim band in `col x 0.9`, 2 px | The fill's outer 9 % of the disc (`RIM_COS`), solid, in the glass tint (`col x 0.9`) |
-| Ink outline `[22, 14, 30]`, 1.3 px | An inverted-hull shell at `1.06 R` (E8; was 1.045), unlit ink |
+| Ink outline `[22, 14, 30]`, 1.3 px | An inverted-hull shell at `1.045 R`, unlit ink |
 | White specular dot upper left | The spot's specular on the near glass (fresnel 0.95, opacity 0.06), with a faint hammered normal map |
 | Contact shadow | Kept |
 
@@ -92,7 +66,7 @@ scene?" The pixel look is part of the style, not the low fidelity being raised.
 |---|---|
 | sRGB 0..255 everywhere, light multiplying colour directly, no tone map | Colours in linear light, `(c / 255)^2.2` (`stage::linear`). Off-spot set pieces (stands, crowd, skirt) take the current engine's shaded colour divided by the ambient, so the ambient alone reproduces the palette and effect lights still light them. `Post::ring` uses straight light under a soft shoulder (`knee` 0.7) and a 2.2 gamma, so a colour lit to `(c / 255)^2.2` comes out as `c`: the shadows are not crushed as ACES would crush them |
 | `grade(contrast 0.18, sat 1.18)`, `vignette(0.45, 0.55, cap 0.5, cy 0.47)`, `top_scrim(0.45, 100, 90)` | The same grade, vignette and scrim in the tone-map shader (`post::grade_cpu`, tested against `bf_picture::post::grade`); the screen chain's own vignette is off |
-| Bloom over 225, k 0.22; dither; nearest x3 upscale | Engine 2's bloom (threshold 1.0, 0.1), then the pixel pass (E8): the 360 x 640 grid, steps of 5 and the Bayer dither (E7 had left these out; Aedan wants them) |
+| Bloom over 225, k 0.22; dither; nearest x3 upscale | Engine 2's bloom (threshold 1.0, 0.1); no dither or pixel upscale: those are the low fidelity being raised |
 
 ## Theme
 
@@ -111,10 +85,6 @@ already uses the same visual theme as every current fight; its fighters' colours
 - The director's moves are scaled by `DirectCfg::intensity` = 0.2.
 
 ## Not ported (yet)
-
-- E8b: the K.O. still carries a wide halo of thin streaks (the K.O. sparks), dithered but busier than the current
-  K.O.'s; the canvas under a point light is still smooth light (stepped only by the 5s), where the current one
-  is too. Projectile and effect shapes other than the dummy's have no ink edge (the current engine inks only some).
 
 - The spot's haze at the top of the frame and the moving spot aim (the current spot follows the action a little).
 - The canvas's corner-light tint is weaker than the current one; posts read a little darker where the spot does

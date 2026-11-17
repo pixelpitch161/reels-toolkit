@@ -403,8 +403,7 @@ impl Screen {
             bloom: [lk.bloom, lk.threshold, lk.knee, lk.dirt],
             grade_gamma: [1.0, 1.0, 1.0, 1.0],
             grade_gain: [1.0; 4],
-            // z: the art pixel size's bits (`FxCamera::art`), for the bloom's pixel look
-            frame: [(self.t * 30.0).round().max(0.0) as u32, 0, cam.art.to_bits(), 0],
+            frame: [(self.t * 30.0).round().max(0.0) as u32, 0, 0, 0],
             ..ScreenU::default()
         };
         let uv = |a: At| -> Option<[f32; 2]> {

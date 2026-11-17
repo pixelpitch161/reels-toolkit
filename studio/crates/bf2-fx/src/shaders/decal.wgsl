@@ -10,8 +10,6 @@ const EXIT_EMBER: u32 = 5u;
 
 struct Cam {
     view_proj: mat4x4<f32>,
-    // x: output pixels per art pixel (1: no pixel look).
-    art: vec4<f32>,
 }
 
 struct Dec {
@@ -85,61 +83,8 @@ fn cell_edge(p: vec2<f32>, seed: u32) -> f32 {
     return f2 - f1;
 }
 
-// The pixel look: the same marks with hard edges, flat tones, a hard hot rim, and the fade dithered on the art
-// grid, as the current engine's canvas marks are drawn.
-fn fs_pixel(in: VOut) -> vec4<f32> {
-    let d = decs[in.inst];
-    let kind = u32(d.colour.w);
-    let seed = u32(d.extra.y);
-    let u = d.extra.x;
-    let art = cam.art.x;
-    let p = in.clip.xy;
-    let uv = in.uv;
-    let r = length(uv);
-    let ragged = r + (fbm(uv * 3.0, seed) - 0.5) * 0.35;
-    var alpha = 0.0;
-    var body = vec3<f32>(0.0);
-    var emit = vec3<f32>(0.0);
-    var heat = 1.0 - smooth01(u * 4.0);
-    if u32(d.extra.z) == EXIT_EMBER {
-        heat = max(heat, 0.25 * d.extra.w);
-    }
-    let hot = mix(vec3<f32>(0.6, 0.05, 0.0), vec3<f32>(4.0, 1.6, 0.4), heat * heat) * heat;
-    switch kind {
-        case SCORCH: {
-            let mask = select(0.0, 1.0, ragged < 0.75);
-            alpha = mask * (0.6 + 0.3 * art_steps(fbm(uv * 6.0 + 3.0, seed + 7u), 2.0, p, art));
-            body = d.colour.rgb * alpha;
-            emit = hot * select(0.0, 1.5, abs(ragged - 0.72) < 0.07);
-        }
-        case CRACK: {
-            let e = cell_edge(uv * 3.2, seed);
-            let ang = atan2(uv.y, uv.x);
-            let spokes = abs(fract(ang / 6.2831853 * 7.0 + h3(seed, 1u, 3u) + (fbm(uv * 4.0, seed + 3u) - 0.5) * 0.25) - 0.5);
-            let line = select(0.0, 1.0, e < 0.05 || (spokes < 0.025 && r < 0.75));
-            let mask = select(0.0, 1.0, ragged < 0.8);
-            alpha = line * mask * 0.9 + mask * 0.15;
-            body = d.colour.rgb * alpha;
-            emit = hot * line * mask;
-        }
-        case SPLAT: {
-            let n = fbm(uv * 2.5, seed);
-            alpha = select(0.0, 0.9, ragged + (0.5 - n) * 0.6 < 0.52);
-            body = d.colour.rgb * alpha;
-        }
-        default: {
-            emit = d.colour.rgb * art_steps(exp(-r * r * 3.0) * select(0.0, 1.0, r < 0.9), 3.0, p, art);
-        }
-    }
-    let on = art_on(d.extra.w, p, art);
-    return vec4<f32>((body + emit) * on, alpha * on);
-}
-
 @fragment
 fn fs_main(in: VOut) -> @location(0) vec4<f32> {
-    if cam.art.x > 1.0 {
-        return fs_pixel(in);
-    }
     let d = decs[in.inst];
     let kind = u32(d.colour.w);
     let seed = u32(d.extra.y);

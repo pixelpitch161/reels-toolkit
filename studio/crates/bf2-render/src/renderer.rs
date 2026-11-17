@@ -638,7 +638,7 @@ impl Renderer {
         fx: Option<&mut dyn FxPass>,
     ) -> Rgb8 {
         self.ensure_size(gpu, w, h);
-        self.draw_scene(gpu, scene, fx, 0, post);
+        self.draw_scene(gpu, scene, fx, 0);
         let sized = self.sized.as_ref().expect("targets were just made");
         let mut enc = gpu
             .device
@@ -683,7 +683,7 @@ impl Renderer {
         let total: f32 = weights.iter().sum();
         let many = scenes.len() > 1;
         for (i, (scene, wt)) in scenes.iter().zip(weights).enumerate() {
-            self.draw_scene(gpu, scene, Some(&mut *fx), i, post);
+            self.draw_scene(gpu, scene, Some(&mut *fx), i);
             if many {
                 let s = self.sized.as_ref().expect("targets were just made");
                 let k = if total > 0.0 {
@@ -711,7 +711,7 @@ impl Renderer {
                     encoder: &mut enc,
                     input: source,
                     output: &t.hdr_post,
-                    camera: FxCamera::of(&scenes[scenes.len() / 2].camera, w, h).with_art(post),
+                    camera: FxCamera::of(&scenes[scenes.len() / 2].camera, w, h),
                 };
                 chain.run(&mut ctx);
                 &s.post_bind_post
@@ -733,11 +733,10 @@ impl Renderer {
 
     /// The scene (shadow, opaque, glass), then the effects, resolved into the targets' single-sample HDR colour.
     /// Submits, so the next call may rewrite the frame's buffers.
-    fn draw_scene(&mut self, gpu: &Gpu, scene: &Scene, fx: Option<&mut dyn FxPass>, sub: usize, post: &Post) {
+    fn draw_scene(&mut self, gpu: &Gpu, scene: &Scene, fx: Option<&mut dyn FxPass>, sub: usize) {
         let sized = self.sized.as_ref().expect("ensure_size first");
         let (w, h) = (sized.targets.w, sized.targets.h);
-        let pixel_look = crate::post::art_scale(post, w) > 1.0;
-        let shadowed = self.write_frame(gpu, scene, w as f32 / h as f32, pixel_look);
+        let shadowed = self.write_frame(gpu, scene, w as f32 / h as f32);
         self.write_instances(gpu, scene);
 
         let mut enc = gpu
@@ -756,7 +755,7 @@ impl Renderer {
                     encoder: &mut enc,
                     colour: &t.hdr_msaa,
                     depth: &t.depth_msaa,
-                    camera: FxCamera::of(&scene.camera, w, h).with_art(post),
+                    camera: FxCamera::of(&scene.camera, w, h),
                     scene,
                     sub,
                 };
@@ -786,8 +785,7 @@ impl Renderer {
     }
 
     /// Writes the frame uniform and the lights; returns whether the spot casts a shadow this frame.
-    /// `pixel_look`: the pixel pass is on, so the glass shades flat (`info.w`).
-    fn write_frame(&self, gpu: &Gpu, scene: &Scene, aspect: f32, pixel_look: bool) -> bool {
+    fn write_frame(&self, gpu: &Gpu, scene: &Scene, aspect: f32) -> bool {
         let lights = scene.lights_for_gpu();
         let gpu_lights: Vec<LightG> = lights
             .iter()
@@ -809,7 +807,7 @@ impl Renderer {
             spot_pos: [0.0; 4],
             spot_dir: [0.0, -1.0, 0.0, 1.0],
             spot_col: [0.0, 0.0, 0.0, 1.0],
-            info: [gpu_lights.len() as u32, 0, SHADOW_SIZE, u32::from(pixel_look)],
+            info: [gpu_lights.len() as u32, 0, SHADOW_SIZE, 0],
         };
         let mut shadowed = false;
         if let Some(s) = &scene.spot {

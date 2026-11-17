@@ -22,8 +22,6 @@ struct Cam {
     right: vec4<f32>,
     // w: seconds of video (mod 1000), for flicker.
     up: vec4<f32>,
-    // x: output pixels per art pixel (1: no pixel look).
-    art: vec4<f32>,
 }
 
 struct Burst {
@@ -197,9 +195,8 @@ fn vs_main(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     }
     let to_eye = cam.eye.xyz - s.pos;
     let dist = max(length(to_eye), 0.1);
-    // Never under 1.5 pixels across (one and a half art pixels with the pixel look); a clamped one keeps its
-    // energy, so far sparks don't sparkle.
-    let min_size = 1.5 * max(cam.art.x, 1.0) * dist * cam.eye.w;
+    // Never under 1.5 pixels across; a clamped one keeps its energy, so far sparks don't sparkle.
+    let min_size = 1.5 * dist * cam.eye.w;
     if size < min_size {
         intensity *= (size / min_size) * (size / min_size);
         size = min_size;
@@ -242,50 +239,8 @@ fn note_sdf(p: vec2<f32>) -> f32 {
     return min(min(head * 0.24, stem), flag);
 }
 
-// The pixel look: each shape solid with a hard edge, its fade (the coverage weight `in.colour.a`) dithered on the
-// art grid, so a puff or a spark is whole art pixels of its full colour or nothing.
-fn fs_pixel(in: VOut) -> vec4<f32> {
-    let uv = in.uv;
-    let art = cam.art.x;
-    let fade = art_on(min(in.colour.a, 1.0), in.clip.xy, art);
-    let full = in.colour.rgb / max(in.colour.a, 1e-4);
-    switch in.shape {
-        case SPARK: {
-            let a = in.extra.x;
-            let q = vec2<f32>(max(abs(uv.x * a) - (a - 1.0), 0.0), uv.y);
-            let d2 = dot(q, q);
-            let lum = max(max(full.r, full.g), full.b);
-            let body = select(0.0, 1.0, d2 < 0.55);
-            let core = select(0.0, 1.0, d2 < 0.12);
-            return vec4<f32>((full * body + vec3<f32>(lum * 0.35 * core)) * fade, 0.0);
-        }
-        case EMBER: {
-            return vec4<f32>(full * select(0.0, 1.0, dot(uv, uv) < 0.45) * fade, 0.0);
-        }
-        case NOTE: {
-            return vec4<f32>(full * select(0.0, 1.0, note_sdf(uv * 1.1) < 0.0) * fade, 0.0);
-        }
-        case SMOKE: {
-            // A puff with a hard, noisy edge, see-through in flat thirds, dithered between them as it thins.
-            let r = length(uv);
-            let n = fbm(uv * 1.6 + vec2<f32>(in.extra.y * 37.0, in.extra.z * 1.5), u32(in.extra.y * 65536.0));
-            let inside = select(0.0, 1.0, (1.0 - smooth01(r)) * smooth01(n * 1.8 - 0.35) > 0.3);
-            let a = inside * art_steps(min(in.colour.a * 0.8, 1.0), 3.0, in.clip.xy, art);
-            return vec4<f32>(full * a, a);
-        }
-        default: {
-            let dd = abs(uv.x) * 0.8 + abs(uv.y) * 1.25 - 1.0;
-            let a = select(0.0, 1.0, dd < 0.0) * fade;
-            return vec4<f32>(full * a, a);
-        }
-    }
-}
-
 @fragment
 fn fs_main(in: VOut) -> @location(0) vec4<f32> {
-    if cam.art.x > 1.0 {
-        return fs_pixel(in);
-    }
     let uv = in.uv;
     // Derivatives only in uniform control flow: both edges are measured before choosing the shape.
     let dn = note_sdf(uv * 1.1);
