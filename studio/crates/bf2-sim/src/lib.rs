@@ -8,6 +8,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod moves;
 pub mod rig;
 pub mod rules;
 pub mod v3;
