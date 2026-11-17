@@ -6,3 +6,8 @@ rust-version.workspace = true
 publish.workspace = true
 
 [dependencies]
+bf-picture.workspace = true
+bf2-render.workspace = true
+bf2-sim.workspace = true
+bytemuck.workspace = true
+wgpu.workspace = true
