@@ -15,15 +15,17 @@ use crate::FighterCard;
 use crate::personality::Personality;
 
 mod test_dummy;
+// SPIKE: the trumpet's candidate standard attacks (Aedan's round-1 picks), for in-engine example renders.
+mod trumpet;
 
 /// Every Engine 2 fighter, in order: the moved fighters ([`MOVED`]) and the dummy ([`DUMMIES`]). "TEST DUMMY 2" is
 /// the same dummy under a second name in a warm colour: a fight file never names one fighter twice, so a dummy
 /// mirror match is TEST DUMMY against TEST DUMMY 2.
-pub const NAMES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
+pub const NAMES: [&str; 3] = ["TEST DUMMY", "TEST DUMMY 2", "TRUMPET"];
 
 /// The real fighters with an Engine 2 version (each also keeps its current-engine version). A fighter session adds
 /// its fighter's name here, and its name to [`NAMES`].
-pub const MOVED: [&str; 0] = [];
+pub const MOVED: [&str; 1] = ["TRUMPET"];
 
 /// The developer fighter's two names (TEST DUMMY and its mirror twin), offered only with the developer switch on.
 pub const DUMMIES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
@@ -99,6 +101,7 @@ pub(crate) fn dummy_starter(left: &str, right: &str) -> bf_core::fightfile::Figh
 pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
     match name {
         "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
 }
@@ -107,6 +110,7 @@ pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
 pub fn look_fx(name: &str) -> Option<Box<dyn bf2_fx::frame::LookFx>> {
     match name {
         "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
 }
@@ -115,7 +119,9 @@ pub fn look_fx(name: &str) -> Option<Box<dyn bf2_fx::frame::LookFx>> {
 pub fn def(name: &str) -> Option<Arc<FighterDef>> {
     static DUMMY: OnceLock<Arc<FighterDef>> = OnceLock::new();
     static DUMMY_2: OnceLock<Arc<FighterDef>> = OnceLock::new();
+    static TRUMPET: OnceLock<Arc<FighterDef>> = OnceLock::new();
     match name {
+        "TRUMPET" => Some(TRUMPET.get_or_init(|| Arc::new(trumpet::def())).clone()),
         "TEST DUMMY" => Some(DUMMY.get_or_init(|| Arc::new(test_dummy::def())).clone()),
         "TEST DUMMY 2" => Some(
             DUMMY_2
@@ -145,6 +151,9 @@ fn entries() -> &'static [FighterCfg] {
 /// in MARIMBA's register, in its own colour, and its abilities name its own moves (unlock1 and unlock2 its two
 /// `Special` moves, low its `Low` move). `None` for any other name.
 pub fn cfg(name: &str) -> Option<&'static FighterCfg> {
+    if name == "TRUMPET" {
+        return crate::roster().iter().find(|f| f.name == name);
+    }
     entries().iter().find(|f| f.name == name)
 }
 
@@ -167,6 +176,7 @@ pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
 pub fn personality(name: &str) -> Option<&'static Personality> {
     match name {
         "TEST DUMMY" | "TEST DUMMY 2" => Some(&crate::fighters::marimba::personality::PERSONALITY),
+        "TRUMPET" => Some(&crate::fighters::trumpet::personality::PERSONALITY),
         _ => None,
     }
 }
@@ -176,6 +186,7 @@ pub fn personality(name: &str) -> Option<&'static Personality> {
 pub fn card_mesh(name: &str) -> Option<Mesh> {
     match name {
         "TEST DUMMY" | "TEST DUMMY 2" => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
+        "TRUMPET" => crate::fighters::trumpet::MESH.and_then(|t| Mesh::from_json(t).ok()),
         _ => None,
     }
 }
