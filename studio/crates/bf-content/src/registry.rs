@@ -7,6 +7,7 @@
 
 use std::sync::OnceLock;
 
+use bf_core::Engine;
 use bf_core::fightfile::NameStatus;
 use bf_core::roster::{FighterCfg, parse_roster};
 
@@ -104,6 +105,26 @@ pub fn name_status(name: &str) -> NameStatus {
     }
 }
 
+/// The engines a fighter can fight on, in order (Engine 2 design section 6). Every offered fighter has the current
+/// engine; an unknown or retired name has none.
+///
+/// A fighter session that moves a fighter to Engine 2 adds [`Engine::Two`] here for it and never takes
+/// [`Engine::One`] away: both versions stay until every fighter has moved (Aedan, 2026-11-17).
+pub fn engines(name: &str) -> &'static [Engine] {
+    const CURRENT: &[Engine] = &[Engine::One];
+    if PORTED.contains(&name) && !RETIRED.contains(&name) {
+        CURRENT
+    } else {
+        &[]
+    }
+}
+
+/// The engines two fighters can fight each other on: the ones both have, in order (no mixed-engine matchups).
+pub fn pair_engines(a: &str, b: &str) -> Vec<Engine> {
+    let theirs = engines(b);
+    engines(a).iter().copied().filter(|e| theirs.contains(e)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,6 +153,26 @@ mod tests {
         "TRUMPET",
         "TUBA",
     ];
+
+    #[test]
+    fn every_offered_fighter_has_the_current_engine_only() {
+        for n in available() {
+            assert_eq!(engines(n), [Engine::One], "{n}");
+        }
+    }
+
+    #[test]
+    fn unknown_and_retired_names_have_no_engine() {
+        for n in ["GUITAR", "SAX", "NOPE"] {
+            assert!(engines(n).is_empty(), "{n}");
+        }
+    }
+
+    #[test]
+    fn pairs_share_engines() {
+        assert_eq!(pair_engines("FLUTE", "TROMBONE"), vec![Engine::One]);
+        assert!(pair_engines("FLUTE", "NOPE").is_empty());
+    }
 
     #[test]
     fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {
