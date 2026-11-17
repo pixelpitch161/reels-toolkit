@@ -21,7 +21,7 @@ use bf_core::rng::Generator;
 use bf_core::show::{IMPACT_FALL, IMPACT_STAGGER, impact_landings};
 
 use crate::mix::{Mix, Sig};
-use crate::music::{MusicCtx, MusicError, ROAR_SEED, roar, shared_events};
+use crate::music::{MusicCtx, MusicError, ROAR_SEED, roar, shared_events, v2};
 use crate::synth::{self, FILTER_O, THUD_DUR, THUD_F0, THUD_F1, THUD_SEED, WHOOSH_RISE, WHOOSH_SEED};
 use crate::traits::{Bed, Sound};
 
@@ -111,6 +111,9 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
         s.play_with(ctx, bed, &mut mix, sounds[1 - k])?;
     }
     shared_events(ctx, bed, &mut mix)?;
+    // Engine 2's impacts, freezes, launches, landings and slams: a shadow recording's v2 detail (nothing on the
+    // current engine, whose events carry none).
+    v2::shared_events2(ctx, bed, &mut mix)?;
 
     // ---- the K.O. (music.py 332-340)
     bed.ko(ctx, &mut mix)?;
