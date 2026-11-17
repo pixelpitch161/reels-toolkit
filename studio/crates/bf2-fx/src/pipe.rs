@@ -59,7 +59,6 @@ pub const UNIFORM: wgpu::BufferBindingType = wgpu::BufferBindingType::Uniform;
 pub const STORAGE: wgpu::BufferBindingType = wgpu::BufferBindingType::Storage { read_only: true };
 
 /// An effect pipeline: `vs_main`/`fs_main` of `m`, no vertex buffers unless given.
-#[allow(clippy::too_many_arguments)]
 pub fn pipeline(
     gpu: &Gpu,
     label: &str,
@@ -69,12 +68,28 @@ pub fn pipeline(
     blend: Blend,
     buffers: &[Option<wgpu::VertexBufferLayout<'_>>],
 ) -> wgpu::RenderPipeline {
+    pipeline_entries(gpu, label, layout, m, "vs_main", "fs_main", topology, blend, buffers)
+}
+
+/// An effect pipeline with named entry points.
+#[allow(clippy::too_many_arguments)]
+pub fn pipeline_entries(
+    gpu: &Gpu,
+    label: &str,
+    layout: &wgpu::PipelineLayout,
+    m: &wgpu::ShaderModule,
+    vs: &str,
+    fs: &str,
+    topology: wgpu::PrimitiveTopology,
+    blend: Blend,
+    buffers: &[Option<wgpu::VertexBufferLayout<'_>>],
+) -> wgpu::RenderPipeline {
     gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some(label),
         layout: Some(layout),
         vertex: wgpu::VertexState {
             module: m,
-            entry_point: Some("vs_main"),
+            entry_point: Some(vs),
             compilation_options: Default::default(),
             buffers,
         },
@@ -97,7 +112,7 @@ pub fn pipeline(
         },
         fragment: Some(wgpu::FragmentState {
             module: m,
-            entry_point: Some("fs_main"),
+            entry_point: Some(fs),
             compilation_options: Default::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: HDR_FORMAT,

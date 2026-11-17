@@ -93,6 +93,9 @@ pub struct Light {
     pub colour: [f32; 3],
     /// Where its light ends.
     pub range: f32,
+    /// Lights of a higher priority are kept first when a frame has more than [`MAX_LIGHTS`]: the stage's are 0,
+    /// effect lights 1.
+    pub priority: u8,
 }
 
 impl Light {
@@ -190,17 +193,18 @@ impl Default for Scene {
 }
 
 impl Scene {
-    /// The lights the GPU gets: all of them if there are at most [`MAX_LIGHTS`], otherwise the brightest
-    /// [`MAX_LIGHTS`] (by luminance, ties to the earlier), in the order they were added.
+    /// The lights the GPU gets: all of them if there are at most [`MAX_LIGHTS`], otherwise the [`MAX_LIGHTS`]
+    /// of highest priority, then brightest (by luminance, ties to the earlier), in the order they were added.
     pub fn lights_for_gpu(&self) -> Vec<Light> {
         if self.lights.len() <= MAX_LIGHTS {
             return self.lights.clone();
         }
         let mut order: Vec<usize> = (0..self.lights.len()).collect();
         order.sort_by(|&a, &b| {
-            self.lights[b]
-                .luminance()
-                .total_cmp(&self.lights[a].luminance())
+            let (la, lb) = (&self.lights[a], &self.lights[b]);
+            lb.priority
+                .cmp(&la.priority)
+                .then(lb.luminance().total_cmp(&la.luminance()))
                 .then(a.cmp(&b))
         });
         order.truncate(MAX_LIGHTS);
@@ -226,6 +230,7 @@ mod tests {
                 pos: [i as f32, 0.0, 0.0],
                 colour: [((i * 37) % 70) as f32; 3],
                 range: 5.0,
+                priority: 0,
             })
             .collect();
         let s = Scene {

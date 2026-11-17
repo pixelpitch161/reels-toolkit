@@ -72,3 +72,38 @@ pub fn swing(n: usize, sweep: f64, extra: usize) -> Recording2 {
 pub fn step_to_t(s: u32) -> f64 {
     T_FIGHT + f64::from(s) * DT
 }
+
+/// An effect pass from a closure.
+pub struct FnPass<F: FnMut(&mut bf2_render::FxCtx<'_>)>(pub F);
+
+impl<F: FnMut(&mut bf2_render::FxCtx<'_>)> bf2_render::FxPass for FnPass<F> {
+    fn draw(&mut self, ctx: &mut bf2_render::FxCtx<'_>) {
+        (self.0)(ctx)
+    }
+}
+
+/// A matte grey canvas (render y = 0) under the default camera, lit only by ambient.
+pub fn canvas_scene(r: &mut bf2_render::Renderer, gpu: &bf2_render::Gpu) -> bf2_render::Scene {
+    let canvas = r.meshes.add(gpu, bf2_render::geom::plane(12.0, 12.0));
+    bf2_render::Scene {
+        ambient: [0.1; 3],
+        instances: vec![
+            bf2_render::Instance::new(canvas, bf2_render::Material::matte(), bf2_render::maths::IDENTITY)
+                .coloured([0.5; 3]),
+        ],
+        ..bf2_render::Scene::default()
+    }
+}
+
+/// Luminance 0..255 of a pixel.
+pub fn lum(p: &[u8]) -> f32 {
+    0.2126 * p[0] as f32 + 0.7152 * p[1] as f32 + 0.0722 * p[2] as f32
+}
+
+pub fn dump(img: &bf_picture::img::Rgb8, name: &str) {
+    if let Ok(dir) = std::env::var("BF2_FX_DUMP") {
+        let mut out = format!("P6 {} {} 255\n", img.w, img.h).into_bytes();
+        out.extend_from_slice(&img.data);
+        std::fs::write(format!("{dir}/{name}.ppm"), out).unwrap();
+    }
+}

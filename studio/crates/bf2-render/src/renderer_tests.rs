@@ -45,6 +45,7 @@ fn toon_sphere_has_banded_shading() {
             pos: [3.0, 3.0, 3.0],
             colour: [1.0; 3],
             range: 40.0,
+            priority: 0,
         }],
         instances: vec![Instance::new(ball, Material::toon(), maths::IDENTITY).coloured([0.8; 3])],
     };
@@ -87,6 +88,7 @@ fn point_light_tints_the_floor() {
         pos: [0.0, 2.0, 0.0],
         colour: [3.0, 0.0, 0.0],
         range: 6.0,
+        priority: 0,
     });
     let img = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
     let redness = |p: [u8; 3]| p[0] as i32 - p[1] as i32;
@@ -230,6 +232,7 @@ fn same_scene_same_pixels_on_one_device() {
         pos: [2.0, 1.0, 2.0],
         colour: [0.0, 2.0, 1.0],
         range: 5.0,
+        priority: 0,
     });
     let a = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
     let b = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);

@@ -318,6 +318,7 @@ impl Stage {
                 pos: p,
                 colour: [1.2, 0.8, 0.4],
                 range: 2.5,
+                priority: 0,
             });
         }
     }
