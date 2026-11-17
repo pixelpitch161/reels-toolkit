@@ -94,11 +94,12 @@ pub fn music_feeds_fight(name: &str) -> bool {
 }
 
 /// What the registry says about a fighter name, for `FightFile::validate`: `Retired` for [`RETIRED`], `Known` for a
-/// roster fighter (ported or not: [`available`] is what the app offers), `Unknown` for anything else.
+/// roster fighter (ported or not: [`available`] is what the app offers) or an Engine 2 fighter
+/// ([`crate::fighters2::NAMES`], never offered), `Unknown` for anything else.
 pub fn name_status(name: &str) -> NameStatus {
     if RETIRED.contains(&name) {
         NameStatus::Retired
-    } else if roster().iter().any(|f| f.name == name) {
+    } else if roster().iter().any(|f| f.name == name) || crate::fighters2::NAMES.contains(&name) {
         NameStatus::Known
     } else {
         NameStatus::Unknown

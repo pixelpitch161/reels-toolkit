@@ -86,6 +86,18 @@ fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> 
 /// `fighters[0]: PIANO has no part in the score yet`, `music.title_hits.FLUTE: the title hits are an empty list`).
 pub fn validate(ff: &FightFile) -> Result<(), ContentError> {
     ff.validate(&name_status)?;
+    if ff.engine == bf_core::Engine::Two {
+        // Engine 2 has no soundtrack yet (E5): its fighters must be Engine 2 fighters, and the music is not read.
+        for (k, name) in ff.fighters.iter().enumerate() {
+            if crate::fighters2::def(name).is_none() {
+                return Err(ContentError::field(
+                    format!("fighters[{k}]"),
+                    format!("{name} has no Engine 2 version yet, so this Engine 2 fight cannot be fought"),
+                ));
+            }
+        }
+        return Ok(());
+    }
     validate_with(ff, theme_of(ff)?)
 }
 

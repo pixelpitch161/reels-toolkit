@@ -7,10 +7,13 @@
 //! [`fight`], which fights a file on the engine it names: Engine 2 fights its `bf_content::fighters2` definitions.
 
 use std::fmt;
+use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use bf_core::Engine;
 use bf_core::fightfile::FightFile;
+use bf_export::{ExportError, JobEvent, JobOpts};
 use bf_sim::{Setup, SimError};
 use bf2_sim::{Recording2, Rules2, Setup2, SimError2};
 
@@ -23,6 +26,8 @@ pub enum EngineError {
     Sim(SimError),
     /// Engine 2 refused the set-up.
     Sim2(SimError2),
+    /// The render job did not make the video.
+    Export(ExportError),
 }
 
 impl fmt::Display for EngineError {
@@ -36,6 +41,7 @@ impl fmt::Display for EngineError {
             }
             EngineError::Sim(e) => write!(f, "{e}"),
             EngineError::Sim2(e) => write!(f, "{e}"),
+            EngineError::Export(e) => write!(f, "{e}"),
         }
     }
 }
@@ -71,6 +77,34 @@ pub fn fight(ff: &FightFile, seed: u64, record: bool) -> Result<Fought, EngineEr
     match ff.engine {
         Engine::One => Ok(Fought::One(bf_sim::run(&classic_setup(ff, seed)?, record)?)),
         Engine::Two => Ok(Fought::Two(bf2_sim::run(&engine_two_setup(ff, seed)?, record)?)),
+    }
+}
+
+impl From<ExportError> for EngineError {
+    fn from(e: ExportError) -> Self {
+        EngineError::Export(e)
+    }
+}
+
+/// Fights `seed` under `ff` on the file's engine and renders the video into a new folder under `opts.out_root`:
+/// the current engine through `bf_export::run_job` as today, Engine 2 through `bf_export::job2::run_job2` (with
+/// the ffmpeg `bf_export::find_ffmpeg` finds). Gives the video's folder.
+///
+/// # Errors
+/// The set-up's or the job's sentence.
+pub fn render(
+    ff: &FightFile,
+    seed: u64,
+    opts: &JobOpts,
+    on: &(dyn Fn(JobEvent) + Sync),
+    cancel: &AtomicBool,
+) -> Result<PathBuf, EngineError> {
+    match fight(ff, seed, true)? {
+        Fought::One(rec) => Ok(bf_export::run_job(ff, Arc::new(rec), opts, on, cancel)?),
+        Fought::Two(rec) => {
+            let ffmpeg = bf_export::find_ffmpeg()?;
+            Ok(bf_export::job2::run_job2(&ffmpeg, ff, Arc::new(rec), opts, on, cancel)?)
+        }
     }
 }
 

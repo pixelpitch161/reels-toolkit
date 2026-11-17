@@ -12,12 +12,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use bf_core::Engine;
+use bf_core::fightfile::FightFile;
 use bf_export::{CheckResult, EncodeSpeed, ExportError, JobEvent, JobOpts, run_job};
 use bf_picture::config::NF;
 use serde_json::json;
 
 use crate::cmd::check::{check_json, check_line};
-use crate::{Ctx, Done, Fail, encode_speed, load_fight, need_ko, note, say, say_json, the_fight};
+use crate::{Ctx, Done, Fail, encode_speed, load_fight, need_ko, note, say, say_json, seed_of, the_fight};
 
 #[derive(clap::Args)]
 pub struct Args {
@@ -61,6 +63,59 @@ fn clip(text: &str) -> Result<Range<usize>, String> {
     }
 }
 
+/// The job's failure as the command says it.
+fn fail(e: ExportError) -> Fail {
+    match e {
+        ExportError::Cancelled(why) => {
+            let mut why = why;
+            if let Some(c) = why.get(..1) {
+                why = c.to_lowercase() + &why[1..];
+            }
+            Fail(format!("the render was stopped (Ctrl+C): {why}"))
+        }
+        e => Fail(e.to_string()),
+    }
+}
+
+/// Fights and renders `ff`: an Engine 2 file through `bf_engine::render` (fought from its seed), a current-engine
+/// file exactly as before (the recording or the seed, the K.O. it needs, then `bf_export::run_job`). Sets the
+/// fight file's seed to the one fought.
+fn route(
+    ff: &mut FightFile,
+    a: &Args,
+    opts: &JobOpts,
+    on: &(dyn Fn(JobEvent) + Sync),
+    cancel: &AtomicBool,
+) -> Result<PathBuf, Fail> {
+    if ff.engine == Engine::Two {
+        if a.rec.is_some() {
+            return Err(Fail(
+                "--rec reads current-engine recordings; an Engine 2 fight is rendered from its seed.".into(),
+            ));
+        }
+        let seed = seed_of(ff, &a.fight, a.seed)?;
+        ff.seed = Some(seed);
+        return bf_engine::render(ff, seed, opts, on, cancel).map_err(|e| match e {
+            bf_engine::EngineError::Export(e) => fail(e),
+            e => Fail(format!("{}: seed {seed}: {e}.", a.fight.display())),
+        });
+    }
+    let rec = the_fight(ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
+    match ff.seed {
+        Some(s) if s != rec.seed => {
+            return Err(Fail(format!(
+                "the recording is the fight of seed {}, but the fight file says seed {s}, so they do not belong \
+                 together.",
+                rec.seed
+            )));
+        }
+        _ => ff.seed = Some(rec.seed),
+    }
+    need_ko(&rec)?;
+
+    run_job(ff, Arc::new(rec), opts, on, cancel).map_err(fail)
+}
+
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
     crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
@@ -74,19 +129,6 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         ff.seed = Some(seed);
         bf_content::validate(&ff).map_err(|e| Fail(format!("--seed {seed}: {e}.")))?;
     }
-    let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
-    match ff.seed {
-        Some(s) if s != rec.seed => {
-            return Err(Fail(format!(
-                "the recording is the fight of seed {}, but the fight file says seed {s}, so they do not belong \
-                 together.",
-                rec.seed
-            )));
-        }
-        _ => ff.seed = Some(rec.seed),
-    }
-    need_ko(&rec)?;
-
     let opts = JobOpts {
         out_root: a.out.clone(),
         workers: ctx.workers,
@@ -111,16 +153,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         JobEvent::Done(_) => {}
     };
     let cancel: &AtomicBool = ctx.cancel;
-    let folder = run_job(&ff, Arc::new(rec), &opts, &on, cancel).map_err(|e| match e {
-        ExportError::Cancelled(why) => {
-            let mut why = why;
-            if let Some(c) = why.get(..1) {
-                why = c.to_lowercase() + &why[1..];
-            }
-            Fail(format!("the render was stopped (Ctrl+C): {why}"))
-        }
-        e => Fail(e.to_string()),
-    })?;
+    let folder = route(&mut ff, a, &opts, &on, cancel)?;
     if cancel.load(Ordering::SeqCst) {
         note("render: Ctrl+C came after the video was saved");
     }
@@ -143,4 +176,54 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn render_routes_engine2_files() {
+        let fight = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fights/engine2/test_dummy.toml"
+        ));
+        let mut ff = load_fight(&fight).expect("the dummy's file loads");
+        let out = std::env::temp_dir().join(format!("ballfight render route {}", std::process::id()));
+        let a = Args {
+            fight: fight.clone(),
+            out: out.clone(),
+            seed: None,
+            rec: None,
+            arrangement: None,
+            music_seed: None,
+            frames: Some(600..602),
+            encode: EncodeSpeed::Faster,
+        };
+        let opts = JobOpts {
+            out_root: out.clone(),
+            workers: 1,
+            frames: a.frames.clone(),
+            speed: a.encode,
+        };
+        let cancel = AtomicBool::new(false);
+        let first = Mutex::new(None);
+        // The first event names the job's first stage; then the job is stopped.
+        let on = |e: JobEvent| {
+            let mut f = first.lock().unwrap();
+            if f.is_none() {
+                *f = Some(e);
+            }
+            cancel.store(true, Ordering::SeqCst);
+        };
+        let r = route(&mut ff, &a, &opts, &on, &cancel);
+        assert!(r.is_err(), "stopped after its first event");
+        assert_eq!(
+            first.into_inner().unwrap(),
+            Some(JobEvent::Stage(bf_export::job2::SILENCE)),
+            "an Engine 2 file reaches run_job2"
+        );
+        assert_eq!(ff.seed, Some(26));
+        let _ = std::fs::remove_dir_all(&out);
+    }
 }

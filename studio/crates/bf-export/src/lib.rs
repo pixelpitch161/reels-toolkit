@@ -7,6 +7,7 @@
 //! | [`probe`] | the checks of the finished file ([`verify_mp4`]) |
 //! | [`output`] | the output folder: its name ([`folder_name`]), the temporary folder, the files beside the video |
 //! | [`job`] | the whole render job ([`run_job`]) |
+//! | [`job2`] | Engine 2's render job ([`job2::run_job2`]) |
 
 use std::fmt;
 
@@ -15,6 +16,7 @@ use bf_content::ContentError;
 pub mod checks;
 pub mod encode;
 pub mod job;
+pub mod job2;
 pub mod output;
 pub mod probe;
 
@@ -23,7 +25,7 @@ pub use self::checks::{BandPlan, CheckResult, Kept, pre_render, pre_render_keepi
 pub use self::encode::ffmpeg_at;
 pub use self::encode::{
     APP_FFMPEG_DIR, ENCODING_NOTE, EncodeSpeed, Encoder, FASTER_PRESET, Ffmpeg, FfmpegSource, REINSTALL, encode_args,
-    encode_args_at, find_ffmpeg, find_with as find_ffmpeg_with, is_about_the_apps_own,
+    encode_args_at, encode_args_sized, find_ffmpeg, find_with as find_ffmpeg_with, is_about_the_apps_own,
 };
 #[cfg(feature = "test-support")]
 pub use self::job::run_job_using;
