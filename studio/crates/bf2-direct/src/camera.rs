@@ -1,31 +1,28 @@
 //! The camera director: one smoothed camera over all 1,830 frames, simulated once per fight in order.
 //!
-//! Per frame: the base shot (both balls inside the safe zone with a 6 % margin, as close as that allows, 14 to 30
-//! away, 58 degrees down); the accepted shots ([`crate::shots`]) bend it (closer, lower, rolled, turned, toward a
-//! ball) but never past what still frames both balls; a critically damped spring smooths every channel, reading
-//! its goal a lag ahead so it keeps step with the balls; the distance is raised ahead of any frame that would still
-//! lose a ball, and a last framing guard catches what is left; a trauma model adds shake.
+//! Per frame: the base shot is the current engine's camera ([`crate::base`]: the whole ring as a diamond from 27.5
+//! away, 58 degrees down, drifting gently over the minute); the accepted shots ([`crate::shots`]) bend it (closer,
+//! lower, rolled, turned, toward a ball), scaled by `DirectCfg::intensity` so they stay subtle, but never past what
+//! still frames both balls; a critically damped spring smooths every channel, reading its goal a lag ahead so it
+//! keeps step with the balls; the distance is raised ahead of any frame that would still lose a ball, and a last
+//! framing guard catches what is left; a trauma model adds shake, also scaled by the intensity.
 
 use bf_core::dmath;
 use bf2_sim::{Cue, EvKind, Recording2};
 
+use crate::base::base_rig;
 use crate::cfg::{DirectCfg, FPS, FRAMES};
-use crate::project::{BALL_R, CamPose, P3, SAFE, ball_box, ball_centre, inset, inside};
+use crate::project::{CamPose, P3, SAFE, ball_box, ball_centre, inset, inside};
 use crate::shots::{Priority, Shot, ShotKind, plan};
 use crate::time::TimeMap;
 
-/// The base shot's angle down, in degrees.
-pub const PITCH: f64 = 58.0;
-/// The vertical field of view.
+/// The vertical field of view (the current engine's).
 pub const FOV: f64 = 36.0;
-/// The base shot's distance range.
+/// The closest a shot's framing search looks (half of it).
 pub const DIST_MIN: f64 = 14.0;
-pub const DIST_MAX: f64 = 30.0;
 /// The farthest the framing guard pulls back.
 const GUARD_MAX: f64 = 60.0;
-/// The base shot keeps both balls this share of the safe zone inside its edges; a shot's push-in stops at the
-/// smaller margin.
-const MARGIN: f64 = 0.06;
+/// A shot's push-in stops where both balls are this share of the safe zone inside its edges.
 const SHOT_MARGIN: f64 = 0.02;
 /// The springs' half-lives in video seconds: normally, and during a whip-back.
 const HALF_LIFE: f64 = 0.18;
@@ -156,6 +153,19 @@ struct Mods {
     /// The ball the target follows up, and how much.
     follow: Option<(usize, f64)>,
     whip: bool,
+}
+
+/// `m` scaled toward no change by `k` (0: none, 1: in full).
+fn scaled(m: Mods, k: f64) -> Mods {
+    Mods {
+        dist_mul: 1.0 + (m.dist_mul - 1.0) * k,
+        pitch: m.pitch * k,
+        yaw: m.yaw * k,
+        roll: m.roll * k,
+        focus: m.focus.map(|(p, w)| (p, w.map(|x| x * k))),
+        follow: m.follow.map(|(who, w)| (who, w * k)),
+        whip: m.whip,
+    }
 }
 
 fn mods(shots: &[Shot], t: f64) -> Mods {
@@ -361,33 +371,32 @@ impl CameraTrack {
         let shots = plan(&rec.events, map, cfg);
         let hits = trauma_hits(rec, map);
         let dt = 1.0 / FPS;
-        let margin_rect = inset(SAFE, MARGIN);
         let shot_rect = inset(SAFE, SHOT_MARGIN);
+
+        let k = cfg.intensity.clamp(0.0, 1.0);
+        // The current engine's keys push in for the final exchange from 44 s and settle back after the K.O.: they
+        // need the K.O. after 44 s and before 58 s, so an earlier or later one is held inside that.
+        let t_ko = map.ko_video_t().unwrap_or(55.0).clamp(44.5, 55.5);
 
         let wants: Vec<Want> = (0..FRAMES)
             .map(|f| {
                 let t = f as f64 * dt;
                 let sim = balls_at(rec, map, t);
                 let balls = [ball_centre(sim[0]), ball_centre(sim[1])];
-                let m = mods(&shots, t);
+                let m = scaled(mods(&shots, t), k);
                 let top = sim[0][2].max(sim[1][2]).max(0.0);
                 let lift = match m.follow {
                     Some((who, w)) => 0.6 * top + (0.9 * sim[who.min(1)][2].max(0.0) - 0.6 * top) * w,
                     None => 0.6 * top,
                 };
-                let mid = [
-                    0.5 * (balls[0][0] + balls[1][0]),
-                    BALL_R + lift,
-                    0.5 * (balls[0][2] + balls[1][2]),
-                ];
+                let (target, base, pitch, yaw) = base_rig(t, t_ko);
                 let orient = Rig {
-                    target: mid,
-                    dist: DIST_MAX,
-                    pitch: PITCH + m.pitch,
-                    yaw: m.yaw,
+                    target: [target[0], target[1] + k * lift, target[2]],
+                    dist: base,
+                    pitch: pitch + m.pitch,
+                    yaw: yaw + m.yaw,
                     roll: m.roll,
                 };
-                let base = orient.fit_dist(&balls, margin_rect, DIST_MIN, DIST_MAX);
                 let (rig, need) = shot_rig(orient, &balls, m.focus.map(|(_, w)| w), base * m.dist_mul, shot_rect);
                 Want {
                     balls,
@@ -401,7 +410,7 @@ impl CameraTrack {
         // The springs, run until the framing guard has nothing left to do: each pass raises the distance's goal
         // ahead of every frame the guard had to fix, so the pull-back is smooth and early rather than a snap.
         let mut raise = vec![0.0; FRAMES];
-        let mut out = springs(rec.seed, &wants, &hits, &raise, false);
+        let mut out = springs(rec.seed, &wants, &hits, &raise, false, k);
         for _ in 0..6 {
             if out.fixes.is_empty() {
                 break;
@@ -412,9 +421,9 @@ impl CameraTrack {
                     *r = f64::max(*r, d);
                 }
             }
-            out = springs(rec.seed, &wants, &hits, &raise, false);
+            out = springs(rec.seed, &wants, &hits, &raise, false, k);
         }
-        let out = springs(rec.seed, &wants, &hits, &raise, true);
+        let out = springs(rec.seed, &wants, &hits, &raise, true, k);
         CameraTrack {
             poses: out.poses,
             shake: out.shake,
@@ -434,7 +443,7 @@ struct Run {
 
 /// The springs over every frame, in order, the distance's goal raised to at least `raise`. With `guard`, a frame
 /// that still loses a ball is pulled back to fit (the springs carry on from there).
-fn springs(seed: u64, wants: &[Want], hits: &[(f64, f64)], raise: &[f64], guard: bool) -> Run {
+fn springs(seed: u64, wants: &[Want], hits: &[(f64, f64)], raise: &[f64], guard: bool, shake_k: f64) -> Run {
     let dt = 1.0 / FPS;
     let fix_rect = inset(SAFE, 0.01);
     let mut run = Run {
@@ -476,7 +485,7 @@ fn springs(seed: u64, wants: &[Want], hits: &[(f64, f64)], raise: &[f64], guard:
             trauma = (trauma + hits[next_hit].1).min(1.0);
             next_hit += 1;
         }
-        let k = trauma * trauma;
+        let k = trauma * trauma * shake_k;
         let off = [k * SHAKE_PX * noise(seed, 1, t), k * SHAKE_PX * noise(seed, 2, t)];
         let roll_shake = k * SHAKE_ROLL * noise(seed, 3, t);
         trauma = (trauma - TRAUMA_DECAY * dt).max(0.0);
@@ -513,7 +522,15 @@ mod tests {
     use bf2_sim::Ev;
 
     fn track(rec: &Recording2) -> (TimeMap, CameraTrack) {
-        let cfg = DirectCfg::default();
+        track_k(rec, DirectCfg::default().intensity)
+    }
+
+    /// The track with the shots and shake at `intensity` (1: in full, to check each shot's shape).
+    fn track_k(rec: &Recording2, intensity: f64) -> (TimeMap, CameraTrack) {
+        let cfg = DirectCfg {
+            intensity,
+            ..DirectCfg::default()
+        };
         let map = TimeMap::from_recording(rec, &cfg);
         let t = CameraTrack::build(rec, &map, &cfg);
         (map, t)
@@ -616,7 +633,7 @@ mod tests {
             ev(300, 1, EvKind::Land),
         ];
         let rec = synthetic(600, pos, ev, None);
-        let (map, tr) = track(&rec);
+        let (map, tr) = track_k(&rec, 1.0);
         let (ok, n) = framing(&rec, &map, &tr);
         assert_eq!(ok, n);
         assert!(tr.shots.iter().any(|s| s.kind == ShotKind::Launch));
@@ -652,7 +669,7 @@ mod tests {
     #[test]
     fn punch_in_moves_closer_during_windup() {
         let rec = synthetic(1200, diagonal, punch(600, 0, 36, false), None);
-        let (map, tr) = track(&rec);
+        let (map, tr) = track_k(&rec, 1.0);
         // The springs read ahead to stay in step, so the move starts a beat early: measure from well before.
         let start = &tr.poses[frame(map.step_video_t(600) - 0.6)];
         let hit = &tr.poses[frame(map.step_video_t(636)) + 3];
@@ -700,17 +717,21 @@ mod tests {
     fn ko_shot_orbits_then_pulls_out() {
         let ev = vec![ev(1200, 0, EvKind::Ko { target: 1 })];
         let rec = synthetic(1320, diagonal, ev, Some((1, 1200)));
-        let (map, tr) = track(&rec);
+        let (map, tr) = track_k(&rec, 1.0);
         let ko = map.ko_video_t().unwrap();
-        let yaw = |p: &CamPose| {
-            let d = sub(p.eye, p.target);
-            d[0].atan2(d[2]).to_degrees()
-        };
+        let t_ko = ko.clamp(44.5, 55.5);
+        // The orbit, measured from the base shot's own yaw at that moment.
+        let base_yaw = |t: f64| crate::base::base_rig(t, t_ko).3;
         let at = |t: f64| &tr.poses[frame(t)];
-        assert!(yaw(at(ko - 0.6)).abs() < 0.5);
+        let yaw = |t: f64| {
+            let p = at(t);
+            let d = sub(p.eye, p.target);
+            d[0].atan2(d[2]).to_degrees() - base_yaw(t)
+        };
+        assert!(yaw(ko - 0.6).abs() < 0.5);
         let slow_end = map.video_t(1200.0 * DT + 0.8);
-        let y_mid = yaw(at(0.5 * (ko + slow_end)));
-        let y_end = yaw(at(slow_end + 0.5));
+        let y_mid = yaw(0.5 * (ko + slow_end));
+        let y_end = yaw(slow_end + 0.5);
         assert!(y_mid.abs() > 2.0 && y_mid.abs() < y_end.abs(), "{y_mid} {y_end}");
         assert!((y_end.abs() - 12.0).abs() < 1.5, "{y_end}");
         // pushed in on the loser through the freeze, then pulled out wide
@@ -727,6 +748,44 @@ mod tests {
             "toward the loser: {t0:?} {t1:?}"
         );
         assert!(flat(t2, winner) < flat(t0, winner) - 0.25, "then the winner: {t2:?}");
+    }
+
+    /// By default the shots and the shake are subtle offsets around the current engine's camera: a punch-in comes
+    /// at most 10 % closer, the K.O. orbit turns at most 3 degrees, the shake stays within 4 px, and through
+    /// real fights the camera keeps within a few percent of the base shot's distance almost all the time.
+    #[test]
+    fn default_moves_are_subtle() {
+        let rec = synthetic(1200, diagonal, punch(600, 0, 36, false), None);
+        let (map, tr) = track(&rec);
+        let start = dist(&tr.poses[frame(map.step_video_t(600) - 0.6)]);
+        let hit = dist(&tr.poses[frame(map.step_video_t(636)) + 3]);
+        assert!(hit < start && hit > 0.9 * start, "{hit} {start}");
+
+        let ev = vec![ev(1200, 0, EvKind::Ko { target: 1 })];
+        let rec = synthetic(1320, diagonal, ev, Some((1, 1200)));
+        let (map, tr) = track(&rec);
+        let ko = map.ko_video_t().unwrap();
+        let t_ko = ko.clamp(44.5, 55.5);
+        for f in frame(ko)..FRAMES {
+            let p = &tr.poses[f];
+            let d = sub(p.eye, p.target);
+            let turn = d[0].atan2(d[2]).to_degrees() - crate::base::base_rig(f as f64 / FPS, t_ko).3;
+            assert!(turn.abs() <= 3.0, "frame {f}: {turn}");
+        }
+
+        for seed in [3, 8] {
+            let rec = dummy(seed, true);
+            let (map, tr) = track(&rec);
+            let t_ko = map.ko_video_t().unwrap_or(55.0).clamp(44.5, 55.5);
+            assert!(tr.shake.iter().all(|s| s[0].hypot(s[1]) <= 4.0 * 2f64.sqrt()));
+            let near = (0..FRAMES)
+                .filter(|&f| {
+                    let base = crate::base::base_rig(f as f64 / FPS, t_ko).1;
+                    (dist(&tr.poses[f]) / base - 1.0).abs() < 0.08
+                })
+                .count();
+            assert!(near as f64 >= 0.95 * FRAMES as f64, "seed {seed}: {near}");
+        }
     }
 
     #[test]

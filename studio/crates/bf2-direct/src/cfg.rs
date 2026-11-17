@@ -27,6 +27,10 @@ pub struct DirectCfg {
     pub big_shot_gap: f64,
     /// False turns every slow-mo cue off (the K.O. cinematic stays): for tests and a later switch.
     pub slowmo: bool,
+    /// How far the shots and the shake move the camera from the base shot (the current engine's camera): 1 is
+    /// each shot in full (a punch-in to 0.62 of the distance, a 12 degree K.O. orbit, 18 px of shake), 0 none.
+    /// Aedan, E7: "very subtle for now".
+    pub intensity: f64,
 }
 
 impl Default for DirectCfg {
@@ -41,6 +45,7 @@ impl Default for DirectCfg {
             ko_slow_len: 0.8,
             big_shot_gap: 2.5,
             slowmo: true,
+            intensity: 0.2,
         }
     }
 }
