@@ -312,7 +312,6 @@ pub(crate) fn release(world: &mut World, holder: usize, step: u32) {
 /// Step stage 5: each grab counts down (not while the holder is frozen) and releases when it runs out or the
 /// holder is K.O.; a held ball sits with its centre on the tip of the holder's grab bone (or just in front of the
 /// holder if the rig has no such bone), kept inside the ring.
-#[allow(dead_code)] // until the step (Task 8)
 pub(crate) fn hold(world: &mut World, step: u32) {
     for holder in 0..2 {
         let Some(mut h) = world.bodies[holder].holding else {

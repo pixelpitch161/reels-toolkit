@@ -38,7 +38,6 @@ pub(crate) fn angle_diff(a: f64, b: f64) -> f64 {
 
 /// Launches spawn `spawn` of fighter `who`'s move `mv`: from the tip of the last bone (or the ball's surface when
 /// the rig is empty), along the fighter's facing at the projectile's speed plus its upward speed. Emits Spawn.
-#[allow(dead_code)] // until the step (Task 8)
 pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step: u32) {
     let def = &world.defs[who].moves[mv].spawns[spawn].proj;
     let b = &world.bodies[who];

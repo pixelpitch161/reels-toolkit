@@ -89,7 +89,7 @@ pub fn world(defs: [FighterDef; 2], x0: f64, x1: f64) -> World {
     let masks = [mask(&defs[0]), mask(&defs[1])];
     let poses = [Pose::rest(&defs[0].rig), Pose::rest(&defs[1].rig)];
     let [d0, d1] = defs;
-    World {
+    let mut w = World {
         defs: [Arc::new(d0), Arc::new(d1)],
         bodies,
         poses,
@@ -102,7 +102,9 @@ pub fn world(defs: [FighterDef; 2], x0: f64, x1: f64) -> World {
         step: 0,
         ko: None,
         next_proj: 0,
-    }
+    };
+    solve_all(&mut w);
+    w
 }
 
 fn mask(d: &FighterDef) -> Vec<bool> {
