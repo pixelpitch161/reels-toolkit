@@ -14,6 +14,7 @@ bf-content.workspace = true
 png.workspace = true
 bf2-sim.workspace = true
 bf2-render.workspace = true
+bf2-fx.workspace = true
 
 [features]
 # The test entries `ffmpeg_at` and `run_job_using` (a stand-in ffmpeg for the job tests). Only this crate's own tests

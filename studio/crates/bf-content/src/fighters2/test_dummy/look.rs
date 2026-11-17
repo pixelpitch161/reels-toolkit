@@ -1,13 +1,22 @@
 //! TEST DUMMY's look: a grey toon "fist on an arm" (each rig segment a capsule: a cylinder between two spheres,
 //! the fist a bigger ball), a metronome made of boxes inside the glass, its pendulum ticking, and orange glowing
-//! projectiles, each with a point light.
+//! projectiles, each with a point light. Its effects ([`LookFx`]): a smear on the fist through HAYMAKER, a
+//! crackling lightning trail through DUMMY BUSTER and a dome and a beam on its final hit, a ribbon behind every
+//! TOSS projectile, and smouldering marks where GRAB SLAM lands. All in the dummy's grey with an orange accent.
 
 use std::sync::Arc;
 
+use bf2_fx::decal::{DECAL_LIFE, DecalDef, DecalKind, Surface};
+use bf2_fx::frame::LookFx;
+use bf2_fx::meshfx::{BeamDef, DomeDef};
+use bf2_fx::trail::{PROJ, TrailDef, TrailStyle};
+use bf2_fx::{Anchor, Env, Exit, FxError, FxKind, FxRecord, FxTimeline};
 use bf2_render::maths::{self, M4, V3};
 use bf2_render::stage::ball_centre;
 use bf2_render::{FightFrame, Gpu, Instance, Light, Look2, Material, MeshId, Renderer, Scene, geom, to_render};
-use bf2_sim::{EvKind, FighterDef, Pose, Segment, solve};
+use bf2_sim::{EvKind, FighterDef, Pose, Recording2, Segment, solve};
+
+use super::{DUMMY_BUSTER, FIST, GRAB_SLAM, HAYMAKER, TOSS};
 
 /// The dummy's grey and its orange accent (linear).
 pub const GREY: [f32; 3] = [0.55, 0.56, 0.58];
@@ -215,3 +224,184 @@ impl Look2 for DummyLook {
     }
 }
 
+/// The dummy's grey as HDR light, and its orange accent, hot.
+const GREY_HOT: [f32; 3] = [2.0, 2.05, 2.2];
+const ORANGE_HOT: [f32; 3] = [9.0, 3.6, 0.7];
+
+fn record(t0: f64, life: f32, exit: Exit, env: Env, seed: u32, anchor: Anchor, kind: FxKind) -> FxRecord {
+    FxRecord {
+        t0,
+        life,
+        exit,
+        env,
+        seed,
+        anchor,
+        kind,
+    }
+}
+
+impl LookFx for DummyLook {
+    fn fx(
+        &self,
+        k: usize,
+        rec: &Recording2,
+        step_to_t: &dyn Fn(u32) -> f64,
+        out: &mut FxTimeline,
+    ) -> Result<(), FxError> {
+        let dt = rec.dt as f32;
+        let mv = |i: usize| &self.def.moves[i];
+        for (i, e) in rec.events.iter().enumerate() {
+            if e.who != k {
+                continue;
+            }
+            let t0 = step_to_t(e.step);
+            let seed = 0xD0_0000 ^ (e.step.wrapping_mul(97) + i as u32);
+            match &e.kind {
+                EvKind::Active { mv: m } if *m == HAYMAKER => {
+                    let life = (mv(HAYMAKER).active + mv(HAYMAKER).recovery / 2) as f32 * dt + 0.15;
+                    out.push(record(
+                        t0 - 0.03,
+                        life,
+                        Exit::Fade,
+                        Env::new(0.03, 0.05, 0.18),
+                        seed,
+                        Anchor::Bone { k, bone: FIST },
+                        FxKind::Trail(TrailDef {
+                            k,
+                            bone: FIST,
+                            width: (0.3, 0.05),
+                            length_s: 0.12,
+                            colour: GREY_HOT,
+                            core: ORANGE_HOT,
+                            style: TrailStyle::Smear,
+                        }),
+                    ))?;
+                }
+                EvKind::Windup { mv: m } if *m == DUMMY_BUSTER => {
+                    let b = mv(DUMMY_BUSTER);
+                    let life = (b.windup + b.active + b.recovery / 3) as f32 * dt;
+                    out.push(record(
+                        t0,
+                        life,
+                        Exit::Fade,
+                        Env::new(0.1, 0.1, 0.2),
+                        seed,
+                        Anchor::Bone { k, bone: FIST },
+                        FxKind::Trail(TrailDef {
+                            k,
+                            bone: FIST,
+                            width: (0.22, 0.04),
+                            length_s: 0.22,
+                            colour: [4.0, 2.2, 0.8],
+                            core: [10.0, 9.0, 8.0],
+                            style: TrailStyle::Lightning,
+                        }),
+                    ))?;
+                }
+                EvKind::Contact {
+                    mv: m, target, point, ..
+                } if *m == DUMMY_BUSTER => {
+                    // Only the final hit: no later BUSTER contact of this fighter within half a second.
+                    let later = rec.events[i + 1..].iter().any(|f| {
+                        f.who == k
+                            && f.step <= e.step + 60
+                            && matches!(f.kind, EvKind::Contact { mv: m2, .. } if m2 == DUMMY_BUSTER)
+                    });
+                    if later {
+                        continue;
+                    }
+                    out.push(record(
+                        t0,
+                        1.0,
+                        Exit::Burst,
+                        Env::new(0.04, 0.15, 0.5),
+                        seed,
+                        Anchor::World(*point),
+                        FxKind::Dome(DomeDef {
+                            r: (0.3, 2.4),
+                            colour: [5.0, 2.2, 0.5],
+                            fresnel: 0.85,
+                        }),
+                    ))?;
+                    out.push(record(
+                        t0,
+                        0.55,
+                        Exit::Fade,
+                        Env::new(0.02, 0.1, 0.35),
+                        seed ^ 1,
+                        Anchor::Bone { k, bone: FIST },
+                        FxKind::Beam(BeamDef {
+                            from: Anchor::Bone { k, bone: FIST },
+                            to: Anchor::Body {
+                                k: (*target).min(1),
+                                offset: [0.0; 3],
+                            },
+                            width: 0.35,
+                            colour: [6.0, 2.6, 0.6],
+                            core: [12.0, 11.0, 10.0],
+                            jitter: 0.18,
+                        }),
+                    ))?;
+                }
+                // TOSS is the dummy's only throw.
+                EvKind::Spawn { proj } => {
+                    let _ = TOSS;
+                    let gone = rec.events[i..]
+                        .iter()
+                        .find(|f| matches!(f.kind, EvKind::Expire { proj: p } if p == *proj))
+                        .map_or(t0 + 2.0, |f| step_to_t(f.step));
+                    let life = ((gone - t0) as f32 + 0.25).max(0.3);
+                    out.push(record(
+                        t0,
+                        life,
+                        Exit::Fade,
+                        Env::new(0.03, 0.0, 0.25),
+                        seed,
+                        Anchor::Body { k, offset: [0.0; 3] },
+                        FxKind::Trail(TrailDef {
+                            k,
+                            bone: PROJ + *proj,
+                            width: (0.3, 0.02),
+                            length_s: 0.25,
+                            colour: [5.0, 2.0, 0.4],
+                            core: [9.0, 8.0, 6.0],
+                            style: TrailStyle::Ribbon,
+                        }),
+                    ))?;
+                }
+                EvKind::Slam { target } => {
+                    // GRAB SLAM is the dummy's only slam: smouldering marks where the target hits the canvas.
+                    let _ = GRAB_SLAM;
+                    let Some(st) = rec.steps.get(e.step as usize) else {
+                        continue;
+                    };
+                    let p = st.pos[(*target).min(1)];
+                    for (j, (kind, r, colour)) in [
+                        (DecalKind::Scorch, 1.1, [0.02, 0.015, 0.012]),
+                        (DecalKind::Glow, 0.8, [6.0, 2.0, 0.3]),
+                    ]
+                    .into_iter()
+                    .enumerate()
+                    {
+                        out.push(record(
+                            t0,
+                            DECAL_LIFE - 1.5 * j as f32,
+                            Exit::Ember,
+                            Env::new(0.03, 0.0, 2.0),
+                            seed ^ (2 + j as u32),
+                            Anchor::World([p[0], p[1], 0.0]),
+                            FxKind::Decal(DecalDef {
+                                r,
+                                kind,
+                                colour,
+                                on: Surface::Canvas,
+                            }),
+                        ))?;
+                    }
+                }
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+}

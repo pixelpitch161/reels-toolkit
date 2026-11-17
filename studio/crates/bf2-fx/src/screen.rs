@@ -97,9 +97,9 @@ pub struct ScreenLook {
 impl Default for ScreenLook {
     fn default() -> Self {
         ScreenLook {
-            bloom: 0.16,
+            bloom: 0.1,
             threshold: 1.0,
-            knee: 0.5,
+            knee: 0.25,
             dirt: 0.9,
             vignette: 0.22,
             grain: 0.018,

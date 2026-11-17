@@ -82,7 +82,7 @@ impl Out<'_> {
             env: Env { release, ..env },
             seed: self.h.seed.wrapping_add(self.recs.len() as u32 * 7919),
             anchor,
-            kind,
+            kind: tamed(kind),
         });
     }
 
@@ -137,6 +137,33 @@ fn on_floor(p: [f64; 3]) -> [f64; 3] {
     [p[0], p[1], 0.0]
 }
 
+/// The presets' colours are written as hot as their effect reads; additive particles, rings and domes overlapping
+/// in the first frames sum far past white, so glowing records are given this share of it (and a burst of `n`
+/// particles a further `(800 / n)^0.75` once it is denser than 800).
+const GLOW_GAIN: f32 = 0.3;
+
+/// `kind` with its glow scaled down as [`GLOW_GAIN`] says.
+fn tamed(kind: FxKind) -> FxKind {
+    let k = |c: [f32; 3], g: f32| c.map(|x| x * g);
+    match kind {
+        FxKind::Burst(mut b) if !matches!(b.shape, Shape::Smoke | Shape::Debris) => {
+            let g = GLOW_GAIN * (800.0 / b.count.max(1) as f32).powf(0.75).min(1.0);
+            b.colour = k(b.colour, g);
+            b.colour_end = k(b.colour_end, g);
+            FxKind::Burst(b)
+        }
+        FxKind::Ring(mut r) => {
+            r.colour = k(r.colour, GLOW_GAIN);
+            FxKind::Ring(r)
+        }
+        FxKind::Dome(mut d) => {
+            d.colour = k(d.colour, GLOW_GAIN);
+            FxKind::Dome(d)
+        }
+        other => other,
+    }
+}
+
 fn sparks(count: u32, speed: (f32, f32), dir: [f32; 3], spread: f32, colour: [f32; 3], size: f32) -> BurstDef {
     BurstDef {
         count,
@@ -148,7 +175,7 @@ fn sparks(count: u32, speed: (f32, f32), dir: [f32; 3], spread: f32, colour: [f3
         size: (size, size * 0.3),
         colour,
         colour_end: [colour[0] * 0.25, colour[1] * 0.06, colour[2] * 0.02],
-        stretch: 0.035,
+        stretch: 0.022,
         bounce: 0.3,
         shape: Shape::Spark,
         emit_over: 0.0,
@@ -300,7 +327,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
     let at = Anchor::World(h.at);
     o.burst(
         1.0,
-        sparks(22_000, (6.0, 26.0), d, 1.6, hot(h.colour, 0.25, 22.0), 0.08),
+        sparks(22_000, (6.0, 26.0), d, 1.6, hot(h.colour, 0.25, 22.0), 0.04),
     );
     o.burst(
         0.8,
@@ -354,7 +381,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
     );
     o.light(1.1, hot(h.colour, 0.4, 16.0), 7.5, 0.45);
     let flash = hot(h.colour, 0.2, 6.0);
-    o.screen(0.35, Env::new(0.02, 0.0, 0.3), ScreenFx::Flash { colour: flash }, 0.8);
+    o.screen(0.16, Env::new(0.02, 0.0, 0.12), ScreenFx::Flash { colour: flash }, 0.8);
     o.screen(
         0.7,
         Env::new(0.02, 0.0, 0.6),
@@ -365,7 +392,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
         0.55,
         Env::new(0.03, 0.05, 0.4),
         ScreenFx::RadialBlur { centre: at },
-        0.7,
+        0.45,
     );
     o.screen(0.6, Env::new(0.02, 0.1, 0.45), ScreenFx::Chroma { centre: at }, 1.0);
     o.screen(
@@ -378,7 +405,7 @@ pub fn special_impact(h: &Hit) -> Vec<FxRecord> {
         1.0,
     );
     o.screen(0.7, Env::new(0.02, 0.0, 0.6), ScreenFx::Shake, 1.0);
-    o.screen(0.8, Env::new(0.02, 0.1, 0.6), ScreenFx::Bloom, 0.8);
+    o.screen(0.8, Env::new(0.02, 0.1, 0.6), ScreenFx::Bloom, 0.4);
     o.screen(0.5, Env::new(0.02, 0.2, 0.2), ScreenFx::MotionBlur, 1.0);
     o.recs
 }
@@ -430,7 +457,7 @@ pub fn launch_trail(h: &Hit, k: usize) -> Vec<FxRecord> {
             centre: Anchor::Body { k, offset: [0.0; 3] },
             colour: [2.5, 2.4, 2.2],
         },
-        0.6,
+        0.35,
     );
     o.recs
 }
@@ -558,13 +585,13 @@ pub fn ko_burst(h: &Hit, winner_colour: [f32; 3]) -> Vec<FxRecord> {
     let mut o = Out { h, recs: Vec::new() };
     let at = Anchor::World(h.at);
     let shards = BurstDef {
-        count: 60_000,
+        count: 50_000,
         speed: (4.0, 22.0),
         spread: std::f32::consts::PI,
         dir: [0.0, 1.0, 0.0],
         gravity: 9.0,
         drag: 1.4,
-        size: (0.05, 0.03),
+        size: (0.03, 0.02),
         colour: [0.5, 0.52, 0.56],
         colour_end: [0.25, 0.25, 0.28],
         stretch: 0.0,
@@ -573,7 +600,7 @@ pub fn ko_burst(h: &Hit, winner_colour: [f32; 3]) -> Vec<FxRecord> {
         emit_over: 0.0,
     };
     o.burst(2.5, shards);
-    o.burst(3.0, embers(60_000, (2.0, 16.0), hot(h.colour, 0.4, 14.0), 0.09));
+    o.burst(3.0, embers(50_000, (2.0, 16.0), hot(h.colour, 0.4, 14.0), 0.05));
     o.burst(
         1.2,
         sparks(
@@ -618,10 +645,10 @@ pub fn ko_burst(h: &Hit, winner_colour: [f32; 3]) -> Vec<FxRecord> {
     );
     o.light(2.0, [20.0, 18.0, 16.0], 9.0, 0.5);
     o.screen(
-        0.6,
-        Env::new(0.02, 0.05, 0.5),
+        0.22,
+        Env::new(0.02, 0.02, 0.16),
         ScreenFx::Flash {
-            colour: [8.0, 8.0, 8.0],
+            colour: [6.0, 6.0, 6.0],
         },
         1.0,
     );

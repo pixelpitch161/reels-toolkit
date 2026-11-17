@@ -1,5 +1,6 @@
-//! Engine 2's render job: a silent soundtrack (E5 brings sound), the K.O. window check, every frame drawn by
-//! `bf2-render` on one GPU thread (the GPU is the parallelism) and encoded at 1080 x 1920, the finished file's
+//! Engine 2's render job: a silent soundtrack (E5 brings sound), the K.O. window check, the effect timeline (the
+//! events wired to `bf2-fx`'s presets plus each look's own records), every frame drawn by `bf2-fx`'s frame path
+//! (motion-blur sub-frames, effects, the screen chain) on one GPU thread (the GPU is the parallelism) and encoded at 1080 x 1920, the finished file's
 //! checks, then the folder moved into place under the same names and rules as the current engine's job
 //! ([`crate::job`]).
 //!
@@ -23,7 +24,9 @@ use bf_core::fightfile::FightFile;
 use bf_picture::config::{FPS, NF};
 use bf_sound::NA;
 use bf_sound::wav::wav16_bytes;
-use bf2_render::{Gpu, Look2, Renderer, Stage, render_frame};
+use bf2_fx::FxTimeline;
+use bf2_fx::frame::FxFrame;
+use bf2_render::{Gpu, Look2, Renderer, Stage};
 use bf2_sim::Recording2;
 
 use crate::checks::CheckResult;
@@ -73,6 +76,14 @@ pub fn ko_window(rec: &Recording2) -> CheckResult {
     }
 }
 
+fn fx_error(what: &str, e: &bf2_fx::FxError) -> ExportError {
+    ExportError::Content(format!(
+        "The effects of {what} could not be made ({}), so nothing was saved; this is a fault in the app, not in your \
+         fight.",
+        e.0
+    ))
+}
+
 /// A fighter's colour (sRGB bytes) in linear light.
 pub fn linear(c: [u8; 3]) -> [f32; 3] {
     c.map(|v| (f32::from(v) / 255.0).powf(2.2))
@@ -110,16 +121,26 @@ pub fn run_job2(
     }
     let names = [ff.fighters[0].as_str(), ff.fighters[1].as_str()];
     let mut looks = Vec::new();
+    let mut defs = Vec::new();
     let mut colours = [[0.0; 3]; 2];
+    let mut timeline = FxTimeline::new();
+    let step_to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
     for (k, name) in names.iter().enumerate() {
-        let (Some(def), Some(look)) = (fighters2::def(name), fighters2::look(name)) else {
+        let (Some(def), Some(look), Some(fx)) = (fighters2::def(name), fighters2::look(name), fighters2::look_fx(name))
+        else {
             return Err(ExportError::Content(format!(
                 "This fight cannot be rendered: {name} has no Engine 2 look yet."
             )));
         };
         colours[k] = linear(def.colour);
+        fx.fx(k, &rec, &step_to_t, &mut timeline)
+            .map_err(|e| fx_error(name, &e))?;
         looks.push(look);
+        defs.push(def);
     }
+    let defs: [Arc<bf2_sim::FighterDef>; 2] = defs.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
+    bf2_fx::wire::wire(&rec, [&defs[0], &defs[1]], colours, &step_to_t, &mut timeline)
+        .map_err(|e| fx_error("the fight", &e))?;
     let looks: [Box<dyn Look2>; 2] = looks.try_into().unwrap_or_else(|_| unreachable!("two fighters"));
     let seed = ff.seed.unwrap_or(rec.seed);
     let frames = match &opts.frames {
@@ -165,6 +186,8 @@ pub fn run_job2(
         ff,
         rec: &rec,
         looks,
+        defs,
+        timeline,
         colours,
         frames,
         whole,
@@ -191,6 +214,8 @@ struct Job2<'a> {
     ff: &'a FightFile,
     rec: &'a Recording2,
     looks: [Box<dyn Look2>; 2],
+    defs: [Arc<bf2_sim::FighterDef>; 2],
+    timeline: FxTimeline,
     colours: [[f32; 3]; 2],
     frames: Range<usize>,
     whole: bool,
@@ -242,7 +267,11 @@ impl Job2<'_> {
         for look in &mut self.looks {
             look.setup(&mut r, &gpu);
         }
-        let mut draw = |f: usize| render_frame(&mut r, &gpu, &stage_set, &self.looks, self.rec, f, self.colours);
+        let mut fx = FxFrame::new(&gpu, &r);
+        let defs = [&*self.defs[0], &*self.defs[1]];
+        let (looks, timeline, colours, rec) = (&self.looks, &self.timeline, self.colours, self.rec);
+        let size = (W2 as u32, H2 as u32);
+        let mut draw = |f: usize| fx.render(&mut r, &gpu, &stage_set, looks, defs, rec, timeline, colours, f, size);
 
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);

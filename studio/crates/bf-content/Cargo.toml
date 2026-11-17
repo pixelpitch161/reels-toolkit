@@ -11,6 +11,7 @@ bf-picture.workspace = true
 bf-sound.workspace = true
 bf2-sim.workspace = true
 bf2-render.workspace = true
+bf2-fx.workspace = true
 
 # The reader for studio/reference (dev support only), its sidecars' JSON values and the exceptions list.
 [dev-dependencies]
