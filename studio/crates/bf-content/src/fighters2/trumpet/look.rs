@@ -168,16 +168,16 @@ impl Look2 for TrumpetLook {
             // starts a little inside the glass, at the valve
             let a0 = maths::sub(a, maths::scale(dir, 0.12));
             out.instances.push(
-                Instance::new(m.cyl, toon(), along(a0, maths::add(a0, maths::scale(dir, 0.1)), 0.062))
+                Instance::new(m.cyl, toon(), along(a0, maths::add(a0, maths::scale(dir, 0.12)), 0.09))
                     .coloured(brass()),
             );
             out.instances
-                .push(Instance::new(m.cyl, toon(), along(a0, tip, 0.032)).coloured(silver()));
+                .push(Instance::new(m.cyl, toon(), along(a0, tip, 0.05)).coloured(silver()));
             out.instances.push(
                 Instance::new(
                     m.cyl,
                     toon(),
-                    along(tip, maths::add(tip, maths::scale(dir, 0.045)), 0.09),
+                    along(tip, maths::add(tip, maths::scale(dir, 0.06)), 0.14),
                 )
                 .coloured(yellow()),
             );
@@ -185,7 +185,7 @@ impl Look2 for TrumpetLook {
                 Instance::new(
                     m.sphere,
                     toon(),
-                    disc(maths::add(tip, maths::scale(dir, 0.05)), dir, 0.07, 0.45),
+                    disc(maths::add(tip, maths::scale(dir, 0.07)), dir, 0.11, 0.45),
                 )
                 .coloured(pearl()),
             );
@@ -199,7 +199,7 @@ impl Look2 for TrumpetLook {
                 let dir = maths::scale(maths::sub(tip, a), 1.0 / len);
                 let a0 = maths::sub(a, maths::scale(dir, 0.15));
                 let total = len + 0.15;
-                let radii = [0.07f32, 0.056, 0.044];
+                let radii = [0.11f32, 0.09, 0.072];
                 for (i, r) in radii.into_iter().enumerate() {
                     let from = (total * i as f32 / 3.0 - 0.04).max(0.0);
                     let to = total * (i as f32 + 1.0) / 3.0;
@@ -222,7 +222,7 @@ impl Look2 for TrumpetLook {
                     Instance::new(
                         m.cyl,
                         toon(),
-                        along(tip, maths::add(tip, maths::scale(dir, 0.1)), 0.035),
+                        along(tip, maths::add(tip, maths::scale(dir, 0.12)), 0.05),
                     )
                     .coloured(silver()),
                 );
@@ -230,7 +230,7 @@ impl Look2 for TrumpetLook {
                     Instance::new(
                         m.sphere,
                         toon(),
-                        disc(maths::add(tip, maths::scale(dir, 0.13)), dir, 0.075, 0.6),
+                        disc(maths::add(tip, maths::scale(dir, 0.16)), dir, 0.11, 0.6),
                     )
                     .coloured(silver()),
                 );
@@ -248,15 +248,15 @@ impl Look2 for TrumpetLook {
             let dir = maths::scale(v, 1.0 / len);
             let from = maths::add(a, maths::scale(dir, BALL_R * 0.85));
             out.instances
-                .push(Instance::new(m.cyl, toon(), along(from, tip, 0.012)).coloured(silver()));
+                .push(Instance::new(m.cyl, toon(), along(from, tip, 0.02)).coloured(silver()));
             out.instances.push(
                 Instance::new(
                     m.cyl,
                     toon(),
                     along(
-                        maths::sub(tip, maths::scale(UP, 0.035)),
-                        maths::add(tip, maths::scale(UP, 0.035)),
-                        0.1,
+                        maths::sub(tip, maths::scale(UP, 0.05)),
+                        maths::add(tip, maths::scale(UP, 0.05)),
+                        0.16,
                     ),
                 )
                 .coloured(brass()),
@@ -265,7 +265,7 @@ impl Look2 for TrumpetLook {
                 Instance::new(
                     m.sphere,
                     toon(),
-                    disc(maths::add(tip, maths::scale(UP, 0.04)), UP, 0.065, 0.5),
+                    disc(maths::add(tip, maths::scale(UP, 0.06)), UP, 0.1, 0.5),
                 )
                 .coloured(pearl()),
             );
@@ -329,7 +329,7 @@ impl LookFx for TrumpetLook {
                     let d = &self.def.moves[VALVE_COMBO];
                     let life = (d.active + 4) as f32 * dt;
                     for (j, b) in [P1, P2, P3].into_iter().enumerate() {
-                        out.push(trail(b, life, (0.12, 0.02), 0.05, TrailStyle::Smear, j as u32))?;
+                        out.push(trail(b, life, (0.2, 0.03), 0.07, TrailStyle::Smear, j as u32))?;
                     }
                     // valve steam after the chord: a soft puff from the casings, drifting up
                     let Some(st) = rec.steps.get(e.step as usize) else {
@@ -364,13 +364,13 @@ impl LookFx for TrumpetLook {
                 EvKind::Active { mv } if *mv == LEAD_PIPE_LANCE => {
                     let d = &self.def.moves[LEAD_PIPE_LANCE];
                     let life = (d.active + 6) as f32 * dt;
-                    out.push(trail(LANCE, life, (0.16, 0.02), 0.07, TrailStyle::Smear, 1))?;
+                    out.push(trail(LANCE, life, (0.26, 0.03), 0.09, TrailStyle::Smear, 1))?;
                 }
                 EvKind::Windup { mv } if *mv == VALVE_CAP_YOYOS => {
                     let d = &self.def.moves[VALVE_CAP_YOYOS];
                     let life = (d.windup + d.active + d.recovery / 2) as f32 * dt;
                     for (j, b) in [CAP1, CAP2, CAP3].into_iter().enumerate() {
-                        out.push(trail(b, life, (0.1, 0.01), 0.12, TrailStyle::Ribbon, j as u32))?;
+                        out.push(trail(b, life, (0.16, 0.02), 0.14, TrailStyle::Ribbon, j as u32))?;
                     }
                 }
                 _ => {}

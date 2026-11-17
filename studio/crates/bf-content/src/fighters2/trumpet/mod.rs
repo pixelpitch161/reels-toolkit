@@ -148,8 +148,8 @@ fn valve_combo() -> MoveDef {
             };
             -0.18 * (1.0 - smooth(act / 4.0)) + kick(1.0, 0.06) + kick(7.0, 0.06) + kick(13.0, 0.14)
         };
-        let jab = 1.3;
-        let chord = 1.45;
+        let jab = 1.5;
+        let chord = 1.7;
         let p1 = stroke(act - 1.0, jab, 2.0, 2.0, 5.0).max(stroke(act - 13.0, chord, 2.0, 3.0, 14.0));
         let p2 = stroke(act - 7.0, jab, 2.0, 2.0, 5.0).max(stroke(act - 13.0, chord, 2.0, 3.0, 17.0));
         let p3 = stroke(act - 13.0, chord, 2.0, 3.0, 20.0);
@@ -187,7 +187,7 @@ fn valve_combo() -> MoveDef {
             step: 10,
             cue: Cue::PunchIn,
         }],
-        lunge: 0.6,
+        lunge: 0.0,
         ..base("VALVE COMBO", vec![Tag::Light, Tag::Melee], (w, a, r))
     }
 }
@@ -337,9 +337,9 @@ pub fn def() -> FighterDef {
         radius,
     };
     let rig = Rig::new(vec![
-        bone("p1", None, 0.06),
-        bone("p2", None, 0.06),
-        bone("p3", None, 0.06),
+        bone("p1", None, 0.08),
+        bone("p2", None, 0.08),
+        bone("p3", None, 0.08),
         bone("lance", None, 0.08),
         bone("horn", None, 0.001),
         bone("hub", None, 0.001),
@@ -350,9 +350,9 @@ pub fn def() -> FighterDef {
     .expect("the trumpet's rig is parent-first");
     let only = std::env::var("BF_TRUMPET_STD").ok();
     let all = [
-        ("1", choice(VALVE_COMBO, (1.2, 2.5), 2.0, 110)),
+        ("1", choice(VALVE_COMBO, (1.7, 2.6), 2.0, 110)),
         ("2", choice(LEAD_PIPE_LANCE, (1.6, 3.4), 1.5, 150)),
-        ("5", choice(VALVE_CAP_YOYOS, (1.0, 2.0), 1.5, 150)),
+        ("5", choice(VALVE_CAP_YOYOS, (1.3, 2.1), 1.5, 150)),
     ];
     let choices = all
         .into_iter()
