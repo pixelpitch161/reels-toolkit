@@ -414,7 +414,7 @@ mod tests {
                 for x in 0..4 {
                     let q = dither_cpu(v, 5.0, [x, y]);
                     let b = (q * 255.0).round();
-                    assert!((q * 255.0 - b).abs() < 1e-3 && b as u32 % 5 == 0, "{v} -> {q}");
+                    assert!((q * 255.0 - b).abs() < 1e-3 && (b as u32).is_multiple_of(5), "{v} -> {q}");
                     assert!((0.0..=1.0).contains(&q));
                     let want = ((f64::from(v) * 255.0 / 5.0 + bf_picture::config::BAYER[y as usize][x as usize])
                         .floor()
@@ -463,7 +463,11 @@ mod tests {
                 seen.insert(want);
             }
         }
-        assert_eq!(seen.len(), 2, "a flat value dithers between two neighbouring steps: {seen:?}");
+        assert_eq!(
+            seen.len(),
+            2,
+            "a flat value dithers between two neighbouring steps: {seen:?}"
+        );
     }
 
     /// One output column in three lit (`x % 3 == 1`, HDR 1.0), the rest black, drawn into the resolved HDR.

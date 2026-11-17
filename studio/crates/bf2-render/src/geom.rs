@@ -316,10 +316,7 @@ pub fn faceted(m: &MeshData) -> MeshData {
     let mut out = MeshData::default();
     for t in m.idx.as_chunks::<3>().0 {
         let tri = [t[0], t[1], t[2]].map(|i| m.verts[i as usize]);
-        let g = maths::cross(
-            maths::sub(tri[1].pos, tri[0].pos),
-            maths::sub(tri[2].pos, tri[0].pos),
-        );
+        let g = maths::cross(maths::sub(tri[1].pos, tri[0].pos), maths::sub(tri[2].pos, tri[0].pos));
         let flat = maths::length(g) > 1e-12;
         let n = if flat { maths::normalize(g) } else { tri[0].nrm };
         for mut v in tri {
@@ -466,7 +463,11 @@ mod tests {
 
     #[test]
     fn faceted_gives_each_face_one_flat_normal() {
-        for smooth in [icosphere(1.0, 1), cylinder(0.5, 2.0, 8), capsule([0.0; 3], [0.0, 1.0, 0.0], 0.3, 8)] {
+        for smooth in [
+            icosphere(1.0, 1),
+            cylinder(0.5, 2.0, 8),
+            capsule([0.0; 3], [0.0, 1.0, 0.0], 0.3, 8),
+        ] {
             let m = faceted(&smooth);
             assert_eq!(m.idx.len(), smooth.idx.len(), "the same triangles");
             assert_eq!(m.verts.len(), m.idx.len(), "no vertex is shared between faces");
@@ -482,7 +483,11 @@ mod tests {
         }
         // an 8-sided cylinder reads as 8 flat sides (and two caps): 10 normals
         let m = faceted(&cylinder(0.5, 2.0, 8));
-        let mut normals: Vec<[i32; 3]> = m.verts.iter().map(|v| v.nrm.map(|c| (c * 1000.0).round() as i32)).collect();
+        let mut normals: Vec<[i32; 3]> = m
+            .verts
+            .iter()
+            .map(|v| v.nrm.map(|c| (c * 1000.0).round() as i32))
+            .collect();
         normals.sort_unstable();
         normals.dedup();
         assert_eq!(normals.len(), 10, "{normals:?}");

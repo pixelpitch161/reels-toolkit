@@ -477,7 +477,9 @@ impl Stage {
         pole.append(&cap);
         let pole = add(geom::faceted(&pole));
         // a turnbuckle cushion: the current engine's prism, 0.22 tall, radius 0.16, six flat sides
-        let cushion = add(geom::faceted(&geom::cylinder(0.16, 0.22, POST_SIDES).painted([1.0; 3], 0.25)));
+        let cushion = add(geom::faceted(
+            &geom::cylinder(0.16, 0.22, POST_SIDES).painted([1.0; 3], 0.25),
+        ));
         let ropes = [0, 1, 2, 3].map(|side| ROPE_HEIGHTS.map(|h| add(rope_mesh(side, h))));
         let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 10).painted([1.0; 3], 0.35));
         let person = add(person_mesh());

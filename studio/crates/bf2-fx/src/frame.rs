@@ -262,15 +262,6 @@ impl FxFrame {
             src: &src,
             defs,
         };
-        r.render_accum_sized(
-            gpu,
-            &scenes,
-            &weights,
-            post,
-            &mut pass,
-            Some(screen),
-            size.0,
-            size.1,
-        )
+        r.render_accum_sized(gpu, &scenes, &weights, post, &mut pass, Some(screen), size.0, size.1)
     }
 }

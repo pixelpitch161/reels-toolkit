@@ -424,7 +424,11 @@ fn pixel_pass_draws_whole_art_pixels_on_the_value_steps() {
     let scene = pixel_scene(&mut r, &gpu);
     // 1080 wide: pixel 3 is 360 art pixels across, as the current engine draws
     let post = Post::ring();
-    assert_eq!((post.pixel, post.step), (3, 5.0), "the default is the current engine's grid and steps");
+    assert_eq!(
+        (post.pixel, post.step),
+        (3, 5.0),
+        "the default is the current engine's grid and steps"
+    );
     let img = r.render_sized(&gpu, &scene, &post, 1080, 960);
     whole_blocks(&img, 3).unwrap();
     let mut levels = std::collections::BTreeSet::new();
@@ -439,7 +443,10 @@ fn pixel_pass_draws_whole_art_pixels_on_the_value_steps() {
 fn pixel_two_is_a_finer_grid() {
     let (gpu, mut r) = setup();
     let scene = pixel_scene(&mut r, &gpu);
-    let post = Post { pixel: 2, ..Post::ring() };
+    let post = Post {
+        pixel: 2,
+        ..Post::ring()
+    };
     let img = r.render_sized(&gpu, &scene, &post, 1080, 960);
     whole_blocks(&img, 2).unwrap();
     assert!(whole_blocks(&img, 6).is_err(), "pixel 2 is not as coarse as pixel 6");
@@ -463,7 +470,11 @@ fn pixel_pass_keeps_the_art_grid_at_the_previews_size() {
         assert!(runs <= 360, "row {y} has {runs} runs, more than the 360 art pixels");
     }
     // pixel 1 at the video's size, with no steps: the pass is off and the picture is as before
-    let plain = Post { pixel: 1, step: 0.0, ..Post::ring() };
+    let plain = Post {
+        pixel: 1,
+        step: 0.0,
+        ..Post::ring()
+    };
     let mut old = plain;
     old.pixel = 0;
     let a = r.render_sized(&gpu, &scene, &plain, 1080, 960);
