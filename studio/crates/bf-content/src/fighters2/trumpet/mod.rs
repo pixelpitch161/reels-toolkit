@@ -154,7 +154,7 @@ fn valve_combo() -> MoveDef {
         let p2 = stroke(act - 7.0, jab, 2.0, 2.0, 5.0).max(stroke(act - 13.0, chord, 2.0, 3.0, 17.0));
         let p3 = stroke(act - 13.0, chord, 2.0, 3.0, 20.0);
         // the jabs fan a little; the chord spreads wider so the three read as three
-        let spread = if act >= 12.0 { 0.16 } else { 0.1 };
+        let spread = if act >= 12.0 { 0.3 } else { 0.18 };
         let mut p = [Joint::REST; BONES];
         p[P1] = j(spread, 0.0, reach(p1));
         p[P2] = j(0.0, 0.03, reach(p2));
@@ -350,7 +350,7 @@ pub fn def() -> FighterDef {
     .expect("the trumpet's rig is parent-first");
     let only = std::env::var("BF_TRUMPET_STD").ok();
     let all = [
-        ("1", choice(VALVE_COMBO, (1.7, 2.6), 2.0, 110)),
+        ("1", choice(VALVE_COMBO, (1.3, 2.6), 2.0, 110)),
         ("2", choice(LEAD_PIPE_LANCE, (1.6, 3.4), 1.5, 150)),
         ("5", choice(VALVE_CAP_YOYOS, (1.3, 2.1), 1.5, 150)),
     ];

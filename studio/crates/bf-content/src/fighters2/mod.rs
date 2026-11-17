@@ -122,7 +122,24 @@ pub fn def(name: &str) -> Option<Arc<FighterDef>> {
     static TRUMPET: OnceLock<Arc<FighterDef>> = OnceLock::new();
     match name {
         "TRUMPET" => Some(TRUMPET.get_or_init(|| Arc::new(trumpet::def())).clone()),
-        "TEST DUMMY" => Some(DUMMY.get_or_init(|| Arc::new(test_dummy::def())).clone()),
+        "TEST DUMMY" => Some(
+            DUMMY
+                .get_or_init(|| {
+                    let mut d = test_dummy::def();
+                    // SPIKE (trumpet demo clips): BF_DUMMY_PASSIVE=1 makes the dummy a punching bag that throws
+                    // nothing and keeps its arm tucked away, so the attacker's moves read on their own.
+                    if std::env::var("BF_DUMMY_PASSIVE").is_ok_and(|v| v == "1") {
+                        d.brain.choices.clear();
+                        d.brain.low = None;
+                        d.brain.speed = 0.2;
+                        for b in &mut d.rig.bones {
+                            b.length = 0.01;
+                        }
+                    }
+                    Arc::new(d)
+                })
+                .clone(),
+        ),
         "TEST DUMMY 2" => Some(
             DUMMY_2
                 .get_or_init(|| {

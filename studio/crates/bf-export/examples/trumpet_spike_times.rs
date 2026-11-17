@@ -60,5 +60,14 @@ fn main() {
             }
         }
     }
+    for (i, st) in rec.steps.iter().enumerate().step_by(120) {
+        let (a, b) = (st.pos[0], st.pos[1]);
+        println!(
+            "step {i} dist {:.2} a {:.1?} b {:.1?}",
+            ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt(),
+            a,
+            b
+        );
+    }
     println!("{contacts} contacts");
 }
