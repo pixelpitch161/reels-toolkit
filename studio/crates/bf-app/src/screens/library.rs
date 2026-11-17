@@ -295,7 +295,16 @@ fn tile(ui: &mut Ui, vm: &ViewModel, entry: &LibraryEntry, rect: Rect, out: &mut
         picture(ui, &key, cover, vec2(COVER.0, COVER.1), &cover_name);
         ui.add_space(TILE_PAD);
         plain(ui, RichText::new(&entry.title).font(body()));
-        plain(ui, RichText::new(&date).font(small()).color(MUTED));
+        if entry.engine == bf_core::Engine::Two {
+            // the caption line: the date, then the mark
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                plain(ui, RichText::new(&date).font(small()).color(MUTED));
+                crate::widgets::chips::engine_mark(ui);
+            });
+        } else {
+            plain(ui, RichText::new(&date).font(small()).color(MUTED));
+        }
         if let Some(problem) = &entry.problem {
             let mut job = LayoutJob::simple(problem.clone(), small(), MUTED, inside.width());
             job.wrap = TextWrapping {

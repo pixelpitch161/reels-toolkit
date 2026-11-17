@@ -743,6 +743,7 @@ pub fn library() -> Vec<(LibraryEntry, Frame)> {
             seed: Some(seed),
             modified: noon_in_november_2026(day),
             problem: problem.map(str::to_string),
+            engine: bf_core::Engine::One,
         };
         (entry, cover(colors))
     })

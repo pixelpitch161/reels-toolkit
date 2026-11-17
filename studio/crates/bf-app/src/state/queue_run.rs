@@ -415,6 +415,17 @@ impl AppState {
         // The view first, so opening the draft does not start a search for the step the person is leaving (from
         // Seeds into Music, say); the opened fight replaces whatever the engine left meanwhile; then its step opens
         // as the person would open it (Balance balances, Seeds searches once).
+        // A fight whose fighters are not both offered on its engine is not opened (no mixed pair, ruling E6-R1).
+        if !self.pair_on_its_engine(&draft) {
+            self.vm.notices.push(crate::model::Notice {
+                text: format!(
+                    "{title} cannot be opened here: {} are not both offered on {}.",
+                    crate::wording::versus(&draft.fighters),
+                    draft.engine
+                ),
+            });
+            return;
+        }
         let view = View::Step(open.step);
         self.vm.view = view;
         self.vm.step = open.step;

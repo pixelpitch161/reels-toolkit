@@ -753,6 +753,7 @@ fn summary(text: &str, dev: bool) -> Result<FightSummary, String> {
         title: wording::versus(&names),
         colors: [color_of(&names[0]), color_of(&names[1])],
         seed: ff.seed,
+        engine: ff.engine,
     })
 }
 

@@ -363,6 +363,8 @@ pub enum Action {
         name: String,
     },
     SwapSides,
+    /// The matchup header's engine switch (ruling E6-R1).
+    SetEngine(bf_core::Engine),
     SetTheme(String),
     SetBars(u32),
     SetHandicap {
@@ -460,6 +462,7 @@ pub enum Effect {
 /// What feeds the fight (§4): an answer belongs to the current fight only while this stays the same.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct FightKey {
+    pub engine: bf_core::Engine,
     pub fighters: [String; 2],
     pub bars: u32,
     pub handicap: [f64; 2],
@@ -618,6 +621,7 @@ impl AppState {
             Action::Go(view) => self.go(view, &mut fx),
             Action::PickFighter { side, name } => self.pick_fighter(side, &name),
             Action::SwapSides => self.swap_sides(),
+            Action::SetEngine(engine) => self.set_engine(engine),
             Action::SetTheme(name) => self.set_theme(&name),
             Action::SetBars(bars) => self.set_bars(bars),
             Action::SetHandicap { side, value, released } => self.set_handicap(side, value, released, &mut fx),

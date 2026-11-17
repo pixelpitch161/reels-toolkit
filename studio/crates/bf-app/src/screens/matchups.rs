@@ -85,6 +85,10 @@ pub fn fight_words(row: &FightRecord) -> String {
 
 /// A fighter's colour: the roster's, else the compiled-in roster's, else grey.
 fn colour_of(vm: &ViewModel, name: &str) -> [u8; 3] {
+    // A developer fighter's swatch only with the developer switch on (ruling E6-R2).
+    if !vm.dev && bf_content::dev_only(name) {
+        return UNKNOWN;
+    }
     vm.roster
         .as_ref()
         .and_then(|r| r.fighters.iter().find(|f| f.name == name).map(|f| f.color))
@@ -264,6 +268,10 @@ fn fight_row(ui: &mut Ui, vm: &ViewModel, row: &FightRecord, out: &mut Vec<Actio
                 cell(ui, seed, |ui| {
                     let text = row.seed.map_or_else(|| "—".to_string(), |s| s.to_string());
                     plain(ui, RichText::new(text).font(body()));
+                    if row.engine == bf_core::Engine::Two {
+                        ui.add_space(ITEM_GAP);
+                        crate::widgets::chips::engine_mark(ui);
+                    }
                 });
                 if buttons::tick_box(ui, &tick_name, row.uploaded).clicked() {
                     ticked = Some(!row.uploaded);

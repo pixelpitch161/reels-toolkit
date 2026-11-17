@@ -33,7 +33,7 @@ use crate::theme::{
     TEXT_STRONG, body, rgb, section, small, value as mono,
 };
 use crate::widgets::buttons;
-use crate::widgets::chips::{fighter_bar, object_row};
+use crate::widgets::chips::{engine_mark, fighter_bar, object_row};
 use crate::widgets::fields::{self, ring_above};
 use crate::widgets::icons::{self, Icon};
 use crate::wording;
@@ -657,6 +657,15 @@ fn row_state(job: &Job) -> RowState {
 
 /// One job's row: the thumbnail, the title line, what its state says, and its buttons. `place` is a waiting job's
 /// place in line, of how many wait. Returns the row's own response.
+/// Whether a queued job is an Engine 2 fight: its fight file's top-level `engine = 2` line, read without parsing
+/// the whole file every frame (a current-engine file has no `engine` line).
+fn is_engine2(spec: &crate::model::queue::JobSpec) -> bool {
+    spec.fight_toml
+        .lines()
+        .take_while(|l| !l.trim_start().starts_with('['))
+        .any(|l| l.split('#').next().unwrap_or("").replace(' ', "") == "engine=2")
+}
+
 fn job_row(
     ui: &mut Ui,
     vm: &ViewModel,
@@ -724,7 +733,13 @@ fn job_row(
         let about = RichText::new(&about).font(small()).color(MUTED);
         if about_h == 0.0 {
             plain(&mut c, about);
+            if is_engine2(&job.spec) {
+                engine_mark(&mut c);
+            }
         } else {
+            if is_engine2(&job.spec) {
+                engine_mark(&mut c);
+            }
             let below = Rect::from_x_y_ranges(text_x..=text_x + text_w, title.max.y..=title.max.y + about_h);
             let mut c = child(ui, below, "about", Layout::top_down(Align::Min));
             c.set_width(text_w);

@@ -4,6 +4,44 @@
 /// status bar and `open_audio` all use it.
 pub const NO_DEVICE: &str = "No sound device was found, so the preview is silent.";
 
+/// The mark on an Engine 2 item (ruling E6-R3), and the engine switch's second segment.
+pub const ENGINE2: &str = "Engine 2";
+/// The engine switch's first segment: the current engine.
+pub const ENGINE1: &str = "Current";
+
+/// The notice of a switch to Engine 2 that made a mirror match (ruling E6-R1): "Flute has no Engine 2 version yet,
+/// so this is a mirror match."
+pub fn mirror_notice(roster_name: &str) -> String {
+    format!(
+        "{} has no Engine 2 version yet, so this is a mirror match.",
+        display_name(roster_name)
+    )
+}
+
+/// The notice of a switch to Engine 2 where a fighter without a version gives its place to another.
+pub fn stand_in_notice(gone: &str, stand_in: &str) -> String {
+    format!(
+        "{} has no Engine 2 version yet, so {} takes its place.",
+        display_name(gone),
+        display_name(stand_in)
+    )
+}
+
+/// The notice of a switch of engine that starts the match-up over: "Flute vs Trombone have no Engine 2 version
+/// yet, so the match-up starts over as Test dummy vs Test dummy 2."
+pub fn engine_start_over(was: &[String; 2], now: &[String; 2], engine: bf_core::Engine) -> String {
+    let which = match engine {
+        bf_core::Engine::One => "current-engine",
+        bf_core::Engine::Two => ENGINE2,
+    };
+    format!(
+        "{} and {} have no {which} version, so the match-up starts over as {}.",
+        display_name(&was[0]),
+        display_name(&was[1]),
+        versus(now)
+    )
+}
+
 /// A roster name as shown, in sentence case: "BASS CLARINET" -> "Bass clarinet".
 pub fn display_name(roster_name: &str) -> String {
     let lower = roster_name.to_lowercase();
