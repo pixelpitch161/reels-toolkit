@@ -8,7 +8,10 @@
 
 #![forbid(unsafe_code)]
 
+pub mod body;
+pub mod event;
 pub mod moves;
+pub mod physics;
 pub mod rig;
 pub mod rules;
 pub mod v3;
