@@ -30,7 +30,7 @@ impl Material {
         Material::Toon {
             bands: 4,
             rim: [0.35, 0.35, 0.35],
-            rim_power: 3.0,
+            rim_power: 4.0,
         }
     }
 

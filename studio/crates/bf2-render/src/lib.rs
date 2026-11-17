@@ -22,3 +22,6 @@ pub mod scene;
 
 pub use mesh::{MeshData, MeshId, Meshes, Vertex};
 pub use scene::{Camera, Instance, Light, Material, Scene, Spot, to_render};
+pub mod renderer;
+
+pub use renderer::Renderer;
