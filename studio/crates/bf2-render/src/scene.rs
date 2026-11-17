@@ -22,6 +22,9 @@ pub enum Material {
     Glass { tint: [f32; 3], opacity: f32, fresnel: f32 },
     /// The colour times `strength`, unlit (HDR: above 1 glows once bloom exists).
     Emissive { strength: f32 },
+    /// The colour times its vertices' colour times `strength`, added to what is behind it: light laid on the
+    /// picture (a light's spill on the floor), unlit, with no highlight; drawn with the glass, depth tested.
+    Additive { strength: f32 },
     /// The colour as it is.
     Unlit,
 }
@@ -55,7 +58,7 @@ impl Material {
     }
 
     pub fn is_transparent(&self) -> bool {
-        matches!(self, Material::Glass { .. })
+        matches!(self, Material::Glass { .. } | Material::Additive { .. })
     }
 }
 
@@ -66,7 +69,7 @@ pub struct Surface {
     pub albedo: Option<TexId>,
     /// A tangent-space normal map, lit by the spot and the point lights: Toon and Glass.
     pub normal: Option<TexId>,
-    /// The maps repeat this many times across the mesh's uvs.
+    /// The normal map repeats this many times across the mesh's uvs (the albedo map covers them once).
     pub uv_scale: f32,
     /// How far the normal map tilts the normal (0: flat, 1: as the map says).
     pub normal_strength: f32,

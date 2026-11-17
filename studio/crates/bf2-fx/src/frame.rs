@@ -261,7 +261,7 @@ impl FxFrame {
             gpu,
             &scenes,
             &weights,
-            &Post::default(),
+            &Post::ring(),
             &mut pass,
             Some(screen),
             size.0,

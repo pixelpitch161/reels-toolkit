@@ -81,7 +81,7 @@ fn stage_scene_is_bounded() {
     assert!(s.lights.len() <= MAX_LIGHTS, "{} lights", s.lights.len());
     let spot = s.spot.expect("the spot");
     assert!(spot.shadow);
-    assert_eq!(s.ambient, [AMBIENT; 3]);
+    assert_eq!(s.ambient, AMBIENT);
     // 18 default projectiles, not the two the look drew.
     let glowing = s.instances.iter().filter(|i| i.mesh == stage.proj_mesh()).count();
     assert_eq!(glowing, 18);
@@ -109,16 +109,18 @@ fn stage_ropes_bend_with_wobble() {
         starts(&still, stage.rope_link).is_empty(),
         "a quiet frame draws whole ropes"
     );
-    assert_eq!(starts(&still, stage.ropes[0]).len(), 1);
+    assert_eq!(starts(&still, stage.ropes[0][1]).len(), 1);
 
     let mut f = quiet.clone();
     f.arena.rope_wobble = [0.2, 0.0, -0.1, 0.0];
     let mut bent = Scene::default();
     stage.draw(&f, COLOURS, &mut bent);
     // The far side (sim +y) bows out, the near side in; the others hang as they were.
-    assert!(starts(&bent, stage.ropes[0]).is_empty() && starts(&bent, stage.ropes[2]).is_empty());
-    assert_eq!(starts(&bent, stage.ropes[1]).len(), 1);
-    assert_eq!(starts(&bent, stage.ropes[3]).len(), 1);
+    for j in 0..3 {
+        assert!(starts(&bent, stage.ropes[0][j]).is_empty() && starts(&bent, stage.ropes[2][j]).is_empty());
+        assert_eq!(starts(&bent, stage.ropes[1][j]).len(), 1);
+        assert_eq!(starts(&bent, stage.ropes[3][j]).len(), 1);
+    }
     let links = starts(&bent, stage.rope_link);
     assert_eq!(links.len(), 2 * 3 * 8, "eight links a rope, three ropes a side");
     let out = |side: usize| {
@@ -165,14 +167,14 @@ fn stage_crowd_leds_and_house_follow_the_arena() {
     f.arena.beat = 1.0;
     let mut live = Scene::default();
     stage.draw(&f, COLOURS, &mut live);
-    let (a, b) = (starts(&still, stage.fan), starts(&live, stage.fan));
+    let (a, b) = (starts(&still, stage.person), starts(&live, stage.person));
     assert_eq!(a.len(), b.len());
     assert!(
-        a.iter().zip(&b).all(|(p, q)| (q[1] - p[1] - 0.25).abs() < 1e-5),
+        a.iter().zip(&b).all(|(p, q)| (q[1] - p[1] - CROWD_JUMP).abs() < 1e-5),
         "the crowd is up"
     );
-    assert!((live.ambient[0] - AMBIENT * 0.35).abs() < 1e-7);
-    // The leader is fighter 0 (more HP), but the flash is fighter 1's.
+    assert!((0..3).all(|c| (live.ambient[c] - AMBIENT[c] * 0.35).abs() < 1e-7));
+    // Each half of the boards is its fighter's colour; while fighter 1 flashes they are all its colour.
     let leds = |s: &Scene| -> Vec<([f32; 4], f32)> {
         s.instances
             .iter()
@@ -184,10 +186,65 @@ fn stage_crowd_leds_and_house_follow_the_arena() {
     };
     let (l0, l1) = (leds(&still), leds(&live));
     assert_eq!(l0.len(), l1.len());
-    assert!(l0.iter().all(|(c, _)| c[..3] == COLOURS[0]));
-    assert!(l1.iter().all(|(c, _)| c[..3] == COLOURS[1]));
+    let red = |c: &[f32; 4]| c[0] > c[2];
+    assert!(
+        l0.iter().any(|(c, _)| red(c)) && l0.iter().any(|(c, _)| !red(c)),
+        "both colours"
+    );
+    assert!(l1.iter().all(|(c, _)| !red(c)), "all fighter 1's");
     assert!(
         l0.iter().zip(&l1).all(|(a, b)| b.1 > a.1 + 1.0),
         "the flash and the beat brighten the boards"
     );
+}
+
+/// The canvas map is the current engine's canvas: texel (i, j) is `canvas_albedo` at its centre, rows running
+/// from the near edge (+z) back.
+#[test]
+fn canvas_map_is_the_current_canvas() {
+    let n = 64u32;
+    let map = canvas_map(n);
+    let ap = cur::AP;
+    for (i, j) in [(0, 0), (31, 31), (5, 50), (63, 10)] {
+        let x = -ap + (f64::from(i) + 0.5) / f64::from(n) * 2.0 * ap;
+        let z = ap - (f64::from(j) + 0.5) / f64::from(n) * 2.0 * ap;
+        let want = cur::canvas_albedo(x, z).map(|v| v.round().clamp(0.0, 255.0) as u8);
+        let k = ((j * n + i) * 4) as usize;
+        assert_eq!(map[k..k + 3], want, "texel ({i}, {j})");
+    }
+}
+
+/// The stage is the current scene: its crowd, one person per seat, and the middle rope of each side in the
+/// colour of the fighter whose corner it touches; the others cream.
+#[test]
+fn stage_keeps_the_current_crowd_and_rope_colours() {
+    let gpu = Gpu::headless().unwrap();
+    let mut r = Renderer::new(&gpu);
+    let stage = Stage::new(&mut r, &gpu);
+    assert_eq!(stage.crowd.len(), cur::Scene::new([[0.0; 3]; 2]).crowd.len());
+    let rec = recording(vec![]);
+    let f = frame_at_time(&rec, &plain(&rec), 12.5);
+    let mut s = Scene::default();
+    stage.draw(&f, COLOURS, &mut s);
+    assert_eq!(starts(&s, stage.person).len(), stage.crowd.len());
+    for side in 0..4 {
+        let colour = |j: usize| {
+            s.instances
+                .iter()
+                .find(|i| i.mesh == stage.ropes[side][j])
+                .map(|i| [i.colour[0], i.colour[1], i.colour[2]])
+                .unwrap()
+        };
+        let want = linear(srgb255(COLOURS[SIDE_FIGHTER[side]]).map(|v| v * 0.92)).map(|v| v * ROPE_LIFT);
+        assert!(
+            colour(1).iter().zip(want).all(|(a, b)| (a - b).abs() < 1e-5),
+            "side {side}"
+        );
+        let cream = linear(cur::ROPE_COL[0]).map(|v| v * ROPE_LIFT);
+        assert_eq!(colour(0), cream);
+        assert_eq!(colour(2), cream);
+    }
+    // The red corner (fighter 0's) is on the left of the base camera: render (−x, +z).
+    let red = cur::CORNERS[cur::RED];
+    assert!(red[0] < 0.0 && red[1] > 0.0);
 }

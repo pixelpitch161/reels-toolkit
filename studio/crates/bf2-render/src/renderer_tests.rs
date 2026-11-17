@@ -331,3 +331,46 @@ fn normal_map_breaks_up_the_light() {
         spread(&none)
     );
 }
+
+/// Additive light: a patch adds its colour (times its vertices' weight) to what is behind it, unlit, with no
+/// highlight and no cover; where its weight is 0 nothing changes.
+#[test]
+fn additive_adds_without_covering() {
+    let (gpu, mut r) = setup();
+    let mut scene = floor_scene(&mut r, &gpu);
+    let mut patch = geom::plane(6.0, 6.0);
+    for v in &mut patch.verts {
+        // weight 1 on the +x edge, 0 on the -x edge
+        v.rgb = [(v.pos[0] / 6.0 + 0.5).clamp(0.0, 1.0); 3];
+    }
+    let patch = r.meshes.add(&gpu, patch);
+    scene.spot = Some(Spot {
+        pos: [0.0, 12.0, 4.0],
+        target: [0.0; 3],
+        colour: [0.2; 3],
+        angle_deg: 40.0,
+        shadow: false,
+    });
+    let before = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
+    scene.instances.push(
+        Instance::new(
+            patch,
+            Material::Additive { strength: 0.3 },
+            maths::translation([0.0, 0.01, 0.0]),
+        )
+        .coloured([0.0, 0.0, 1.0]),
+    );
+    let after = r.render_sized(&gpu, &scene, &Post::default(), TW, TH);
+    let px = |img: &Rgb8, p: [f32; 3]| at(img, scene.camera.project(p, TW, TH).unwrap());
+    let (b, a) = (px(&before, [2.5, 0.0, 0.0]), px(&after, [2.5, 0.0, 0.0]));
+    assert!(i32::from(a[2]) > i32::from(b[2]) + 20, "blue is added: {b:?} -> {a:?}");
+    assert!(
+        (i32::from(a[0]) - i32::from(b[0])).abs() <= 2,
+        "red stays: {b:?} -> {a:?}"
+    );
+    let (b, a) = (px(&before, [-2.9, 0.0, 0.0]), px(&after, [-2.9, 0.0, 0.0]));
+    assert!(
+        b.iter().zip(a).all(|(x, y)| (i32::from(*x) - i32::from(y)).abs() <= 3),
+        "{b:?} -> {a:?}"
+    );
+}

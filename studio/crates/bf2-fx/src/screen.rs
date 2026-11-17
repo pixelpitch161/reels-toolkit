@@ -101,7 +101,8 @@ impl Default for ScreenLook {
             threshold: 1.0,
             knee: 0.25,
             dirt: 0.9,
-            vignette: 0.22,
+            // the tone map's grade vignettes the picture as the current engine does (`Post::ring`)
+            vignette: 0.0,
             grain: 0.018,
         }
     }

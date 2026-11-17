@@ -1,4 +1,5 @@
-// The tone map: resolved HDR colour -> exposure -> ACES fitted -> grade -> sRGB encode -> Rgba8Unorm.
+// The tone map: resolved HDR colour -> exposure -> the curve (ACES fitted and the sRGB encode, or the current
+// engine's straight light and 2.2 gamma) -> grade -> Rgba8Unorm.
 // One full-screen triangle; each fragment reads its own texel, so no sampler and no filtering.
 
 struct PostU {
@@ -7,7 +8,7 @@ struct PostU {
     saturation: f32,
     vignette: f32,
     scrim: f32,
-    _pad0: f32,
+    knee: f32,
     _pad1: f32,
     _pad2: f32,
 }
@@ -50,9 +51,19 @@ fn srgb_encode(c: vec3<f32>) -> vec3<f32> {
     return select(hi, lo, c <= vec3<f32>(0.0031308));
 }
 
+// `post::curve_cpu`: ACES and the sRGB encode, or (knee above 0) straight light with a shoulder and 2.2 gamma.
+fn curve(x: vec3<f32>) -> vec3<f32> {
+    if u.knee <= 0.0 {
+        return srgb_encode(aces(x));
+    }
+    let k = u.knee;
+    let s = select(x, k + (1.0 - k) * (1.0 - exp(-(x - k) / (1.0 - k))), x > vec3<f32>(k));
+    return pow(s, vec3<f32>(1.0 / 2.2));
+}
+
 @fragment
 fn fs(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
     let c = textureLoad(hdr, vec2<i32>(p.xy), 0).rgb * u.exposure;
     let size = vec2<f32>(textureDimensions(hdr));
-    return vec4<f32>(grade(srgb_encode(aces(max(c, vec3<f32>(0.0)))), p.xy, size), 1.0);
+    return vec4<f32>(grade(curve(max(c, vec3<f32>(0.0))), p.xy, size), 1.0);
 }

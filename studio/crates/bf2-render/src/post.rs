@@ -20,6 +20,10 @@ pub struct Post {
     pub vignette: f32,
     /// The top scrim (0: none): darkens by this much above 100/640 of the height, fading out over 90/640.
     pub scrim: f32,
+    /// The curve: 0 is ACES fitted and the sRGB encode; above 0, the current engine's straight light (no curve
+    /// below this knee, a soft shoulder from it to white) and its 2.2 gamma, so a colour lit to `(c / 255)^2.2`
+    /// comes out as `c` (E7).
+    pub knee: f32,
 }
 
 impl Default for Post {
@@ -31,6 +35,7 @@ impl Default for Post {
             saturation: 1.0,
             vignette: 0.0,
             scrim: 0.0,
+            knee: 0.0,
         }
     }
 }
@@ -46,9 +51,13 @@ impl Post {
             saturation: 1.18,
             vignette: 0.45,
             scrim: 0.45,
+            knee: RING_KNEE,
         }
     }
 }
+
+/// Where [`Post::ring`]'s shoulder starts.
+pub const RING_KNEE: f32 = 0.7;
 
 /// The exposure of [`Post::ring`].
 pub const RING_EXPOSURE: f32 = 1.0;
@@ -73,6 +82,24 @@ pub fn tonemap_cpu(hdr: f32, exposure: f32) -> u8 {
     (v * 255.0).round() as u8
 }
 
+/// The CPU reference of the shader's curve and encode for one channel (before the grade), 0..1.
+pub fn curve_cpu(hdr: f32, post: &Post) -> f32 {
+    let x = (hdr * post.exposure).max(0.0);
+    if post.knee <= 0.0 {
+        return srgb_encode(aces(x));
+    }
+    shoulder(x, post.knee).powf(1.0 / 2.2)
+}
+
+/// Straight up to `k`, then rolling off to 1.
+fn shoulder(x: f32, k: f32) -> f32 {
+    if x <= k {
+        x
+    } else {
+        k + (1.0 - k) * (1.0 - (-(x - k) / (1.0 - k)).exp())
+    }
+}
+
 /// Narkowicz's fit of the ACES curve, clamped to 0..1.
 fn aces(x: f32) -> f32 {
     ((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14)).clamp(0.0, 1.0)
@@ -95,7 +122,8 @@ struct PostU {
     saturation: f32,
     vignette: f32,
     scrim: f32,
-    _pad: [f32; 3],
+    knee: f32,
+    _pad: [f32; 2],
 }
 
 /// The tone map pass: built once, its uniform rewritten each frame.
@@ -205,7 +233,8 @@ impl PostPass {
             saturation: post.saturation,
             vignette: post.vignette,
             scrim: post.scrim,
-            _pad: [0.0; 3],
+            knee: post.knee,
+            _pad: [0.0; 2],
         };
         gpu.queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&u));
         let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -322,6 +351,26 @@ mod tests {
         let top = grade_cpu([0.5; 3], 540.0, 10.0, 1080.0, 1920.0, &p);
         let mid = grade_cpu([0.5; 3], 540.0, 0.47 * 1920.0, 1080.0, 1920.0, &p);
         assert!(top[0] < 0.6 * mid[0], "{top:?} {mid:?}");
+    }
+
+    #[test]
+    fn ring_curve_gives_back_the_current_engines_colours() {
+        let p = Post::ring();
+        // below the knee a colour lit to (c / 255)^2.2 comes out as c: the shadows are not crushed
+        for c in [6.0f32, 30.0, 90.0, 180.0] {
+            let lin = (c / 255.0).powf(2.2) / p.exposure;
+            assert!((curve_cpu(lin, &p) * 255.0 - c).abs() < 0.05, "{c}");
+        }
+        // above it the shoulder rolls off to white, never past it, always rising
+        let mut last = 0.0;
+        for i in 0..=400 {
+            let v = curve_cpu(i as f32 / 40.0, &p);
+            assert!(v >= last && v <= 1.0, "{v} after {last}");
+            last = v;
+        }
+        assert!(last > 0.99);
+        // the default stays ACES
+        assert_eq!(curve_cpu(0.5, &Post::default()), srgb_encode(aces(0.5)));
     }
 
     #[test]

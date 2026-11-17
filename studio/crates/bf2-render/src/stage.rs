@@ -1,97 +1,120 @@
-//! The stage: the arena, the ring, the crowd, the LED boards, and each fighter's glass ball.
+//! The stage: the current engine's ring and arena (`bf_picture::scene`, `bf_picture::ring::{arena, canvas, ropes,
+//! ball}`), lifted to 3D at a higher fidelity (E7, "same style, higher fidelity": the mapping is
+//! `docs/studio/engine2/style-port.md`).
 //!
-//! Every mesh is made once in [`Stage::new`]; the crowd's places and colours are seeded there too, so a frame
-//! only places instances. Sizes are the sim's (`bf2_sim::Rules2`): the ropes enclose a square of half-size
-//! [`RING_A`], and a ball has radius [`BALL_R`].
+//! Render space is the current engine's ring frame: render `(x, z)` is its `(sx, sz)` and render `y` its height,
+//! so its world is render space turned 45 degrees about Y ([`from_world`]) and the base camera
+//! (`bf2_direct::base`) sees the ring as the same diamond. Everything is the current scene's: the slate-purple
+//! canvas with its rings, star and apron band ([`bf_picture::scene::canvas_albedo`], baked into an albedo map with
+//! a woven normal map), the skirt and its band, the padded posts with each fighter's colour on its corner, the
+//! ropes with the middle one in its side's fighter colour, the LED boards (each half in its fighter's colour, a
+//! chase stepping on the beat), ten stepped tiers and the seeded crowd (`bf_picture::scene::Scene::crowd`: the
+//! same people, shirts and phones), the dark floor with the spill under the ring, and the spot above.
+//!
+//! Colours: the current engine paints sRGB 0..255; here they are linear. What the current engine shades outside
+//! the spot (stands, crowd, skirt, floor) gets the colour it ends up with there, divided by the stage's ambient,
+//! so the ambient alone gives the same palette and the effects' lights still light it. What stands in the spot
+//! (canvas, posts, ropes, balls) gets its albedo and is lit.
+//!
+//! Every mesh and map is made once in [`Stage::new`]; a frame only places instances.
+
+use bf_picture::camera::interp_keys;
+use bf_picture::lighting::{Lights, shade};
+use bf_picture::ring::state::camera_keys;
+use bf_picture::scene as cur;
 
 use crate::geom;
 use crate::gpu::Gpu;
 use crate::look2::FightFrame;
 use crate::maths::{self, V3};
-use crate::mesh::{MeshData, MeshId};
+use crate::mesh::{MeshData, MeshId, Vertex};
 use crate::renderer::Renderer;
-use crate::scene::{Instance, Light, Material, Scene, Spot, to_render};
+use crate::scene::{Instance, Light, Material, Scene, Spot, Surface, to_render};
+use crate::texture::{TEX_SIZE, TexId, hammered_height, normals_from_height, weave_height};
 
-/// The ring's half-size inside the ropes (`Rules2::a`).
-pub const RING_A: f32 = 3.0;
-/// A ball's radius (`Rules2::r`).
-pub const BALL_R: f32 = 0.6;
-/// The ambient light of the arena.
-pub const AMBIENT: f32 = 0.06;
+/// The ring's half-size inside the ropes (`Rules2::a`, the current engine's `A`).
+pub const RING_A: f32 = cur::A as f32;
+/// A ball's radius (`Rules2::r`, `R_BALL`).
+pub const BALL_R: f32 = cur::R_BALL as f32;
+/// The arena's ambient light (linear): the current engine's ambient (`Lights::new([0.36, 0.33, 0.44], ..)`) in
+/// linear light.
+pub const AMBIENT: [f32; 3] = [0.106, 0.087, 0.164];
 
-/// The posts stand just outside the ropes' square; the canvas runs on past them as the apron.
-pub const POST: f32 = RING_A + 0.25;
-pub const APRON: f32 = POST + 0.45;
-/// The arena floor, below the ring's platform.
-const FLOOR_Y: f32 = -1.2;
-pub const ROPE_HEIGHTS: [f32; 3] = [0.45, 0.85, 1.25];
-pub const ROPE_R: f32 = 0.035;
-pub const ROPE_SAG: f32 = 0.06;
-const POST_H: f32 = 1.45;
-/// The stands: tiers rising away from the ring on all four sides.
-const TIERS: usize = 3;
-const STAND_IN: f32 = 8.0;
-const TIER_DEPTH: f32 = 1.6;
-const TIER_RISE: f32 = 0.8;
-const SEAT_GAP: f32 = 0.55;
-/// LED board segments per side, on the front of the first tier.
-const LEDS: usize = 16;
+/// The corner posts (`POST`); the canvas runs on past them as the apron (`AP`).
+pub const POST: f32 = cur::POST as f32;
+pub const APRON: f32 = cur::AP as f32;
+/// The arena floor, below the ring's platform (`FLOOR_Y`).
+const FLOOR_Y: f32 = cur::FLOOR_Y as f32;
+/// The three ropes' heights (`ROPE_Y`).
+pub const ROPE_HEIGHTS: [f32; 3] = [cur::ROPE_Y[0] as f32, cur::ROPE_Y[1] as f32, cur::ROPE_Y[2] as f32];
+/// A rope's radius: the current engine's 2 px line at the ring's distance.
+pub const ROPE_R: f32 = 0.028;
+/// How far a rope sags in the middle (`rope_points`: `0.035 sin(pi u)`).
+pub const ROPE_SAG: f32 = 0.035;
+const POST_H: f32 = cur::POST_H as f32;
 const PROJ_R: f32 = 0.15;
-/// The arena's reactions: how far the crowd stands up at a full jump, how much brighter the LED boards are on the
-/// beat (a share) and at a full flash (added strength).
-const CROWD_JUMP: f32 = 0.25;
-const LED_BEAT: f32 = 0.5;
-const LED_FLASH: f32 = 3.0;
+/// The arena's reactions: how far the crowd hops at a full jump (the current engine's one-pixel hop, a little more), and how much brighter the LED boards are at
+/// a full flash (added strength; on the beat they pulse as the current engine's do).
+const CROWD_JUMP: f32 = 0.08;
+const LED_FLASH: f32 = 2.0;
+/// The LED boards round the ring floor.
+const BOARDS: usize = 64;
+/// The spot (`SPOT`, `SPOT_AIM`) and its cone (`SPOT_COS`: soft from 19 to 27 degrees).
+const SPOT_ANGLE: f32 = 27.0;
+const SPOT_COLOUR: [f32; 3] = [1.3, 1.22, 1.3];
+/// The fill of the stands' and crowd's light the current engine's directional key gives them, in linear light.
+const NEUTRAL: [f64; 3] = [236.0, 232.0, 222.0];
+/// The current engine's ball glass (`title::GLASS`) and the ink round a ball.
+const GLASS: [f64; 3] = [236.0, 232.0, 226.0];
+const INK: [f64; 3] = [22.0, 14.0, 30.0];
+/// The steel of the posts and their caps.
+const STEEL: [f64; 3] = [190.0, 190.0, 204.0];
+const CAP: [f64; 3] = [220.0, 220.0, 230.0];
+/// The current engine's crowd: how much of its shirt colour reaches the picture (`spill`), and its body and
+/// head shades.
+const SPILL: f64 = 0.48;
 
-const CANVAS: [f32; 3] = [0.075, 0.08, 0.1];
-const SKIRT: [f32; 3] = [0.05, 0.06, 0.1];
-const FLOOR: [f32; 3] = [0.035, 0.035, 0.045];
-const STANDS: [f32; 3] = [0.09, 0.09, 0.12];
-const ROPE: [f32; 3] = [0.92, 0.92, 0.95];
-const POST_NEUTRAL: [f32; 3] = [0.55, 0.56, 0.6];
-const SPOT_COLOUR: [f32; 3] = [6.0, 5.7, 5.1];
+/// An sRGB 0..255 colour in linear light.
+pub fn linear(c: [f64; 3]) -> [f32; 3] {
+    c.map(|v| bf_core::dmath::powf((v / 255.0).clamp(0.0, 4.0) as f32, 2.2))
+}
+
+/// A linear colour as sRGB 0..255 (the fighters' colours come linear).
+fn srgb255(c: [f32; 3]) -> [f64; 3] {
+    c.map(|v| 255.0 * f64::from(bf_core::dmath::powf(v.max(0.0), 1.0 / 2.2)))
+}
+
+/// The posts' and ropes' colours: lit by the current engine's key everywhere, they stand partly outside the
+/// spot's cone here, so their albedo is lifted until the ambient alone shows them near the current brightness
+/// (in the spot they go to white, as there).
+const SET_LIFT: f32 = 6.0;
+
+/// The ropes' lift: thin and mostly in the spot, they need less.
+const ROPE_LIFT: f32 = 1.6;
+
+/// An sRGB 0..255 colour of the posts as their albedo ([`SET_LIFT`]).
+fn lifted(c: [f64; 3]) -> [f32; 3] {
+    // over the ambient's own tint, so the ambient shows them in their own colour
+    let grey = (AMBIENT[0] + AMBIENT[1] + AMBIENT[2]) / 3.0;
+    let l = linear(c);
+    [0, 1, 2].map(|k| l[k] * SET_LIFT * grey / AMBIENT[k])
+}
+
+/// A current-engine world point in render space.
+pub fn from_world(p: [f64; 3]) -> V3 {
+    let (x, z) = cur::to_ring(p[0], p[2]);
+    [x as f32, p[1] as f32, z as f32]
+}
+
+/// What the ambient alone must be lit by to show the current engine's `target` (sRGB 0..255).
+fn baked(target: [f64; 3]) -> [f32; 3] {
+    let l = linear(target);
+    [0, 1, 2].map(|c| l[c] / AMBIENT[c])
+}
 
 /// A ball's centre in render space: the sim position is its bottom.
 pub fn ball_centre(pos: [f64; 3]) -> V3 {
     maths::add(to_render(pos), [0.0, BALL_R, 0.0])
-}
-
-/// One seat of the crowd.
-struct Fan {
-    pos: V3,
-    yaw: f32,
-    phase: f32,
-    colour: [f32; 3],
-}
-
-pub struct Stage {
-    floor: MeshId,
-    unit_box: MeshId,
-    canvas: MeshId,
-    post: MeshId,
-    /// Each side's ropes hanging still, in [`SIDES`] order.
-    ropes: [MeshId; 4],
-    /// One capsule of rope from the origin to +X, for ropes that wobble.
-    rope_link: MeshId,
-    fan: MeshId,
-    ball: MeshId,
-    disc: MeshId,
-    proj: MeshId,
-    crowd: Vec<Fan>,
-}
-
-/// A small, fixed sequence (splitmix64): the crowd is the same every run and on every PC.
-struct Seq(u64);
-
-impl Seq {
-    fn next(&mut self) -> f32 {
-        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^= z >> 31;
-        (z >> 40) as f32 / (1u64 << 24) as f32
-    }
 }
 
 /// The four sides of a square: (outward direction, along direction) in the floor plane of render space.
@@ -102,9 +125,24 @@ pub const SIDES: [(V3, V3); 4] = [
     ([-1.0, 0.0, 0.0], [0.0, 0.0, -1.0]),
 ];
 
-/// A rotation about Y taking +X to `along` (so a box's length runs along a side).
-fn yaw_of(along: V3) -> f32 {
-    (-along[2]).atan2(along[0])
+/// Whose colour each side's middle rope carries, in [`SIDES`] order: the current engine's rope sides touching the
+/// red corner (render (−x, +z), fighter 0's) are fighter 0's, the others fighter 1's.
+pub const SIDE_FIGHTER: [usize; 4] = [1, 1, 0, 0];
+
+/// The current engine's lights for shading the set outside the spot (`state::lights` without the corner lights
+/// and the flares): its ambient, sky and key, seen from the base camera.
+fn current_lights() -> Lights {
+    let mut l = Lights::new([0.36, 0.33, 0.44], [0.10, 0.08, 0.14]);
+    let d = [
+        cur::SPOT[0] - cur::SPOT_AIM[0],
+        cur::SPOT[1] - cur::SPOT_AIM[1],
+        cur::SPOT[2] - cur::SPOT_AIM[2],
+    ];
+    l.key("spot", d, [1.05, 1.0, 0.96]);
+    // the base camera's view: from +Z, 58 degrees up
+    let p = 58f64.to_radians();
+    l.view = [0.0, bf_core::dmath::sin(p), bf_core::dmath::cos(p)];
+    l
 }
 
 /// Capsules per rope.
@@ -116,22 +154,21 @@ fn rope_at(side: usize, h: f32, s: f32, wobble: f32) -> V3 {
     let (out, along) = SIDES[side];
     let bow = POST + wobble * (std::f32::consts::PI * s).sin();
     let base = maths::add(maths::scale(out, bow), maths::scale(along, (2.0 * s - 1.0) * POST));
-    maths::add(base, [0.0, h - ROPE_SAG * 4.0 * s * (1.0 - s), 0.0])
+    maths::add(base, [0.0, h - ROPE_SAG * (std::f32::consts::PI * s).sin(), 0.0])
 }
 
-/// One side's three ropes, each a chain of capsules sagging between the posts.
-fn ropes_mesh(side: usize) -> MeshData {
+/// One rope hanging still: a chain of capsules sagging between the posts, white (the instance colours it).
+fn rope_mesh(side: usize, h: f32) -> MeshData {
     let mut m = MeshData::default();
-    for h in ROPE_HEIGHTS {
-        for i in 0..LINKS {
-            let (a, b) = (
-                rope_at(side, h, i as f32 / LINKS as f32, 0.0),
-                rope_at(side, h, (i + 1) as f32 / LINKS as f32, 0.0),
-            );
-            m.append(&geom::capsule(a, b, ROPE_R, 8));
-        }
+    for i in 0..LINKS * 2 {
+        let n = (LINKS * 2) as f32;
+        let (a, b) = (
+            rope_at(side, h, i as f32 / n, 0.0),
+            rope_at(side, h, (i + 1) as f32 / n, 0.0),
+        );
+        m.append(&geom::capsule(a, b, ROPE_R, 10));
     }
-    m.painted(ROPE, 0.3)
+    m.painted([1.0; 3], 0.35)
 }
 
 /// The model that takes the unit link (a capsule from the origin to +X) to the segment `a`→`b`: stretched along
@@ -155,69 +192,350 @@ fn link_model(a: V3, b: V3) -> maths::M4 {
     ]
 }
 
-/// A low-poly fan: a body and a head, standing on y = 0.
-fn fan_mesh() -> MeshData {
-    let mut m = geom::capsule([0.0, 0.16, 0.0], [0.0, 0.42, 0.0], 0.16, 6);
-    let mut head = geom::icosphere(0.13, 0);
-    for v in &mut head.verts {
-        v.pos[1] += 0.72;
+/// The canvas's albedo map: [`cur::canvas_albedo`] over the apron (u along +x, v along −z from the near edge),
+/// sRGB.
+pub fn canvas_map(size: u32) -> Vec<u8> {
+    let mut out = Vec::with_capacity((size * size * 4) as usize);
+    let ap = cur::AP;
+    for j in 0..size {
+        let z = ap - (f64::from(j) + 0.5) / f64::from(size) * 2.0 * ap;
+        for i in 0..size {
+            let x = -ap + (f64::from(i) + 0.5) / f64::from(size) * 2.0 * ap;
+            let c = cur::canvas_albedo(x, z);
+            out.extend(c.map(|v| v.round().clamp(0.0, 255.0) as u8));
+            out.push(255);
+        }
     }
-    m.append(&head);
+    out
+}
+
+/// The skirt: the current platform's faces (`platform_faces`: three bands a side), each coloured as the
+/// current engine shades it, baked for the ambient.
+fn skirt_mesh(l: &Lights) -> MeshData {
+    let sc = cur::Scene::new([[0.0; 3]; 2]);
+    let mut m = MeshData::default();
+    for f in &sc.skirt_faces {
+        let ctr = [0, 1, 2].map(|k| f.q.iter().map(|p| p[k]).sum::<f64>() / f.q.len() as f64);
+        let target = shade(l, &[f.n], &[ctr], &[f.col], None, 0.3, 0.0, 5.0)[0];
+        let n = from_world(f.n);
+        let base = m.verts.len() as u32;
+        for p in &f.q {
+            let mut v = Vertex::new(from_world(*p), n);
+            v.rgb = baked(target);
+            m.verts.push(v);
+        }
+        // wound to face `n`
+        let (a, b, c) = (
+            m.verts[base as usize].pos,
+            m.verts[base as usize + 1].pos,
+            m.verts[base as usize + 2].pos,
+        );
+        let g = maths::cross(maths::sub(b, a), maths::sub(c, a));
+        if maths::dot(g, n) >= 0.0 {
+            m.idx.extend([base, base + 1, base + 2, base, base + 2, base + 3]);
+        } else {
+            m.idx.extend([base, base + 2, base + 1, base, base + 3, base + 2]);
+        }
+    }
     m
+}
+
+/// The stands: `N_ROWS` tiers from `STAND_R0`, each a riser and a top, `segs` segments round, coloured as the
+/// current engine draws them (`shade`, then `* 0.55`), baked for the ambient.
+fn stands_mesh(l: &Lights, segs: u32) -> MeshData {
+    let mut m = MeshData::default();
+    let p = |r: f64, a: f64, y: f64| from_world([r * a.sin(), y, -r * a.cos()]);
+    for row in 0..cur::N_ROWS {
+        let (r0, r1) = (
+            cur::STAND_R0 + row as f64 * cur::ROW_W,
+            cur::STAND_R0 + (row + 1) as f64 * cur::ROW_W,
+        );
+        let y = cur::FLOOR_Y + row as f64 * cur::ROW_H;
+        for k in 0..segs {
+            let (a0, a1) = (
+                std::f64::consts::TAU * f64::from(k) / f64::from(segs),
+                std::f64::consts::TAU * f64::from(k + 1) / f64::from(segs),
+            );
+            let am = (a0 + a1) / 2.0;
+            let quads = [
+                (
+                    [
+                        p(r0, a0, y + cur::ROW_H),
+                        p(r1, a0, y + cur::ROW_H),
+                        p(r1, a1, y + cur::ROW_H),
+                        p(r0, a1, y + cur::ROW_H),
+                    ],
+                    [0.0, 1.0, 0.0],
+                    [54.0, 46.0, 74.0],
+                ),
+                (
+                    [
+                        p(r0, a0, y),
+                        p(r0, a0, y + cur::ROW_H),
+                        p(r0, a1, y + cur::ROW_H),
+                        p(r0, a1, y),
+                    ],
+                    [-am.sin(), 0.0, am.cos()],
+                    [40.0, 34.0, 58.0],
+                ),
+            ];
+            for (q, n, col) in quads {
+                let ctr = [r0 * am.sin(), y + cur::ROW_H, -r0 * am.cos()];
+                let target = shade(l, &[n], &[ctr], &[col], None, 0.2, 0.0, 5.0)[0].map(|c| c * 0.55);
+                let nr = from_world(n);
+                let base = m.verts.len() as u32;
+                for pos in q {
+                    let mut v = Vertex::new(pos, nr);
+                    v.rgb = baked(target);
+                    m.verts.push(v);
+                }
+                let g = maths::cross(maths::sub(q[1], q[0]), maths::sub(q[2], q[0]));
+                if maths::dot(g, nr) >= 0.0 {
+                    m.idx.extend([base, base + 1, base + 2, base, base + 2, base + 3]);
+                } else {
+                    m.idx.extend([base, base + 2, base + 1, base, base + 3, base + 2]);
+                }
+            }
+        }
+    }
+    m
+}
+
+/// The arena floor: a disc at `FLOOR_Y` coloured as the current engine lights it per pixel (`floor`: the spill
+/// under the ring, the faint checks left out), drawn unlit.
+fn floor_mesh() -> MeshData {
+    let radii: Vec<f32> = (0..=40).map(|k| (k as f32 / 40.0).powi(2) * 70.0).collect();
+    let segs = 96u32;
+    let mut m = MeshData::default();
+    for &r in &radii {
+        let e = (-((f64::from(r) - 4.6).max(0.0)) / 3.0).exp() * 0.55;
+        let light = [0.20 + e, 0.18 + e * 0.95, 0.26 + e * 1.05];
+        let c = [0, 1, 2].map(|k| cur::ARENA_FLOOR[k] * light[k]);
+        for j in 0..=segs {
+            let a = j as f32 / segs as f32 * std::f32::consts::TAU;
+            let mut v = Vertex::new([r * a.cos(), FLOOR_Y, -r * a.sin()], [0.0, 1.0, 0.0]);
+            v.rgb = linear(c);
+            m.verts.push(v);
+        }
+    }
+    let row = segs + 1;
+    for i in 0..radii.len() as u32 - 1 {
+        for j in 0..segs {
+            let (p, q) = (i * row + j, (i + 1) * row + j);
+            m.idx.extend([p, q, p + 1, p + 1, q, q + 1]);
+        }
+    }
+    m
+}
+
+/// How far a corner light's spill on the floor reaches.
+const SPILL_R: f32 = 7.0;
+
+/// A corner light's spill on the floor, centred under it, flat at y = 0: each vertex weighted as the current
+/// engine's `floor` weights the light (`h / d / (1 + (d / (1.8 r))^2)`, the light `h` above the floor, `r` its
+/// radius), less its weight at the edge so it fades to nothing there.
+fn spill_mesh() -> MeshData {
+    let h = f64::from(POST_H) + 0.35 - cur::FLOOR_Y;
+    let w = |d: f64| {
+        let dist = (h * h + d * d).sqrt();
+        let q = dist / (2.6 * 1.8);
+        h / dist / (1.0 + q * q)
+    };
+    let edge = w(f64::from(SPILL_R));
+    let (rings, segs) = (24u32, 64u32);
+    let mut m = MeshData::default();
+    for i in 0..=rings {
+        let r = SPILL_R * (i as f32 / rings as f32).powf(1.5);
+        let k = (w(f64::from(r)) - edge).max(0.0) as f32;
+        for j in 0..segs {
+            let a = j as f32 / segs as f32 * std::f32::consts::TAU;
+            let mut v = Vertex::new([r * a.cos(), 0.0, -r * a.sin()], [0.0, 1.0, 0.0]);
+            v.rgb = [k; 3];
+            m.verts.push(v);
+        }
+    }
+    for i in 0..rings {
+        for j in 0..segs {
+            let (p, q) = (i * segs + j, (i + 1) * segs + j);
+            let (p1, q1) = (i * segs + (j + 1) % segs, (i + 1) * segs + (j + 1) % segs);
+            m.idx.extend([p, q, p1, p1, q, q1]);
+        }
+    }
+    m
+}
+
+/// One of the crowd: a body (a flattened ball, the current engine's ellipse) and a head, standing on y = 0,
+/// facing −Z; the body's vertices at 0.8 and the head's at 0.62 of the shirt colour, as the current engine draws
+/// them.
+fn person_mesh() -> MeshData {
+    let mut body = geom::icosphere(1.0, 2);
+    for v in &mut body.verts {
+        v.pos = [v.pos[0] * 0.285, v.pos[1] * 0.21 + 0.25, v.pos[2] * 0.2];
+        v.nrm = maths::normalize([v.nrm[0] / 0.285, v.nrm[1] / 0.21, v.nrm[2] / 0.2]);
+        v.rgb = [0.8f32.powf(2.2); 3];
+    }
+    let mut head = geom::icosphere(0.15, 2);
+    for v in &mut head.verts {
+        v.pos[1] += 0.55;
+        v.rgb = [0.62f32.powf(2.2); 3];
+    }
+    body.append(&head);
+    body.with_tangents()
+}
+
+/// The rotation turning the person mesh (front −Z, up +Y) at `pos` to face `eye`.
+fn facing(pos: V3, eye: V3) -> maths::M4 {
+    let back = maths::normalize(maths::sub(pos, eye));
+    let x = maths::normalize(maths::cross([0.0, 1.0, 0.0], back));
+    let y = maths::cross(back, x);
+    [
+        [x[0], x[1], x[2], 0.0],
+        [y[0], y[1], y[2], 0.0],
+        [back[0], back[1], back[2], 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+}
+
+/// One seat of the crowd: where, which way, its shirt and when its phone twinkles.
+struct Fan {
+    pos: V3,
+    /// Turned to face the base camera, as the current engine's flat figures do.
+    turn: maths::M4,
+    ht: f32,
+    shirt: usize,
+    /// The current engine's phase (`ph`): the phone, and the side of the ring its light comes from.
+    ph: f32,
+    /// −1: fighter 0's side of the screen, 1: fighter 1's, 0: the middle.
+    side: i8,
+}
+
+pub struct Stage {
+    floor: MeshId,
+    unit_box: MeshId,
+    phone: MeshId,
+    canvas: MeshId,
+    skirt: MeshId,
+    stands: MeshId,
+    pole: MeshId,
+    cushion: MeshId,
+    /// Each side's three ropes hanging still, in [`SIDES`] then [`ROPE_HEIGHTS`] order.
+    ropes: [[MeshId; 3]; 4],
+    /// One capsule of rope from the origin to +X, for ropes that wobble.
+    rope_link: MeshId,
+    person: MeshId,
+    ball: MeshId,
+    outline: MeshId,
+    disc: MeshId,
+    /// The corner lights' spill on the floor.
+    spill: MeshId,
+    proj: MeshId,
+    glow: MeshId,
+    crowd: Vec<Fan>,
+    canvas_map: Option<TexId>,
+    weave: Option<TexId>,
+    dimples: Option<TexId>,
+}
+
+/// A rotation about Y taking +X to `along` (so a box's length runs along a side).
+fn yaw_of(along: V3) -> f32 {
+    (-along[2]).atan2(along[0])
 }
 
 impl Stage {
     pub fn new(r: &mut Renderer, gpu: &Gpu) -> Stage {
+        let l = current_lights();
+        let canvas_map = r.textures.add_albedo(gpu, &canvas_map(TEX_SIZE));
+        let weave = r
+            .textures
+            .add_normal(gpu, &normals_from_height(&weave_height(TEX_SIZE, 64), TEX_SIZE, 1.2));
+        let dimples = r.textures.add_normal(
+            gpu,
+            &normals_from_height(&hammered_height(TEX_SIZE, 12, 7), TEX_SIZE, 10.0),
+        );
         let mut add = |m: MeshData| r.meshes.add(gpu, m);
-        let floor = add(geom::plane(120.0, 120.0));
+        let floor = add(floor_mesh());
         let unit_box = add(geom::box_([1.0, 1.0, 1.0]));
+        let phone = add(geom::box_([1.0, 1.0, 1.0]));
         let canvas = add(geom::plane(2.0 * APRON, 2.0 * APRON).painted([1.0; 3], 0.0));
-        let post = add(geom::cylinder(0.11, POST_H, 12).painted([1.0; 3], 0.6));
-        let ropes = [0, 1, 2, 3].map(|side| add(ropes_mesh(side)));
-        let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 8).painted(ROPE, 0.3));
-        let fan = add(fan_mesh());
-        let ball = add(geom::icosphere(BALL_R, 3));
-        let disc = add(geom::cylinder(1.0, 0.004, 32));
-        let proj = add(geom::icosphere(PROJ_R, 2));
-
-        let mut seq = Seq(0xBA11_F164_7000_0002);
-        let mut crowd = Vec::new();
-        for (out, along) in SIDES {
-            for tier in 0..TIERS {
-                let dist = STAND_IN + TIER_DEPTH * (tier as f32 + 0.5);
-                let top = FLOOR_Y + TIER_RISE * (tier + 1) as f32;
-                let half_len = STAND_IN + TIER_DEPTH * tier as f32;
-                let seats = (2.0 * half_len / SEAT_GAP) as usize;
-                for s in 0..seats {
-                    // Some seats are empty.
-                    if seq.next() < 0.12 {
-                        continue;
-                    }
-                    let u = (s as f32 + 0.5) * SEAT_GAP - half_len + (seq.next() - 0.5) * 0.15;
-                    let pos = maths::add(maths::scale(out, dist), maths::scale(along, u));
-                    let hue = seq.next();
-                    let light = 0.25 + 0.45 * seq.next();
-                    crowd.push(Fan {
-                        pos: [pos[0], top, pos[2]],
-                        yaw: yaw_of(along),
-                        phase: seq.next() * std::f32::consts::TAU,
-                        colour: hue_colour(hue, light),
-                    });
-                }
-            }
+        let skirt = add(skirt_mesh(&l));
+        let stands = add(stands_mesh(&l, 160));
+        let mut pole = geom::cylinder(0.085, POST_H, 20).painted(lifted(STEEL), 0.6);
+        for v in &mut pole.verts {
+            v.pos[1] += POST_H / 2.0;
         }
+        let mut cap = geom::cylinder(0.11, 0.06, 20).painted(lifted(CAP), 0.6);
+        for v in &mut cap.verts {
+            v.pos[1] += POST_H + 0.03;
+        }
+        pole.append(&cap);
+        let pole = add(pole);
+        // a turnbuckle cushion: rounded, 0.22 tall, radius 0.16
+        let cushion = add(geom::capsule([0.0, -0.05, 0.0], [0.0, 0.05, 0.0], 0.16, 24).painted([1.0; 3], 0.25));
+        let ropes = [0, 1, 2, 3].map(|side| ROPE_HEIGHTS.map(|h| add(rope_mesh(side, h))));
+        let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 10).painted([1.0; 3], 0.35));
+        let person = add(person_mesh());
+        let ball = add(geom::uv_sphere(BALL_R, 48, 24));
+        // the ink outline: the far side of a slightly bigger ball (wound inside out, so only it shows)
+        let mut shell = geom::icosphere(BALL_R * 1.045, 3);
+        for t in shell.idx.as_chunks_mut::<3>().0 {
+            t.swap(1, 2);
+        }
+        for v in &mut shell.verts {
+            v.nrm = maths::scale(v.nrm, -1.0);
+        }
+        let outline = add(shell);
+        let disc = add(geom::cylinder(1.0, 0.004, 32));
+        let spill = add(spill_mesh());
+        let proj = add(geom::icosphere(PROJ_R, 2));
+        let glow = add(geom::icosphere(1.0, 2));
+
+        // The same people as the current engine (its seeded crowd), where it puts them, each turned to the
+        // current engine's camera (`camera_keys` at the start) so it reads as the same figure.
+        let sc = cur::Scene::new([[0.0; 3]; 2]);
+        let eye = from_world(interp_keys(&camera_keys(55.0), 0.0, None).pos);
+        let crowd = sc
+            .crowd
+            .iter()
+            .map(|q| {
+                let pos = from_world(q.p);
+                Fan {
+                    pos,
+                    turn: facing(pos, eye),
+                    ht: q.ht as f32,
+                    shirt: q.ci,
+                    ph: q.ph as f32,
+                    side: if q.p[0] < -1.5 {
+                        -1
+                    } else if q.p[0] > 1.5 {
+                        1
+                    } else {
+                        0
+                    },
+                }
+            })
+            .collect();
         Stage {
             floor,
             unit_box,
+            phone,
             canvas,
-            post,
+            skirt,
+            stands,
+            pole,
+            cushion,
             ropes,
             rope_link,
-            fan,
+            person,
             ball,
+            outline,
             disc,
+            spill,
             proj,
+            glow,
             crowd,
+            canvas_map,
+            weave,
+            dimples,
         }
     }
 
@@ -230,118 +548,250 @@ impl Stage {
 
     /// Everything but the balls: the lights, the arena, the stands, the crowd, the LED boards and the ring, with
     /// the arena's reactions of `f.arena` (a quiet arena draws as it always has): the house lights scale the
-    /// ambient, the crowd stands up by `crowd_jump` x 0.25, the LED boards run in the leader's colour, flash in the
-    /// flashing fighter's and pulse on the beat, and a wobbling side's ropes bow.
+    /// ambient, the crowd hops by `crowd_jump` x [`CROWD_JUMP`], the LED boards pulse on the beat and flash in the
+    /// flashing fighter's colour, and a wobbling side's ropes bow.
     pub fn draw_arena(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
         let arena = &f.arena;
-        out.ambient = [AMBIENT * arena.house as f32; 3];
+        let house = arena.house as f32;
+        out.ambient = AMBIENT.map(|a| a * house);
         out.spot = Some(Spot {
-            pos: [0.0, 14.0, 0.0],
-            target: [0.0, 0.0, 0.0],
+            pos: from_world(cur::SPOT),
+            target: from_world(cur::SPOT_AIM),
             colour: SPOT_COLOUR,
-            angle_deg: 22.0,
+            angle_deg: SPOT_ANGLE,
             shadow: true,
         });
         let t = f.t_video as f32;
+        let beat = arena.beat as f32;
+        let col255 = colours.map(srgb255);
+        // LIGHT_RGB = COL / max(COL); CROWD_TINT = 0.78 + 0.42 LIGHT_RGB
+        let light_rgb = col255.map(|c| {
+            let top = c[0].max(c[1]).max(c[2]).max(1.0);
+            c.map(|v| v / top)
+        });
         let toon = Material::toon();
         let matte = Material::matte();
         let put = |out: &mut Scene, mesh, material, model, rgb| {
             out.instances.push(Instance::new(mesh, material, model).coloured(rgb));
         };
 
-        put(out, self.floor, matte, maths::translation([0.0, FLOOR_Y, 0.0]), FLOOR);
-        for (out_dir, along) in SIDES {
-            let yaw = yaw_of(along);
-            for tier in 0..TIERS {
-                let dist = STAND_IN + TIER_DEPTH * (tier as f32 + 0.5);
-                let height = TIER_RISE * (tier + 1) as f32;
-                let len = 2.0 * (STAND_IN + TIER_DEPTH * (tier as f32 + 1.0));
-                let c = maths::add(maths::scale(out_dir, dist), [0.0, FLOOR_Y + height / 2.0, 0.0]);
-                put(
-                    out,
-                    self.unit_box,
-                    matte,
-                    maths::trs(c, yaw, [len, height, TIER_DEPTH]),
-                    STANDS,
-                );
-            }
-            // The LED boards: a chase of the leader's colour along the first tier's front (with no leader, the
-            // first fighter's unless the second has more HP), in the flashing fighter's colour while it flashes.
-            let leader = arena.leader.unwrap_or(if f.snap.hp[0] >= f.snap.hp[1] { 0 } else { 1 });
-            let (board, flash) = match arena.led_flash {
-                Some((who, a)) => (colours[who.min(1)], a as f32),
-                None => (colours[leader.min(1)], 0.0),
-            };
-            let beat = arena.beat as f32;
-            let seg = 2.0 * STAND_IN / LEDS as f32;
-            for i in 0..LEDS {
-                let u = (i as f32 + 0.5) * seg - STAND_IN;
-                let wave = 0.5 + 0.5 * (t * 3.0 - i as f32 * 0.7).sin();
-                let c = maths::add(
-                    maths::add(maths::scale(out_dir, STAND_IN - 0.03), maths::scale(along, u)),
-                    [0.0, FLOOR_Y + TIER_RISE * 0.55, 0.0],
-                );
-                put(
-                    out,
-                    self.unit_box,
-                    Material::Emissive {
-                        strength: (0.6 + 2.4 * wave) * (1.0 + LED_BEAT * beat) + LED_FLASH * flash,
-                    },
-                    maths::trs(c, yaw, [seg * 0.9, 0.3, 0.05]),
-                    board,
-                );
-            }
-        }
+        // The floor, the stands and the crowd.
+        put(out, self.floor, Material::Unlit, maths::IDENTITY, [house; 3]);
+        put(out, self.stands, matte, maths::IDENTITY, [1.0; 3]);
+        let wk = 0.0;
         for fan in &self.crowd {
-            let bob = 0.04 * (t * 2.2 + fan.phase).sin().max(0.0) + CROWD_JUMP * arena.crowd_jump as f32;
+            let tone = match fan.side {
+                -1 => light_rgb[0].map(|v| 0.78 + 0.42 * v),
+                1 => light_rgb[1].map(|v| 0.78 + 0.42 * v),
+                _ => [1.0, 0.92, 1.0],
+            };
+            let shirt = cur::CROWD_COLS[fan.shirt];
+            let body = baked([0, 1, 2].map(|c| (shirt[c] * tone[c] * (SPILL + 0.28 * wk)).clamp(0.0, 255.0)));
+            let bob =
+                0.02 * (t * 2.2 + fan.ph * std::f32::consts::TAU).sin().max(0.0) + CROWD_JUMP * arena.crowd_jump as f32;
             let p = maths::add(fan.pos, [0.0, bob, 0.0]);
-            put(out, self.fan, toon, maths::trs(p, fan.yaw, [1.0; 3]), fan.colour);
+            let mut model = fan.turn;
+            for col in model.iter_mut().take(3) {
+                for c in &mut col[..3] {
+                    *c *= fan.ht;
+                }
+            }
+            model[3] = [p[0], p[1], p[2], 1.0];
+            put(out, self.person, matte, model, body);
+            // phones up, twinkling (the current engine's `ph < 0.07`)
+            if fan.ph < 0.07 {
+                let tw = 0.65 + 0.35 * (std::f32::consts::TAU * (t / (61.0 / 137.0) + fan.ph * 11.0)).sin();
+                let ph = maths::add(p, [0.0, 0.55 * fan.ht + 0.32, 0.0]);
+                put(
+                    out,
+                    self.phone,
+                    Material::Emissive { strength: 1.6 * tw },
+                    maths::mul(
+                        &maths::translation(ph),
+                        &maths::mul(&fan.turn, &maths::trs([0.0; 3], 0.0, [0.06, 0.1, 0.02])),
+                    ),
+                    linear([255.0, 248.0, 226.0]),
+                );
+            }
         }
 
-        // The ring: the canvas, its skirt down to the floor, the posts and the ropes.
-        put(out, self.canvas, matte, maths::IDENTITY, CANVAS);
-        put(
-            out,
-            self.unit_box,
-            matte,
-            maths::trs(
-                [0.0, (FLOOR_Y - 0.01) / 2.0, 0.0],
-                0.0,
-                [2.0 * APRON, -FLOOR_Y - 0.01, 2.0 * APRON],
-            ),
-            SKIRT,
+        // The LED boards: each fighter's colour on its own half, a chase stepping on the beat, brighter on the beat;
+        // in the flashing fighter's colour while it flashes.
+        let step = (t * 2.2).floor();
+        let k = 0.55 + 0.45 * beat;
+        let flash = arena.led_flash.map(|(who, a)| (who.min(1), a as f32));
+        for b in 0..BOARDS {
+            let (a0, a1) = (
+                std::f64::consts::TAU * b as f64 / BOARDS as f64,
+                std::f64::consts::TAU * (b + 1) as f64 / BOARDS as f64,
+            );
+            let am = (a0 + a1) / 2.0;
+            let side = if am.sin() < 0.0 { 0 } else { 1 };
+            let u = (am / std::f64::consts::TAU * 16.0 + f64::from(step)).rem_euclid(4.0);
+            let mut c = col255[side];
+            if u >= 2.0 {
+                c = c.map(|v| v * 0.42 + 40.0);
+            }
+            let mut strength = 1.0;
+            if let Some((who, a)) = flash {
+                c = col255[who];
+                strength += LED_FLASH * a;
+            }
+            // `led_colour`'s pulse, then the board's fill and its top edge as the current engine paints them
+            let c = c.map(|v| v * f64::from(k));
+            let fill = linear(c.map(|v| v * 0.55 + 18.0));
+            let edge = linear(c.map(|v| (v * 0.9 + 60.0).min(255.0)));
+            let r = cur::BARRIER_R;
+            let centre = from_world([r * am.sin(), cur::FLOOR_Y + cur::BARRIER_H / 2.0, -r * am.cos()]);
+            let tangent = from_world([am.cos(), 0.0, am.sin()]);
+            let yaw = yaw_of(tangent);
+            let w = (2.0 * r * (std::f64::consts::PI / BOARDS as f64).sin()) as f32 * 1.01;
+            put(
+                out,
+                self.unit_box,
+                Material::Emissive { strength },
+                maths::trs(centre, yaw, [w, cur::BARRIER_H as f32, 0.05]),
+                fill,
+            );
+            let top = maths::add(centre, [0.0, cur::BARRIER_H as f32 / 2.0, 0.0]);
+            put(
+                out,
+                self.unit_box,
+                Material::Emissive { strength },
+                maths::trs(top, yaw, [w, 0.018, 0.06]),
+                edge,
+            );
+        }
+
+        // The ring: the canvas (its albedo map and woven normal map), the skirt, the posts and the ropes.
+        out.instances.push(
+            Instance::new(self.canvas, matte, maths::IDENTITY).with_surface(Surface {
+                albedo: self.canvas_map,
+                normal: self.weave,
+                uv_scale: 2.0,
+                normal_strength: 0.6,
+                back: None,
+            }),
         );
-        for (k, corner) in [[-1.0, 1.0], [1.0, 1.0], [1.0, -1.0], [-1.0, -1.0]].iter().enumerate() {
-            // Sim (−x, −y) is fighter 0's corner and (+x, +y) fighter 1's; render z is −y.
-            let colour = match k {
-                0 => colours[0],
-                2 => colours[1],
-                _ => POST_NEUTRAL,
+        put(out, self.skirt, matte, maths::IDENTITY, [1.0; 3]);
+        for (c, corner) in cur::CORNERS.iter().enumerate() {
+            let p = [corner[0] as f32, 0.0, corner[1] as f32];
+            put(out, self.pole, toon, maths::translation(p), [1.0; 3]);
+            let colour = match c {
+                cur::RED => lifted(col255[0].map(|v| (v * 0.9).min(255.0))),
+                cur::BLUE => lifted(col255[1].map(|v| (v * 0.9).min(255.0))),
+                _ => lifted(NEUTRAL),
             };
-            let p = [corner[0] * POST, POST_H / 2.0, corner[1] * POST];
-            put(out, self.post, toon, maths::translation(p), colour);
+            for h in ROPE_HEIGHTS {
+                out.instances.push(
+                    Instance::new(self.cushion, toon, maths::translation([p[0], h, p[2]]))
+                        .coloured(colour)
+                        .with_surface(Surface {
+                            normal: self.dimples,
+                            uv_scale: 2.0,
+                            normal_strength: 0.25,
+                            ..Surface::default()
+                        }),
+                );
+            }
+        }
+        // The corner lights over the red and blue posts, in each fighter's light colour, pulsing on the beat, and
+        // their glow.
+        let rk = 1.0 + 0.25 * beat;
+        for (k, corner) in [cur::RED, cur::BLUE].into_iter().enumerate() {
+            let at = [
+                cur::CORNERS[corner][0] as f32,
+                POST_H + 0.35,
+                cur::CORNERS[corner][1] as f32,
+            ];
+            out.lights.push(Light {
+                pos: at,
+                colour: linear(light_rgb[k].map(|v| v * 255.0)).map(|v| v * 0.9 * rk),
+                range: 4.2,
+                priority: 0,
+            });
+            put(
+                out,
+                self.glow,
+                Material::Emissive {
+                    strength: 2.0 * (0.35 + 0.15 * beat),
+                },
+                maths::at_scaled(at, 0.07),
+                colours[k],
+            );
+        }
+        for (k, corner) in [cur::RED, cur::BLUE].into_iter().enumerate() {
+            let c = cur::CORNERS[corner];
+            // The light's spill on the floor, added as the current engine adds it (`floor`: `0.9 x` the light's
+            // colour, `light_rgb x 1.1`, on the arena floor's colour), taken to linear light about the floor's
+            // own light by the ring (0.75): d lin(a x) / dx = 2.2 lin(a x) / x.
+            let colour = [0, 1, 2].map(|j| {
+                let lit = f64::from(linear([cur::ARENA_FLOOR[j] * 0.75; 3])[0]);
+                (2.2 * lit / 0.75 * 0.9 * 1.1 * light_rgb[k][j]) as f32
+            });
+            put(
+                out,
+                self.spill,
+                Material::Additive { strength: rk * house },
+                maths::translation([c[0] as f32, FLOOR_Y + 0.004, c[1] as f32]),
+                colour,
+            );
         }
         for (side, &w) in arena.rope_wobble.iter().enumerate() {
-            if w == 0.0 {
-                put(out, self.ropes[side], toon, maths::IDENTITY, [1.0; 3]);
-                continue;
-            }
-            for h in ROPE_HEIGHTS {
+            let middle = linear(col255[SIDE_FIGHTER[side]].map(|v| v * 0.92)).map(|v| v * ROPE_LIFT);
+            let cream = linear(cur::ROPE_COL[0]).map(|v| v * ROPE_LIFT);
+            for (j, &h) in ROPE_HEIGHTS.iter().enumerate() {
+                let colour = if j == 1 { middle } else { cream };
+                if w == 0.0 {
+                    put(out, self.ropes[side][j], toon, maths::IDENTITY, colour);
+                    continue;
+                }
                 for i in 0..LINKS {
                     let a = rope_at(side, h, i as f32 / LINKS as f32, w as f32);
                     let b = rope_at(side, h, (i + 1) as f32 / LINKS as f32, w as f32);
-                    put(out, self.rope_link, toon, link_model(a, b), [1.0; 3]);
+                    put(out, self.rope_link, toon, link_model(a, b), colour);
                 }
             }
         }
+        // The spot's can at the top of the frame.
+        put(
+            out,
+            self.glow,
+            Material::Emissive { strength: 6.0 },
+            maths::at_scaled(maths::add(from_world(cur::SPOT), [0.0, 0.4, 0.0]), 0.35),
+            linear([255.0, 244.0, 220.0]),
+        );
     }
 
-    /// Each ball's glass shell, tinted in its fighter's colour, and its contact shadow on the canvas.
+    /// Each fighter's ball as the current engine draws it, in glass: the fill behind what it holds (its colour
+    /// 0.3 and the glass 0.7, in four bands of the spot), a near side of clear glass whose rim turns the fighter's
+    /// colour, a faint hammered finish, the ink outline, and its contact shadow on the canvas.
     pub fn draw_balls(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
         for (pos, colour) in f.snap.pos.iter().zip(colours) {
             let c = ball_centre(*pos);
+            let col = srgb255(colour);
+            let tone = linear([0, 1, 2].map(|k| col[k] * 0.30 + GLASS[k] * 0.70));
+            let rim = linear(col.map(|v| (v * 0.9).min(255.0)));
+            out.instances.push(
+                Instance::new(
+                    self.ball,
+                    Material::Glass {
+                        tint: rim,
+                        opacity: 0.06,
+                        fresnel: 0.95,
+                    },
+                    maths::translation(c),
+                )
+                .with_surface(Surface {
+                    normal: self.dimples,
+                    uv_scale: 3.0,
+                    normal_strength: 0.12,
+                    back: Some((tone, 0.88)),
+                    ..Surface::default()
+                }),
+            );
             out.instances
-                .push(Instance::new(self.ball, Material::glass(colour), maths::translation(c)));
+                .push(Instance::new(self.outline, Material::Unlit, maths::translation(c)).coloured(linear(INK)));
             // The contact shadow shrinks and fades as the ball rises.
             let lift = (pos[2] as f32).max(0.0);
             let fade = (1.0 - lift / 2.5).clamp(0.0, 1.0);
@@ -384,17 +834,6 @@ impl Stage {
     pub fn proj_mesh(&self) -> MeshId {
         self.proj
     }
-}
-
-/// A crowd colour: hue 0..1 at a lightness, muted so the ring stays the brightest thing.
-fn hue_colour(h: f32, light: f32) -> [f32; 3] {
-    let k = |n: f32| {
-        let x = (n + h * 6.0) % 6.0;
-        (x - 3.0).abs().clamp(1.0, 2.0) - 1.0
-    };
-    let rgb = [k(5.0), k(3.0), k(1.0)];
-    let grey = 0.55;
-    rgb.map(|c| light * (grey + (1.0 - grey) * c))
 }
 
 #[cfg(test)]

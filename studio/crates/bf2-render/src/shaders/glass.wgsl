@@ -7,11 +7,17 @@
 // brighten whatever is behind).
 
 const GLASS_SHININESS: f32 = 160.0;
+// sqrt(1 - 0.91^2): where a sphere's outer 9 % (the current engine's 2 px rim on a ball) begins.
+const RIM_COS: f32 = 0.415;
 
 @fragment
 fn fs_glass(in: VOut, @builtin(front_facing) front: bool) -> @location(0) vec4<f32> {
-    let maps = read_maps(in);
     let i = instances[in.inst];
+    // Additive (`mat_b.w` 1): its colour added to what is behind, nothing covered.
+    if i.mat_b.w > 0.5 {
+        return vec4<f32>(in.rgb.rgb * i.mat_a.x * in.rgb.a, 0.0);
+    }
+    let maps = read_maps(in);
     let tint = i.mat_a.rgb * in.rgb.rgb;
     let opacity = i.mat_a.w;
     let fresnel_k = i.mat_b.x;
@@ -58,6 +64,11 @@ fn fs_glass(in: VOut, @builtin(front_facing) front: bool) -> @location(0) vec4<f
 // (the outward normal mirrored toward the camera), the spot's light cut into four bands as the current engine's
 // ball fill is.
 fn back_fill(in: VOut, i: InstanceG, n_out: vec3<f32>, v: vec3<f32>) -> vec4<f32> {
+    // The outer 9 % of the disc the ball covers on the screen (|n.v| under 0.42 on a sphere) is the current
+    // engine's rim band: the glass's tint, solid.
+    if abs(dot(n_out, v)) < RIM_COS {
+        return vec4<f32>(i.mat_a.rgb, 1.0);
+    }
     let n = normalize(n_out - 2.0 * dot(n_out, v) * v);
     var light = frame.ambient.rgb;
     let reach = spot_reach(in.world, n);

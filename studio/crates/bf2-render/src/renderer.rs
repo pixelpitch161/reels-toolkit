@@ -82,6 +82,8 @@ impl InstanceG {
                 [fresnel, 0.0, 0.0, 0.0],
             ),
             Material::Emissive { strength } => (KIND_EMISSIVE, 0, [strength, 0.0, 0.0, 0.0], [0.0; 4]),
+            // the glass pass, flagged in `mat_b.w`
+            Material::Additive { strength } => (KIND_GLASS, 0, [strength, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
             Material::Unlit => (KIND_UNLIT, 0, [0.0; 4], [0.0; 4]),
         };
         let sf = &i.surface;
