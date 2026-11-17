@@ -202,7 +202,13 @@ impl FxFrame {
             r_ball: [defs[0].r, defs[1].r],
             step_to_t: &step_to_t,
         };
-        let n = subframes(&src, t, timeline);
+        // the pixel look draws one moment, as the current engine does (no motion blur: its smears are effects);
+        // sub-frames would average into soft in-between tones the hard art pixels cannot hold
+        let n = if self.post.pixel > 1 {
+            1
+        } else {
+            subframes(&src, t, timeline)
+        };
         let times = shutter_times(t, n);
         let mut idx = Vec::new();
         let mut subs = Vec::with_capacity(times.len());
