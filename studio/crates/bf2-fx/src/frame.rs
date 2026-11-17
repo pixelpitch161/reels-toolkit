@@ -4,7 +4,8 @@
 //! effect timeline: it lives here because `bf2-render` cannot know `bf2-fx`'s records.
 
 use bf_picture::img::Rgb8;
-use bf2_render::{FightFrame, FxCtx, FxPass, Gpu, Look2, Post, Renderer, Stage, frame_at_time, scene_at};
+use bf2_direct::{ArenaFrame, ArenaTrack, CameraTrack, TimeMap};
+use bf2_render::{Camera, FightFrame, FxCtx, FxPass, Gpu, Look2, Post, Renderer, Stage, frame_at_time, scene_at};
 use bf2_sim::{FighterDef, Pose, Recording2, solve};
 
 use crate::decal::Decals;
@@ -58,6 +59,59 @@ pub fn resolve(a: &Anchor, f: &FightFrame<'_>, defs: [&FighterDef; 2]) -> [f64; 
     }
 }
 
+/// What the director decided for a fight, as a frame reads it: the time map, and the camera and arena tracks
+/// when there are any (without a camera track the frame keeps the default ring camera and the effects' shake;
+/// without an arena track the arena is quiet).
+#[derive(Clone, Copy, Debug)]
+pub struct Direction<'a> {
+    pub map: &'a TimeMap,
+    pub camera: Option<&'a CameraTrack>,
+    pub arena: Option<&'a ArenaTrack>,
+}
+
+impl<'a> Direction<'a> {
+    /// Only the time map: the default camera and a quiet arena.
+    pub fn time_only(map: &'a TimeMap) -> Direction<'a> {
+        Direction {
+            map,
+            camera: None,
+            arena: None,
+        }
+    }
+
+    /// The arena of the video frame nearest `t` (video seconds).
+    pub fn arena_at(&self, t: f64) -> Option<ArenaFrame> {
+        let frames = &self.arena?.frames;
+        let last = frames.len().checked_sub(1)?;
+        let f = (t * bf2_render::fight_frame::FPS).round().clamp(0.0, last as f64) as usize;
+        Some(frames[f])
+    }
+}
+
+/// The director's camera at video time `t` (any time, for sub-frames): its poses and shake interpolated between
+/// the two video frames around `t`, the shake (pixels of the 1080 x 1920 picture) applied as a sideways slide.
+/// `None` without a camera track.
+pub fn camera_at(dir: &Direction<'_>, t: f64) -> Option<Camera> {
+    let track = dir.camera?;
+    let last = track.poses.len().checked_sub(1)?;
+    let x = (t * bf2_render::fight_frame::FPS).clamp(0.0, last as f64);
+    let i = (x.floor() as usize).min(last);
+    let j = (i + 1).min(last);
+    let a = x - i as f64;
+    let (p, q) = (track.poses[i], track.poses[j]);
+    let l = |u: f64, v: f64| u + (v - u) * a;
+    let l3 = |u: [f64; 3], v: [f64; 3]| [l(u[0], v[0]), l(u[1], v[1]), l(u[2], v[2])];
+    let pose = bf2_direct::CamPose {
+        eye: l3(p.eye, q.eye),
+        target: l3(p.target, q.target),
+        roll: l(p.roll, q.roll),
+        fov_deg: l(p.fov_deg, q.fov_deg),
+    };
+    let shake = |k: usize| track.shake.get(k).copied().unwrap_or([0.0; 2]);
+    let (s, u) = (shake(i), shake(j));
+    Some(Camera::from(pose).shifted_px(l(s[0], u[0]), l(s[1], u[1]), bf2_direct::project::H))
+}
+
 /// The effect passes, built once.
 pub struct FxFrame {
     pub particles: Particles,
@@ -109,7 +163,10 @@ impl FxFrame {
         }
     }
 
-    /// Video frame `f` (at `f / 30` s) of the fight in `rec` with the effects of `timeline`, at `w x h`.
+    /// Video frame `f` (at `f / 30` s) of the fight in `rec` as `dir` directs it (the time map, and the
+    /// director's camera, shake and arena when it has them), with the effects of `timeline` (whose records are in
+    /// video time, from `map.step_video_t`), at `w x h`. With the director's camera, the shake is the director's
+    /// alone: the effects' own shake records are not added on top.
     #[allow(clippy::too_many_arguments)]
     pub fn render(
         &mut self,
@@ -119,13 +176,15 @@ impl FxFrame {
         looks: &[Box<dyn Look2>; 2],
         defs: [&FighterDef; 2],
         rec: &Recording2,
+        dir: &Direction<'_>,
         timeline: &FxTimeline,
         colours: [[f32; 3]; 2],
         f: usize,
         size: (u32, u32),
     ) -> Rgb8 {
         let t = f as f64 / bf2_render::fight_frame::FPS;
-        let step_to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+        let map = dir.map;
+        let step_to_t = |s: u32| map.step_video_t(s);
         let src = TrailSource {
             rec,
             rigs: [&defs[0].rig, &defs[1].rig],
@@ -140,7 +199,10 @@ impl FxFrame {
         for &ts in &times {
             idx.clear();
             timeline.active(ts, &mut idx);
-            let frame = frame_at_time(rec, ts);
+            let mut frame = frame_at_time(rec, map, ts);
+            if let Some(a) = dir.arena_at(ts) {
+                frame.arena = a;
+            }
             let recs: Vec<(&FxRecord, [f64; 3])> = idx
                 .iter()
                 .map(|&i| {
@@ -150,7 +212,10 @@ impl FxFrame {
                 .collect();
             let mut scene = scene_at(stage, looks, &frame, colours);
             let plain: Vec<&FxRecord> = recs.iter().map(|(r, _)| *r).collect();
-            scene.camera = shake_camera(&scene.camera, &plain, ts);
+            scene.camera = match camera_at(dir, ts) {
+                Some(c) => c,
+                None => shake_camera(&scene.camera, &plain, ts),
+            };
             lights_for(ts, &recs, &mut scene.lights);
             scenes.push(scene);
             subs.push(Sub { t: ts, recs, frame });
@@ -158,7 +223,7 @@ impl FxFrame {
         // The screen chain reads the frame's own time.
         idx.clear();
         timeline.active(t, &mut idx);
-        let mid = frame_at_time(rec, t);
+        let mid = frame_at_time(rec, map, t);
         let now: Vec<(&FxRecord, [f64; 3])> = idx
             .iter()
             .map(|&i| {

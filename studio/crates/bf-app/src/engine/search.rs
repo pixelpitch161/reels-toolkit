@@ -624,6 +624,7 @@ mod tests {
             paths: Paths::under(root),
             clip: None,
             search_limit: limit,
+            dev: false,
         };
         (crate::engine::spawn(waker.clone(), config), waker)
     }

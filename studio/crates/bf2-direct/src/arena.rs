@@ -29,6 +29,20 @@ pub struct ArenaFrame {
     pub house: f64,
 }
 
+impl Default for ArenaFrame {
+    /// A quiet arena: still ropes, a seated crowd, no flash, no leader, no beat, the house lights up.
+    fn default() -> Self {
+        ArenaFrame {
+            rope_wobble: [0.0; 4],
+            crowd_jump: 0.0,
+            led_flash: None,
+            leader: None,
+            beat: 0.0,
+            house: 1.0,
+        }
+    }
+}
+
 /// The arena of every frame.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ArenaTrack {

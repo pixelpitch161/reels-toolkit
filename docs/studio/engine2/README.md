@@ -38,7 +38,7 @@ GPU rendering, heavy particles, dramatic lighting, camera work and time control.
 | E1 | Fight engine core | done (the PC speed run comes with E2's PC session) |
 | E2 | Renderer core | not started |
 | E3 | Effects toolkit, then a clip for Aedan's review | not started |
-| E4 | Director and time | not started |
+| E4 | Director and time: `bf2-direct` (time map, camera director, arena reactions) wired into the render job; `bf_engine::ko_video_t` for the K.O. window in video time | done |
 | E5 | Sound and music on the time map; HUD, captions and VS card. Then a full video for Aedan's review | not started |
 | E6 | App integration and the fighter guide | not started |
 | F1..F40 | One session per fighter | not started |

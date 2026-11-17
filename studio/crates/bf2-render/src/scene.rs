@@ -168,6 +168,40 @@ impl Camera {
     }
 }
 
+impl From<bf2_direct::CamPose> for Camera {
+    /// The director's pose (render space, `f64`) as the renderer's camera.
+    fn from(c: bf2_direct::CamPose) -> Camera {
+        let v = |p: [f64; 3]| p.map(|x| x as f32);
+        Camera {
+            eye: v(c.eye),
+            target: v(c.target),
+            roll: c.roll as f32,
+            fov_deg: c.fov_deg as f32,
+        }
+    }
+}
+
+impl Camera {
+    /// The camera slid sideways so the picture moves by `(dx, dy)` pixels of an `h` pixel high frame at the
+    /// target's distance (x right, y down): the director's shake.
+    pub fn shifted_px(&self, dx: f64, dy: f64, h: f64) -> Camera {
+        let view = self.view();
+        let row = |r: usize| [view[0][r], view[1][r], view[2][r]];
+        let dist = maths::length(maths::sub(self.target, self.eye));
+        let per_px = 2.0 * dist * (self.fov_deg.to_radians() / 2.0).tan() / h as f32;
+        // The picture moves right when the camera moves left, and down when it moves up.
+        let off = maths::add(
+            maths::scale(row(0), -(dx as f32) * per_px),
+            maths::scale(row(1), dy as f32 * per_px),
+        );
+        Camera {
+            eye: maths::add(self.eye, off),
+            target: maths::add(self.target, off),
+            ..*self
+        }
+    }
+}
+
 /// One frame.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scene {
@@ -216,6 +250,29 @@ impl Scene {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shifted_px_moves_the_picture_by_pixels() {
+        let c = Camera::default_ring();
+        let p = [0.0, 0.0, 0.0];
+        let a = c.project(p, 1080, 1920).unwrap();
+        let b = c.shifted_px(12.0, -7.0, 1920.0).project(p, 1080, 1920).unwrap();
+        assert!(
+            (b[0] - a[0] - 12.0).abs() < 0.05 && (b[1] - a[1] + 7.0).abs() < 0.05,
+            "{a:?} -> {b:?}"
+        );
+        let pose = bf2_direct::CamPose {
+            eye: [1.0, 2.0, 3.0],
+            target: [0.0, 0.5, 0.0],
+            roll: 0.1,
+            fov_deg: 30.0,
+        };
+        let cam = Camera::from(pose);
+        assert_eq!(
+            (cam.eye, cam.target, cam.roll, cam.fov_deg),
+            ([1.0, 2.0, 3.0], [0.0, 0.5, 0.0], 0.1, 30.0)
+        );
+    }
 
     #[test]
     fn to_render_swaps_axes() {

@@ -37,6 +37,11 @@ const SEAT_GAP: f32 = 0.55;
 /// LED board segments per side, on the front of the first tier.
 const LEDS: usize = 16;
 const PROJ_R: f32 = 0.15;
+/// The arena's reactions: how far the crowd stands up at a full jump, how much brighter the LED boards are on the
+/// beat (a share) and at a full flash (added strength).
+const CROWD_JUMP: f32 = 0.25;
+const LED_BEAT: f32 = 0.5;
+const LED_FLASH: f32 = 3.0;
 
 const CANVAS: [f32; 3] = [0.075, 0.08, 0.1];
 const SKIRT: [f32; 3] = [0.05, 0.06, 0.1];
@@ -64,7 +69,10 @@ pub struct Stage {
     unit_box: MeshId,
     canvas: MeshId,
     post: MeshId,
-    ropes: MeshId,
+    /// Each side's ropes hanging still, in [`SIDES`] order.
+    ropes: [MeshId; 4],
+    /// One capsule of rope from the origin to +X, for ropes that wobble.
+    rope_link: MeshId,
     fan: MeshId,
     ball: MeshId,
     disc: MeshId,
@@ -99,23 +107,52 @@ fn yaw_of(along: V3) -> f32 {
     (-along[2]).atan2(along[0])
 }
 
-/// Three ropes a side, each a chain of capsules sagging between the posts.
-fn ropes_mesh() -> MeshData {
-    const LINKS: usize = 8;
+/// Capsules per rope.
+const LINKS: usize = 8;
+
+/// Where a rope of side `side` at height `h` is at share `s` (0 to 1) of its length, bowed out by `wobble` in the
+/// middle (outward positive; the posts hold its ends).
+fn rope_at(side: usize, h: f32, s: f32, wobble: f32) -> V3 {
+    let (out, along) = SIDES[side];
+    let bow = POST + wobble * (std::f32::consts::PI * s).sin();
+    let base = maths::add(maths::scale(out, bow), maths::scale(along, (2.0 * s - 1.0) * POST));
+    maths::add(base, [0.0, h - ROPE_SAG * 4.0 * s * (1.0 - s), 0.0])
+}
+
+/// One side's three ropes, each a chain of capsules sagging between the posts.
+fn ropes_mesh(side: usize) -> MeshData {
     let mut m = MeshData::default();
-    for (out, along) in SIDES {
-        for h in ROPE_HEIGHTS {
-            let at = |s: f32| {
-                let base = maths::add(maths::scale(out, POST), maths::scale(along, (2.0 * s - 1.0) * POST));
-                maths::add(base, [0.0, h - ROPE_SAG * 4.0 * s * (1.0 - s), 0.0])
-            };
-            for i in 0..LINKS {
-                let (a, b) = (at(i as f32 / LINKS as f32), at((i + 1) as f32 / LINKS as f32));
-                m.append(&geom::capsule(a, b, ROPE_R, 8));
-            }
+    for h in ROPE_HEIGHTS {
+        for i in 0..LINKS {
+            let (a, b) = (
+                rope_at(side, h, i as f32 / LINKS as f32, 0.0),
+                rope_at(side, h, (i + 1) as f32 / LINKS as f32, 0.0),
+            );
+            m.append(&geom::capsule(a, b, ROPE_R, 8));
         }
     }
     m.painted(ROPE, 0.3)
+}
+
+/// The model that takes the unit link (a capsule from the origin to +X) to the segment `a`→`b`: stretched along
+/// its length, its radius kept.
+fn link_model(a: V3, b: V3) -> maths::M4 {
+    let d = maths::sub(b, a);
+    let x = maths::normalize(d);
+    // A rope runs mostly level, so its second axis is level too (or up, for a link along Z).
+    let side = maths::cross([0.0, 1.0, 0.0], x);
+    let y = if maths::length(side) < 1e-4 {
+        [1.0, 0.0, 0.0]
+    } else {
+        maths::cross(x, maths::normalize(side))
+    };
+    let z = maths::cross(x, y);
+    [
+        [d[0], d[1], d[2], 0.0],
+        [y[0], y[1], y[2], 0.0],
+        [z[0], z[1], z[2], 0.0],
+        [a[0], a[1], a[2], 1.0],
+    ]
 }
 
 /// A low-poly fan: a body and a head, standing on y = 0.
@@ -136,7 +173,8 @@ impl Stage {
         let unit_box = add(geom::box_([1.0, 1.0, 1.0]));
         let canvas = add(geom::plane(2.0 * APRON, 2.0 * APRON).painted([1.0; 3], 0.0));
         let post = add(geom::cylinder(0.11, POST_H, 12).painted([1.0; 3], 0.6));
-        let ropes = add(ropes_mesh());
+        let ropes = [0, 1, 2, 3].map(|side| add(ropes_mesh(side)));
+        let rope_link = add(geom::capsule([0.0; 3], [1.0, 0.0, 0.0], ROPE_R, 8).painted(ROPE, 0.3));
         let fan = add(fan_mesh());
         let ball = add(geom::icosphere(BALL_R, 3));
         let disc = add(geom::cylinder(1.0, 0.004, 32));
@@ -174,6 +212,7 @@ impl Stage {
             canvas,
             post,
             ropes,
+            rope_link,
             fan,
             ball,
             disc,
@@ -189,9 +228,13 @@ impl Stage {
         self.draw_balls(f, colours, out);
     }
 
-    /// Everything but the balls: the lights, the arena, the stands, the crowd, the LED boards and the ring.
+    /// Everything but the balls: the lights, the arena, the stands, the crowd, the LED boards and the ring, with
+    /// the arena's reactions of `f.arena` (a quiet arena draws as it always has): the house lights scale the
+    /// ambient, the crowd stands up by `crowd_jump` x 0.25, the LED boards run in the leader's colour, flash in the
+    /// flashing fighter's and pulse on the beat, and a wobbling side's ropes bow.
     pub fn draw_arena(&self, f: &FightFrame<'_>, colours: [[f32; 3]; 2], out: &mut Scene) {
-        out.ambient = [AMBIENT; 3];
+        let arena = &f.arena;
+        out.ambient = [AMBIENT * arena.house as f32; 3];
         out.spot = Some(Spot {
             pos: [0.0, 14.0, 0.0],
             target: [0.0, 0.0, 0.0],
@@ -222,12 +265,14 @@ impl Stage {
                     STANDS,
                 );
             }
-            // The LED boards: a chase of the leader's colour along the first tier's front.
-            let leader = if f.snap.hp[0] >= f.snap.hp[1] {
-                colours[0]
-            } else {
-                colours[1]
+            // The LED boards: a chase of the leader's colour along the first tier's front (with no leader, the
+            // first fighter's unless the second has more HP), in the flashing fighter's colour while it flashes.
+            let leader = arena.leader.unwrap_or(if f.snap.hp[0] >= f.snap.hp[1] { 0 } else { 1 });
+            let (board, flash) = match arena.led_flash {
+                Some((who, a)) => (colours[who.min(1)], a as f32),
+                None => (colours[leader.min(1)], 0.0),
             };
+            let beat = arena.beat as f32;
             let seg = 2.0 * STAND_IN / LEDS as f32;
             for i in 0..LEDS {
                 let u = (i as f32 + 0.5) * seg - STAND_IN;
@@ -240,15 +285,15 @@ impl Stage {
                     out,
                     self.unit_box,
                     Material::Emissive {
-                        strength: 0.6 + 2.4 * wave,
+                        strength: (0.6 + 2.4 * wave) * (1.0 + LED_BEAT * beat) + LED_FLASH * flash,
                     },
                     maths::trs(c, yaw, [seg * 0.9, 0.3, 0.05]),
-                    leader,
+                    board,
                 );
             }
         }
         for fan in &self.crowd {
-            let bob = 0.04 * (t * 2.2 + fan.phase).sin().max(0.0);
+            let bob = 0.04 * (t * 2.2 + fan.phase).sin().max(0.0) + CROWD_JUMP * arena.crowd_jump as f32;
             let p = maths::add(fan.pos, [0.0, bob, 0.0]);
             put(out, self.fan, toon, maths::trs(p, fan.yaw, [1.0; 3]), fan.colour);
         }
@@ -276,7 +321,19 @@ impl Stage {
             let p = [corner[0] * POST, POST_H / 2.0, corner[1] * POST];
             put(out, self.post, toon, maths::translation(p), colour);
         }
-        put(out, self.ropes, toon, maths::IDENTITY, [1.0; 3]);
+        for (side, &w) in arena.rope_wobble.iter().enumerate() {
+            if w == 0.0 {
+                put(out, self.ropes[side], toon, maths::IDENTITY, [1.0; 3]);
+                continue;
+            }
+            for h in ROPE_HEIGHTS {
+                for i in 0..LINKS {
+                    let a = rope_at(side, h, i as f32 / LINKS as f32, w as f32);
+                    let b = rope_at(side, h, (i + 1) as f32 / LINKS as f32, w as f32);
+                    put(out, self.rope_link, toon, link_model(a, b), [1.0; 3]);
+                }
+            }
+        }
     }
 
     /// Each ball's glass shell, tinted in its fighter's colour, and its contact shadow on the canvas.

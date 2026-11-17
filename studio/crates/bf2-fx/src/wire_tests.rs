@@ -150,7 +150,9 @@ impl bf2_render::Look2 for NoLook {
 fn a_wired_hit_lights_its_frame() {
     use crate::frame::FxFrame;
     let (rec, f) = fight();
-    let to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+    let map = bf2_direct::TimeMap::from_recording(&rec, &bf2_direct::DirectCfg::default());
+    let dir = crate::frame::Direction::time_only(&map);
+    let to_t = |s: u32| map.step_video_t(s);
     let mut tl = FxTimeline::new();
     wire(&rec, [&f, &f], [[1.0, 0.5, 0.2], [0.2, 0.5, 1.0]], &to_t, &mut tl).unwrap();
     let first = rec
@@ -166,7 +168,19 @@ fn a_wired_hit_lights_its_frame() {
     let mut fx = FxFrame::new(&gpu, &r);
     let colours = [[1.0, 0.5, 0.2], [0.2, 0.5, 1.0]];
     let size = (270, 480);
-    let lit = fx.render(&mut r, &gpu, &stage, &looks, [&f, &f], &rec, &tl, colours, frame, size);
+    let lit = fx.render(
+        &mut r,
+        &gpu,
+        &stage,
+        &looks,
+        [&f, &f],
+        &rec,
+        &dir,
+        &tl,
+        colours,
+        frame,
+        size,
+    );
     let bare = fx.render(
         &mut r,
         &gpu,
@@ -174,6 +188,7 @@ fn a_wired_hit_lights_its_frame() {
         &looks,
         [&f, &f],
         &rec,
+        &dir,
         &FxTimeline::new(),
         colours,
         frame,
@@ -188,6 +203,18 @@ fn a_wired_hit_lights_its_frame() {
         sum(&bare)
     );
     // Stateless: the same frame again is the same picture.
-    let again = fx.render(&mut r, &gpu, &stage, &looks, [&f, &f], &rec, &tl, colours, frame, size);
+    let again = fx.render(
+        &mut r,
+        &gpu,
+        &stage,
+        &looks,
+        [&f, &f],
+        &rec,
+        &dir,
+        &tl,
+        colours,
+        frame,
+        size,
+    );
     assert!(again.data == lit.data);
 }

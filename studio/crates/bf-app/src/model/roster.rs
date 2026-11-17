@@ -81,6 +81,10 @@ pub struct RosterEntry {
     pub traits: Vec<String>,
     /// 1 heavy and stately to 3 fast and bright, for the recommended tempo; 0 when the app knows none.
     pub energy: u8,
+    /// The engines it fights on (`bf_content::engines_dev` with the start-up developer switch): the current engine
+    /// for every offered fighter, Engine 2 too for a moved one, only Engine 2 for the TEST DUMMY; none for a roster
+    /// fighter not offered yet.
+    pub engines: Vec<bf_core::Engine>,
 }
 
 /// A fighter's home config, as far as a new match-up needs it (milestone 3 Task 59: its newest kit config).
@@ -295,6 +299,14 @@ pub const RECOMMENDED: usize = 3;
 const HOME_BONUS: u32 = 100;
 
 impl Roster {
+    /// The fighters offered on `engine` (available, and `engine` is one of theirs), in the roster's order.
+    pub fn offered(&self, engine: bf_core::Engine) -> Vec<&RosterEntry> {
+        self.fighters
+            .iter()
+            .filter(|f| f.available && f.engines.contains(&engine))
+            .collect()
+    }
+
     /// The themes the pair `fighters` may be set in, grouped as the picker lists them: [`CATEGORIES`] in order, then
     /// [`OTHER`], each with its themes in the roster's order. Groups with no theme are left out.
     pub fn grouped(&self, fighters: &[String; 2]) -> Vec<(String, Vec<&ThemeEntry>)> {

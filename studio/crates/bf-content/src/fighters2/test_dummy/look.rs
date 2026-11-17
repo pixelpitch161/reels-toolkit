@@ -71,8 +71,8 @@ fn along(a: V3, b: V3, r: f32) -> M4 {
 
 /// Turn by `yaw` about Y, then by `roll` about the turned Z, then box `size`, about `o` (render space).
 fn boxed(o: V3, yaw: f32, roll: f32, offset: V3, size: V3) -> M4 {
-    let (sy, cy) = yaw.sin_cos();
-    let (sr, cr) = roll.sin_cos();
+    let (sy, cy) = (bf_core::dmath::sinf(yaw), bf_core::dmath::cosf(yaw));
+    let (sr, cr) = (bf_core::dmath::sinf(roll), bf_core::dmath::cosf(roll));
     // The facing frame: X toward the facing, Z across it.
     let fx = [cy, 0.0, -sy];
     let fz = [sy, 0.0, cy];
@@ -182,7 +182,7 @@ impl Look2 for DummyLook {
             )
             .coloured([0.85, 0.82, 0.74]),
         );
-        let tick = (std::f64::consts::TAU * 1.1 * f.t_video).sin() as f32 * 0.45;
+        let tick = bf_core::dmath::sin(std::f64::consts::TAU * 1.1 * f.t_video) as f32 * 0.45;
         let pivot = [base[0], base[1] + 0.12, base[2]];
         out.instances.push(
             Instance::new(

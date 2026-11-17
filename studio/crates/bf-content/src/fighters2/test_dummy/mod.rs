@@ -8,8 +8,10 @@
 //! recovery (follow-through) before it settles at rest. Key times are shares of the whole move; the phase
 //! boundaries are noted beside each move.
 
+pub mod card;
 pub mod look;
 pub mod sound;
+pub mod starter;
 
 use bf2_sim::{
     Bone, Brain, Choice, Cue, CueAt, Ease, FighterDef, Grab, HitDef, Joint, Key, MoveDef, Phase, ProjDef, Rig, Spawn,

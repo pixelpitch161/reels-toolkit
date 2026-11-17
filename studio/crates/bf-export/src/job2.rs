@@ -24,8 +24,9 @@ use bf_core::fightfile::FightFile;
 use bf_picture::config::{FPS, NF};
 use bf_sound::NA;
 use bf_sound::wav::wav16_bytes;
+use bf2_direct::{ArenaTrack, CameraTrack, DirectCfg, TimeMap};
 use bf2_fx::FxTimeline;
-use bf2_fx::frame::FxFrame;
+use bf2_fx::frame::{Direction, FxFrame};
 use bf2_render::{Gpu, Look2, Renderer, Stage};
 use bf2_sim::Recording2;
 
@@ -49,10 +50,11 @@ const ADVISORY: [&str; 2] = ["mp4_loop_picture", "mp4_loop_audio"];
 /// The finished file's checks not run on Engine 2 at all (no flash cap on Engine 2, Aedan 2026-11-17).
 const NOT_RUN: [&str; 1] = ["mp4_flash"];
 
-/// The K.O. window: a K.O. after the fight starts and by [`KO_BY`].
-pub fn ko_window(rec: &Recording2) -> CheckResult {
+/// The K.O. window, in video time (after slow-mo, `map.ko_video_t`): a K.O. after the fight starts and by
+/// [`KO_BY`].
+pub fn ko_window(rec: &Recording2, map: &TimeMap) -> CheckResult {
     const TITLE: &str = "K.O. window";
-    match rec.outcome.t_ko {
+    match rec.outcome.t_ko.and(map.ko_video_t()) {
         Some(t) if t >= rec.t_fight && t <= KO_BY => CheckResult::new(
             "ko_window",
             true,
@@ -76,6 +78,35 @@ pub fn ko_window(rec: &Recording2) -> CheckResult {
     }
 }
 
+/// What the director made of a fight, once per job: the time map, the camera of every frame and the arena's
+/// reactions.
+pub struct Directed {
+    pub map: TimeMap,
+    pub camera: CameraTrack,
+    pub arena: ArenaTrack,
+}
+
+impl Directed {
+    /// As a frame reads it.
+    pub fn direction(&self) -> Direction<'_> {
+        Direction {
+            map: &self.map,
+            camera: Some(&self.camera),
+            arena: Some(&self.arena),
+        }
+    }
+}
+
+/// Directs the fight `rec` of `ff` with the default numbers: the time map, then the camera and the arena (the
+/// beat on the file's tempo grid).
+pub fn direct(ff: &FightFile, rec: &Recording2) -> Directed {
+    let cfg = DirectCfg::default();
+    let map = TimeMap::from_recording(rec, &cfg);
+    let camera = CameraTrack::build(rec, &map, &cfg);
+    let arena = ArenaTrack::build(rec, &map, ff.grid().bpm, &cfg);
+    Directed { map, camera, arena }
+}
+
 fn fx_error(what: &str, e: &bf2_fx::FxError) -> ExportError {
     ExportError::Content(format!(
         "The effects of {what} could not be made ({}), so nothing was saved; this is a fault in the app, not in your \
@@ -86,7 +117,7 @@ fn fx_error(what: &str, e: &bf2_fx::FxError) -> ExportError {
 
 /// A fighter's colour (sRGB bytes) in linear light.
 pub fn linear(c: [u8; 3]) -> [f32; 3] {
-    c.map(|v| (f32::from(v) / 255.0).powf(2.2))
+    c.map(|v| bf_core::dmath::powf(f32::from(v) / 255.0, 2.2))
 }
 
 /// Renders the Engine 2 fight `ff` from its recording `rec` into a new folder under `opts.out_root`, with the
@@ -124,7 +155,10 @@ pub fn run_job2(
     let mut defs = Vec::new();
     let mut colours = [[0.0; 3]; 2];
     let mut timeline = FxTimeline::new();
-    let step_to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+    // Directed once for the whole job: the frames, the effects (in video time), the camera and the arena read it.
+    let directed = direct(ff, &rec);
+    let map = &directed.map;
+    let step_to_t = |s: u32| map.step_video_t(s);
     for (k, name) in names.iter().enumerate() {
         let (Some(def), Some(look), Some(fx)) = (fighters2::def(name), fighters2::look(name), fighters2::look_fx(name))
         else {
@@ -185,6 +219,7 @@ pub fn run_job2(
     let job = Job2 {
         ff,
         rec: &rec,
+        directed: &directed,
         looks,
         defs,
         timeline,
@@ -213,6 +248,7 @@ pub fn run_job2(
 struct Job2<'a> {
     ff: &'a FightFile,
     rec: &'a Recording2,
+    directed: &'a Directed,
     looks: [Box<dyn Look2>; 2],
     defs: [Arc<bf2_sim::FighterDef>; 2],
     timeline: FxTimeline,
@@ -252,7 +288,7 @@ impl Job2<'_> {
         stop()?;
         if self.whole {
             on(JobEvent::Stage(stage::CHECKS));
-            report2(vec![ko_window(self.rec)], on)?;
+            report2(vec![ko_window(self.rec, &self.directed.map)], on)?;
             stop()?;
         }
 
@@ -270,8 +306,13 @@ impl Job2<'_> {
         let mut fx = FxFrame::new(&gpu, &r);
         let defs = [&*self.defs[0], &*self.defs[1]];
         let (looks, timeline, colours, rec) = (&self.looks, &self.timeline, self.colours, self.rec);
+        let dir = self.directed.direction();
         let size = (W2 as u32, H2 as u32);
-        let mut draw = |f: usize| fx.render(&mut r, &gpu, &stage_set, looks, defs, rec, timeline, colours, f, size);
+        let mut draw = |f: usize| {
+            fx.render(
+                &mut r, &gpu, &stage_set, looks, defs, rec, &dir, timeline, colours, f, size,
+            )
+        };
 
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);
@@ -313,12 +354,13 @@ impl Job2<'_> {
             tmp.write(ENCODING_NOTE, note.as_bytes())?;
         }
         if self.whole {
-            // The cover: the K.O. frame (E4's director picks a better one).
+            // The cover: the first frame of the K.O. freeze, in video time.
             let f = self
-                .rec
-                .outcome
-                .t_ko
-                .map_or(NF / 2, |t| ((t * f64::from(FPS)).round() as usize).min(NF - 1));
+                .directed
+                .map
+                .ko_video_t()
+                .filter(|_| self.rec.outcome.t_ko.is_some())
+                .map_or(NF / 2, |t| ((t * f64::from(FPS)).ceil() as usize).min(NF - 1));
             let cover = draw(f);
             tmp.write("cover.png", &png_bytes(&cover))?;
             tmp.write("caption.txt", caption_text(self.ff).as_bytes())?;
@@ -326,5 +368,53 @@ impl Job2<'_> {
             tmp.write(&format!("{name}.toml"), self.ff.to_toml().as_bytes())?;
         }
         stop()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dummy() -> (FightFile, Recording2) {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fights/engine2/test_dummy.toml");
+        let ff = FightFile::parse(&std::fs::read_to_string(path).unwrap()).expect("the dummy's file parses");
+        let def = |k: usize| fighters2::def(&ff.fighters[k]).expect("an Engine 2 fighter");
+        let mut rules = bf2_sim::Rules2::new(ff.grid().t_fight);
+        rules.dmg_scale = ff.dmg_scale;
+        let setup = bf2_sim::Setup2 {
+            fighters: [def(0), def(1)],
+            rules,
+            seed: ff.seed.expect("the file names its seed"),
+        };
+        (ff, bf2_sim::run(&setup, true).expect("the dummy fights"))
+    }
+
+    #[test]
+    fn engine2_job_uses_the_director() {
+        let (ff, rec) = dummy();
+        let d = direct(&ff, &rec);
+        let dir = d.direction();
+        // Frame 30 of the 60-frame test clip (frames 600 to 660, as `tests/job2.rs` renders).
+        let t = 630.0 / f64::from(FPS);
+        let cam = bf2_fx::frame::camera_at(&dir, t).expect("the director's camera");
+        assert_ne!(cam, bf2_render::Camera::default_ring());
+        let pose = d.camera.poses[630];
+        assert!((f64::from(cam.fov_deg) - pose.fov_deg).abs() < 1e-4);
+        assert_eq!(dir.arena_at(t), Some(d.arena.frames[630]));
+        assert_eq!(
+            d.map.ko_video_t(),
+            TimeMap::from_recording(&rec, &DirectCfg::default()).ko_video_t()
+        );
+    }
+
+    #[test]
+    fn ko_window_is_in_video_time() {
+        let (ff, rec) = dummy();
+        let d = direct(&ff, &rec);
+        let r = ko_window(&rec, &d.map);
+        let t = d.map.ko_video_t().expect("the dummy's seed K.O.s");
+        assert!(r.pass, "{}", r.summary);
+        assert!(t >= rec.outcome.t_ko.unwrap());
+        assert!(r.summary.contains(&format!("{t:.2}")), "{}", r.summary);
     }
 }

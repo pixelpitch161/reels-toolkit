@@ -208,6 +208,7 @@ pub fn roster() -> Roster {
                 parts: Vec::new(),
                 traits: Vec::new(),
                 energy: 0,
+                engines: vec![bf_core::Engine::One],
                 name,
             }
         })
