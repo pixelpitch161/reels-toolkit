@@ -207,7 +207,8 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
         captions: caption_texts(&ff.captions),
         captions_edited: true,
         arrangement: None,
-        look: None,
+        // a saved file keeps its own look (a file that names none is Classic)
+        look: Some(ff.picture.look.clone()),
         pinned: None,
         base: Some(toml.to_string()),
         fighters,
