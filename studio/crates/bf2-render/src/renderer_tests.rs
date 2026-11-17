@@ -38,6 +38,7 @@ fn toon_sphere_has_banded_shading() {
     let (gpu, mut r) = setup();
     let ball = r.meshes.add(&gpu, geom::icosphere(1.0, 4));
     let scene = Scene {
+        beam: None,
         camera: camera([0.0, 0.0, 6.0], [0.0; 3]),
         ambient: [0.05; 3],
         spot: None,
@@ -73,6 +74,7 @@ fn toon_sphere_has_banded_shading() {
 fn floor_scene(r: &mut Renderer, gpu: &Gpu) -> Scene {
     let floor = r.meshes.add(gpu, geom::plane(40.0, 40.0));
     Scene {
+        beam: None,
         camera: Camera::default_ring(),
         ambient: [0.1; 3],
         instances: vec![Instance::new(floor, Material::toon(), maths::IDENTITY)],
@@ -312,7 +314,8 @@ fn normal_map_breaks_up_the_light() {
         r.render_sized(&gpu, scene, &Post::default(), TW, TH)
     };
     let flat_img = with(&mut r, &mut scene, flat);
-    // (8-bit 128 is a hair off zero, so a toon band edge may move by a pixel: count the pixels that change.)
+    // (8-bit 128 is a hair off zero, so a toon band edge may move by a pixel: count the pixels that change. With
+    // no multisampling a band edge's dither checker flips whole pixels, so allow 2 % of them.)
     let changed = none
         .data
         .chunks(3)
@@ -320,7 +323,7 @@ fn normal_map_breaks_up_the_light() {
         .filter(|(a, b)| a.iter().zip(*b).any(|(x, y)| (i32::from(*x) - i32::from(*y)).abs() > 1))
         .count();
     assert!(
-        changed * 200 < none.data.len() / 3,
+        changed * 50 < none.data.len() / 3,
         "a flat map changes {changed} pixels"
     );
     let bumpy = with(&mut r, &mut scene, dimpled);

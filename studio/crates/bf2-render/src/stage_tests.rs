@@ -77,7 +77,8 @@ fn stage_scene_is_bounded() {
     let mut s = Scene::default();
     stage.draw(&f, COLOURS, &mut s);
     stage.draw_projectiles(&f, &[3, 4], &mut s);
-    assert!(s.instances.len() < 2000, "{} instances", s.instances.len());
+    // the crowd is two instances a head (the figure and its rim light), about 1,500 people
+    assert!(s.instances.len() < 3500, "{} instances", s.instances.len());
     assert!(s.lights.len() <= MAX_LIGHTS, "{} lights", s.lights.len());
     let spot = s.spot.expect("the spot");
     assert!(spot.shadow);
@@ -241,12 +242,12 @@ fn stage_keeps_the_current_crowd_and_rope_colours() {
                 .map(|i| [i.colour[0], i.colour[1], i.colour[2]])
                 .unwrap()
         };
-        let want = linear(srgb255(COLOURS[SIDE_FIGHTER[side]]).map(|v| v * 0.92)).map(|v| v * ROPE_LIFT);
+        let want = rope_colour(srgb255(COLOURS[SIDE_FIGHTER[side]]).map(|v| v * 0.92));
         assert!(
             colour(1).iter().zip(want).all(|(a, b)| (a - b).abs() < 1e-5),
             "side {side}"
         );
-        let cream = linear(cur::ROPE_COL[0]).map(|v| v * ROPE_LIFT);
+        let cream = rope_colour(cur::ROPE_COL[0]);
         assert_eq!(colour(0), cream);
         assert_eq!(colour(2), cream);
     }

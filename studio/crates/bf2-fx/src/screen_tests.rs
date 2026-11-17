@@ -380,6 +380,7 @@ fn accum_blurs_a_fast_ball() {
         // 1 unit per frame along sim x.
         let x = (ts - t) * 30.0;
         Scene {
+            beam: None,
             instances: vec![
                 Instance::new(
                     ball,

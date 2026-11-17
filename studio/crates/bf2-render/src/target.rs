@@ -12,8 +12,10 @@ use crate::gpu::Gpu;
 pub const W: u32 = 1080;
 pub const H: u32 = 1920;
 
-/// MSAA samples for the scene passes.
-pub const SAMPLES: u32 = 4;
+/// MSAA samples for the scene passes: 1, none. The current engine draws hard-edged pixel art (Pillow polygons
+/// with no smoothing); smoothed edges read as a 3D model (Aedan, 2026-11-17). With one sample the scene draws
+/// straight into the resolved colour and there is nothing to resolve.
+pub const SAMPLES: u32 = 1;
 /// The scene's colour: linear HDR.
 pub const HDR_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -40,6 +42,12 @@ pub struct Targets {
 }
 
 impl Targets {
+    /// What a pass drawing into [`Targets::hdr_msaa`] resolves into: the resolved colour, or nothing when the
+    /// scene is not multisampled (it already draws there).
+    pub fn resolve(&self) -> Option<&wgpu::TextureView> {
+        (SAMPLES > 1).then_some(&self.hdr_resolved)
+    }
+
     pub fn new(gpu: &Gpu, w: u32, h: u32) -> Targets {
         let tex = |label, format, samples, usage| {
             gpu.device.create_texture(&wgpu::TextureDescriptor {
@@ -59,13 +67,18 @@ impl Targets {
         };
         let view = |t: &wgpu::Texture| t.create_view(&wgpu::TextureViewDescriptor::default());
         let attach = wgpu::TextureUsages::RENDER_ATTACHMENT;
-        let hdr_msaa = tex("hdr msaa", HDR_FORMAT, SAMPLES, attach);
         let hdr_resolved = tex(
             "hdr resolved",
             HDR_FORMAT,
             1,
             attach | wgpu::TextureUsages::TEXTURE_BINDING,
         );
+        // with one sample the scene's colour is the resolved colour itself
+        let hdr_msaa = if SAMPLES > 1 {
+            view(&tex("hdr msaa", HDR_FORMAT, SAMPLES, attach))
+        } else {
+            view(&hdr_resolved)
+        };
         let sampled = attach | wgpu::TextureUsages::TEXTURE_BINDING;
         let hdr_accum = tex("hdr accum", HDR_FORMAT, 1, sampled);
         let hdr_post_tex = tex("hdr post", HDR_FORMAT, 1, sampled | wgpu::TextureUsages::COPY_SRC);
@@ -81,7 +94,7 @@ impl Targets {
         Targets {
             w,
             h,
-            hdr_msaa: view(&hdr_msaa),
+            hdr_msaa,
             hdr_resolved: view(&hdr_resolved),
             hdr_accum: view(&hdr_accum),
             hdr_post: view(&hdr_post_tex),
