@@ -1,7 +1,7 @@
 //! The renderer: the passes that turn a [`Scene`] into a picture.
 //!
 //! In order, each frame:
-//! 1. the spot's shadow map (2048², depth only, opaque instances), when the spot casts one;
+//! 1. the spot's shadow map (2048², depth only, the Toon instances), when the spot casts one;
 //! 2. the scene pass into the 4x MSAA HDR target: opaque instances (Toon, Emissive, Unlit), one draw per mesh,
 //!    then glass instances back to front, each its far side then its near side, depth tested but not written;
 //!    the pass resolves into the single-sample HDR target as it ends;
@@ -88,6 +88,11 @@ impl InstanceG {
     }
 }
 
+/// Whether an instance of `m` is drawn into the spot's shadow map: lit opaque surfaces only.
+fn casts_shadow(m: &Material) -> bool {
+    matches!(m, Material::Toon { .. })
+}
+
 /// One draw: `count` instances of `mesh` from `first` in the instance buffer.
 #[derive(Clone, Copy)]
 struct Draw {
@@ -122,6 +127,8 @@ pub struct Renderer {
     // Reused every frame.
     inst_data: Vec<InstanceG>,
     opaque_draws: Vec<Draw>,
+    /// How many of `opaque_draws`, from the start, cast the spot's shadow.
+    caster_draws: usize,
     glass_draws: Vec<Draw>,
 }
 
@@ -404,6 +411,7 @@ impl Renderer {
             sized: None,
             inst_data: Vec::new(),
             opaque_draws: Vec::new(),
+            caster_draws: 0,
             glass_draws: Vec::new(),
         }
     }
@@ -499,6 +507,7 @@ impl Renderer {
     fn write_instances(&mut self, gpu: &Gpu, scene: &Scene) {
         self.inst_data.clear();
         self.opaque_draws.clear();
+        self.caster_draws = 0;
         self.glass_draws.clear();
 
         let mut opaque: Vec<usize> = Vec::with_capacity(scene.instances.len());
@@ -517,20 +526,29 @@ impl Renderer {
                 opaque.push(k);
             }
         }
-        opaque.sort_by_key(|&k| scene.instances[k].mesh);
+        // Shadow casters (Toon) first, so the shadow pass draws a prefix of the opaque draws; glowing and unlit
+        // things cast no shadow. Within each, grouped by mesh.
+        opaque.sort_by_key(|&k| (!casts_shadow(&scene.instances[k].material), scene.instances[k].mesh));
         glass.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
 
-        for &k in &opaque {
+        for (n, &k) in opaque.iter().enumerate() {
             let inst = &scene.instances[k];
             let first = self.inst_data.len() as u32;
             self.inst_data.push(InstanceG::new(inst));
+            let caster = casts_shadow(&inst.material);
+            let same_run = n > 0 && casts_shadow(&scene.instances[opaque[n - 1]].material) == caster;
             match self.opaque_draws.last_mut() {
-                Some(d) if d.mesh == inst.mesh => d.count += 1,
-                _ => self.opaque_draws.push(Draw {
-                    mesh: inst.mesh,
-                    first,
-                    count: 1,
-                }),
+                Some(d) if same_run && d.mesh == inst.mesh => d.count += 1,
+                _ => {
+                    self.opaque_draws.push(Draw {
+                        mesh: inst.mesh,
+                        first,
+                        count: 1,
+                    });
+                    if caster {
+                        self.caster_draws = self.opaque_draws.len();
+                    }
+                }
             }
         }
         for &(_, k) in &glass {
@@ -579,7 +597,7 @@ impl Renderer {
         pass.set_pipeline(&self.shadow);
         pass.set_bind_group(0, &self.shadow_frame_bind, &[]);
         pass.set_bind_group(1, &self.inst_bind, &[]);
-        for d in &self.opaque_draws {
+        for d in &self.opaque_draws[..self.caster_draws] {
             self.draw(&mut pass, d);
         }
     }
