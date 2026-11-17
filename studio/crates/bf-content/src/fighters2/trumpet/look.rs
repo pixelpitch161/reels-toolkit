@@ -280,9 +280,10 @@ impl Look2 for TrumpetLook {
             [p[0], p[1] + layer, p[2]]
         };
         let strip = |out: &mut Scene, a: V3, b: V3, w: f32, colour: [f32; 3], mat: Material| {
+            // (x along the strip, y up, z = x cross y: right-handed, so its triangles stay front-facing)
             let d = maths::sub(b, a);
             let len = maths::length(d).max(1e-5);
-            let n = maths::normalize(maths::cross(UP, maths::scale(d, 1.0 / len)));
+            let n = maths::normalize(maths::cross(maths::scale(d, 1.0 / len), UP));
             out.instances
                 .push(Instance::new(m.strip, mat, basis(d, UP, maths::scale(n, w), a)).coloured(colour));
         };
