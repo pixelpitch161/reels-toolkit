@@ -136,7 +136,7 @@ pub const DEV_ONLY: &str = "TEST DUMMY is a developer fighter. Start the app wit
 /// Whether `name` is a developer fighter: the TEST DUMMY (under either of its names), offered only with the
 /// developer switch on (`BALLFIGHT_DEV=1`).
 pub fn dev_only(name: &str) -> bool {
-    crate::fighters2::DUMMIES.contains(&name)
+    crate::fighters2::DUMMIES.contains(&name) || name == crate::fighters2::TARGET
 }
 
 /// [`engines`], plus Engine 2 for the developer fighter when `dev` is on.

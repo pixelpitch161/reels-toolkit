@@ -21,7 +21,13 @@ mod trumpet;
 /// Every Engine 2 fighter, in order: the moved fighters ([`MOVED`]) and the dummy ([`DUMMIES`]). "TEST DUMMY 2" is
 /// the same dummy under a second name in a warm colour: a fight file never names one fighter twice, so a dummy
 /// mirror match is TEST DUMMY against TEST DUMMY 2.
-pub const NAMES: [&str; 3] = ["TEST DUMMY", "TEST DUMMY 2", "TRUMPET"];
+pub const NAMES: [&str; 4] = ["TEST DUMMY", "TEST DUMMY 2", TARGET, "TRUMPET"];
+
+/// TARGET DUMMY: the TEST DUMMY that never fights back (Aedan, 2026-11-17: with the dummy attacking, the move a
+/// fighter session is working on is hard to see). It throws nothing, keeps its arm tucked in and only drifts round
+/// the ring, so the other fighter's moves read on their own and the fight still ends in a K.O. A developer
+/// fighter for fight files and example renders; the app does not offer it.
+pub const TARGET: &str = "TARGET DUMMY";
 
 /// The real fighters with an Engine 2 version (each also keeps its current-engine version). A fighter session adds
 /// its fighter's name here, and its name to [`NAMES`].
@@ -61,7 +67,7 @@ pub(crate) fn with_moved<R>(names: &'static [&'static str], f: impl FnOnce() -> 
 /// The VS card panel of an Engine 2 fighter: a moved fighter's current-engine card (until its folder writes a
 /// `card.rs` of its own), the dummy's own card, `None` for any other name.
 pub fn card(name: &str) -> Option<&'static FighterCard> {
-    if DUMMIES.contains(&name) {
+    if DUMMIES.contains(&name) || name == TARGET {
         Some(&test_dummy::card::CARD)
     } else if moved().contains(&name) {
         crate::card(name)
@@ -74,12 +80,12 @@ pub fn card(name: &str) -> Option<&'static FighterCard> {
 /// fighter whose card is its own (the dummy); `None` for a moved fighter (its roster abilities name them) or any
 /// other name.
 pub fn card_moves(name: &str) -> Option<[&'static str; 3]> {
-    DUMMIES.contains(&name).then_some(test_dummy::card::MOVES)
+    (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::MOVES)
 }
 
 /// The reach an Engine 2 card shows for a fighter whose card is its own (the dummy), in words; `None` otherwise.
 pub fn card_range(name: &str) -> Option<&'static str> {
-    DUMMIES.contains(&name).then_some(test_dummy::card::RANGE)
+    (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::RANGE)
 }
 
 /// The fight a new Engine 2 match-up with the dummy on either side begins from (see [`crate::starter_on`]).
@@ -100,7 +106,7 @@ pub(crate) fn dummy_starter(left: &str, right: &str) -> bf_core::fightfile::Figh
 /// The Engine 2 look of the fighter called `name`: a new one each call (a look holds its renderer's meshes).
 pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
         "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
@@ -109,7 +115,7 @@ pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
 /// The effects of the look of the fighter called `name` ([`bf2_fx::frame::LookFx`]).
 pub fn look_fx(name: &str) -> Option<Box<dyn bf2_fx::frame::LookFx>> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
         "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
@@ -120,21 +126,23 @@ pub fn def(name: &str) -> Option<Arc<FighterDef>> {
     static DUMMY: OnceLock<Arc<FighterDef>> = OnceLock::new();
     static DUMMY_2: OnceLock<Arc<FighterDef>> = OnceLock::new();
     static TRUMPET: OnceLock<Arc<FighterDef>> = OnceLock::new();
+    static TARGET_DUMMY: OnceLock<Arc<FighterDef>> = OnceLock::new();
     match name {
         "TRUMPET" => Some(TRUMPET.get_or_init(|| Arc::new(trumpet::def())).clone()),
-        "TEST DUMMY" => Some(
-            DUMMY
+        "TEST DUMMY" => Some(DUMMY.get_or_init(|| Arc::new(test_dummy::def())).clone()),
+        TARGET => Some(
+            TARGET_DUMMY
                 .get_or_init(|| {
                     let mut d = test_dummy::def();
-                    // SPIKE (trumpet demo clips): BF_DUMMY_PASSIVE=1 makes the dummy a punching bag that throws
-                    // nothing and keeps its arm tucked away, so the attacker's moves read on their own.
-                    if std::env::var("BF_DUMMY_PASSIVE").is_ok_and(|v| v == "1") {
-                        d.brain.choices.clear();
-                        d.brain.low = None;
-                        d.brain.speed = 0.2;
-                        for b in &mut d.rig.bones {
-                            b.length = 0.01;
-                        }
+                    d.name = TARGET.into();
+                    d.colour = [170, 170, 170];
+                    d.brain.choices.clear();
+                    d.brain.low = None;
+                    // it drifts and circles (so it is not pinned to the ropes) but never closes in fast
+                    d.brain.speed = 1.2;
+                    d.brain.orbit = 0.8;
+                    for b in &mut d.rig.bones {
+                        b.length = 0.01;
                     }
                     Arc::new(d)
                 })
@@ -183,7 +191,7 @@ pub fn voice(name: &str) -> Option<Arc<dyn Voice>> {
 pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
     let _ = ff;
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::sound::DummySound::new(k))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::sound::DummySound::new(k))),
         _ => None,
     }
 }
@@ -192,7 +200,7 @@ pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
 /// MARIMBA's.
 pub fn personality(name: &str) -> Option<&'static Personality> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(&crate::fighters::marimba::personality::PERSONALITY),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(&crate::fighters::marimba::personality::PERSONALITY),
         "TRUMPET" => Some(&crate::fighters::trumpet::personality::PERSONALITY),
         _ => None,
     }
@@ -202,7 +210,7 @@ pub fn personality(name: &str) -> Option<&'static Personality> {
 /// (`test_dummy/metronome.json`).
 pub fn card_mesh(name: &str) -> Option<Mesh> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
         "TRUMPET" => crate::fighters::trumpet::MESH.and_then(|t| Mesh::from_json(t).ok()),
         _ => None,
     }

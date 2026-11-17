@@ -350,9 +350,9 @@ pub fn def() -> FighterDef {
     .expect("the trumpet's rig is parent-first");
     let only = std::env::var("BF_TRUMPET_STD").ok();
     let all = [
-        ("1", choice(VALVE_COMBO, (1.3, 2.6), 2.0, 110)),
+        ("1", choice(VALVE_COMBO, (1.1, 2.6), 2.0, 110)),
         ("2", choice(LEAD_PIPE_LANCE, (1.6, 3.4), 1.5, 150)),
-        ("5", choice(VALVE_CAP_YOYOS, (1.3, 2.1), 1.5, 150)),
+        ("5", choice(VALVE_CAP_YOYOS, (1.1, 2.1), 1.5, 150)),
     ];
     let choices = all
         .into_iter()
