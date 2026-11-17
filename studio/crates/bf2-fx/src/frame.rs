@@ -148,10 +148,6 @@ struct Pass<'a, 'b> {
 impl FxPass for Pass<'_, '_> {
     fn draw(&mut self, ctx: &mut FxCtx<'_>) {
         let Some(s) = self.subs.get(ctx.sub) else { return };
-        // pixel-style spike: the scene with the effects' lights but none of their drawing
-        if std::env::var_os("BF2_NO_FX_DRAW").is_some() {
-            return;
-        }
         let plain: Vec<&FxRecord> = s.recs.iter().map(|(r, _)| *r).collect();
         let defs = self.defs;
         let frame = &s.frame;
@@ -243,11 +239,7 @@ impl FxFrame {
             })
             .collect();
         let res = |a: &Anchor| resolve(a, &mid, defs);
-        if std::env::var_os("BF2_NO_FX_DRAW").is_some() {
-            self.screen.set(&[], &res, t);
-        } else {
-            self.screen.set(&now, &res, t);
-        }
+        self.screen.set(&now, &res, t);
         let weights = vec![1.0; scenes.len()];
         let FxFrame {
             particles,

@@ -60,30 +60,11 @@ fn main() {
         return;
     }
     let gpu = Gpu::headless().expect("a GPU");
-    // pixel-style spike: BF2_SIZE=360x640 draws small, then each pixel is blown up to 3 x 3
-    let (w, h) = std::env::var("BF2_SIZE")
-        .ok()
-        .and_then(|s| s.split_once('x').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
-        .unwrap_or((bf2_render::W, bf2_render::H));
-    let mut fr = bf_export::job2::Frames2::of_scene(&gpu, scene, w, h);
+    let mut fr = bf_export::job2::Frames2::of_scene(&gpu, scene, bf2_render::W, bf2_render::H);
     std::fs::create_dir_all(&out).expect("the output folder");
     for f in frames {
         let t0 = std::time::Instant::now();
-        let mut img = fr.frame(f);
-        let (bw, bh) = (bf2_render::W as usize, bf2_render::H as usize);
-        if img.w != bw {
-            let k = bw / img.w;
-            let c = img.c;
-            let mut big = bf_picture::img::Rgb8::new(bw, bh, c);
-            for y in 0..bh {
-                for x in 0..bw {
-                    let s = ((y / k) * img.w + x / k) * c;
-                    let d = (y * bw + x) * c;
-                    big.data[d..d + c].copy_from_slice(&img.data[s..s + c]);
-                }
-            }
-            img = big;
-        }
+        let img = fr.frame(f);
         let file = out.join(format!("engine2_f{f}.png"));
         std::fs::write(&file, bf_export::output::png_bytes(&img)).expect("the still is written");
         println!("{} ({:.1} s)", file.display(), t0.elapsed().as_secs_f64());
