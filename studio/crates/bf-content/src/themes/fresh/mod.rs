@@ -17,6 +17,8 @@ use bf_sound::traits::{Bed, BedHook, Played};
 
 use crate::error::ContentError;
 
+pub mod voices;
+
 /// What a Studio theme sets besides its layers: its room, its master compressor and the levels of the show's
 /// shared sounds.
 #[derive(Clone, Copy, Debug)]
