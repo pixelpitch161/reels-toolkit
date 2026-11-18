@@ -1,0 +1,11 @@
+render: soundtrack
+render: checks
+render: pass safezone: Safe zone: all 4,903 caption, label and panel positions checked in 244 frames are inside the safe area.
+render: FAIL levels: Levels: the loudness is not even: 4 windows of 2 s are more than 3 dB below the ending where one dip is allowed (at 6 s (-3.3 dB), 20 s (-3.2 dB), 32 s (-3.4 dB), 34 s (-3.0 dB)), so fill those stretches.
+render: FAIL band: Band: the TRUMPET is silent in its band (300 to 5000 Hz) for the whole fight, so check that its part plays.
+render: pass loudness: Perceived loudness: to the ear the intro (title card and count-in) is 1.5 loudness units (LU) louder than the fight (-11.0 against -12.4 LUFS), which is shown for your judgement because the series sets no limit for it.
+render: pass loop_picture: Loop point (picture): the last frame flows into the first (the change is 0.7 times a normal frame-to-frame change, at most 2.5 allowed) and nothing in the last 5 s looks like the video starting over early.
+render: pass loop_audio: Loop point (sound): the sound runs through the point where the video loops without a step in loudness or a click (the last and the first 20 ms are 3.4 dB apart, at most 6 allowed, and the sound jumps by only 0.022 there).
+render: pass focus: Focus: both balls stay in the picture on every frame from FIGHT! to just after the K.O., their centres inside the safe zone on 100.0 % of frames.
+render: pass ko_window: K.O. window: the K.O. comes at 53.00 s, inside 49 to 53 s.
+ballfight: Levels: the loudness is not even: 4 windows of 2 s are more than 3 dB below the ending where one dip is allowed (at 6 s (-3.3 dB), 20 s (-3.2 dB), 32 s (-3.4 dB), 34 s (-3.0 dB)), so fill those stretches.

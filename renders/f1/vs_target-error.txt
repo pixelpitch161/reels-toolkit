@@ -1,0 +1,11 @@
+render: soundtrack
+render: checks
+render: pass safezone: Safe zone: all 5,075 caption, label and panel positions checked in 244 frames are inside the safe area.
+render: FAIL levels: Levels: the loudness is not even: 6 windows of 2 s are more than 3 dB below the ending where one dip is allowed (at 4 s (-3.4 dB), 6 s (-3.7 dB), 10 s (-3.9 dB), 12 s (-3.5 dB), 14 s (-4.1 dB), 16 s (-3.4 dB)), so fill those stretches; and the loudest 2 s window is 6.9 dB above the quietest where at most 5 dB is allowed, so even out the loud and the quiet stretches.
+render: FAIL band: Band: the TRUMPET is silent in its band (300 to 5000 Hz) for the whole fight, so check that its part plays; and the TARGET DUMMY is 157.3 dB under the bed in its band (250 to 4000 Hz) between 4 and 10 s while it plays, so turn the TARGET DUMMY up or thin the bed there.
+render: pass loudness: Perceived loudness: to the ear the intro (title card and count-in) is 4.1 loudness units (LU) louder than the fight (-11.1 against -15.2 LUFS), which is shown for your judgement because the series sets no limit for it.
+render: pass loop_picture: Loop point (picture): the last frame flows into the first (the change is 1.2 times a normal frame-to-frame change, at most 2.5 allowed) and nothing in the last 5 s looks like the video starting over early.
+render: pass loop_audio: Loop point (sound): the sound runs through the point where the video loops without a step in loudness or a click (the last and the first 20 ms are 3.5 dB apart, at most 6 allowed, and the sound jumps by only 0.024 there).
+render: pass focus: Focus: both balls stay in the picture on every frame from FIGHT! to just after the K.O., their centres inside the safe zone on 100.0 % of frames.
+render: FAIL ko_window: K.O. window: the K.O. comes at 23.27 s, outside 49 to 53 s; choose another seed.
+ballfight: Levels: the loudness is not even: 6 windows of 2 s are more than 3 dB below the ending where one dip is allowed (at 4 s (-3.4 dB), 6 s (-3.7 dB), 10 s (-3.9 dB), 12 s (-3.5 dB), 14 s (-4.1 dB), 16 s (-3.4 dB)), so fill those stretches; and the loudest 2 s window is 6.9 dB above the quietest where at most 5 dB is allowed, so even out the loud and the quiet stretches.
