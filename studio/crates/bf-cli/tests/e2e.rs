@@ -82,7 +82,9 @@ fn fight_file(dir: &TempRoot, name: &str, edit: impl Fn(String) -> String) -> Pa
 /// at run time so the test never names a fighter a port will make whole; once every fighter is ported, a name the
 /// registry does not know. The program refuses either in one line that names it.
 fn unported_fighter() -> &'static str {
-    let found = bf_content::roster().iter().find(|f| {
+    // the developer fighters (the TARGET DUMMY, kind `dummy`) are let in by the engine, so they don't count
+    let dev = |name: &str| bf_content::fighters::DEV.contains(&name);
+    let found = bf_content::roster().iter().filter(|f| !dev(f.name.as_str())).find(|f| {
         matches!(f.weapon, bf_core::roster::WeaponCfg::Unsupported(_))
             || [&f.unlock1, &f.unlock2, &f.low].iter().any(|ab| !ab.kind.is_ported())
     });
