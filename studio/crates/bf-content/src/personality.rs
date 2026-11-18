@@ -96,6 +96,7 @@ fighters! {
     "TIMPANI" => timpani,
     "FLUGELHORN" => flugelhorn,
     "SNARE DRUM" => snare_drum,
+    "TARGET DUMMY" => target_dummy,
 }
 
 #[cfg(test)]
@@ -111,7 +112,10 @@ mod tests {
         names.retain(|n| entry(n).is_some());
         names.sort();
         names.dedup();
-        assert_eq!(names.len(), 30 + crate::fighters::NEW.len());
+        assert_eq!(
+            names.len(),
+            30 + crate::fighters::NEW.len() + crate::fighters::DEV.len()
+        );
         for n in &names {
             let p = personality(n).unwrap_or_else(|| panic!("{n}"));
             assert!((2..=4).contains(&p.motifs.len()), "{n}");

@@ -200,3 +200,21 @@ pub fn snare_drum(base: &mut RgbF) {
         }
     });
 }
+
+/// TARGET DUMMY (a developer fighter): rows of small bullseyes, each ring alternately lit and shaded.
+pub fn target_dummy(base: &mut RgbF) {
+    shade(base, |x, y, _| {
+        let row = (y / 72.0).floor();
+        let ox = if row as i64 % 2 == 0 { 0.0 } else { 36.0 };
+        let (gx, gy) = (((x + ox) / 72.0).fract() - 0.5, (y / 72.0).fract() - 0.5);
+        let r = dmath::hypot(gx, gy) * 72.0;
+        if r > 30.0 {
+            return (0.94, 0.0);
+        }
+        if ((r / 7.5).floor() as i64) % 2 == 0 {
+            (1.0, 0.07)
+        } else {
+            (0.9, 0.0)
+        }
+    });
+}

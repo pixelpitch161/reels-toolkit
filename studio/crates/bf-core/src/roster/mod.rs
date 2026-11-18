@@ -38,6 +38,12 @@ pub use kinds::{
 };
 pub use striker::StrikerCfg;
 
+/// The weapon and ability kind `dummy`: the TARGET DUMMY's (a developer fighter, never offered in the app). It is no
+/// weapon and no ability: the engine lets it in although no module ports it (`bf_sim::Setup::check`), its ball only
+/// drifts and bounces round the ring, it never attacks, its unlocks never come (it deals no damage, so it never levels
+/// up) and its `low` ability is skipped without an announcement. Its enemy can still knock it out, so its fights end.
+pub const DUMMY: &str = "dummy";
+
 /// The kit's further weapon kinds, each with its module's `PORTED`: a kind loads as `WeaponCfg::Unsupported` exactly
 /// while its `PORTED` is false. (Tests derive what they expect from this, so a port flips only its own constant.)
 pub const KIT_WEAPON_KINDS: [(&str, bool); 18] = [

@@ -868,6 +868,10 @@ impl<'a> Fight<'a> {
             let b = &mut self.balls[k];
             if !b.low_done && b.hp < self.rules.low_hp {
                 b.low_done = true;
+                // the TARGET DUMMY's `low` (kind `dummy`) is no ability: nothing is announced, nothing fires
+                if matches!(&b.cfg.low.kind, AbilityKind::Unsupported(kind) if kind == bf_core::roster::DUMMY) {
+                    continue;
+                }
                 abilities::trigger(self, k, Slot::Low);
                 continue;
             }
@@ -1023,14 +1027,18 @@ fn check_fighter(cfg: &FighterCfg, k: usize, unported: bool) -> Result<(), SimEr
     let field = format!("fighters[{k}]");
     let name = &cfg.name;
     if !unported {
-        if let WeaponCfg::Unsupported(kind) = &cfg.weapon {
+        if let WeaponCfg::Unsupported(kind) = &cfg.weapon
+            && kind != bf_core::roster::DUMMY
+        {
             return Err(SimError::new(
                 &field,
                 format!("the engine has not ported {name}'s weapon kind {kind:?} yet"),
             ));
         }
         for ab in [&cfg.unlock1, &cfg.unlock2, &cfg.low] {
-            if let AbilityKind::Unsupported(kind) = &ab.kind {
+            if let AbilityKind::Unsupported(kind) = &ab.kind
+                && kind != bf_core::roster::DUMMY
+            {
                 return Err(SimError::new(
                     &field,
                     format!(

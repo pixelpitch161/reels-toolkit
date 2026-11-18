@@ -172,6 +172,16 @@ Nov 16, 2026) from threads each keeping their own. The rules:
   reports.
 - Keep `studio\reference\.cache` (pinned test data, slow to remake); the script never touches `studio\reference`.
 
+## The TARGET DUMMY (developer fighter, Nov 18)
+
+Engine 2 was scrapped on Nov 18 (the owner's call: Engine 1's look and characters stay; only cooler effects were ever
+wanted, to be shown visually before they are built). The one thing kept from it is the idea of a **TARGET DUMMY**:
+a straw training dummy that never attacks, drifts round the ring and can still be knocked out, for example renders of
+another fighter's moves. It is in the roster (`bf-content/data/roster_dev.json`, `fighters::DEV`) so a fight file can
+name it, but never offered in the app. Its weapon and abilities are kind `dummy` (`bf_core::roster::DUMMY`), which the
+engine lets in and skips. Example: `ballfight render fights/dev/trumpet_vs_target_dummy.toml --out <folder>`. Its
+fights never "fit the series" (no lead changes); that is expected, and the render's own checks pass.
+
 ## How to add a fighter
 
 The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a

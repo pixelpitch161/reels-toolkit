@@ -18,6 +18,10 @@ const ROSTER_JSON: &str = include_str!("../data/roster.json");
 /// The fighters made from scratch in the Studio (no Python kit reference), appended to the exported roster.
 const ROSTER_NEW_JSON: &str = include_str!("../data/roster_new.json");
 
+/// The developer fighters (`crate::fighters::DEV`: the TARGET DUMMY), appended after them: a fight file can name
+/// them, the app never offers them.
+const ROSTER_DEV_JSON: &str = include_str!("../data/roster_dev.json");
+
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
 pub const PORTED: [&str; 40] = [
@@ -73,6 +77,7 @@ pub fn roster() -> &'static [FighterCfg] {
     ROSTER.get_or_init(|| {
         let mut all = parse_roster(ROSTER_JSON).unwrap_or_else(|e| panic!("the compiled-in {e}"));
         all.extend(parse_roster(ROSTER_NEW_JSON).unwrap_or_else(|e| panic!("the compiled-in new {e}")));
+        all.extend(parse_roster(ROSTER_DEV_JSON).unwrap_or_else(|e| panic!("the compiled-in developer {e}")));
         all
     })
 }
@@ -136,10 +141,14 @@ mod tests {
     #[test]
     fn roster_has_the_kit_20_the_older_10_the_studio_ones_and_no_retired() {
         let r = roster();
-        assert_eq!(r.len(), 30 + crate::fighters::NEW.len());
-        // fighters.py's order, which starts with the first fighters the kit had, then the fighters made from scratch
+        let (new, dev) = (crate::fighters::NEW.len(), crate::fighters::DEV.len());
+        assert_eq!(r.len(), 30 + new + dev);
+        // fighters.py's order, which starts with the first fighters the kit had, then the fighters made from scratch,
+        // then the developer fighters (never offered)
         let names: Vec<&str> = r.iter().map(|f| f.name.as_str()).collect();
-        assert_eq!(&names[30..], crate::fighters::NEW);
+        assert_eq!(&names[30..30 + new], crate::fighters::NEW);
+        assert_eq!(&names[30 + new..], crate::fighters::DEV);
+        assert!(crate::fighters::DEV.iter().all(|n| !PORTED.contains(n)));
         let names = &names[..30];
         assert_eq!(&names[..4], &["PIANO", "DRUMS", "VIOLIN", "BAGPIPES"]);
         let (older, mut kit): (Vec<&str>, Vec<&str>) = names.iter().partition(|n| crate::fighters::OLDER.contains(n));
