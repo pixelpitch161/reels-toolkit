@@ -175,6 +175,9 @@ fn advance(world: &mut World, who: usize, fresh: bool, step: u32) {
                     b.vel[2] += d.hop;
                     b.airborne = true;
                 }
+                if d.has(crate::moves::Tag::Haste) {
+                    b.haste = crate::moves::HASTE_STEPS;
+                }
             }
             Phase::Recovery => world.events.push(step, who, EvKind::Recovery { mv: ms.def }),
         }
@@ -230,6 +233,10 @@ mod tests {
             hit: hit(1.0),
             bounces: 0,
             homing: 0.0,
+            place: None,
+            rehit: 0,
+            aim: 0.0,
+            level: false,
         };
         let mv = MoveDef {
             cues: vec![CueAt {

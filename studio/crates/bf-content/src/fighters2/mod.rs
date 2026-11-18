@@ -15,15 +15,22 @@ use crate::FighterCard;
 use crate::personality::Personality;
 
 mod test_dummy;
+mod trumpet;
 
 /// Every Engine 2 fighter, in order: the moved fighters ([`MOVED`]) and the dummy ([`DUMMIES`]). "TEST DUMMY 2" is
 /// the same dummy under a second name in a warm colour: a fight file never names one fighter twice, so a dummy
 /// mirror match is TEST DUMMY against TEST DUMMY 2.
-pub const NAMES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
+pub const NAMES: [&str; 4] = ["TEST DUMMY", "TEST DUMMY 2", TARGET, "TRUMPET"];
+
+/// TARGET DUMMY: the TEST DUMMY that never fights back (Aedan, 2026-11-17: with the dummy attacking, the move a
+/// fighter session is working on is hard to see). It throws nothing, keeps its arm tucked in and only drifts round
+/// the ring, so the other fighter's moves read on their own and the fight still ends in a K.O. A developer
+/// fighter for fight files and example renders; the app does not offer it.
+pub const TARGET: &str = "TARGET DUMMY";
 
 /// The real fighters with an Engine 2 version (each also keeps its current-engine version). A fighter session adds
 /// its fighter's name here, and its name to [`NAMES`].
-pub const MOVED: [&str; 0] = [];
+pub const MOVED: [&str; 1] = ["TRUMPET"];
 
 /// The developer fighter's two names (TEST DUMMY and its mirror twin), offered only with the developer switch on.
 pub const DUMMIES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
@@ -59,8 +66,10 @@ pub(crate) fn with_moved<R>(names: &'static [&'static str], f: impl FnOnce() -> 
 /// The VS card panel of an Engine 2 fighter: a moved fighter's current-engine card (until its folder writes a
 /// `card.rs` of its own), the dummy's own card, `None` for any other name.
 pub fn card(name: &str) -> Option<&'static FighterCard> {
-    if DUMMIES.contains(&name) {
+    if DUMMIES.contains(&name) || name == TARGET {
         Some(&test_dummy::card::CARD)
+    } else if name == "TRUMPET" {
+        Some(&trumpet::card::CARD)
     } else if moved().contains(&name) {
         crate::card(name)
     } else {
@@ -72,12 +81,18 @@ pub fn card(name: &str) -> Option<&'static FighterCard> {
 /// fighter whose card is its own (the dummy); `None` for a moved fighter (its roster abilities name them) or any
 /// other name.
 pub fn card_moves(name: &str) -> Option<[&'static str; 3]> {
-    DUMMIES.contains(&name).then_some(test_dummy::card::MOVES)
+    match name {
+        "TRUMPET" => Some(trumpet::card::MOVES),
+        _ => (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::MOVES),
+    }
 }
 
 /// The reach an Engine 2 card shows for a fighter whose card is its own (the dummy), in words; `None` otherwise.
 pub fn card_range(name: &str) -> Option<&'static str> {
-    DUMMIES.contains(&name).then_some(test_dummy::card::RANGE)
+    match name {
+        "TRUMPET" => Some(trumpet::card::RANGE),
+        _ => (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::RANGE),
+    }
 }
 
 /// The fight a new Engine 2 match-up with the dummy on either side begins from (see [`crate::starter_on`]).
@@ -98,7 +113,8 @@ pub(crate) fn dummy_starter(left: &str, right: &str) -> bf_core::fightfile::Figh
 /// The Engine 2 look of the fighter called `name`: a new one each call (a look holds its renderer's meshes).
 pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
 }
@@ -106,7 +122,8 @@ pub fn look(name: &str) -> Option<Box<dyn bf2_render::Look2>> {
 /// The effects of the look of the fighter called `name` ([`bf2_fx::frame::LookFx`]).
 pub fn look_fx(name: &str) -> Option<Box<dyn bf2_fx::frame::LookFx>> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::look::DummyLook::new(def(name)?))),
+        "TRUMPET" => Some(Box::new(trumpet::look::TrumpetLook::new(def(name)?))),
         _ => None,
     }
 }
@@ -115,8 +132,29 @@ pub fn look_fx(name: &str) -> Option<Box<dyn bf2_fx::frame::LookFx>> {
 pub fn def(name: &str) -> Option<Arc<FighterDef>> {
     static DUMMY: OnceLock<Arc<FighterDef>> = OnceLock::new();
     static DUMMY_2: OnceLock<Arc<FighterDef>> = OnceLock::new();
+    static TRUMPET: OnceLock<Arc<FighterDef>> = OnceLock::new();
+    static TARGET_DUMMY: OnceLock<Arc<FighterDef>> = OnceLock::new();
     match name {
+        "TRUMPET" => Some(TRUMPET.get_or_init(|| Arc::new(trumpet::def())).clone()),
         "TEST DUMMY" => Some(DUMMY.get_or_init(|| Arc::new(test_dummy::def())).clone()),
+        TARGET => Some(
+            TARGET_DUMMY
+                .get_or_init(|| {
+                    let mut d = test_dummy::def();
+                    d.name = TARGET.into();
+                    d.colour = [170, 170, 170];
+                    d.brain.choices.clear();
+                    d.brain.low = None;
+                    // it drifts and circles (so it is not pinned to the ropes) but never closes in fast
+                    d.brain.speed = 1.2;
+                    d.brain.orbit = 0.8;
+                    for b in &mut d.rig.bones {
+                        b.length = 0.01;
+                    }
+                    Arc::new(d)
+                })
+                .clone(),
+        ),
         "TEST DUMMY 2" => Some(
             DUMMY_2
                 .get_or_init(|| {
@@ -145,6 +183,9 @@ fn entries() -> &'static [FighterCfg] {
 /// in MARIMBA's register, in its own colour, and its abilities name its own moves (unlock1 and unlock2 its two
 /// `Special` moves, low its `Low` move). `None` for any other name.
 pub fn cfg(name: &str) -> Option<&'static FighterCfg> {
+    if name == "TRUMPET" {
+        return crate::roster().iter().find(|f| f.name == name);
+    }
     entries().iter().find(|f| f.name == name)
 }
 
@@ -157,7 +198,8 @@ pub fn voice(name: &str) -> Option<Arc<dyn Voice>> {
 pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
     let _ = ff;
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(Box::new(test_dummy::sound::DummySound::new(k))),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::sound::DummySound::new(k))),
+        "TRUMPET" => Some(Box::new(trumpet::sound::TrumpetSound::new(k))),
         _ => None,
     }
 }
@@ -166,7 +208,8 @@ pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
 /// MARIMBA's.
 pub fn personality(name: &str) -> Option<&'static Personality> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Some(&crate::fighters::marimba::personality::PERSONALITY),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(&crate::fighters::marimba::personality::PERSONALITY),
+        "TRUMPET" => Some(&crate::fighters::trumpet::personality::PERSONALITY),
         _ => None,
     }
 }
@@ -175,7 +218,8 @@ pub fn personality(name: &str) -> Option<&'static Personality> {
 /// (`test_dummy/metronome.json`).
 pub fn card_mesh(name: &str) -> Option<Mesh> {
     match name {
-        "TEST DUMMY" | "TEST DUMMY 2" => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
+        "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Mesh::from_json(include_str!("test_dummy/metronome.json")).ok(),
+        "TRUMPET" => crate::fighters::trumpet::MESH.and_then(|t| Mesh::from_json(t).ok()),
         _ => None,
     }
 }
@@ -195,7 +239,7 @@ mod tests {
 
     #[test]
     fn dummy_is_not_offered() {
-        for name in NAMES {
+        for name in DUMMIES {
             assert!(crate::engines(name).is_empty());
             assert!(!crate::available().contains(&name));
             assert!(!crate::PORTED.contains(&name));
@@ -253,7 +297,7 @@ mod tests {
         let ff = bf_core::fightfile::FightFile::parse(include_str!("../../../../fights/engine2/test_dummy.toml"))
             .expect("the dummy's fight file parses");
         let marimba = crate::roster().iter().find(|f| f.name == "MARIMBA").unwrap();
-        for (k, name) in NAMES.into_iter().enumerate() {
+        for (k, name) in DUMMIES.into_iter().enumerate() {
             let c = cfg(name).expect("a roster entry");
             assert_eq!(c.name, name);
             assert_eq!((c.pp.as_str(), c.register), (marimba.pp.as_str(), marimba.register));
@@ -291,7 +335,7 @@ mod tests {
 
     #[test]
     fn dummy_still_hidden() {
-        for name in NAMES {
+        for name in DUMMIES {
             assert!(crate::roster().iter().all(|f| f.name != name), "{name}");
             assert!(crate::fighters::entry(name).is_none(), "{name}");
         }
@@ -410,5 +454,79 @@ mod tests {
                 assert!(!lens || at_ko, "a lens effect off the K.O.: {r:?}");
             }
         }
+    }
+
+    /// The TRUMPET's card names every move its brain picks, its three ability moves are its own, and its range
+    /// is its brain's.
+    #[test]
+    fn trumpet_card_names_its_moves() {
+        let c = card("TRUMPET").expect("the trumpet has an Engine 2 card");
+        let d = def("TRUMPET").unwrap();
+        for ch in &d.brain.choices {
+            let name = d.moves[ch.mv].name;
+            assert!(c.text.contains(&sentence(name)), "{name} in {:?}", c.text);
+        }
+        let moves = card_moves("TRUMPET").unwrap();
+        for m in moves {
+            assert!(d.moves.iter().any(|mv| mv.name == m), "{m}");
+        }
+        assert_eq!(moves[2], d.moves[d.brain.low.unwrap()].name);
+        let near = d
+            .brain
+            .choices
+            .iter()
+            .map(|ch| ch.range.0)
+            .fold(f64::INFINITY, f64::min);
+        let far = d.brain.choices.iter().map(|ch| ch.range.1).fold(0.0, f64::max);
+        assert_eq!(card_range("TRUMPET"), Some(format!("{near} to {far} m").as_str()));
+        assert!(sound("TRUMPET", 0, &dummy_starter("TRUMPET", "TEST DUMMY")).is_some());
+    }
+
+    /// The exit audit for the TRUMPET, seeds 1 to 20 against the dummy: its own records (none yet: its signature
+    /// parts are drawn by `draw`, each with its own exit) and the shared presets through its restraint all fade out.
+    #[test]
+    fn trumpet_look_records_all_have_exits() {
+        use bf2_fx::FxTimeline;
+        use bf2_fx::presets::{MIN_FALL, brightness};
+        let defs = [def("TRUMPET").unwrap(), def("TEST DUMMY").unwrap()];
+        let fx = [look_fx("TRUMPET").unwrap(), look_fx("TEST DUMMY").unwrap()];
+        let mut kos = 0;
+        for seed in 1..=20 {
+            let mut rules = bf2_sim::Rules2::new(4.5);
+            rules.dmg_scale = 2.0;
+            let rec = bf2_sim::run(
+                &bf2_sim::Setup2 {
+                    fighters: defs.clone(),
+                    rules,
+                    seed,
+                },
+                true,
+            )
+            .unwrap();
+            kos += usize::from(rec.events.iter().any(|e| matches!(e.kind, bf2_sim::EvKind::Ko { .. })));
+            let to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+            let mut tl = FxTimeline::new();
+            for (k, f) in fx.iter().enumerate() {
+                f.fx(k, &rec, &to_t, &mut tl).unwrap();
+            }
+            let colours = [[1.0, 0.85, 0.24], [0.6; 3]];
+            let (a, b) = (|e: &bf2_sim::EvKind| fx[0].tone(e), |e: &bf2_sim::EvKind| fx[1].tone(e));
+            bf2_fx::wire::wire_toned(&rec, [&defs[0], &defs[1]], colours, &to_t, [&a, &b], &mut tl).unwrap();
+            assert_eq!(tl.check_all(), Ok(()));
+            for r in &tl.records {
+                assert!(r.life > 0.0, "seed {seed}: {r:?}");
+                assert!(
+                    r.env.release >= MIN_FALL,
+                    "seed {seed}: a fall of {}: {r:?}",
+                    r.env.release
+                );
+                let peak = (1..200)
+                    .map(|i| brightness(r, r.t0 + f64::from(r.life) * f64::from(i) / 200.0))
+                    .fold(0.0f32, f32::max);
+                let last = brightness(r, r.t0 + f64::from(r.life) - 1.0 / 240.0);
+                assert!(last < 0.02 * peak, "seed {seed}: ends at {last} of {peak}: {r:?}");
+            }
+        }
+        assert!(kos >= 10, "{kos} of 20 seeds end in a K.O.");
     }
 }

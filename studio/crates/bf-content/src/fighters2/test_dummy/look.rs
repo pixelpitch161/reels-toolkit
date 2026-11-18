@@ -128,7 +128,8 @@ impl Look2 for DummyLook {
         let pose = Pose {
             joints: f.snap.joints[k].clone(),
         };
-        if pose.joints.len() == self.def.rig.bones.len() {
+        // (the TARGET DUMMY never fights back, so it shows no arm at all)
+        if pose.joints.len() == self.def.rig.bones.len() && self.def.name != crate::fighters2::TARGET {
             solve(&self.def.rig, &pose, centre, r_ball, facing, &mut segs);
         }
         let last = segs.len().saturating_sub(1);

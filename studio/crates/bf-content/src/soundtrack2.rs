@@ -463,4 +463,27 @@ mod tests {
         let text = e.to_string();
         assert!(!text.is_empty() && !text.contains('\n'), "{text}");
     }
+
+    /// On Engine 2 the TRUMPET plays its Engine 2 part (the one that reads the Engine 2 shadow): its stem sounds.
+    #[test]
+    fn trumpet_plays_its_engine2_part() {
+        let ff = FightFile::parse(include_str!("../../../fights/engine2/trumpet_vs_test_dummy.toml")).unwrap();
+        let rec = fight(&ff, 7, true);
+        let map = TimeMap::from_recording(&rec, &DirectCfg::default());
+        let s = build(&ff, &(rec, map)).unwrap();
+        let names: Vec<&String> = s.soundtrack.stems.keys().collect();
+        let stem = s
+            .soundtrack
+            .stems
+            .iter()
+            .find(|(b, _)| b.contains("TRUMPET") || b.contains("trumpet"))
+            .unwrap_or_else(|| panic!("no trumpet stem in {names:?}"));
+        // it sounds through the fight itself (FIGHT! to the K.O.), not only in the title and the ending
+        let (a, b) = (
+            (s.show.grid.t_fight * 48_000.0) as usize,
+            (s.show.t_ko * 48_000.0) as usize,
+        );
+        let loud = stem.1[a..b].iter().filter(|f| f[0].abs() > 0.01).count();
+        assert!(loud > 48_000, "the trumpet sounds for only {loud} samples of the fight");
+    }
 }

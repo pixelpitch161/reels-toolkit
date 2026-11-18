@@ -1,0 +1,40 @@
+format = 2
+engine = 2
+app_version = "0.1.0"
+fighters = ["TRUMPET", "TARGET DUMMY"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 2.0
+tempo_bpm = 132.0
+seed = 576
+
+[pair_rules]
+
+[music]
+theme = "big_top"
+arrangement = "composed"
+key = "E"
+scale = "harmonic minor"
+chords_intro = ["Em", "B7"]
+chord_loop = ["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"]
+chords_tail = []
+music_seed = 1
+
+[music.roles]
+
+[music.lines]
+
+[music.solos]
+
+[music.title_hits]
+"TARGET DUMMY" = [0, 4, 7]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+
+[picture.title_lines]
+
+[captions]

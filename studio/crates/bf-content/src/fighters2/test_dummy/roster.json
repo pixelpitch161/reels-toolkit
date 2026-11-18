@@ -33,6 +33,22 @@
    "pp": "MARIMBA",
    "register": [60, 96],
    "idiom": "mallets"
+  },
+  {
+   "name": "TARGET DUMMY",
+   "color": [170, 170, 170],
+   "dark": [95, 95, 95],
+   "corner": "blue",
+   "view": [30, 20, 0],
+   "weapon": {"kind": "engine2", "name": "ARM"},
+   "abilities": {
+    "unlock1": {"name": "DUMMY BUSTER", "kind": "engine2"},
+    "unlock2": {"name": "SECOND WIND", "kind": "engine2"},
+    "low": {"name": "SECOND WIND", "kind": "engine2"}
+   },
+   "pp": "MARIMBA",
+   "register": [60, 96],
+   "idiom": "mallets"
   }
  ]
 }

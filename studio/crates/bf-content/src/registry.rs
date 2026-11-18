@@ -136,7 +136,7 @@ pub const DEV_ONLY: &str = "TEST DUMMY is a developer fighter. Start the app wit
 /// Whether `name` is a developer fighter: the TEST DUMMY (under either of its names), offered only with the
 /// developer switch on (`BALLFIGHT_DEV=1`).
 pub fn dev_only(name: &str) -> bool {
-    crate::fighters2::DUMMIES.contains(&name)
+    crate::fighters2::DUMMIES.contains(&name) || name == crate::fighters2::TARGET
 }
 
 /// [`engines`], plus Engine 2 for the developer fighter when `dev` is on.
@@ -206,7 +206,11 @@ mod tests {
     #[test]
     fn every_offered_fighter_has_the_current_engine_only() {
         for n in available() {
-            assert_eq!(engines(n), [Engine::One], "{n}");
+            if crate::fighters2::MOVED.contains(&n) {
+                assert_eq!(engines(n), [Engine::One, Engine::Two], "{n}");
+            } else {
+                assert_eq!(engines(n), [Engine::One], "{n}");
+            }
         }
     }
 
@@ -244,7 +248,12 @@ mod tests {
         let dummies = crate::fighters2::DUMMIES;
         assert!(offered(Engine::Two, false).iter().all(|n| !dummies.contains(n)));
         assert!(offered(Engine::Two, true).ends_with(&dummies));
-        assert_eq!(offered(Engine::Two, true).first(), Some(&"TEST DUMMY"));
+        // the moved fighters first, then the dummies
+        assert_eq!(offered(Engine::Two, false), crate::fighters2::MOVED);
+        assert_eq!(
+            offered(Engine::Two, true).get(crate::fighters2::MOVED.len()),
+            Some(&"TEST DUMMY")
+        );
         for name in dummies {
             assert!(dev_only(name));
             assert!(engines(name).is_empty());

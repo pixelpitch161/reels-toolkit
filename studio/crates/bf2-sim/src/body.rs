@@ -42,6 +42,8 @@ pub struct Body {
     pub holding: Option<Holding>,
     /// Each move has started at least once (for `Ability { first }`).
     pub used: Vec<bool>,
+    /// Steps of haste left (a `Tag::Haste` move): cooldowns run twice as fast and it moves faster.
+    pub haste: u32,
 }
 
 impl Body {
@@ -65,6 +67,7 @@ impl Body {
             low_done: false,
             holding: None,
             used: vec![false; n_moves],
+            haste: 0,
         }
     }
 
@@ -80,8 +83,10 @@ impl Body {
         } else if self.hitstun > 0 {
             self.hitstun -= 1;
         }
+        let tick = if self.haste > 0 { 2 } else { 1 };
+        self.haste = self.haste.saturating_sub(1);
         for c in &mut self.cooldowns {
-            *c = c.saturating_sub(1);
+            *c = c.saturating_sub(tick);
         }
     }
 }

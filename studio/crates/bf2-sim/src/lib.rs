@@ -29,7 +29,9 @@ pub use body::Body;
 pub use brain::{Brain, Choice, think};
 pub use event::{Ev, EvKind, Events, Surface};
 pub use fighter::{FighterDef, Setup2};
-pub use moves::{Cue, CueAt, Ease, Grab, HitDef, Key, MoveDef, MoveState, Phase, ProjDef, Spawn, Tag, ease};
+pub use moves::{
+    Cue, CueAt, Ease, Grab, HASTE_STEPS, HitDef, Key, MoveDef, MoveState, Phase, ProjDef, Spawn, Tag, ease,
+};
 pub use proj::Proj;
 pub use record::{Outcome, Recording2, StepSnap};
 pub use rig::{Bone, Joint, Pose, Rig, Segment, solve};

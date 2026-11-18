@@ -23,6 +23,8 @@ pub struct Proj {
     pub alive: bool,
     /// Unique within the fight, in spawn order.
     pub id: u32,
+    /// Steps before it can hit again (a `rehit` projectile).
+    pub cool: u32,
 }
 
 /// `a - b` wrapped into -π to π, for angles that are each within -π to π.
@@ -42,11 +44,26 @@ pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step
     let def = &world.defs[who].moves[mv].spawns[spawn].proj;
     let b = &world.bodies[who];
     let (c, s) = (dmath::cos(b.facing), dmath::sin(b.facing));
-    let pos = match world.segments[who].last() {
-        Some(seg) => seg.b,
-        None => add(b.centre(), [c * b.r, s * b.r, 0.0]),
+    let (pos, vel) = match def.place {
+        Some((ang, dist)) => {
+            let t = world.bodies[1 - who].centre();
+            let a = b.facing + ang;
+            (
+                [t[0] + dmath::cos(a) * dist, t[1] + dmath::sin(a) * dist, def.radius],
+                [0.0; 3],
+            )
+        }
+        None => (
+            match world.segments[who].last() {
+                Some(seg) => seg.b,
+                None => add(b.centre(), [c * b.r, s * b.r, 0.0]),
+            },
+            {
+                let a = b.facing + def.aim;
+                [dmath::cos(a) * def.speed, dmath::sin(a) * def.speed, def.up]
+            },
+        ),
     };
-    let vel = [c * def.speed, s * def.speed, def.up];
     let id = world.next_proj;
     world.next_proj += 1;
     world.projs.push(Proj {
@@ -58,6 +75,7 @@ pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step
         bounces: 0,
         alive: true,
         id,
+        cool: 0,
     });
     world.events.push(step, who, EvKind::Spawn { proj: id as usize });
 }
@@ -87,6 +105,7 @@ pub fn step_projs(world: &mut World, step: u32) {
         let tc = world.bodies[target].centre();
         let rules = &world.rules;
         p.age += 1;
+        p.cool = p.cool.saturating_sub(1);
         if def.homing > 0.0 {
             let want = dmath::atan2(tc[1] - p.pos[1], tc[0] - p.pos[0]);
             let now = dmath::atan2(p.vel[1], p.vel[0]);
@@ -96,6 +115,10 @@ pub fn step_projs(world: &mut World, step: u32) {
             let (vx, vy) = (p.vel[0], p.vel[1]);
             p.vel[0] = c * vx - s * vy;
             p.vel[1] = s * vx + c * vy;
+            if def.level {
+                // close the height gap over about a fifth of a second
+                p.vel[2] = (tc[2] - p.pos[2]) * 5.0;
+            }
         }
         if def.gravity {
             p.vel[2] += rules.gravity * rules.dt;
@@ -113,6 +136,7 @@ pub fn step_projs(world: &mut World, step: u32) {
             && tb.hp > 0.0
             && world.bodies[p.owner].hp > 0.0
             && tb.held_by.is_none()
+            && p.cool == 0
             && len(sub(tc, p.pos)) <= def.radius + tb.r
         {
             let point = add(tc, scale(norm(sub(p.pos, tc)), tb.r));
@@ -128,7 +152,23 @@ pub fn step_projs(world: &mut World, step: u32) {
                 },
             );
             apply_hit(world, p.owner, target, &def.hit, point, normal, &[], p.def.1, step);
-            gone = true;
+            if def.place.is_some() {
+                // a placed post pushes the target away from itself (a fence), not away from the thrower
+                let out = norm([tc[0] - p.pos[0], tc[1] - p.pos[1], 0.0]);
+                if out != [0.0; 3] {
+                    let t = &mut world.bodies[target];
+                    t.vel[0] = out[0] * def.hit.knock;
+                    t.vel[1] = out[1] * def.hit.knock;
+                }
+            }
+            if def.rehit > 0 {
+                world.projs[i].cool = def.rehit;
+                p = world.projs[i];
+                gone |= p.age >= def.life;
+                world.projs[i] = p;
+            } else {
+                gone = true;
+            }
         } else {
             let lim = world.rules.a - def.radius;
             for axis in 0..2 {
@@ -164,7 +204,7 @@ pub(crate) fn expire_all(world: &mut World, step: u32) {
 mod tests {
     use super::*;
     use crate::event::EvKind;
-    use crate::moves::{MoveDef, Spawn};
+    use crate::moves::{HitDef, MoveDef, Spawn};
     use crate::testkit::*;
     use crate::world::World;
     use bf_core::rng::Generator;
@@ -183,6 +223,10 @@ mod tests {
             },
             bounces: 0,
             homing: 0.0,
+            place: None,
+            rehit: 0,
+            aim: 0.0,
+            level: false,
         }
     }
 
@@ -204,6 +248,85 @@ mod tests {
             step_projs(w, s);
             w.bodies.iter_mut().for_each(|b| b.countdown());
         }
+    }
+
+    #[test]
+    fn aimed_placed_and_rehitting_projectiles() {
+        // aim: it sets off a quarter turn off the facing
+        let w = thrower(
+            ProjDef {
+                aim: std::f64::consts::FRAC_PI_2,
+                ..dart(10)
+            },
+            -2.0,
+            0.0,
+        );
+        assert!(close(w.projs[0].vel, [0.0, 6.0, 0.0], 1e-9));
+        // level: a homing projectile thrown from high up comes down to the target's centre height
+        let mut w = thrower(
+            ProjDef {
+                homing: 3.0,
+                level: true,
+                life: 200,
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        w.projs[0].pos[2] = 2.0;
+        run(&mut w, 120);
+        assert_eq!(
+            count(&w, |k| matches!(k, EvKind::ProjHit { .. })),
+            1,
+            "it came down and hit"
+        );
+        // place: at rest beside the target, on the canvas
+        let w = thrower(
+            ProjDef {
+                place: Some((0.0, 1.0)),
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        let t = w.bodies[1].centre();
+        assert_eq!(w.projs[0].vel, [0.0; 3]);
+        assert!(close(
+            w.projs[0].pos,
+            [t[0] + 1.0, t[1], w.defs[0].moves[0].spawns[0].proj.radius],
+            1e-9
+        ));
+        // rehit: a post the target sits on hits it again and again, and stays
+        let mut w = thrower(
+            ProjDef {
+                place: Some((0.0, 0.0)),
+                rehit: 20,
+                life: 100,
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        run(&mut w, 70);
+        assert!(count(&w, |k| matches!(k, EvKind::ProjHit { .. })) >= 3);
+        // a post beside the target pushes it away from the post, even toward the thrower
+        let mut w = thrower(
+            ProjDef {
+                place: Some((0.0, 0.3)),
+                rehit: 20,
+                life: 100,
+                hit: HitDef {
+                    knock: 3.0,
+                    ..dart(10).hit
+                },
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        run(&mut w, 1);
+        assert!(w.bodies[1].vel[0] < 0.0, "{:?}", w.bodies[1].vel);
+        assert!(w.projs[0].alive);
     }
 
     #[test]
@@ -311,6 +434,10 @@ mod tests {
                 life: 1 + (g.random() * 300.0) as u32,
                 bounces: (g.random() * 4.0) as u32,
                 homing: if g.random() < 0.5 { 0.0 } else { g.uniform(0.0, 4.0) },
+                place: None,
+                rehit: 0,
+                aim: 0.0,
+                level: false,
                 ..dart(1)
             };
             let mut w = thrower(p, g.uniform(-2.4, 2.4), g.uniform(-2.4, 2.4));
