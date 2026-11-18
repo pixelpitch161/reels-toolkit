@@ -196,6 +196,7 @@ mod tests {
             place: None,
             rehit: 0,
             aim: 0.0,
+            level: false,
         };
         p.hit.grab = Some(crate::moves::Grab {
             hold: 10,

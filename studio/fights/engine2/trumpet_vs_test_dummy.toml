@@ -3,10 +3,10 @@ engine = 2
 app_version = "0.1.0"
 fighters = ["TRUMPET", "TEST DUMMY"]
 arena = "ring"
-handicap = [0.76, 0.8]
+handicap = [0.74, 0.78]
 dmg_scale = 2.0
 tempo_bpm = 132.0
-seed = 7
+seed = 34
 
 [pair_rules]
 

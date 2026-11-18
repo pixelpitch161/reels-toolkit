@@ -190,6 +190,7 @@ fn toss() -> MoveDef {
                 place: None,
                 rehit: 0,
                 aim: 0.0,
+                level: false,
             },
         }],
         ..base("TOSS", vec![Tag::Ranged], (10, 2, 10))

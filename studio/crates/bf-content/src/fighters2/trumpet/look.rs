@@ -545,7 +545,7 @@ impl Look2 for TrumpetLook {
                     lift(maths::add(qp, [wob, 0.0, -wob])),
                     0.07 + 0.13 * u,
                     col([236.0, 236.0, 242.0]),
-                    Material::Additive { strength: 0.32 * fade },
+                    Material::Additive { strength: 0.45 * fade },
                 );
             }
         }
@@ -567,9 +567,25 @@ impl Look2 for TrumpetLook {
                         out,
                         lift(flat(pa)),
                         lift(flat(pb)),
-                        0.05,
+                        0.09,
                         col(fighter),
-                        Material::Additive { strength: 0.7 * fade },
+                        Material::Additive { strength: 1.0 * fade },
+                    );
+                    // a second, thinner ring a beat behind: "ta-ka"
+                    let r2 = BALL_R * (1.05 + 0.9 * smooth01((u - 0.25).max(0.0) / 0.75));
+                    let (qa, qb) = (
+                        maths::add(c, [cosf(a) * r2, 0.0, sinf(a) * r2]),
+                        maths::add(c, [cosf(b) * r2, 0.0, sinf(b) * r2]),
+                    );
+                    strip(
+                        out,
+                        lift(flat(qa)),
+                        lift(flat(qb)),
+                        0.05,
+                        col(BRASS_HI),
+                        Material::Additive {
+                            strength: 0.8 * fade * smooth01(u / 0.25),
+                        },
                     );
                 }
             }
@@ -585,7 +601,7 @@ impl Look2 for TrumpetLook {
                     BALL_R * 1.15,
                     col(fighter),
                     Material::Additive {
-                        strength: (0.08 + 0.1 * pulse) * fade_in * fade_out,
+                        strength: (0.16 + 0.16 * pulse) * fade_in * fade_out,
                     },
                 );
             }
@@ -717,7 +733,7 @@ impl TrumpetLook {
     #[allow(clippy::too_many_arguments)]
     fn rocket(&self, out: &mut Scene, m: &Meshes, p: V3, dir: V3, grow: f32, age: f64, fighter: [f64; 3]) {
         let n = maths::normalize(maths::cross(UP, dir));
-        let s = 0.5 + 0.5 * grow;
+        let s = 1.35 * (0.5 + 0.5 * grow);
         let nose = maths::add(p, maths::scale(dir, 0.12 * s));
         let tail = maths::sub(p, maths::scale(dir, 0.34 * s));
         let strip = |out: &mut Scene, a: V3, b: V3, w: f32, colour: [f32; 3], mat: Material, y: f32| {

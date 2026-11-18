@@ -154,6 +154,7 @@ fn proj(name: &'static str, hit: HitDef) -> ProjDef {
         place: None,
         rehit: 0,
         aim: 0.0,
+        level: false,
     }
 }
 
@@ -220,6 +221,8 @@ fn valve_combo() -> MoveDef {
             },
         ],
         cues: vec![cue(Phase::Active, 13, Cue::PunchIn)],
+        // the trumpet rocks back as it fires, so the pistons have room to show before they meet the glass
+        lunge: -2.5,
         ..base("VALVE COMBO+", vec![Tag::Light, Tag::Melee], (w, a, r))
     }
 }
@@ -372,7 +375,7 @@ fn double_tongue() -> MoveDef {
 }
 
 /// PISTON ROCKETS' rockets: when each sets off (active steps) and the angle it fans out at.
-pub const ROCKETS: [(u32, f64); 3] = [(0, 0.9), (30, -0.9), (60, 0.0)];
+pub const ROCKETS: [(u32, f64); 3] = [(0, 1.0), (30, -1.0), (60, 0.0)];
 /// A rocket's life, steps.
 pub const ROCKET_LIFE: u32 = 240;
 
@@ -407,11 +410,12 @@ fn piston_rockets() -> MoveDef {
         .map(|&(at, aim)| Spawn {
             at,
             proj: ProjDef {
-                speed: 6.0,
+                speed: 4.5,
                 radius: 0.14,
                 life: ROCKET_LIFE,
                 homing: 5.0,
                 aim,
+                level: true,
                 ..proj(
                     "PISTON ROCKET",
                     HitDef {
@@ -479,7 +483,7 @@ pub fn def() -> FighterDef {
                 choice(VALVE_COMBO, (1.1, 2.3), 3.0, 110),
                 choice(VALVE_COMBO_TK, (1.1, 2.3), 3.0, 50),
                 choice(HERALD_LINE, (1.2, 4.0), 1.2, 900),
-                choice(DOUBLE_TONGUE, (1.1, 5.0), 0.8, 1900),
+                choice(DOUBLE_TONGUE, (1.1, 3.0), 0.8, 1900),
             ],
             speed: 2.6,
             think: 6,

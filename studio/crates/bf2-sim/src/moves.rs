@@ -148,6 +148,9 @@ pub struct ProjDef {
     /// Radians off the attacker's facing that a launched projectile sets off along (0: straight ahead), so a
     /// volley can fan out before its homing curves it back in.
     pub aim: f64,
+    /// With homing: it also levels off to the target's centre height (a rocket thrown from the air comes down to
+    /// meet the target instead of flying over it).
+    pub level: bool,
 }
 
 /// A projectile launched during the Active phase.

@@ -236,6 +236,7 @@ mod tests {
             place: None,
             rehit: 0,
             aim: 0.0,
+            level: false,
         };
         let mv = MoveDef {
             cues: vec![CueAt {
