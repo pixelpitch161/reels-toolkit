@@ -13,6 +13,8 @@ use crate::world::World;
 const TURN_RATE: f64 = 12.0;
 /// Seeded heading jitter when moving, degrees either way.
 const JITTER_DEG: f64 = 10.0;
+/// A hasted fighter's move speed, times its brain's.
+const HASTE_SPEED: f64 = 1.3;
 
 /// A move the brain may pick, and when.
 #[derive(Clone, Debug, PartialEq)]
@@ -100,8 +102,12 @@ pub fn think(world: &mut World, who: usize, step: u32) {
         return;
     }
     let dist = len(to);
+    let hasted = b.haste > 0;
+    // while hasted, only the moves made for it (when it has any)
+    let only_hasted = hasted && brain.choices.iter().any(|c| def.moves[c.mv].has(Tag::Hasted));
     let fits = |c: &Choice| {
         c.weight > 0.0
+            && def.moves[c.mv].has(Tag::Hasted) == only_hasted
             && c.range.0 <= dist
             && dist <= c.range.1
             && b.cooldowns.get(c.mv).is_some_and(|&cd| cd == 0)
@@ -146,8 +152,13 @@ pub fn think(world: &mut World, who: usize, step: u32) {
     let jitter = world.rng.uniform(-JITTER_DEG, JITTER_DEG) * dmath::PI / 180.0;
     let heading = dmath::atan2(hy, hx) + jitter;
     let b = &mut world.bodies[who];
-    b.vel[0] = dmath::cos(heading) * brain.speed;
-    b.vel[1] = dmath::sin(heading) * brain.speed;
+    let speed = if b.haste > 0 {
+        brain.speed * HASTE_SPEED
+    } else {
+        brain.speed
+    };
+    b.vel[0] = dmath::cos(heading) * speed;
+    b.vel[1] = dmath::sin(heading) * speed;
 }
 
 #[cfg(test)]
@@ -289,6 +300,35 @@ mod tests {
         assert_eq!(starts(&w, 0), vec![(0, 1)]);
         assert_eq!(w.bodies[0].meter, 0.0);
         assert_eq!(count(&w, |k| matches!(k, EvKind::Ability { mv: 1, first: true })), 1);
+    }
+
+    #[test]
+    fn haste_picks_hasted_moves_and_doubles_cooldowns() {
+        let mut f = with_brain(vec![choice(0, 1.0), choice(2, 1.0)], None);
+        f.moves[2].tags.push(Tag::Hasted);
+        let defs = [f, with_brain(vec![], None)];
+        // not hasted: never the hasted move
+        let w = fight(defs.clone(), 3, 600);
+        assert!(!starts(&w, 0).is_empty());
+        assert!(starts(&w, 0).iter().all(|&(_, mv)| mv == 0));
+        // hasted: only the hasted move, until the haste runs out
+        let mut w = world(defs, -1.0, 1.0);
+        w.bodies[0].haste = 300;
+        for _ in 0..600 {
+            tick(&mut w);
+        }
+        let s = starts(&w, 0);
+        assert!(s.iter().any(|&(at, mv)| at < 300 && mv == 2));
+        assert!(s.iter().all(|&(at, mv)| (at < 300) == (mv == 2)), "{s:?}");
+        // cooldowns run twice as fast while hasted
+        let mut b = w.bodies[0].clone();
+        b.cooldowns[0] = 10;
+        b.haste = 2;
+        b.countdown();
+        assert_eq!((b.cooldowns[0], b.haste), (8, 1));
+        b.haste = 0;
+        b.countdown();
+        assert_eq!(b.cooldowns[0], 7);
     }
 
     #[test]

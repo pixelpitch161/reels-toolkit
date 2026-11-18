@@ -665,7 +665,8 @@ impl Renderer {
         let mut enc = gpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("post") });
-        self.post.encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post, Some(scene));
+        self.post
+            .encode(gpu, &mut enc, &sized.targets, &sized.post_bind, post, Some(scene));
         self.overlay.encode(gpu, &mut enc, &sized.targets);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, &sized.targets)
@@ -740,7 +741,8 @@ impl Renderer {
             }
             None => source_bind,
         };
-        self.post.encode(gpu, &mut enc, t, bind, post, Some(&scenes[scenes.len() / 2]));
+        self.post
+            .encode(gpu, &mut enc, t, bind, post, Some(&scenes[scenes.len() / 2]));
         self.overlay.encode(gpu, &mut enc, t);
         gpu.queue.submit([enc.finish()]);
         read_back(gpu, t)

@@ -76,7 +76,15 @@ pub enum Tag {
     Ranged,
     Grab,
     Low,
+    /// Its Active start hastes the fighter for [`HASTE_STEPS`]: move cooldowns run twice as fast and it moves 1.3x
+    /// as fast.
+    Haste,
+    /// The brain picks it only while hasted, and while hasted picks only such moves.
+    Hasted,
 }
+
+/// How long a [`Tag::Haste`] move's haste lasts: 4 s.
+pub const HASTE_STEPS: u32 = 480;
 
 /// A grab: the target is held at the tip of `bone`, then slammed down or thrown.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -131,12 +139,15 @@ pub struct ProjDef {
     pub bounces: u32,
     /// Radians/s toward the target; 0 for none.
     pub homing: f64,
-    /// SPIKE (trumpet): placed instead of launched: it appears at rest on the canvas at (angle off the attacker's
-    /// facing, distance) from the target's centre.
+    /// Placed instead of launched: it appears at rest on the canvas at (angle off the attacker's facing, distance)
+    /// from the target's centre. `None` launches it from the tip of the last bone.
     pub place: Option<(f64, f64)>,
-    /// SPIKE (trumpet): 0: it expires on its first hit. Otherwise it stays and can hit again this many steps later
-    /// (a post the target bounces off).
+    /// 0: it expires on its first hit. Otherwise it stays and can hit again this many steps later (a post the
+    /// target bounces off).
     pub rehit: u32,
+    /// Radians off the attacker's facing that a launched projectile sets off along (0: straight ahead), so a
+    /// volley can fan out before its homing curves it back in.
+    pub aim: f64,
 }
 
 /// A projectile launched during the Active phase.

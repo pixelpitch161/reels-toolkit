@@ -58,7 +58,10 @@ pub(crate) fn spawn(world: &mut World, who: usize, mv: usize, spawn: usize, step
                 Some(seg) => seg.b,
                 None => add(b.centre(), [c * b.r, s * b.r, 0.0]),
             },
-            [c * def.speed, s * def.speed, def.up],
+            {
+                let a = b.facing + def.aim;
+                [dmath::cos(a) * def.speed, dmath::sin(a) * def.speed, def.up]
+            },
         ),
     };
     let id = world.next_proj;
@@ -209,6 +212,7 @@ mod tests {
             homing: 0.0,
             place: None,
             rehit: 0,
+            aim: 0.0,
         }
     }
 
@@ -230,6 +234,50 @@ mod tests {
             step_projs(w, s);
             w.bodies.iter_mut().for_each(|b| b.countdown());
         }
+    }
+
+    #[test]
+    fn aimed_placed_and_rehitting_projectiles() {
+        // aim: it sets off a quarter turn off the facing
+        let w = thrower(
+            ProjDef {
+                aim: std::f64::consts::FRAC_PI_2,
+                ..dart(10)
+            },
+            -2.0,
+            0.0,
+        );
+        assert!(close(w.projs[0].vel, [0.0, 6.0, 0.0], 1e-9));
+        // place: at rest beside the target, on the canvas
+        let w = thrower(
+            ProjDef {
+                place: Some((0.0, 1.0)),
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        let t = w.bodies[1].centre();
+        assert_eq!(w.projs[0].vel, [0.0; 3]);
+        assert!(close(
+            w.projs[0].pos,
+            [t[0] + 1.0, t[1], w.defs[0].moves[0].spawns[0].proj.radius],
+            1e-9
+        ));
+        // rehit: a post the target sits on hits it again and again, and stays
+        let mut w = thrower(
+            ProjDef {
+                place: Some((0.0, 0.0)),
+                rehit: 20,
+                life: 100,
+                ..dart(10)
+            },
+            2.0,
+            0.0,
+        );
+        run(&mut w, 70);
+        assert!(count(&w, |k| matches!(k, EvKind::ProjHit { .. })) >= 3);
+        assert!(w.projs[0].alive);
     }
 
     #[test]
@@ -339,6 +387,7 @@ mod tests {
                 homing: if g.random() < 0.5 { 0.0 } else { g.uniform(0.0, 4.0) },
                 place: None,
                 rehit: 0,
+                aim: 0.0,
                 ..dart(1)
             };
             let mut w = thrower(p, g.uniform(-2.4, 2.4), g.uniform(-2.4, 2.4));

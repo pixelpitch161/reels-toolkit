@@ -1,18 +1,23 @@
-//! SPIKE: the TRUMPET's Engine 2 look, drawn the way the current engine draws it (Aedan, 2026-11-17: everything
-//! faithful to the original style, no 3D model).
+//! The TRUMPET's Engine 2 look, drawn the way the current engine draws it (Aedan, 2026-11-17: everything faithful
+//! to the original style, no 3D model).
 //!
 //! - The trumpet in the ball is the current engine's own sprite (`render_sprite` of `data/models/TRUMPET.json` at
 //!   its view's yaw, rolled in 10 degree steps so the valves face the aim), laid in the glass as a flat
 //!   camera-facing card of one quad per art pixel, unlit, at the current engine's `lit = sprite * 1.06`.
 //! - Every weapon is the current engine's flat drawing: polygons in the floor plane at the ball's centre height, in
 //!   its colours. The pistons are `draw_piston`'s (a brass collar, the silver rod with its glint line, the pearl
-//!   button in a rim of the fighter's colour, a pale streak while they shoot out). The lance and the valve caps are
-//!   new, in the same vocabulary: flat brass strips with a dark edge and a glint, collar rings, flat discs.
+//!   button in a rim of the fighter's colour, a pale streak while they shoot out). A piston stops on the foe's glass
+//!   instead of passing through it (Aedan, 2026-11-18): its button squashes against the glass with a small ring, and
+//!   the trumpet recoils a touch in its ball.
+//! - The specials are new, in the same vocabulary: HERALD LINE's silver poles with gold pennants, DOUBLE TONGUE+'s
+//!   gold ring and the haste's glow under the ball, PISTON ROCKETS' flying pistons with puffs of steam behind them.
+//!   Nothing pops: every part rises, folds, fades or shrinks out.
 //! - Effects: the shared hit presets turned a notch below the dummy's, with no scorch marks.
 
 use std::sync::Arc;
 
 use bf_core::dmath::{atan2, cosf, sin, sinf};
+use bf2_sim::HASTE_STEPS;
 
 fn cube(x: f64) -> f64 {
     x * x * x
@@ -30,12 +35,11 @@ use bf2_render::{
 use bf2_sim::{EvKind, FighterDef, Joint, Pose, Recording2, Segment, solve};
 
 use super::{
-    CAP1, CAP2, CAP3, CAVALRY_CHARGE, H1, H2, H3, HERALD_LINE, HORN, LANCE, P1, P2, P3, POLE_LIFE, ROYAL_HERALDS,
-    TICKER_TAPE,
+    DOUBLE_TONGUE, HERALD_LINE, HORN, P1, P2, P3, PISTON_ROCKETS, POLE_FOLD, POLE_LIFE, POLE_RISE, ROCKET_LIFE,
+    VALVE_COMBO_TK,
 };
 
 /// The current engine's TRUMPET colours (`fighters/trumpet/look.rs`).
-const BRASS: [f64; 3] = [232.0, 184.0, 72.0];
 const BRASS_HI: [f64; 3] = [255.0, 236.0, 160.0];
 const BRASS_DK: [f64; 3] = [150.0, 104.0, 34.0];
 const PEARL: [f64; 3] = [238.0, 236.0, 228.0];
@@ -269,14 +273,20 @@ impl Look2 for TrumpetLook {
         // one sprite pixel: the sprite's radius covers SPRITE_K of the ball's (at the card's depth, a hair smaller)
         let px = BALL_R * SPRITE_K / rad * (ball_px(&cam, at) / ball_px(&cam, c)).min(1.0);
         let idx = ri * 36 + (rl / ROLL_STEP) as usize;
-        out.instances.push(
+        // (pushed once the pistons are known: it recoils when they meet the foe)
+        let card_at = |off: V3| {
             Instance::new(
                 m.cards[idx],
                 Material::Unlit,
-                basis(maths::scale(right, px), maths::scale(up, px), toward, at),
+                basis(
+                    maths::scale(right, px),
+                    maths::scale(up, px),
+                    toward,
+                    maths::add(at, off),
+                ),
             )
-            .coloured([1.0; 3]),
-        );
+            .coloured([1.0; 3])
+        };
 
         // The rig's segments, now and a few steps back (the caps' motion ghosts, the pistons' streaks).
         let solve_at = |step: usize| -> Option<Vec<Segment>> {
@@ -327,8 +337,33 @@ impl Look2 for TrumpetLook {
         };
         let fighter = self.def.colour.map(f64::from);
         let prev = f.step.checked_sub(2).and_then(solve_at);
+        let fstep = f.step.min(f.rec.steps.len().saturating_sub(1));
+        let now = f.step as f64 + f.alpha;
+        let now_mv = f.rec.steps.get(fstep).and_then(|st| st.mv[k]).map(|m| m.0 as usize);
+        let foe = flat(ball_centre(f.snap.pos[1 - k]));
+        let cam_right = right;
+        let glow = col(mix(fighter, 0.5, 120.0));
+        let rod = col(PISTON.map(|v| v * 0.82));
+        let shine = col([250.0, 252.0, 255.0]);
+        // a flat oval in the floor plane: `along` half-width along `d`, `across` across it
+        let oval = |out: &mut Scene, p: V3, d: V3, along: f32, across: f32, colour: [f32; 3]| {
+            let n = maths::normalize(maths::cross(d, UP));
+            out.instances.push(
+                Instance::new(
+                    m.disc,
+                    Material::Unlit,
+                    basis(maths::scale(d, along), UP, maths::scale(n, across), p),
+                )
+                .coloured(colour),
+            );
+        };
 
-        // The pistons: `draw_piston`, at the valve's lateral offset, the rod's base 0.8 of the radius out.
+        // The pistons: `draw_piston`, at the valve's lateral offset, the rod's base 0.2 of the radius inside the
+        // glass. A piston that would pass into the foe stops on its glass: the tip is cut back to the glass, the
+        // button squashes flat against it, and a small ring marks the contact.
+        let mut recoil = 0.0f32;
+        let mut recoil_dir = [0.0f32; 3];
+        let taka = now_mv == Some(VALVE_COMBO_TK);
         for (i, b) in [P1, P2, P3].into_iter().enumerate() {
             let (a, tip) = seg(&segs, b);
             let (a, tip) = (flat(a), flat(tip));
@@ -340,7 +375,19 @@ impl Look2 for TrumpetLook {
             let n = maths::normalize(maths::cross(UP, d));
             let off = maths::scale(n, (i as f32 - 1.0) * 0.1);
             let a0 = maths::add(maths::sub(a, maths::scale(d, BALL_R * 0.2)), off);
-            let tip = maths::add(tip, off);
+            let full = maths::add(tip, off);
+            // where the rod meets the foe's glass (the button's rim stops on it)
+            let reach = maths::length(maths::sub(full, a0));
+            let stop = glass_hit(a0, d, foe, BALL_R + 0.1).filter(|&t| t < reach);
+            let (tip, squash) = match stop {
+                Some(t) => {
+                    let over = reach - t;
+                    recoil = recoil.max((over * 0.06).min(0.05));
+                    recoil_dir = d;
+                    (maths::add(a0, maths::scale(d, t.max(0.05))), (over / 0.25).min(1.0))
+                }
+                None => (full, 0.0),
+            };
             let growing = prev.as_ref().is_some_and(|p| {
                 let (pa, pt) = seg(p, b);
                 maths::length(maths::sub(pt, pa)) + 0.02 < len
@@ -351,155 +398,72 @@ impl Look2 for TrumpetLook {
                     lift(a0),
                     lift(tip),
                     0.3,
-                    col(mix(fighter, 0.5, 120.0)),
+                    glow,
                     Material::Additive { strength: 0.3 },
                 );
             }
-            strip(
-                out,
-                lift(a0),
-                lift(tip),
-                0.1,
-                col(PISTON.map(|v| v * 0.82)),
-                Material::Unlit,
-            );
+            // TA-KA COMBO: the second tongue's after-image, a pale rod and button just behind the live one
+            if taka && growing {
+                let back = maths::sub(tip, maths::scale(d, 0.22));
+                strip(
+                    out,
+                    lift(a0),
+                    lift(back),
+                    0.1,
+                    glow,
+                    Material::Additive { strength: 0.25 },
+                );
+                disc(out, lift(back), 0.13, glow, Material::Additive { strength: 0.3 });
+            }
+            strip(out, lift(a0), lift(tip), 0.1, rod, Material::Unlit);
             strip(
                 out,
                 lift(maths::add(a0, maths::scale(n, 0.018))),
                 lift(maths::add(tip, maths::scale(n, 0.018))),
                 0.022,
-                col([250.0, 252.0, 255.0]),
+                shine,
                 Material::Unlit,
             );
             disc(out, lift(a0), 0.095, col(COLLAR), Material::Unlit);
-            disc(out, lift(tip), 0.16, col(mix(fighter, 0.8, 30.0)), Material::Unlit);
-            disc(
+            // the button: squashed along the stroke against the glass
+            let sq = 1.0 - 0.45 * squash;
+            oval(
+                out,
+                lift(tip),
+                d,
+                0.16 * sq,
+                0.16 * (1.0 + 0.15 * squash),
+                col(mix(fighter, 0.8, 30.0)),
+            );
+            oval(
                 out,
                 lift(maths::add(tip, maths::scale(d, 0.015))),
-                0.125,
+                d,
+                0.125 * sq,
+                0.125 * (1.0 + 0.15 * squash),
                 col(PEARL),
-                Material::Unlit,
             );
-        }
-
-        // The lance: the lead pipe in three telescoping flat brass sections, the mouthpiece on the end.
-        {
-            let (a, tip) = seg(&segs, LANCE);
-            let (a, tip) = (flat(a), flat(tip));
-            let len = maths::length(maths::sub(tip, a));
-            if len > 0.06 {
-                let d = maths::scale(maths::sub(tip, a), 1.0 / len);
-                let n = maths::normalize(maths::cross(UP, d));
-                let a0 = maths::sub(a, maths::scale(d, 0.18));
-                let total = len + 0.18;
-                let growing = prev.as_ref().is_some_and(|p| {
-                    let (pa, pt) = seg(p, LANCE);
-                    maths::length(maths::sub(pt, pa)) + 0.03 < len
-                });
-                if growing {
-                    strip(
-                        out,
-                        lift(a0),
-                        lift(tip),
-                        0.4,
-                        col(mix(fighter, 0.5, 120.0)),
-                        Material::Additive { strength: 0.3 },
-                    );
-                }
-                let halves = [0.11f32, 0.09, 0.072];
-                for (i, w) in halves.into_iter().enumerate() {
-                    let from = (total * i as f32 / 3.0 - 0.04).max(0.0);
-                    let to = total * (i as f32 + 1.0) / 3.0;
-                    let p0 = maths::add(a0, maths::scale(d, from));
-                    let p1 = maths::add(a0, maths::scale(d, to));
-                    strip(out, lift(p0), lift(p1), 2.0 * w + 0.03, col(BRASS_DK), Material::Unlit);
-                    strip(out, lift(p0), lift(p1), 2.0 * w, col(BRASS), Material::Unlit);
-                    let g = maths::scale(n, w * 0.45);
-                    strip(
-                        out,
-                        lift(maths::add(p0, g)),
-                        lift(maths::add(p1, g)),
-                        0.022,
-                        col(BRASS_HI),
-                        Material::Unlit,
-                    );
-                    // a collar ring at the section's mouth
-                    strip(
-                        out,
-                        lift(maths::sub(p1, maths::scale(d, 0.05))),
-                        lift(p1),
-                        2.0 * w + 0.05,
-                        col(COLLAR),
-                        Material::Unlit,
-                    );
-                }
-                // the mouthpiece: a silver shank and cup
-                let cup = maths::add(tip, maths::scale(d, 0.13));
-                strip(
+            if squash > 0.0 {
+                // the contact ring on the glass
+                let at = maths::add(tip, maths::scale(d, 0.1));
+                disc(
                     out,
-                    lift(tip),
-                    lift(cup),
-                    0.08,
-                    col(PISTON.map(|v| v * 0.82)),
-                    Material::Unlit,
+                    lift(at),
+                    0.12 + 0.12 * squash,
+                    glow,
+                    Material::Additive {
+                        strength: 0.35 * squash,
+                    },
                 );
-                disc(out, lift(cup), 0.12, col(PISTON.map(|v| v * 0.82)), Material::Unlit);
-                disc(out, lift(cup), 0.09, col(PISTON), Material::Unlit);
-                disc(out, lift(cup), 0.045, col(PISTON.map(|v| v * 0.55)), Material::Unlit);
             }
         }
+        out.instances.push(card_at(maths::scale(recoil_dir, -recoil)));
 
-        // The valve caps on their cords, with pale ghosts of where they were.
-        for b in [CAP1, CAP2, CAP3] {
-            let (a, tip) = seg(&segs, b);
-            let v = maths::sub(tip, a);
-            let len = maths::length(v);
-            if len < 0.64 {
-                continue;
-            }
-            let dir = maths::scale(v, 1.0 / len);
-            for (j, back) in [6usize, 4, 2].into_iter().enumerate() {
-                if let Some(ps) = f.step.checked_sub(back).and_then(solve_at) {
-                    let (_, gt) = seg(&ps, b);
-                    if maths::length(maths::sub(gt, tip)) > 0.08 {
-                        disc(
-                            out,
-                            lift(gt),
-                            0.15,
-                            col(mix(fighter, 0.5, 120.0)),
-                            Material::Additive {
-                                strength: 0.12 + 0.08 * j as f32,
-                            },
-                        );
-                    }
-                }
-            }
-            let from = maths::add(a, maths::scale(dir, BALL_R * 0.85));
-            strip(
-                out,
-                lift(from),
-                lift(tip),
-                0.025,
-                col(PISTON.map(|v| v * 0.82)),
-                Material::Unlit,
-            );
-            disc(out, lift(tip), 0.16, col(BRASS_DK), Material::Unlit);
-            disc(out, lift(tip), 0.135, col(COLLAR), Material::Unlit);
-            disc(out, lift(tip), 0.095, col(BRASS_HI), Material::Unlit);
-            disc(out, lift(tip), 0.05, col(PEARL), Material::Unlit);
-        }
-        // ---------------------------------------------------------------- round 2: the specials
-        let fstep = f.step.min(f.rec.steps.len().saturating_sub(1));
-        let now_mv = f.rec.steps.get(fstep).and_then(|st| st.mv[k]);
-        let flat_put = |out: &mut Scene, mesh: MeshId, x: V3, z: V3, o: V3, colour: [f32; 3], mat: Material| {
-            out.instances
-                .push(Instance::new(mesh, mat, facing_cam(x, z, o)).coloured(colour));
-        };
-        let cam_right = right;
-        let mut drawn = Vec::new();
-
-        // My projectiles: which move threw each (HERALD LINE's poles, TICKER TAPE's flakes), and when.
-        let mut mine: Vec<(u32, usize, u32, usize)> = Vec::new(); // (id, move, spawn step, index in its cast)
+        // My projectiles: which move threw each (HERALD LINE's poles, PISTON ROCKETS' rockets), when, and which one
+        // of its cast.
+        let mut mine: Vec<(u32, usize, u32, usize)> = Vec::new();
+        let mut pole_hits: Vec<(u32, u32)> = Vec::new();
+        let mut active_at: [Option<u32>; 5] = [None; 5];
         for e in &f.rec.events {
             if e.step as usize > fstep {
                 break;
@@ -507,277 +471,320 @@ impl Look2 for TrumpetLook {
             if e.who != k {
                 continue;
             }
-            if let EvKind::Spawn { proj } = e.kind {
-                let mv = f
-                    .rec
-                    .steps
-                    .get(e.step as usize)
-                    .and_then(|st| st.mv[k])
-                    .map_or(usize::MAX, |m| m.0 as usize);
-                let idx = mine
-                    .iter()
-                    .filter(|m| m.1 == mv && e.step.saturating_sub(m.2) < 40)
-                    .count();
-                mine.push((proj as u32, mv, e.step, idx));
+            match e.kind {
+                EvKind::Active { mv } if mv < active_at.len() => active_at[mv] = Some(e.step),
+                EvKind::Spawn { proj } => {
+                    let mv = f
+                        .rec
+                        .steps
+                        .get(e.step as usize)
+                        .and_then(|st| st.mv[k])
+                        .map_or(usize::MAX, |m| m.0 as usize);
+                    let idx = mine
+                        .iter()
+                        .filter(|m| m.1 == mv && e.step.saturating_sub(m.2) < 90)
+                        .count();
+                    mine.push((proj as u32, mv, e.step, idx));
+                }
+                EvKind::ProjHit { proj, .. } => pole_hits.push((proj as u32, e.step)),
+                _ => {}
             }
         }
+        let mut drawn = Vec::new();
         for &(id, pos3) in &f.snap.projs {
             let Some(&(_, mv, at, idx)) = mine.iter().find(|m| m.0 == id) else {
                 continue;
             };
-            let age = (f.step as f64 + f.alpha) - f64::from(at);
+            let age = now - f64::from(at);
             let p = to_render(pos3);
             if mv == HERALD_LINE {
                 drawn.push(id);
-                let life = f64::from(POLE_LIFE);
-                let up = (1.0 - cube(1.0 - (age / 10.0).clamp(0.0, 1.0)))
-                    * (1.0 - ((age - (life - 24.0)) / 20.0).clamp(0.0, 1.0));
-                let h = 0.95 * up as f32;
-                if h < 0.02 {
-                    continue;
-                }
-                let base = [p[0], 0.0, p[2]];
-                let top = maths::add(base, [0.0, h, 0.0]);
-                disc(out, [base[0], 0.012, base[2]], 0.11, col(COLLAR), Material::Unlit);
-                flat_put(
-                    out,
-                    m.strip,
-                    [0.0, h, 0.0],
-                    maths::scale(cam_right, 0.06),
-                    base,
-                    col(PISTON.map(|v| v * 0.82)),
-                    Material::Unlit,
-                );
-                flat_put(
-                    out,
-                    m.strip,
-                    [0.0, h, 0.0],
-                    maths::scale(cam_right, 0.018),
-                    maths::add(base, maths::scale(cam_right, 0.012)),
-                    col([250.0, 252.0, 255.0]),
-                    Material::Unlit,
-                );
-                // the pennant streams away from the foe it fences, fluttering
-                let tc = ball_centre(f.snap.pos[1 - k]);
-                let out_dir = maths::normalize([p[0] - tc[0], 0.0, p[2] - tc[2]]);
-                let flut = sin(age * 0.5 + idx as f64) as f32 * 0.05;
-                let tip = maths::add(maths::scale(out_dir, 0.36), [0.0, flut, 0.0]);
-                let o = maths::sub(top, [0.0, 0.11, 0.0]);
-                flat_put(
-                    out,
-                    m.tri,
-                    maths::scale(tip, 1.12),
-                    [0.0, 0.26, 0.0],
-                    o,
-                    col(BRASS_DK),
-                    Material::Unlit,
-                );
-                flat_put(
-                    out,
-                    m.tri,
-                    tip,
-                    [0.0, 0.2, 0.0],
-                    maths::add(o, [0.0, 0.004, 0.0]),
-                    col(fighter),
-                    Material::Unlit,
-                );
-                disc(
-                    out,
-                    maths::add(top, [0.0, 0.01, 0.0]),
-                    0.04,
-                    col(BRASS_HI),
-                    Material::Unlit,
-                );
-            } else if mv == TICKER_TAPE {
+                let hit = pole_hits.iter().rev().find(|h| h.0 == id).map(|h| now - f64::from(h.1));
+                self.pole(out, m, p, foe, age, idx, hit, cam_right, fighter);
+            } else if mv == PISTON_ROCKETS {
                 drawn.push(id);
-                let colours = [fighter, BRASS_HI, BRASS];
-                for j in 0..5usize {
-                    let a = (age * 0.31 + (idx * 3 + j) as f64 * 1.7) as f32;
-                    let off = [
-                        sinf((idx * 5 + j * 3) as f32) * 0.26,
-                        cosf((j * 7) as f32) * 0.14,
-                        cosf((idx * 3 + j * 5) as f32) * 0.26,
-                    ];
-                    let at = maths::add(p, if j == 0 { [0.0; 3] } else { off });
-                    let landed = at[1] < 0.16;
-                    let x = if landed {
-                        [cosf(a) * 0.18, 0.0, sinf(a) * 0.18]
-                    } else {
-                        maths::scale(maths::normalize([cosf(a), 0.7 * sinf(1.3 * a), sinf(a)]), 0.2)
-                    };
-                    let z = maths::scale(
-                        maths::normalize(maths::cross(x, if landed { [0.0, -1.0, 0.0] } else { [0.3, 1.0, 0.2] })),
-                        0.08,
-                    );
-                    let at = if landed { [at[0], 0.015, at[2]] } else { at };
-                    flat_put(
-                        out,
-                        m.strip,
-                        x,
-                        z,
-                        maths::sub(at, maths::scale(x, 0.5)),
-                        col(colours[(idx + j) % 3]),
-                        Material::Unlit,
-                    );
-                }
+                // heading: from where it was a step back
+                let back = f
+                    .rec
+                    .steps
+                    .get(fstep.saturating_sub(1))
+                    .and_then(|st| st.projs.iter().find(|q| q.0 == id))
+                    .map(|q| flat(to_render(q.1)));
+                let pf = flat(p);
+                let dir = back
+                    .map(|b| maths::sub(pf, b))
+                    .filter(|v| maths::length(*v) > 1e-4)
+                    .map_or(floor_dir(facing), maths::normalize);
+                // it sets off small out of the casing and grows to full size over 6 steps
+                let grow = smooth01((age / 6.0) as f32);
+                self.rocket(out, m, pf, dir, grow, age, fighter);
             }
         }
 
-        // CAVALRY CHARGE: a brass wake and a row of pennants left standing along the dash.
-        let last_active = f
-            .rec
-            .events
-            .iter()
-            .rev()
-            .filter(|e| e.who == k && e.step as usize <= fstep)
-            .find_map(|e| match e.kind {
-                EvKind::Active { mv } if mv == CAVALRY_CHARGE => Some(e.step),
-                _ => None,
-            });
-        if let Some(a0) = last_active {
-            let since = (f.step as f64 + f.alpha) - f64::from(a0);
-            if (0.0..70.0).contains(&since) {
-                let fade = (1.0 - ((since - 20.0) / 50.0).clamp(0.0, 1.0)) as f32;
-                let start = f.rec.steps.get(a0 as usize).map(|st| ball_centre(st.pos[k]));
-                if let Some(s0) = start {
-                    let s0 = [s0[0], c[1], s0[2]];
-                    let cc = [c[0], c[1], c[2]];
-                    if maths::length(maths::sub(cc, s0)) > 0.3 {
-                        strip(
-                            out,
-                            lift(s0),
-                            lift(cc),
-                            0.9,
-                            col(mix(fighter, 0.5, 120.0)),
-                            Material::Additive { strength: 0.45 * fade },
-                        );
-                    }
-                    for i in 0..3u32 {
-                        let st = f
-                            .rec
-                            .steps
-                            .get((a0 + 3 + i * 4) as usize)
-                            .map(|st| ball_centre(st.pos[k]));
-                        let Some(q) = st else { continue };
-                        if since < f64::from(3 + i * 4) {
-                            continue;
-                        }
-                        let d = floor_dir(f.rec.steps[(a0 + 3 + i * 4) as usize].facing[k]);
-                        let back = maths::scale(d, -1.0);
-                        let base = maths::add([q[0], 0.0, q[2]], maths::scale(back, 0.7));
-                        let h = 0.6 * fade;
-                        if h < 0.03 {
-                            continue;
-                        }
-                        flat_put(
-                            out,
-                            m.strip,
-                            [0.0, h, 0.0],
-                            maths::scale(cam_right, 0.05),
-                            base,
-                            col(PISTON.map(|v| v * 0.82)),
-                            Material::Unlit,
-                        );
-                        let flut = sinf((since * 0.6) as f32 + i as f32) * 0.05;
-                        let o = maths::add(base, [0.0, h - 0.09, 0.0]);
-                        flat_put(
-                            out,
-                            m.tri,
-                            maths::add(maths::scale(back, 0.32), [0.0, flut, 0.0]),
-                            [0.0, 0.17, 0.0],
-                            o,
-                            col(fighter),
-                            Material::Unlit,
-                        );
-                    }
-                }
-            }
-        }
-
-        // ROYAL HERALDS: three long herald trumpets with hanging banners, cones of air on the blast.
-        let blast = match now_mv {
-            Some((mv, 1, s)) if mv as usize == ROYAL_HERALDS => Some(f64::from(s) + f.alpha),
-            Some((mv, 2, s)) if mv as usize == ROYAL_HERALDS && s < 20 => Some(8.0 + f64::from(s) + f.alpha),
-            _ => None,
-        };
-        for b in [H1, H2, H3] {
-            let (a, tip) = seg(&segs, b);
-            let (a, tip) = (flat(a), flat(tip));
-            let len = maths::length(maths::sub(tip, a));
-            if len < 0.1 {
+        // The rockets' steam: puffs left along each rocket's path, each one swelling and fading over 18 steps, so
+        // the trail lingers and dies away after the rocket has hit or gone.
+        for &(id, mv, at, _) in &mine {
+            if mv != PISTON_ROCKETS {
                 continue;
             }
-            let d = maths::scale(maths::sub(tip, a), 1.0 / len);
-            let n = maths::normalize(maths::cross(d, UP));
-            let a0 = maths::sub(a, maths::scale(d, 0.12));
-            strip(out, lift(a0), lift(tip), 0.11, col(BRASS_DK), Material::Unlit);
-            strip(out, lift(a0), lift(tip), 0.075, col(BRASS), Material::Unlit);
-            strip(
-                out,
-                lift(maths::add(a0, maths::scale(n, 0.018))),
-                lift(maths::add(tip, maths::scale(n, 0.018))),
-                0.02,
-                col(BRASS_HI),
-                Material::Unlit,
-            );
-            // the bell, flaring out
-            let bell = lift(maths::add(tip, maths::scale(d, 0.28)));
-            flat_put(
-                out,
-                m.tri,
-                maths::scale(d, -0.3),
-                maths::scale(n, 0.4),
-                bell,
-                col(BRASS_DK),
-                Material::Unlit,
-            );
-            flat_put(
-                out,
-                m.tri,
-                maths::scale(d, -0.27),
-                maths::scale(n, 0.33),
-                lift(bell),
-                col(BRASS),
-                Material::Unlit,
-            );
-            // the banner, hanging from the middle of the tube
-            let mid = maths::add(a0, maths::scale(maths::sub(tip, a0), 0.55));
-            let bh = (0.5 * (len / 1.5)).min(0.5);
-            flat_put(
-                out,
-                m.strip,
-                [0.0, -bh, 0.0],
-                maths::scale(d, 0.42),
-                mid,
-                col(BRASS_DK),
-                Material::Unlit,
-            );
-            flat_put(
-                out,
-                m.strip,
-                [0.0, -bh + 0.03, 0.0],
-                maths::scale(d, 0.36),
-                maths::add(mid, [0.0, -0.015, 0.0]),
-                col(fighter),
-                Material::Unlit,
-            );
-            if let Some(s) = blast {
-                let kk = (s / 28.0).clamp(0.0, 1.0) as f32;
-                let l = 0.4 + 1.1 * kk;
-                flat_put(
+            let last = (at as usize + ROCKET_LIFE as usize).min(fstep);
+            let first = (at as usize + 1).max(fstep.saturating_sub(18));
+            for st in (first..=last).step_by(2) {
+                let Some(q) = f.rec.steps.get(st).and_then(|s| s.projs.iter().find(|q| q.0 == id)) else {
+                    continue;
+                };
+                let u = ((now - st as f64) / 18.0).clamp(0.0, 1.0) as f32;
+                let fade = 1.0 - u;
+                if fade <= 0.02 {
+                    continue;
+                }
+                let qp = flat(to_render(q.1));
+                let wob = sinf(st as f32 * 1.3 + id as f32) * 0.03;
+                disc(
                     out,
-                    m.tri,
-                    maths::scale(d, -l),
-                    maths::scale(n, 0.25 + 0.9 * kk),
-                    lift(maths::add(bell, maths::scale(d, l))),
-                    col(mix(fighter, 0.4, 150.0)),
+                    lift(maths::add(qp, [wob, 0.0, -wob])),
+                    0.07 + 0.13 * u,
+                    col([236.0, 236.0, 242.0]),
+                    Material::Additive { strength: 0.32 * fade },
+                );
+            }
+        }
+
+        // DOUBLE TONGUE+: on its Active start a gold ring flashes out round the ball; through the haste a soft gold
+        // glow pulses under the ball on every eighth note, and fades out over its last half second.
+        if let Some(a0) = active_at[DOUBLE_TONGUE] {
+            let since = now - f64::from(a0);
+            if (0.0..18.0).contains(&since) {
+                let u = (since / 18.0) as f32;
+                let r = BALL_R * (1.05 + 0.9 * smooth01(u));
+                let fade = 1.0 - smooth01(u);
+                for j in 0..20 {
+                    let a = std::f32::consts::TAU * j as f32 / 20.0;
+                    let b = std::f32::consts::TAU * (j as f32 + 0.6) / 20.0;
+                    let pa = maths::add(c, [cosf(a) * r, 0.0, sinf(a) * r]);
+                    let pb = maths::add(c, [cosf(b) * r, 0.0, sinf(b) * r]);
+                    strip(
+                        out,
+                        lift(flat(pa)),
+                        lift(flat(pb)),
+                        0.05,
+                        col(fighter),
+                        Material::Additive { strength: 0.7 * fade },
+                    );
+                }
+            }
+            let haste = f64::from(HASTE_STEPS);
+            if (0.0..haste).contains(&since) {
+                let fade_in = smooth01((since / 10.0) as f32);
+                let fade_out = 1.0 - smooth01(((since - (haste - 60.0)) / 60.0) as f32);
+                let pulse = 0.5 + 0.5 * cosf((since * std::f64::consts::TAU / 30.0) as f32);
+                let floor = [c[0], 0.012, c[2]];
+                disc(
+                    out,
+                    floor,
+                    BALL_R * 1.15,
+                    col(fighter),
                     Material::Additive {
-                        strength: 0.4 * (1.0 - kk),
+                        strength: (0.08 + 0.1 * pulse) * fade_in * fade_out,
                     },
                 );
             }
         }
         drawn
+    }
+}
+
+/// The distance along the ray from `a` in direction `d` (a unit vector in the floor plane) to where it first
+/// meets a circle of radius `r` round `c`, when it does ahead of `a`.
+fn glass_hit(a: V3, d: V3, c: V3, r: f32) -> Option<f32> {
+    let oc = maths::sub(a, c);
+    let b = maths::dot(oc, d);
+    let q = maths::dot(oc, oc) - r * r;
+    let disc = b * b - q;
+    if disc < 0.0 {
+        return None;
+    }
+    let t = -b - disc.sqrt();
+    (t > 0.0).then_some(t)
+}
+
+fn smooth01(x: f32) -> f32 {
+    let x = x.clamp(0.0, 1.0);
+    x * x * (3.0 - 2.0 * x)
+}
+
+impl TrumpetLook {
+    /// One HERALD LINE pole at `p` (on the canvas), `age` steps after it rose: a silver pole that shoots up with a
+    /// little overshoot, a gold pennant streaming away from the foe it fences, a wobble for a few steps after the
+    /// foe bounces off it (`hit` steps ago), and at the end of its life it folds down flat outward, one pole after
+    /// another, then sinks into the canvas.
+    #[allow(clippy::too_many_arguments)]
+    fn pole(
+        &self,
+        out: &mut Scene,
+        m: &Meshes,
+        p: V3,
+        foe: V3,
+        age: f64,
+        idx: usize,
+        hit: Option<f64>,
+        cam_right: V3,
+        fighter: [f64; 3],
+    ) {
+        let life = f64::from(POLE_LIFE);
+        let rise = (age / POLE_RISE).clamp(0.0, 1.0);
+        let up = 1.0 + 2.6 * cube(rise - 1.0) + 1.6 * (rise - 1.0) * (rise - 1.0);
+        let fold_at = life - 40.0 + 3.0 * idx as f64;
+        let fold = smooth01(((age - fold_at) / (POLE_FOLD * 0.7)) as f32);
+        let sink =
+            1.0 - smooth01(((age - fold_at - POLE_FOLD * 0.7) / (life - fold_at - POLE_FOLD * 0.7 - 1.0)) as f32);
+        let h = 1.05 * up.max(0.0) as f32 * sink;
+        if h < 0.02 {
+            return;
+        }
+        let base = [p[0], 0.0, p[2]];
+        let out_dir = {
+            let v = [p[0] - foe[0], 0.0, p[2] - foe[2]];
+            if maths::length(v) > 1e-4 {
+                maths::normalize(v)
+            } else {
+                [1.0, 0.0, 0.0]
+            }
+        };
+        // the wobble after a bounce: a tilt away from the foe that rings down
+        let wob = hit
+            .filter(|&s| s < 30.0)
+            .map_or(0.0, |s| (0.35 * (1.0 - s / 30.0) * sin(s * 0.9)) as f32);
+        let tilt = fold * std::f32::consts::FRAC_PI_2 + wob;
+        let axis = maths::add(maths::scale(UP, cosf(tilt)), maths::scale(out_dir, sinf(tilt)));
+        let top = maths::add(base, maths::scale(axis, h));
+        let put = |out: &mut Scene, mesh: MeshId, x: V3, z: V3, o: V3, colour: [f32; 3]| {
+            out.instances
+                .push(Instance::new(mesh, Material::Unlit, facing_cam(x, z, o)).coloured(colour));
+        };
+        let disc = |out: &mut Scene, at: V3, r: f32, colour: [f32; 3]| {
+            out.instances.push(
+                Instance::new(m.disc, Material::Unlit, basis([r, 0.0, 0.0], UP, [0.0, 0.0, r], at)).coloured(colour),
+            );
+        };
+        disc(out, [base[0], 0.012, base[2]], 0.12 * sink.max(0.3), col(COLLAR));
+        disc(out, [base[0], 0.016, base[2]], 0.07 * sink.max(0.3), col(BRASS_DK));
+        put(
+            out,
+            m.strip,
+            maths::scale(axis, h),
+            maths::scale(cam_right, 0.065),
+            base,
+            col(PISTON.map(|v| v * 0.82)),
+        );
+        put(
+            out,
+            m.strip,
+            maths::scale(axis, h),
+            maths::scale(cam_right, 0.02),
+            maths::add(base, maths::scale(cam_right, 0.014)),
+            col([250.0, 252.0, 255.0]),
+        );
+        // the pennant: a long gold triangle with a dark edge, streaming away from the foe and fluttering
+        let flut = sin(age * 0.45 + idx as f64 * 1.3) as f32;
+        let side = maths::normalize(maths::add(out_dir, maths::scale(axis, -0.15 * fold)));
+        let tail = maths::add(maths::scale(side, 0.52 * sink), maths::scale(axis, 0.05 * flut));
+        let o = maths::sub(top, maths::scale(axis, 0.16));
+        let width = maths::scale(axis, 0.36);
+        put(
+            out,
+            m.tri,
+            maths::scale(tail, 1.1),
+            maths::scale(width, 1.15),
+            o,
+            col(BRASS_DK),
+        );
+        put(out, m.tri, tail, width, maths::add(o, [0.0, 0.004, 0.0]), col(fighter));
+        // a stripe of the brass highlight down the pennant's middle
+        put(
+            out,
+            m.tri,
+            maths::scale(tail, 0.7),
+            maths::scale(width, 0.3),
+            maths::add(o, [0.0, 0.008, 0.0]),
+            col(BRASS_HI),
+        );
+        disc(out, maths::add(top, [0.0, 0.01, 0.0]), 0.05, col(BRASS_HI));
+    }
+
+    /// One PISTON ROCKET at `p` heading `dir`: the piston flying button-first, its rod and collar behind, a flicker
+    /// of the fighter's colour from the casing end, all `grow` of full size.
+    #[allow(clippy::too_many_arguments)]
+    fn rocket(&self, out: &mut Scene, m: &Meshes, p: V3, dir: V3, grow: f32, age: f64, fighter: [f64; 3]) {
+        let n = maths::normalize(maths::cross(UP, dir));
+        let s = 0.5 + 0.5 * grow;
+        let nose = maths::add(p, maths::scale(dir, 0.12 * s));
+        let tail = maths::sub(p, maths::scale(dir, 0.34 * s));
+        let strip = |out: &mut Scene, a: V3, b: V3, w: f32, colour: [f32; 3], mat: Material, y: f32| {
+            let d = maths::sub(b, a);
+            let len = maths::length(d).max(1e-5);
+            let nn = maths::normalize(maths::cross(maths::scale(d, 1.0 / len), UP));
+            let a = [a[0], a[1] + y, a[2]];
+            out.instances
+                .push(Instance::new(m.strip, mat, basis(d, UP, maths::scale(nn, w), a)).coloured(colour));
+        };
+        let disc = |out: &mut Scene, at: V3, r: f32, colour: [f32; 3], mat: Material, y: f32| {
+            out.instances.push(
+                Instance::new(
+                    m.disc,
+                    mat,
+                    basis([r, 0.0, 0.0], UP, [0.0, 0.0, r], [at[0], at[1] + y, at[2]]),
+                )
+                .coloured(colour),
+            );
+        };
+        // the exhaust: a flickering flame of the fighter's colour out of the casing end
+        let flick = 0.75 + 0.25 * sin(age * 2.3) as f32;
+        let flame = maths::sub(tail, maths::scale(dir, 0.22 * s * flick));
+        strip(
+            out,
+            flame,
+            tail,
+            0.16 * s,
+            col(mix(fighter, 0.6, 100.0)),
+            Material::Additive { strength: 0.6 },
+            0.001,
+        );
+        strip(
+            out,
+            tail,
+            nose,
+            0.1 * s,
+            col(PISTON.map(|v| v * 0.82)),
+            Material::Unlit,
+            0.004,
+        );
+        strip(
+            out,
+            maths::add(tail, maths::scale(n, 0.018)),
+            maths::add(nose, maths::scale(n, 0.018)),
+            0.022 * s,
+            col([250.0, 252.0, 255.0]),
+            Material::Unlit,
+            0.007,
+        );
+        disc(out, tail, 0.095 * s, col(COLLAR), Material::Unlit, 0.01);
+        disc(
+            out,
+            nose,
+            0.16 * s,
+            col(mix(fighter, 0.8, 30.0)),
+            Material::Unlit,
+            0.013,
+        );
+        disc(
+            out,
+            maths::add(nose, maths::scale(dir, 0.015)),
+            0.125 * s,
+            col(PEARL),
+            Material::Unlit,
+            0.016,
+        );
     }
 }
 

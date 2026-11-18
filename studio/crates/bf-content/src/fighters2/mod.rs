@@ -15,7 +15,6 @@ use crate::FighterCard;
 use crate::personality::Personality;
 
 mod test_dummy;
-// SPIKE: the trumpet's candidate standard attacks (Aedan's round-1 picks), for in-engine example renders.
 mod trumpet;
 
 /// Every Engine 2 fighter, in order: the moved fighters ([`MOVED`]) and the dummy ([`DUMMIES`]). "TEST DUMMY 2" is
@@ -31,7 +30,7 @@ pub const TARGET: &str = "TARGET DUMMY";
 
 /// The real fighters with an Engine 2 version (each also keeps its current-engine version). A fighter session adds
 /// its fighter's name here, and its name to [`NAMES`].
-pub const MOVED: [&str; 0] = [];
+pub const MOVED: [&str; 1] = ["TRUMPET"];
 
 /// The developer fighter's two names (TEST DUMMY and its mirror twin), offered only with the developer switch on.
 pub const DUMMIES: [&str; 2] = ["TEST DUMMY", "TEST DUMMY 2"];
@@ -69,6 +68,8 @@ pub(crate) fn with_moved<R>(names: &'static [&'static str], f: impl FnOnce() -> 
 pub fn card(name: &str) -> Option<&'static FighterCard> {
     if DUMMIES.contains(&name) || name == TARGET {
         Some(&test_dummy::card::CARD)
+    } else if name == "TRUMPET" {
+        Some(&trumpet::card::CARD)
     } else if moved().contains(&name) {
         crate::card(name)
     } else {
@@ -80,12 +81,18 @@ pub fn card(name: &str) -> Option<&'static FighterCard> {
 /// fighter whose card is its own (the dummy); `None` for a moved fighter (its roster abilities name them) or any
 /// other name.
 pub fn card_moves(name: &str) -> Option<[&'static str; 3]> {
-    (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::MOVES)
+    match name {
+        "TRUMPET" => Some(trumpet::card::MOVES),
+        _ => (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::MOVES),
+    }
 }
 
 /// The reach an Engine 2 card shows for a fighter whose card is its own (the dummy), in words; `None` otherwise.
 pub fn card_range(name: &str) -> Option<&'static str> {
-    (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::RANGE)
+    match name {
+        "TRUMPET" => Some(trumpet::card::RANGE),
+        _ => (DUMMIES.contains(&name) || name == TARGET).then_some(test_dummy::card::RANGE),
+    }
 }
 
 /// The fight a new Engine 2 match-up with the dummy on either side begins from (see [`crate::starter_on`]).
@@ -192,6 +199,7 @@ pub fn sound(name: &str, k: usize, ff: &FightFile) -> Option<Box<dyn Sound>> {
     let _ = ff;
     match name {
         "TEST DUMMY" | "TEST DUMMY 2" | TARGET => Some(Box::new(test_dummy::sound::DummySound::new(k))),
+        "TRUMPET" => Some(Box::new(trumpet::sound::TrumpetSound::new(k))),
         _ => None,
     }
 }
@@ -446,5 +454,79 @@ mod tests {
                 assert!(!lens || at_ko, "a lens effect off the K.O.: {r:?}");
             }
         }
+    }
+
+    /// The TRUMPET's card names every move its brain picks, its three ability moves are its own, and its range
+    /// is its brain's.
+    #[test]
+    fn trumpet_card_names_its_moves() {
+        let c = card("TRUMPET").expect("the trumpet has an Engine 2 card");
+        let d = def("TRUMPET").unwrap();
+        for ch in &d.brain.choices {
+            let name = d.moves[ch.mv].name;
+            assert!(c.text.contains(&sentence(name)), "{name} in {:?}", c.text);
+        }
+        let moves = card_moves("TRUMPET").unwrap();
+        for m in moves {
+            assert!(d.moves.iter().any(|mv| mv.name == m), "{m}");
+        }
+        assert_eq!(moves[2], d.moves[d.brain.low.unwrap()].name);
+        let near = d
+            .brain
+            .choices
+            .iter()
+            .map(|ch| ch.range.0)
+            .fold(f64::INFINITY, f64::min);
+        let far = d.brain.choices.iter().map(|ch| ch.range.1).fold(0.0, f64::max);
+        assert_eq!(card_range("TRUMPET"), Some(format!("{near} to {far} m").as_str()));
+        assert!(sound("TRUMPET", 0, &dummy_starter("TRUMPET", "TEST DUMMY")).is_some());
+    }
+
+    /// The exit audit for the TRUMPET, seeds 1 to 20 against the dummy: its own records (none yet: its signature
+    /// parts are drawn by `draw`, each with its own exit) and the shared presets through its restraint all fade out.
+    #[test]
+    fn trumpet_look_records_all_have_exits() {
+        use bf2_fx::FxTimeline;
+        use bf2_fx::presets::{MIN_FALL, brightness};
+        let defs = [def("TRUMPET").unwrap(), def("TEST DUMMY").unwrap()];
+        let fx = [look_fx("TRUMPET").unwrap(), look_fx("TEST DUMMY").unwrap()];
+        let mut kos = 0;
+        for seed in 1..=20 {
+            let mut rules = bf2_sim::Rules2::new(4.5);
+            rules.dmg_scale = 2.0;
+            let rec = bf2_sim::run(
+                &bf2_sim::Setup2 {
+                    fighters: defs.clone(),
+                    rules,
+                    seed,
+                },
+                true,
+            )
+            .unwrap();
+            kos += usize::from(rec.events.iter().any(|e| matches!(e.kind, bf2_sim::EvKind::Ko { .. })));
+            let to_t = |s: u32| rec.t_fight + f64::from(s) * rec.dt;
+            let mut tl = FxTimeline::new();
+            for (k, f) in fx.iter().enumerate() {
+                f.fx(k, &rec, &to_t, &mut tl).unwrap();
+            }
+            let colours = [[1.0, 0.85, 0.24], [0.6; 3]];
+            let (a, b) = (|e: &bf2_sim::EvKind| fx[0].tone(e), |e: &bf2_sim::EvKind| fx[1].tone(e));
+            bf2_fx::wire::wire_toned(&rec, [&defs[0], &defs[1]], colours, &to_t, [&a, &b], &mut tl).unwrap();
+            assert_eq!(tl.check_all(), Ok(()));
+            for r in &tl.records {
+                assert!(r.life > 0.0, "seed {seed}: {r:?}");
+                assert!(
+                    r.env.release >= MIN_FALL,
+                    "seed {seed}: a fall of {}: {r:?}",
+                    r.env.release
+                );
+                let peak = (1..200)
+                    .map(|i| brightness(r, r.t0 + f64::from(r.life) * f64::from(i) / 200.0))
+                    .fold(0.0f32, f32::max);
+                let last = brightness(r, r.t0 + f64::from(r.life) - 1.0 / 240.0);
+                assert!(last < 0.02 * peak, "seed {seed}: ends at {last} of {peak}: {r:?}");
+            }
+        }
+        assert!(kos >= 10, "{kos} of 20 seeds end in a K.O.");
     }
 }
