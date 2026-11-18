@@ -27,19 +27,7 @@ impl FightFile {
     /// `;chords_tail=[...]` after the chord loop; everything else is written as version 1 wrote it. So two fights
     /// have the same key exactly when they had before, and a shortlist cached under a version 1 key is looked for
     /// under another key once (it is searched again, never read under the wrong fight).
-    ///
-    /// An Engine 2 fight's key ends `;engine=2`; a current-engine fight's key has no engine part, so it is the key
-    /// it was before Engine 2 and shortlists cached under it stay found.
     pub fn search_key(&self, feeds_fight: &[bool]) -> String {
-        let mut o = self.engine_one_key(feeds_fight);
-        if self.engine != Engine::One {
-            let _ = write!(o, ";engine={}", self.engine.number());
-        }
-        o
-    }
-
-    /// The key as it was before the engine choice: everything but the engine.
-    fn engine_one_key(&self, feeds_fight: &[bool]) -> String {
         let mut o = String::from("fight-key 2;fighters=");
         k_list(&mut o, &self.fighters, |o, s| k_str(o, s));
         o.push_str(";arena=");

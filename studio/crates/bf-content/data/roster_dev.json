@@ -1,0 +1,22 @@
+{
+ "about": "The developer fighters: never offered in the app (not in PORTED, no place in the score order), in the same format as roster.json and appended to it by bf_content::registry::roster() so a fight file can name them. TARGET DUMMY has no weapon and no abilities (kind \"dummy\", bf_core::roster::DUMMY): it drifts round the ring, never attacks and can still be knocked out. Its unlocks never come (it deals no damage, so it never levels up); every_bars is there because the engine reads it of any unlock.",
+ "format": 1,
+ "fighters": [
+  {
+   "name": "TARGET DUMMY",
+   "color": [170, 170, 170],
+   "dark": [95, 95, 95],
+   "corner": "blue",
+   "view": [0, 16, 0],
+   "weapon": {"kind": "dummy", "name": "NONE"},
+   "abilities": {
+    "unlock1": {"name": "NONE", "kind": "dummy", "every_bars": 999},
+    "unlock2": {"name": "NONE", "kind": "dummy", "every_bars": 999},
+    "low": {"name": "NONE", "kind": "dummy"}
+   },
+   "pp": "MARIMBA",
+   "register": [60, 84],
+   "idiom": "mallets"
+  }
+ ]
+}

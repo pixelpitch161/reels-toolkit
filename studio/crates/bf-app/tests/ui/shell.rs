@@ -62,7 +62,6 @@ fn boot(engine: EngineHandle) -> Boot {
         queue: Queue::new(),
         notices: Vec::new(),
         cores: 8,
-        dev: false,
     }
 }
 

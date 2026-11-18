@@ -7,7 +7,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use bf_core::Engine;
 use serde::{Deserialize, Serialize};
 
 /// One fight made.
@@ -28,14 +27,6 @@ pub struct FightRecord {
     /// The owner ticked it as uploaded.
     #[serde(default)]
     pub uploaded: bool,
-    /// The engine it was fought on. Missing in a row written before Engine 2, and never written for the current
-    /// engine, so such a row reads and writes as it did.
-    #[serde(
-        default,
-        skip_serializing_if = "Engine::is_one",
-        with = "crate::model::engine_number"
-    )]
-    pub engine: Engine,
 }
 
 /// Every fight made, in the order they were first made.
@@ -49,22 +40,14 @@ pub struct History {
 }
 
 impl History {
-    /// Notes that the fight `fighters` (left, right) on `engine` with `seed` was made at `made`, won by `winner`. A
-    /// row with the same fighters, engine and seed has its date and winner moved on and keeps its uploaded tick;
-    /// otherwise a new row is added, not uploaded (the same pair and seed on another engine is another fight).
-    /// Returns the row's id.
-    pub fn record(
-        &mut self,
-        fighters: [String; 2],
-        engine: Engine,
-        seed: u64,
-        winner: Option<String>,
-        made: u64,
-    ) -> u64 {
+    /// Notes that the fight `fighters` (left, right) with `seed` was made at `made`, won by `winner`. A row with the
+    /// same fighters and seed has its date and winner moved on and keeps its uploaded tick; otherwise a new row is
+    /// added, not uploaded. Returns the row's id.
+    pub fn record(&mut self, fighters: [String; 2], seed: u64, winner: Option<String>, made: u64) -> u64 {
         if let Some(row) = self
             .fights
             .iter_mut()
-            .find(|row| row.fighters == fighters && row.engine == engine && row.seed == Some(seed))
+            .find(|row| row.fighters == fighters && row.seed == Some(seed))
         {
             row.made = made;
             row.winner = winner;
@@ -85,7 +68,6 @@ impl History {
             winner,
             made,
             uploaded: false,
-            engine,
         });
         self.next_id = id.saturating_add(1);
         id
@@ -162,29 +144,9 @@ mod tests {
     }
 
     #[test]
-    fn history_keeps_engines_apart() {
-        let mut h = History::default();
-        let one = h.record(pair("FLUTE", "TROMBONE"), Engine::One, 2210, None, 100);
-        let two = h.record(pair("FLUTE", "TROMBONE"), Engine::Two, 2210, None, 200);
-        assert_ne!(one, two);
-        assert_eq!(h.fights.len(), 2);
-        assert_eq!(h.fight(one).unwrap().engine, Engine::One);
-        assert_eq!(h.fight(two).unwrap().engine, Engine::Two);
-        // the same fight on the same engine again moves its row on
-        assert_eq!(h.record(pair("FLUTE", "TROMBONE"), Engine::Two, 2210, None, 300), two);
-        assert_eq!(h.fights.len(), 2);
-    }
-
-    #[test]
     fn recording_a_new_fight_adds_a_row() {
         let mut h = History::default();
-        let id = h.record(
-            pair("FLUTE", "TROMBONE"),
-            Engine::One,
-            2210,
-            Some("FLUTE".to_string()),
-            100,
-        );
+        let id = h.record(pair("FLUTE", "TROMBONE"), 2210, Some("FLUTE".to_string()), 100);
         assert_eq!(id, 0);
         assert_eq!(h.fights.len(), 1);
         assert!(!h.fights[0].uploaded);
@@ -195,21 +157,9 @@ mod tests {
     #[test]
     fn the_same_fighters_and_seed_update_the_row() {
         let mut h = History::default();
-        let id = h.record(
-            pair("FLUTE", "TROMBONE"),
-            Engine::One,
-            2210,
-            Some("FLUTE".to_string()),
-            100,
-        );
+        let id = h.record(pair("FLUTE", "TROMBONE"), 2210, Some("FLUTE".to_string()), 100);
         assert!(h.set_uploaded(id, true));
-        let again = h.record(
-            pair("FLUTE", "TROMBONE"),
-            Engine::One,
-            2210,
-            Some("TROMBONE".to_string()),
-            200,
-        );
+        let again = h.record(pair("FLUTE", "TROMBONE"), 2210, Some("TROMBONE".to_string()), 200);
         assert_eq!(again, id);
         assert_eq!(h.fights.len(), 1);
         assert_eq!(h.fights[0].made, 200);
@@ -220,10 +170,10 @@ mod tests {
     #[test]
     fn a_new_seed_or_swapped_sides_is_a_new_row() {
         let mut h = History::default();
-        h.record(pair("FLUTE", "TROMBONE"), Engine::One, 2210, None, 100);
-        h.record(pair("FLUTE", "TROMBONE"), Engine::One, 2211, None, 100);
+        h.record(pair("FLUTE", "TROMBONE"), 2210, None, 100);
+        h.record(pair("FLUTE", "TROMBONE"), 2211, None, 100);
         assert_eq!(h.fights.len(), 2);
-        h.record(pair("TROMBONE", "FLUTE"), Engine::One, 2210, None, 100);
+        h.record(pair("TROMBONE", "FLUTE"), 2210, None, 100);
         assert_eq!(h.fights.len(), 3);
         assert_eq!(h.next_id, 3);
     }
@@ -231,17 +181,17 @@ mod tests {
     #[test]
     fn a_new_row_never_takes_an_id_in_use() {
         let mut h = History::default();
-        h.record(pair("FLUTE", "TROMBONE"), Engine::One, 1, None, 100);
-        h.record(pair("FLUTE", "TROMBONE"), Engine::One, 2, None, 100);
+        h.record(pair("FLUTE", "TROMBONE"), 1, None, 100);
+        h.record(pair("FLUTE", "TROMBONE"), 2, None, 100);
         h.next_id = 0;
-        assert_eq!(h.record(pair("FLUTE", "TROMBONE"), Engine::One, 3, None, 100), 2);
+        assert_eq!(h.record(pair("FLUTE", "TROMBONE"), 3, None, 100), 2);
     }
 
     fn three_rows() -> History {
         let mut h = History::default();
-        let a = h.record(pair("FLUTE", "TROMBONE"), Engine::One, 1, None, 100);
-        let b = h.record(pair("TROMBONE", "FLUTE"), Engine::One, 2, None, 100);
-        h.record(pair("FLUTE", "TUBA"), Engine::One, 3, None, 100);
+        let a = h.record(pair("FLUTE", "TROMBONE"), 1, None, 100);
+        let b = h.record(pair("TROMBONE", "FLUTE"), 2, None, 100);
+        h.record(pair("FLUTE", "TUBA"), 3, None, 100);
         h.set_uploaded(a, true);
         h.set_uploaded(b, true);
         h
@@ -266,9 +216,9 @@ mod tests {
     #[test]
     fn newest_first_orders_by_made_then_id() {
         let mut h = History::default();
-        h.record(pair("A", "B"), Engine::One, 1, None, 100);
-        h.record(pair("A", "B"), Engine::One, 2, None, 300);
-        h.record(pair("A", "B"), Engine::One, 3, None, 300);
+        h.record(pair("A", "B"), 1, None, 100);
+        h.record(pair("A", "B"), 2, None, 300);
+        h.record(pair("A", "B"), 3, None, 300);
         let order: Vec<u64> = h.newest_first().iter().map(|row| row.id).collect();
         assert_eq!(order, vec![2, 1, 0]);
     }

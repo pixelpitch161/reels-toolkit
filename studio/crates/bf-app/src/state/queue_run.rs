@@ -355,7 +355,7 @@ impl AppState {
                 job.spec
                     .fighters
                     .clone()
-                    .map(|f| (f, job.spec.engine(), job.spec.seed, *winner, *finished_at))
+                    .map(|f| (f, job.spec.seed, *winner, *finished_at))
             }),
             _ => None,
         };
@@ -371,9 +371,9 @@ impl AppState {
             }
             // Review Focus 4: whatever the end, the queue goes on.
             self.save_and_run_next(fx);
-            if let Some((fighters, engine, seed, winner, made)) = finished {
+            if let Some((fighters, seed, winner, made)) = finished {
                 let winner = winner.and_then(|side| fighters.get(side).cloned());
-                self.vm.history.record(fighters, engine, seed, winner, made);
+                self.vm.history.record(fighters, seed, winner, made);
                 fx.push(Effect::SaveHistory(self.vm.history.clone()));
             }
             if is_done {
@@ -415,17 +415,6 @@ impl AppState {
         // The view first, so opening the draft does not start a search for the step the person is leaving (from
         // Seeds into Music, say); the opened fight replaces whatever the engine left meanwhile; then its step opens
         // as the person would open it (Balance balances, Seeds searches once).
-        // A fight whose fighters are not both offered on its engine is not opened (no mixed pair, ruling E6-R1).
-        if !self.pair_on_its_engine(&draft) {
-            self.vm.notices.push(crate::model::Notice {
-                text: format!(
-                    "{title} cannot be opened here: {} are not both offered on {}.",
-                    crate::wording::versus(&draft.fighters),
-                    draft.engine
-                ),
-            });
-            return;
-        }
         let view = View::Step(open.step);
         self.vm.view = view;
         self.vm.step = open.step;

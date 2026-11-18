@@ -1,8 +1,5 @@
 # BALLFIGHT Studio: handoff brief (updated Nov 15)
 
-> **Engine 2 (Nov 17):** a new fight engine and GPU renderer are being built beside the current one. Read
-> `docs/studio/engine2/README.md` before touching how fights are fought or drawn.
-
 ## Status (Nov 15): the packaged Studio, 30 fighters, 26 themes, the music system
 
 **Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is
@@ -175,9 +172,17 @@ Nov 16, 2026) from threads each keeping their own. The rules:
   reports.
 - Keep `studio\reference\.cache` (pinned test data, slow to remake); the script never touches `studio\reference`.
 
-## How to add a fighter
+## The TARGET DUMMY (developer fighter, Nov 18)
 
-Engine 2 fighters follow `docs/studio/engine2/FIGHTER-GUIDE.md`; the steps below are for the current engine.
+Engine 2 was scrapped on Nov 18 (the owner's call: Engine 1's look and characters stay; only cooler effects were ever
+wanted, to be shown visually before they are built). The one thing kept from it is the idea of a **TARGET DUMMY**:
+a straw training dummy that never attacks, drifts round the ring and can still be knocked out, for example renders of
+another fighter's moves. It is in the roster (`bf-content/data/roster_dev.json`, `fighters::DEV`) so a fight file can
+name it, but never offered in the app. Its weapon and abilities are kind `dummy` (`bf_core::roster::DUMMY`), which the
+engine lets in and skips. Example: `ballfight render fights/dev/trumpet_vs_target_dummy.toml --out <folder>`. Its
+fights never "fit the series" (no lead changes); that is expected, and the render's own checks pass.
+
+## How to add a fighter
 
 The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a
 faithful-looking, faithful-sounding port, judged by eye and ear. The seed finder handicaps pairs to be fair, so a

@@ -29,12 +29,6 @@ use crate::theme::{
     FAINT, HOVER, MUTED, RADIUS_ROW, RAISED, ROW_H, SELECTED, TEXT, TEXT_STRONG, body, large_fill, rgb, small, strong,
 };
 
-/// The "Engine 2" mark (ruling E6-R3): the text alone, in the theme's `small` style and `FAINT`, on an Engine 2
-/// item only, so a current-engine item's layout is as it was.
-pub fn engine_mark(ui: &mut Ui) -> Response {
-    ui.add(egui::Label::new(egui::RichText::new(crate::wording::ENGINE2).font(small()).color(FAINT)).selectable(false))
-}
-
 /// A fighter bar's width.
 const BAR_W: f32 = 4.0;
 /// A fighter bar's corner.

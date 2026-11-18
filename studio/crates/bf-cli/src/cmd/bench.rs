@@ -28,10 +28,13 @@ use std::time::Instant;
 use bf_export::{EncodeSpeed, ExportError, JobEvent, JobOpts, run_job};
 use bf_picture::config::NF;
 use bf_picture::ring::{Picture, Stage};
-use bf_story::Halt;
+use bf_sim::Setup;
+use bf_story::{BeatSheet, Halt};
 use serde_json::{Map, Value, json};
 
-use crate::{Ctx, Done, Fail, encode_speed, load_fight, need_ko, note, num, say, say_json, stopped, the_fight};
+use crate::{
+    Ctx, Done, Fail, encode_speed, fighters, load_fight, need_ko, note, num, say, say_json, stopped, the_fight,
+};
 
 /// The parts, in the order they run.
 const PARTS: [&str; 6] = ["fights", "frame", "stages", "draw", "sound", "render"];
@@ -79,12 +82,6 @@ pub struct Args {
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let parts = chosen(a)?;
     let ff = load_fight(&a.fight)?;
-    if ff.engine != bf_core::Engine::One {
-        return Err(Fail(format!(
-            "{}: bench measures the current engine's picture, so an Engine 2 file is not benched.",
-            a.fight.display()
-        )));
-    }
     if let Some(out) = &a.out
         && std::fs::metadata(out).is_ok_and(|m| !m.is_dir())
     {
@@ -206,14 +203,17 @@ fn chosen(a: &Args) -> Result<Vec<&'static str>, Fail> {
 
 /// Fights a second on seeds 1 to `--seeds`, record off, on all workers and on one.
 fn fights(a: &Args, ff: &bf_core::fightfile::FightFile, ctx: &Ctx) -> Result<(Value, String), Fail> {
-    let prepared = bf_engine::prepare(ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
-    let fight_for = |seed: u64| prepared.candidate(seed, None);
+    let cfg = fighters(ff)?;
+    let sheet = BeatSheet::series(cfg);
+    let base =
+        bf_sim::setup_from(ff, bf_content::roster(), 0).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let setup_for = |seed: u64| Setup { seed, ..base.clone() };
     let rate = |workers: usize| -> Result<(f64, Option<f64>), Fail> {
         stopped(ctx, "the bench")?;
         let busy = cpu_busy();
         note(&format!("bench: {} fights on {workers} worker(s)", a.seeds));
         let t0 = Instant::now();
-        bf_story::stats_by(&fight_for, 1..a.seeds + 1, workers, ctx.cancel).map_err(|h| match h {
+        bf_story::stats_until(&setup_for, &sheet, 1..a.seeds + 1, workers, ctx.cancel).map_err(|h| match h {
             Halt::Cancelled => Fail::new("the bench was stopped (Ctrl+C)."),
             Halt::Failed(why) => Fail(format!("{}: {why}.", a.fight.display())),
         })?;

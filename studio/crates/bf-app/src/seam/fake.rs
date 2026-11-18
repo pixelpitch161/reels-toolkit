@@ -589,7 +589,6 @@ impl Engine {
             arrangement: None,
             pinned: None,
             base: None,
-            engine: bf_core::Engine::One,
         }
     }
 }
@@ -851,7 +850,6 @@ mod tests {
             arrangement: None,
             pinned: None,
             base: None,
-            engine: bf_core::Engine::One,
         }
     }
 

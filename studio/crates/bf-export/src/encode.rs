@@ -545,26 +545,12 @@ pub fn encode_args(wav: &Path, out: &Path, nf: usize) -> Vec<OsString> {
 
 /// [`encode_args`] with the x264 preset of `speed`; nothing else differs.
 pub fn encode_args_at(wav: &Path, out: &Path, nf: usize, speed: EncodeSpeed) -> Vec<OsString> {
-    encode_args_sized(wav, out, nf, speed, W, H, UP)
-}
-
-/// [`encode_args_at`] for frames of `w x h`, scaled up `up` times (nearest neighbour) in the video. The current
-/// engine's frames are `W x H` scaled up `UP`; Engine 2's are 1080 x 1920 as they are (`up` 1).
-pub fn encode_args_sized(
-    wav: &Path,
-    out: &Path,
-    nf: usize,
-    speed: EncodeSpeed,
-    w: usize,
-    h: usize,
-    up: usize,
-) -> Vec<OsString> {
     let mut a: Vec<OsString> = Vec::new();
     let mut put = |s: &str| a.push(s.into());
     for s in ["-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s"] {
         put(s);
     }
-    put(&format!("{w}x{h}"));
+    put(&format!("{W}x{H}"));
     put("-r");
     put(&FPS.to_string());
     for s in ["-i", "pipe:0", "-i"] {
@@ -573,7 +559,7 @@ pub fn encode_args_sized(
     a.push(wav.as_os_str().to_os_string());
     let mut put = |s: &str| a.push(s.into());
     put("-vf");
-    put(&format!("scale={}:{}:flags=neighbor", w * up, h * up));
+    put(&format!("scale={}:{}:flags=neighbor", W * UP, H * UP));
     for s in [
         "-c:v",
         "libx264",
@@ -626,8 +612,6 @@ pub struct Encoder {
     pushed: usize,
     out: PathBuf,
     done: bool,
-    /// The frames' width and height.
-    size: (usize, usize),
 }
 
 impl Encoder {
@@ -636,26 +620,7 @@ impl Encoder {
     /// # Errors
     /// [`ExportError::Ffmpeg`]: ffmpeg could not be started.
     pub fn start(ff: &Ffmpeg, wav: &Path, out: &Path, nf: usize, speed: EncodeSpeed) -> Result<Encoder, ExportError> {
-        Encoder::start_sized(ff, wav, out, nf, speed, W, H, UP)
-    }
-
-    /// [`Encoder::start`] for frames of `w x h`, scaled up `up` times in the video ([`encode_args_sized`]);
-    /// [`Encoder::push`] then takes `w x h` RGB frames.
-    ///
-    /// # Errors
-    /// [`ExportError::Ffmpeg`]: ffmpeg could not be started.
-    #[allow(clippy::too_many_arguments)]
-    pub fn start_sized(
-        ff: &Ffmpeg,
-        wav: &Path,
-        out: &Path,
-        nf: usize,
-        speed: EncodeSpeed,
-        w: usize,
-        h: usize,
-        up: usize,
-    ) -> Result<Encoder, ExportError> {
-        let args = encode_args_sized(wav, out, nf, speed, w, h, up);
+        let args = encode_args_at(wav, out, nf, speed);
         let args: Vec<&OsStr> = args.iter().map(OsString::as_os_str).collect();
         let mut child = spawn(&ff.ffmpeg, &args, Stdio::piped()).map_err(|e| {
             ExportError::Ffmpeg(format!(
@@ -679,7 +644,6 @@ impl Encoder {
             pushed: 0,
             out: out.to_path_buf(),
             done: false,
-            size: (w, h),
         })
     }
 
@@ -688,16 +652,15 @@ impl Encoder {
         self.pushed
     }
 
-    /// Gives ffmpeg the next frame (360 x 640 RGB, or the size given to [`Encoder::start_sized`]).
+    /// Gives ffmpeg the next frame (360 x 640 RGB).
     ///
     /// # Errors
-    /// [`ExportError::Encode`]: the frame is not that size in RGB, all `nf` frames were already given, or ffmpeg
+    /// [`ExportError::Encode`]: the frame is not 360 x 640 RGB, all `nf` frames were already given, or ffmpeg
     /// stopped (its exit and last words are in the sentence; it has then been waited for).
     pub fn push(&mut self, frame: &Rgb8) -> Result<(), ExportError> {
-        let (w, h) = self.size;
-        if (frame.w, frame.h, frame.c) != (w, h, 3) || frame.data.len() != w * h * 3 {
+        if (frame.w, frame.h, frame.c) != (W, H, 3) || frame.data.len() != W * H * 3 {
             return Err(ExportError::Encode(format!(
-                "Frame {} is {} x {} with {} channels where the encoder takes {w} x {h} RGB, so the video was not \
+                "Frame {} is {} x {} with {} channels where the encoder takes {W} x {H} RGB, so the video was not \
                  made; this is a fault in the app, not in your fight.",
                 self.pushed, frame.w, frame.h, frame.c
             )));
@@ -829,74 +792,6 @@ mod tests {
         assert_eq!(args.last().map(String::as_str), Some(r"C:\a b!\x.mp4.part"));
         assert_eq!(args.join(" "), want);
         assert_eq!(args.len(), 46);
-    }
-
-    #[test]
-    fn encode_args_at_is_unchanged() {
-        // The current engine's list before Engine 2's sized encode, pasted as a literal.
-        let want: Vec<&str> = vec![
-            "-y",
-            "-loglevel",
-            "error",
-            "-f",
-            "rawvideo",
-            "-pix_fmt",
-            "rgb24",
-            "-s",
-            "360x640",
-            "-r",
-            "30",
-            "-i",
-            "pipe:0",
-            "-i",
-            "w.wav",
-            "-vf",
-            "scale=1080:1920:flags=neighbor",
-            "-c:v",
-            "libx264",
-            "-preset",
-            "fast",
-            "-crf",
-            "18",
-            "-pix_fmt",
-            "yuv420p",
-            "-profile:v",
-            "high",
-            "-tune",
-            "animation",
-            "-x264-params",
-            "mbtree=0",
-            "-force_key_frames",
-            "expr:eq(n,0)+eq(n,59)",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "256k",
-            "-ar",
-            "48000",
-            "-max_interleave_delta",
-            "0",
-            "-movflags",
-            "+faststart",
-            "-f",
-            "mp4",
-            "o.mp4.part",
-        ];
-        let got = encode_args_at(Path::new("w.wav"), Path::new("o.mp4.part"), 60, EncodeSpeed::Faster);
-        assert_eq!(got, want.iter().map(OsString::from).collect::<Vec<_>>());
-        // Engine 2: 1080 x 1920 frames, not scaled.
-        let two = encode_args_sized(
-            Path::new("w.wav"),
-            Path::new("o.mp4.part"),
-            60,
-            EncodeSpeed::Best,
-            1080,
-            1920,
-            1,
-        );
-        let two: Vec<String> = two.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-        assert_eq!(two[8], "1080x1920");
-        assert_eq!(two[16], "scale=1080:1920:flags=neighbor");
     }
 
     /// The arguments of `encode_args_at` as strings.

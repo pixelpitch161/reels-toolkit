@@ -27,7 +27,7 @@ use crate::theme::{
     CONTROL_H, LABEL_W, LINE_SOFT, MUTED, RADIUS, TEXT, TEXT_STRONG, body, rgb, section, small, strong, value,
 };
 use crate::widgets::buttons;
-use crate::widgets::chips::{engine_mark, portrait, roster_chip};
+use crate::widgets::chips::{portrait, roster_chip};
 use crate::widgets::fields::{Unit, value_field};
 use crate::widgets::pixel::{fit_scale, pixel_text};
 use crate::widgets::slider::bar_slider;
@@ -85,8 +85,6 @@ const SLIDER_MIN_W: f32 = 40.0;
 const FIELD_W: f32 = 86.0;
 /// The space a row's items keep between them.
 const ITEM_GAP: f32 = 8.0;
-/// The engine switch's width: two segments, "Current" and "Engine 2".
-const ENGINE_SWITCH_W: f32 = 180.0;
 /// A button's side padding (as the buttons widget pads its label).
 const BUTTON_PAD_X: f32 = 10.0;
 /// The two buttons of the tempo row.
@@ -446,11 +444,9 @@ fn roster_column(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Act
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.spacing_mut().item_spacing = vec2(ITEM_GAP, 0.0);
-                let listed = picker(roster, vm.draft.engine);
-                roster_header(ui, &listed);
-                engine_row(ui, vm, roster, out);
+                roster_header(ui, roster);
                 for section in SECTIONS {
-                    let fighters: Vec<&RosterEntry> = listed.iter().copied().filter(|f| f.section == section).collect();
+                    let fighters: Vec<&RosterEntry> = roster.fighters.iter().filter(|f| f.section == section).collect();
                     if fighters.is_empty() {
                         continue;
                     }
@@ -463,55 +459,11 @@ fn roster_column(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Act
     });
 }
 
-/// The fighters the roster lists on `engine` (ruling E6-R1): on the current engine every fighter with a
-/// current-engine version and every fighter not built yet (shown, not picked); on Engine 2 those it offers.
-pub fn picker(roster: &Roster, engine: bf_core::Engine) -> Vec<&RosterEntry> {
-    roster
-        .fighters
-        .iter()
-        .filter(|f| match engine {
-            bf_core::Engine::One => f.engines.contains(&engine) || !f.available,
-            bf_core::Engine::Two => f.available && f.engines.contains(&engine),
-        })
-        .collect()
-}
-
-/// The engine switch (ruling E6-R1), "Current" and "Engine 2", with the "Engine 2" mark while the draft is on
-/// Engine 2. Drawn only when Engine 2 offers a fighter, so until a fighter moves (or the developer switch is on)
-/// the screen is as it was.
-fn engine_row(ui: &mut Ui, vm: &ViewModel, roster: &Roster, out: &mut Vec<Action>) {
-    if roster.offered(bf_core::Engine::Two).is_empty() {
-        return;
-    }
-    ui.add_space(SECTION_GAP);
-    ui.horizontal(|ui| {
-        let chosen = match vm.draft.engine {
-            bf_core::Engine::One => 0,
-            bf_core::Engine::Two => 1,
-        };
-        let options = [(wording::ENGINE1, None), (wording::ENGINE2, None)];
-        if let Some(i) = buttons::segmented(ui, "Engine", &options, Some(chosen), ENGINE_SWITCH_W) {
-            let engine = if i == 0 {
-                bf_core::Engine::One
-            } else {
-                bf_core::Engine::Two
-            };
-            if engine != vm.draft.engine {
-                out.push(Action::SetEngine(engine));
-            }
-        }
-        if vm.draft.engine == bf_core::Engine::Two {
-            ui.add_space(ITEM_GAP);
-            engine_mark(ui);
-        }
-    });
-}
-
 /// "Roster", the count ("30 fighters", or "29 of 30 ready" when some are not built yet) and the hint, which moves to
 /// a line of its own when the three do not fit on one.
-fn roster_header(ui: &mut Ui, listed: &[&RosterEntry]) {
-    let total = listed.len() as u64;
-    let ready = listed.iter().filter(|f| f.available).count() as u64;
+fn roster_header(ui: &mut Ui, roster: &Roster) {
+    let total = roster.fighters.len() as u64;
+    let ready = roster.fighters.iter().filter(|f| f.available).count() as u64;
     let count = if ready == total {
         wording::plural(total, "fighter", "fighters")
     } else {

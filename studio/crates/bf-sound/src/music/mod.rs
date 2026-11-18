@@ -45,7 +45,6 @@ pub(crate) mod testkit;
 mod tests;
 mod thin;
 mod timeline;
-pub mod v2;
 
 use std::collections::BTreeMap;
 use std::fmt;

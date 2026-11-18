@@ -13,7 +13,7 @@ use std::sync::atomic::AtomicBool;
 use bf_sim::Setup;
 
 use crate::score::BeatSheet;
-use crate::search::{Candidate, End, FightFn, Halt, fight_of, run_seeds};
+use crate::search::{Candidate, End, Halt, fight_of, run_seeds};
 
 /// What a fight with no K.O. counts as in the K.O. times, in seconds (`r['t_ko'] or 99` in `kit/tuning.py`, as in
 /// `kit/story.py` `score`).
@@ -191,18 +191,6 @@ pub fn stats_until<'a>(
     workers: usize,
     cancel: &AtomicBool,
 ) -> Result<Stats, Halt> {
-    stats_by(&|seed| fight_of(setup_for, sheet, seed), seeds, workers, cancel)
-}
-
-/// [`stats_until`] over a fight function: `fight_for` fights one seed into a candidate (on whichever engine), and
-/// everything else is as [`stats_until`] says. [`stats`] and [`stats_until`] are this with the fight of their
-/// set-up.
-pub fn stats_by(
-    fight_for: &FightFn<'_>,
-    seeds: Range<u64>,
-    workers: usize,
-    cancel: &AtomicBool,
-) -> Result<Stats, Halt> {
     let count = seeds.end.saturating_sub(seeds.start);
     if count == 0 {
         return Err(Halt::Failed(format!(
@@ -215,7 +203,7 @@ pub fn stats_by(
         seeds.start,
         Some(count),
         workers,
-        &|seed| fight_for(seed).map(|c| Outcome::of(&c)),
+        &|seed| fight_of(setup_for, sheet, seed).map(|c| Outcome::of(&c)),
         &mut |_, row| {
             rows.push(row);
             false

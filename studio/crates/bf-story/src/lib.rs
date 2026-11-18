@@ -16,14 +16,13 @@ pub mod stats;
 pub mod story;
 
 pub use balance::{
-    BALANCE_SEED0, BalanceFightFn, BalancePlan, BalanceProgress, BalanceResult, BalanceRound, BalanceStep,
-    auto_balance, auto_balance_by, auto_balance_with, in_band,
+    BALANCE_SEED0, BalancePlan, BalanceProgress, BalanceResult, BalanceRound, BalanceStep, auto_balance,
+    auto_balance_with, in_band,
 };
 pub use filters::Filters;
 pub use score::{BeatSheet, Verdict, score};
 pub use search::{
-    Candidate, FightFn, Halt, KEEP_MISFITS, SearchEnd, SearchOpts, SearchProgress, SearchResult, fight, rank, search,
-    search_by, shortlist,
+    Candidate, Halt, KEEP_MISFITS, SearchEnd, SearchOpts, SearchProgress, SearchResult, fight, rank, search, shortlist,
 };
-pub use stats::{KO_BINS, KO_HIST_FROM, Outcome, Stats, ko_hist, stats, stats_by, stats_until};
+pub use stats::{KO_BINS, KO_HIST_FROM, Outcome, Stats, ko_hist, stats, stats_until};
 pub use story::{Story, story, story_at};

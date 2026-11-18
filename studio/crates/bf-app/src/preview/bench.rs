@@ -503,7 +503,8 @@ pub fn fitting_seed_after(seed: u64) -> Result<u64, String> {
 /// The first seed from `from` (below 10,000 past it) whose fight under `draft` fits the story.
 fn fitting_seed_from(draft: &Draft, from: u64) -> Result<u64, String> {
     let ff = engine::convert::fight_file(draft)?;
-    let base = bf_engine::classic_setup(&ff, 0).map_err(|e| format!("This fight cannot be fought: {e}"))?;
+    let base =
+        bf_sim::setup_from(&ff, bf_content::roster(), 0).map_err(|e| format!("This fight cannot be fought: {e}"))?;
     let sheet = bf_story::BeatSheet::series(base.fighters);
     for seed in from..from.saturating_add(10_000) {
         let setup = bf_sim::Setup { seed, ..base.clone() };
@@ -540,8 +541,6 @@ pub fn starter_take(seed: Option<u64>) -> Result<Take, String> {
         paths: Paths::under(&root.0),
         clip: None,
         search_limit: None,
-        dev: false,
-        gpu: None,
     };
     let handle = engine::spawn(Arc::new(|| {}), config);
     const TAKE: TakeId = 1;

@@ -11,9 +11,6 @@ pub mod queue_file;
 pub mod settings;
 pub mod shortlist_cache;
 
-#[cfg(test)]
-mod engine_compat;
-
 use std::collections::BTreeSet;
 use std::ffi::OsString;
 use std::fs;
@@ -1021,13 +1018,7 @@ mod tests {
         let paths = root.paths();
         let writer = Writer::start(paths.clone());
         let mut h = history::starter();
-        h.record(
-            ["FLUTE".to_string(), "TROMBONE".to_string()],
-            bf_core::Engine::One,
-            2210,
-            None,
-            1_763_208_000,
-        );
+        h.record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_763_208_000);
         writer.history(&h);
         writer.flush();
         assert_eq!(history::load_history(&paths.history()), (h, None));

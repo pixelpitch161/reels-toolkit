@@ -918,8 +918,6 @@ pub fn kit_vm(pair: &str, step: Step, take: bool) -> ViewModel {
             paths: Paths::under(&root),
             clip: None,
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         let engine = engine::spawn(std::sync::Arc::new(|| {}), config);
         engine.send(Command::LoadTake { take: 1, draft });

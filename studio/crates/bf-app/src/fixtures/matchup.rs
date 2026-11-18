@@ -17,21 +17,9 @@ pub fn vm() -> ViewModel {
 pub fn counted() -> ViewModel {
     let mut vm = vm();
     let mut history = crate::store::history::starter();
-    let again = history.record(
-        ["FLUTE".to_string(), "CLARINET".to_string()],
-        bf_core::Engine::One,
-        515,
-        None,
-        1_794_744_000,
-    );
+    let again = history.record(["FLUTE".to_string(), "CLARINET".to_string()], 515, None, 1_794_744_000);
     history.set_uploaded(again, true);
-    history.record(
-        ["FLUTE".to_string(), "OBOE".to_string()],
-        bf_core::Engine::One,
-        516,
-        None,
-        1_794_744_000,
-    );
+    history.record(["FLUTE".to_string(), "OBOE".to_string()], 516, None, 1_794_744_000);
     vm.history = history;
     vm
 }

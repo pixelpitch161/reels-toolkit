@@ -161,7 +161,6 @@ impl AppState {
             arrangement: None,
             pinned: None,
             base: None,
-            engine: bf_core::Engine::One,
         };
         self.vm.roster = Some(roster);
         self.vm.draft.bass = self.first_bass();

@@ -475,15 +475,12 @@ version = "1.5.0"
 dependencies = [
  "bf-content",
  "bf-core",
- "bf-engine",
  "bf-export",
  "bf-pack",
  "bf-picture",
  "bf-sim",
  "bf-sound",
  "bf-story",
- "bf2-render",
- "bf2-sim",
  "chrono",
  "cpal",
  "directories",
@@ -505,7 +502,6 @@ version = "1.5.0"
 dependencies = [
  "bf-content",
  "bf-core",
- "bf-engine",
  "bf-export",
  "bf-picture",
  "bf-sim",
@@ -526,13 +522,7 @@ dependencies = [
  "bf-core",
  "bf-picture",
  "bf-sound",
- "bf-story",
  "bf-testdata",
- "bf2-direct",
- "bf2-fx",
- "bf2-render",
- "bf2-sim",
- "rayon",
  "serde_json",
  "sha2",
  "toml",
@@ -550,20 +540,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bf-engine"
-version = "1.5.0"
-dependencies = [
- "bf-content",
- "bf-core",
- "bf-export",
- "bf-sim",
- "bf-story",
- "bf2-direct",
- "bf2-sim",
- "rayon",
-]
-
-[[package]]
 name = "bf-export"
 version = "1.5.0"
 dependencies = [
@@ -574,10 +550,6 @@ dependencies = [
  "bf-sound",
  "bf-story",
  "bf-testdata",
- "bf2-direct",
- "bf2-fx",
- "bf2-render",
- "bf2-sim",
  "png",
  "serde_json",
  "windows-sys 0.61.2",
@@ -664,50 +636,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "zip",
-]
-
-[[package]]
-name = "bf2-direct"
-version = "1.5.0"
-dependencies = [
- "bf-content",
- "bf-core",
- "bf-picture",
- "bf-sound",
- "bf2-sim",
-]
-
-[[package]]
-name = "bf2-fx"
-version = "1.5.0"
-dependencies = [
- "bf-picture",
- "bf2-direct",
- "bf2-render",
- "bf2-sim",
- "bytemuck",
- "wgpu",
-]
-
-[[package]]
-name = "bf2-render"
-version = "1.5.0"
-dependencies = [
- "bf-content",
- "bf-core",
- "bf-picture",
- "bf2-direct",
- "bf2-sim",
- "bytemuck",
- "pollster",
- "wgpu",
-]
-
-[[package]]
-name = "bf2-sim"
-version = "1.5.0"
-dependencies = [
- "bf-core",
 ]
 
 [[package]]

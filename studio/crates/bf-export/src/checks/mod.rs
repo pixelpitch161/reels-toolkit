@@ -38,7 +38,6 @@ use bf_sound::wav::sample_i16;
 use bf_story::Story;
 
 pub mod band;
-pub mod engine2;
 pub mod evenout;
 pub mod flash;
 pub mod focus;
@@ -246,9 +245,7 @@ impl BandPlan {
         let bed = theme.bed(&ff.music.arrangement, &theme.options_of(ff)?)?;
         let part = |k: usize| -> Result<(String, (f64, f64)), ContentError> {
             let name = ff.fighters.get(k).ok_or_else(|| missing("fighter list"))?;
-            let sound = bf_content::fighters::sound(name, k, ff)
-                .or_else(|| bf_content::fighters2::sound(name, k, ff))
-                .ok_or_else(|| missing("fighter"))?;
+            let sound = bf_content::fighters::sound(name, k, ff).ok_or_else(|| missing("fighter"))?;
             // `Sound::bus` needs the music context of a recording, which a fight file alone does not give;
             // it is the fighter's name in lower case (`self.name.lower()`), and no part overrides it
             Ok((name.to_lowercase(), sound.band()))

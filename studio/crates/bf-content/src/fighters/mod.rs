@@ -65,6 +65,9 @@ pub mod piccolo;
 pub mod snare_drum;
 pub mod soprano_sax;
 
+// the developer fighters (never offered)
+pub mod target_dummy;
+
 /// The ten older fighters (spec section 10, plan m4 Table O1), in alphabetical order: each has its folder here, a
 /// stub until its port, offered only once a register task lists it in `PORTED`.
 pub const OLDER: [&str; 10] = [
@@ -94,6 +97,10 @@ pub const NEW: [&str; 10] = [
     "FLUGELHORN",
     "SNARE DRUM",
 ];
+
+/// The developer fighters (`data/roster_dev.json`), each with its folder here: in the roster so a fight file can name
+/// them, never offered in the app (not in `PORTED`, no place in the score order). The TARGET DUMMY never attacks.
+pub const DEV: [&str; 1] = ["TARGET DUMMY"];
 
 /// The two lines a fighter's name takes on the VS card when one line would be too small (the kit's `TITLE_LINES`,
 /// which its configs set per episode); `None` for a name that fits on one.
@@ -183,6 +190,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "CONTRABASSOON" => entry!(contrabassoon),
         "FLUGELHORN" => entry!(flugelhorn),
         "SNARE DRUM" => entry!(snare_drum),
+        "TARGET DUMMY" => entry!(target_dummy),
         _ => return None,
     })
 }
@@ -331,11 +339,14 @@ mod tests {
         // every roster fighter has its folder, and a fighter the app offers has everything in it; a folder a port
         // has filled before the register task offers it may hold anything (nothing here names its state)
         // the roster holds the kit's 20, the older ten (milestone 4) and the fighters made from scratch, each once
-        assert_eq!(roster().len(), 30 + NEW.len());
+        assert_eq!(roster().len(), 30 + NEW.len() + DEV.len());
         assert_eq!(
             roster()
                 .iter()
-                .filter(|f| !OLDER.contains(&f.name.as_str()) && !NEW.contains(&f.name.as_str()))
+                .filter(|f| {
+                    let n = f.name.as_str();
+                    !OLDER.contains(&n) && !NEW.contains(&n) && !DEV.contains(&n)
+                })
                 .count(),
             20
         );

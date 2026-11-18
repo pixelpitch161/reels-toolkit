@@ -17,15 +17,12 @@ path = "src/main.rs"
 [dependencies]
 bf-content.workspace = true
 bf-core.workspace = true
-bf-engine.workspace = true
 bf-export.workspace = true
 bf-pack.workspace = true
 bf-picture.workspace = true
 bf-sim.workspace = true
 bf-sound.workspace = true
 bf-story.workspace = true
-bf2-render.workspace = true
-bf2-sim.workspace = true
 chrono.workspace = true
 cpal.workspace = true
 directories.workspace = true

@@ -1,6 +1,5 @@
 //! The draft: everything the owner has chosen for the fight being made.
 
-use bf_core::Engine;
 use serde::{Deserialize, Serialize};
 
 /// The caption text for each platform.
@@ -42,14 +41,6 @@ pub struct Draft {
     pub captions_edited: bool,
     /// The fight file this draft was opened from, as TOML.
     pub base: Option<String>,
-    /// The engine the draft's fight is on (both fighters always have it). Missing in a draft written before Engine
-    /// 2, and never written for the current engine, so such a draft reads and writes as it did.
-    #[serde(
-        default,
-        skip_serializing_if = "Engine::is_one",
-        with = "crate::model::engine_number"
-    )]
-    pub engine: Engine,
 }
 
 impl Draft {
@@ -83,7 +74,6 @@ mod tests {
             arrangement: None,
             pinned: None,
             base: None,
-            engine: Engine::One,
         }
     }
 
