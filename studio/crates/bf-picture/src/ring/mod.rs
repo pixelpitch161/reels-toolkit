@@ -199,7 +199,16 @@ pub struct PictureCtx {
 pub struct Picture {
     p: PictureCtx,
     card: TitleCard,
+    /// The lens's sharp zone of each frame when the focus was widened ([`Picture::widen_focus`]); empty: the
+    /// kit's [`SHARP`] on every frame.
+    sharp: Vec<f64>,
+    /// The count-in is kept inside the safe zone ([`Picture::keep_counts_inside`]).
+    counts_inside: bool,
 }
+
+/// The lens's sharp zone (`sharp` of `reelkit.lens.coc_map`): the part of the depth around the focus that is not
+/// blurred, as a share of the focus depth.
+pub const SHARP: f64 = 0.17;
 
 /// `owner(e)`: the side an event belongs to (its attacker, user or owner), or `None`.
 pub fn owner(e: &Event) -> Option<usize> {
@@ -577,7 +586,12 @@ impl Picture {
             p.title.clone(),
         )
         .map_err(PictureError::Title)?;
-        Ok(Picture { p, card })
+        Ok(Picture {
+            p,
+            card,
+            sharp: Vec::new(),
+            counts_inside: false,
+        })
     }
 
     /// What the looks' hooks read: the run and everything built from it.

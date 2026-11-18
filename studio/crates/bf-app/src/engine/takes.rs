@@ -497,7 +497,9 @@ impl Worker {
 
         // the picture
         let rec = Arc::new(rec);
-        let picture = bf_content::build_picture(Arc::clone(&rec), &ff).map_err(|e| plain(&e))?;
+        let mut picture = bf_content::build_picture(Arc::clone(&rec), &ff).map_err(|e| plain(&e))?;
+        // as the render does: a subject the lens would blur is kept sharp
+        picture.widen_focus();
         let frames: Arc<dyn FrameSource> = Arc::new(PictureSource(Arc::new(picture)));
         let sent = me.say(
             ctx,
@@ -516,20 +518,22 @@ impl Worker {
             return Ok(());
         };
         let mut st = bf_content::build_soundtrack(&rec, &ff).map_err(|e| plain(&e))?;
-        // the render evens out a soundtrack that would fail the levels check; Music plays and checks the same
-        let evened = bf_export::checks::even_out(&st.master).map(|e| {
-            let note = e.note();
-            st.master = e.master;
-            note
-        });
+        // the render fixes a soundtrack that would fail a sound check (the fighters under the music, the
+        // loudness, the loop point); Music plays and checks the same
+        let fixes = match BandPlan::of(&ff) {
+            Ok(plan) => bf_export::fix::fix_sound(&mut st, &show, &plan),
+            Err(_) => Vec::new(),
+        };
         if !me.heard(ctx) {
             // finished, and thrown away
             return Ok(());
         }
         let names = [show.names[0].as_str(), show.names[1].as_str()];
         let (mut checks, lanes) = sound_views(&st, &show, &ff, names, colors);
-        if let (Some(note), Some(line)) = (evened, checks.iter_mut().find(|l| l.title == "Loudness")) {
-            line.note = format!("{} {note}", line.note);
+        for fix in &fixes {
+            if let Some(line) = checks.iter_mut().find(|l| l.title == check_title(fix.name)) {
+                line.note = format!("{} {}", line.note, fix.note);
+            }
         }
         let audio = AudioTake {
             samples: st.master.iter().map(|f| [f[0] as f32, f[1] as f32]).collect(),

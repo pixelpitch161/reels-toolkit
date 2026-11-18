@@ -3,6 +3,7 @@
 //! | Module | Holds |
 //! | --- | --- |
 //! | [`checks`] | every check a video passes ([`CheckResult`], [`pre_render`], [`pre_render_keeping`]) |
+//! | [`fix`] | the automatic fixes that put right what a check would fail, so the render goes on ([`fix::fix_sound`]) |
 //! | [`encode`] | finding ffmpeg ([`find_ffmpeg`]) and the loop-clean encode ([`Encoder`]) |
 //! | [`probe`] | the checks of the finished file ([`verify_mp4`]) |
 //! | [`output`] | the output folder: its name ([`folder_name`]), the temporary folder, the files beside the video |
@@ -14,6 +15,7 @@ use bf_content::ContentError;
 
 pub mod checks;
 pub mod encode;
+pub mod fix;
 pub mod job;
 pub mod output;
 pub mod probe;

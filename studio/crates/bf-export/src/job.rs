@@ -33,8 +33,10 @@ use bf_picture::ring::{FrameReport, Picture, upscale3};
 use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
-use crate::checks::{BandPlan, CheckResult, Kept, even_out, panic_text, pre_render_keeping};
+use crate::checks::flash::LIMIT;
+use crate::checks::{BandPlan, CheckResult, Kept, flash_span, panic_text, pre_render_keeping};
 use crate::encode::{ENCODING_NOTE, EncodeSpeed, Encoder, Ffmpeg, find_ffmpeg};
+use crate::fix::{Fixed, FlashGuard, fix_frames, fix_sound, with_notes};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
 use crate::probe::verify_until;
 use crate::{ExportError, output};
@@ -235,83 +237,104 @@ struct Job<'a> {
 
 impl Job<'_> {
     /// Everything between the temporary folder and the move, written into `tmp`.
+    ///
+    /// Whatever a check would fail is fixed first where it can be ([`crate::fix`]): the picture's focus, the
+    /// sound (the fighters above the music, the loudness, the loop point), and on the frames the checks drew the
+    /// loop point and the flashes. Every frame is given to ffmpeg through a [`FlashGuard`]. When the finished file
+    /// fails one of its own checks, or ffmpeg stops, the video is made once more (its flashes held one under the
+    /// rule, for room to spare) before the render gives up.
     fn make(&self, tmp: &mut TempFolder, stop: &dyn Fn() -> Result<(), ExportError>) -> Result<(), ExportError> {
         let (ff, rec, on, name) = (self.ff, self.rec, self.on, self.name);
         on(JobEvent::Stage(stage::SOUNDTRACK));
         let mut st = build_soundtrack(rec, ff)?;
-        // a whole video whose loudness would fail the levels check is evened out first, so it renders
-        let evened = if self.whole { even_out(&st.master) } else { None };
-        let evened_note = evened.map(|e| {
-            let note = e.note();
-            st.master = e.master;
-            note
+        stop()?;
+        let mut pic = build_picture(Arc::clone(rec), ff)?;
+        // a subject the lens would blur is kept sharp (the clip too, so it looks like the video)
+        let focus_fix = pic.widen_focus().map(|(frames, widest)| Fixed {
+            name: "focus",
+            note: format!(
+                "The lens was kept sharp on the fighters automatically on {frames} frames (its sharp zone widened to \
+                 {:.0} % of the focus depth at most).",
+                100.0 * widest
+            ),
         });
         stop()?;
-        let pic = build_picture(Arc::clone(rec), ff)?;
+        // the sound that would fail a check is fixed before the render
+        let mut fixes: Vec<Fixed> = focus_fix.into_iter().collect();
+        if self.whole {
+            let plan = BandPlan::of(ff)?;
+            fixes.extend(fix_sound(&mut st, &pic.ctx().show, &plan));
+        }
         stop()?;
 
-        // the frames the checks drew: the video takes them instead of drawing them again
+        // the frames the checks drew: the video takes them instead of drawing them again; `fixed` holds the ones
+        // a fix changed, which the video always takes
         let mut kept = Kept::new();
+        let mut fixed = BTreeMap::new();
         if self.whole {
             on(JobEvent::Stage(stage::CHECKS));
-            let cfg = &pic.ctx().cfg;
-            let show = &pic.ctx().show;
-            let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
-            let story = story(rec, &show.grid, &sheet, [&cfg[0].low.name, &cfg[1].low.name]);
-            let plan = BandPlan::of(ff)?;
-            let (results, drawn) = pre_render_keeping(&pic, &st, show, &story, &plan, self.workers, self.cancel)
-                .ok_or_else(ExportError::cancelled)?;
-            let results = with_note(results, evened_note.as_deref());
-            report(results, on)?;
-            stop()?;
+            let (mut results, drawn, span) = self.check(&pic, &st)?;
             kept = drawn;
+            if results.iter().any(|r| r.name == "safezone" && !r.pass) {
+                // a count of the count-in reaching out of the safe zone is kept inside; the checks are run again
+                // on the frames as they are now drawn
+                pic.keep_counts_inside();
+                fixes.push(Fixed {
+                    name: "safezone",
+                    note: "The count-in was kept inside the safe zone automatically before the render.".into(),
+                });
+                drop(kept);
+                let (again, drawn, _) = self.check(&pic, &st)?;
+                (results, kept) = (again, drawn);
+            }
+            let (frame_fixes, changed) = fix_frames(&mut results, &mut kept, pic.nf(), span);
+            fixes.extend(frame_fixes);
+            fixed = changed;
+            report(with_notes(results, &fixes), on)?;
+            stop()?;
         }
 
         let wav = tmp.write("audio.wav", &wav16_bytes(&st.master))?;
         drop(st);
         let (part, mp4) = (format!("{name}.mp4.part"), format!("{name}.mp4"));
         let part_path = tmp.file(&part);
-        let total = self.frames.len();
-        on(JobEvent::Stage(stage::FRAMES));
-        let mut enc = Encoder::start(self.ffmpeg, &wav, &part_path, total, self.speed)?;
-        let t0 = Instant::now();
-        let first = self.frames.start;
         let kept = Mutex::new(kept);
-        let take_or_draw = |f: usize| {
-            let held = kept.lock().unwrap_or_else(|e| e.into_inner()).remove(&f);
-            match held {
-                Some((img, report)) => accept(img, report),
-                None => draw(&pic, f),
+        let mut first_try: Option<CheckResult> = None;
+        for attempt in 0..2 {
+            let last = attempt == 1;
+            // the second time the flashes are held one under the rule, in case the encode tipped one over
+            let limit = if last { LIMIT - 1 } else { LIMIT };
+            match self.encode_and_verify(&pic, &kept, &fixed, &wav, &part_path, limit, stop) {
+                Ok(results) => {
+                    let results = match &first_try {
+                        Some(failed) => with_notes(
+                            results,
+                            &[Fixed {
+                                name: failed.name,
+                                note: format!(
+                                    "The first encode did not pass this check ({}), so the video was made again \
+                                     automatically.",
+                                    failed.summary.trim_end_matches('.')
+                                ),
+                            }],
+                        ),
+                        None => results,
+                    };
+                    report(results, on)?;
+                    break;
+                }
+                Err(Retry::Check(failed)) if !last => {
+                    first_try = Some(failed);
+                    stop()?;
+                }
+                Err(Retry::Encode(_)) if !last => stop()?,
+                Err(Retry::Check(failed)) => return Err(ExportError::Check(failed)),
+                Err(Retry::Encode(e)) => {
+                    return Err(e.with_clause("it stopped the same way when the video was made a second time"));
+                }
+                Err(Retry::Stop(e)) => return Err(e),
             }
-        };
-        let drawn = draw_in_order(
-            self.frames.clone(),
-            self.workers,
-            &take_or_draw,
-            &mut |f, img| {
-                enc.push(&img)?;
-                on(JobEvent::Progress {
-                    done: f - first + 1,
-                    total,
-                    seconds: t0.elapsed().as_secs_f64(),
-                });
-                Ok(())
-            },
-            self.cancel,
-        );
-        if let Err(e) = drawn {
-            enc.abort();
-            return Err(e);
         }
-        stop()?;
-        on(JobEvent::Stage(stage::ENCODE));
-        enc.finish()?;
-        stop()?;
-
-        on(JobEvent::Stage(stage::VERIFY));
-        let results =
-            verify_until(self.ffmpeg, &part_path, total, self.whole, self.cancel).ok_or_else(ExportError::cancelled)?;
-        report(results, on)?;
         stop()?;
 
         on(JobEvent::Stage(stage::SAVE));
@@ -330,16 +353,103 @@ impl Job<'_> {
         }
         stop()
     }
-}
 
-/// The results with `note` (what the level fix did) added to the levels check's summary.
-fn with_note(mut results: Vec<CheckResult>, note: Option<&str>) -> Vec<CheckResult> {
-    if let Some(note) = note {
-        for r in results.iter_mut().filter(|r| r.name == "levels") {
-            r.summary = format!("{} {note}", r.summary);
+    /// Every check before the render on the picture `pic` and the soundtrack `st`, the frames they drew, and the
+    /// flash check's stretch.
+    fn check(
+        &self,
+        pic: &Picture,
+        st: &bf_sound::master::Soundtrack,
+    ) -> Result<(Vec<CheckResult>, Kept, (usize, usize)), ExportError> {
+        let cfg = &pic.ctx().cfg;
+        let show = &pic.ctx().show;
+        let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
+        let lows = [cfg[0].low.name.as_str(), cfg[1].low.name.as_str()];
+        let story = story(self.rec, &show.grid, &sheet, lows);
+        let plan = BandPlan::of(self.ff)?;
+        let (results, drawn) = pre_render_keeping(pic, st, show, &story, &plan, self.workers, self.cancel)
+            .ok_or_else(ExportError::cancelled)?;
+        Ok((results, drawn, flash_span(show, &story, lows)))
+    }
+
+    /// Draws (or takes) every frame, gives it through a [`FlashGuard`] of `limit` to ffmpeg, finishes the file and
+    /// checks it. The results of the finished file's checks when they all pass; [`Retry::Check`] when one fails
+    /// and [`Retry::Encode`] when ffmpeg stopped, so the video can be made once more.
+    #[allow(clippy::too_many_arguments)]
+    fn encode_and_verify(
+        &self,
+        pic: &Picture,
+        kept: &Mutex<Kept>,
+        fixed: &BTreeMap<usize, Rgb8>,
+        wav: &std::path::Path,
+        part_path: &std::path::Path,
+        limit: usize,
+        stop: &dyn Fn() -> Result<(), ExportError>,
+    ) -> Result<Vec<CheckResult>, Retry> {
+        let on = self.on;
+        let total = self.frames.len();
+        on(JobEvent::Stage(stage::FRAMES));
+        let mut enc = Encoder::start(self.ffmpeg, wav, part_path, total, self.speed).map_err(Retry::Stop)?;
+        let t0 = Instant::now();
+        let first = self.frames.start;
+        let take_or_draw = |f: usize| {
+            let held = kept.lock().unwrap_or_else(|e| e.into_inner()).remove(&f);
+            match (fixed.get(&f), held) {
+                (Some(img), _) => Ok(img.clone()),
+                (None, Some((img, report))) => accept(img, report),
+                (None, None) => draw(pic, f),
+            }
+        };
+        let mut guard = FlashGuard::new(limit);
+        let drawn = draw_in_order(
+            self.frames.clone(),
+            self.workers,
+            &take_or_draw,
+            &mut |f, img| {
+                enc.push(&guard.pass(img))?;
+                on(JobEvent::Progress {
+                    done: f - first + 1,
+                    total,
+                    seconds: t0.elapsed().as_secs_f64(),
+                });
+                Ok(())
+            },
+            self.cancel,
+        );
+        if let Err(e) = drawn {
+            enc.abort();
+            return Err(match e {
+                e @ ExportError::Encode(_) => Retry::Encode(e),
+                e => Retry::Stop(e),
+            });
+        }
+        stop().map_err(Retry::Stop)?;
+        on(JobEvent::Stage(stage::ENCODE));
+        match enc.finish() {
+            Ok(()) => {}
+            Err(e @ ExportError::Encode(_)) => return Err(Retry::Encode(e)),
+            Err(e) => return Err(Retry::Stop(e)),
+        }
+        stop().map_err(Retry::Stop)?;
+
+        on(JobEvent::Stage(stage::VERIFY));
+        let results = verify_until(self.ffmpeg, part_path, total, self.whole, self.cancel)
+            .ok_or_else(|| Retry::Stop(ExportError::cancelled()))?;
+        match results.iter().find(|r| !r.pass) {
+            Some(failed) => Err(Retry::Check(failed.clone())),
+            None => Ok(results),
         }
     }
-    results
+}
+
+/// Why making the file did not succeed: stop with this error, or make it once more.
+enum Retry {
+    /// Stop: cancelled, or a fault that another try would not change.
+    Stop(ExportError),
+    /// Make it again: a check of the finished file failed.
+    Check(CheckResult),
+    /// Make it again: ffmpeg stopped (its words).
+    Encode(ExportError),
 }
 
 /// Sends every result, then fails with the first that did not pass.
