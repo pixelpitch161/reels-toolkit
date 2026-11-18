@@ -227,13 +227,19 @@ fighter_<slug>` (and with `-- --include-ignored`), `cargo test --release -p bf-s
 
 ## Known limits
 
-- **TROMBONE vs HORN on brass trailer has no seed that passes every check.** The kit's own fight (seed 140) and its
-  first ten fits all fail the loudness check: after a late K.O. the brass trailer ending is too quiet. The kit gives
-  the same verdict. The rematch (HORN vs TROMBONE, same theme) passes. Pick another theme for that pair. The app does
-  not yet suggest another theme by itself.
-- **The seed search does not listen to the soundtrack**, so a seed from the shortlist can still fail the loudness
-  check at render time. The render job then refuses it and says why; pick the next seed.
-- **The FIGHT! caption fails the safe zone at 138 BPM**, for any pairing. Avoid 138 BPM until it is tidied.
+- **The render fixes what a check would fail instead of stopping** (Aedan, Nov 18, 2026: "All tests that would
+  make the render fail should be fixed rather than just stopping the render"). `bf-export/src/fix.rs` holds the
+  fixes and its table: the lens's sharp zone is widened where a fighter would be blurred (focus), when the safe-zone
+  check fails the count-in is kept inside the safe zone and the checks run again (this cures FIGHT! at 138 BPM; a
+  label or panel sticking out still stops the render), a fighter covered by the music is turned up there (band), the loudness is evened out (levels), the
+  loop point's sound and picture are joined, flashes are softened (on the checked stretch and, by a guard, on every
+  frame given to ffmpeg), and a finished file that fails its own checks (or an ffmpeg that stops) is made once more
+  with the flashes held one under the rule. Each fix leaves a passing video exactly as it was and adds a sentence
+  to its check's summary. Only a check that still fails after its fix, or one that cannot measure at all (an app
+  fault), stops the render. `ballfight check` still reports the checks before any fix (for diagnosis); the Music
+  view of the app shows them after the sound fixes, as the render does.
+- **TROMBONE vs HORN on brass trailer** fails the levels check before the fix (the brass trailer ending is too quiet
+  after a late K.O.); the render evens it out.
 - **The band check ignores an early K.O.** It looks at 32 to 44 s, so a fight with a K.O. at 31 s would fail it. The
   seed finder only offers K.O.s between 49 and 53 s, so this does not affect real videos.
 - **Four kit crossovers have no fit at an even handicap** (CELLO vs FLUTE, BASS DRUM vs HORN, EUPHONIUM vs CLARINET,

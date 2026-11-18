@@ -9,7 +9,7 @@ use serde_json::Value as Json;
 
 use super::state::BallState;
 use super::{PictureCtx, PictureError, owner};
-use crate::config::{H, SAFE, W, ss};
+use crate::config::{H, SAFE, W, safe_overshoot, safe_x1, ss};
 use crate::font::{self, ADV};
 use crate::img::Rgb8;
 use crate::look::DrawnBall;
@@ -241,9 +241,55 @@ pub fn big_text(
     );
 }
 
+/// The box `big_text` draws `text` in, centred on `(cx, cy)` at `size_px`: `(x0, y0, x1, y1)`.
+fn big_text_box(text: &str, cx: f64, cy: f64, size_px: f64) -> (i32, i32, i32, i32) {
+    let base = font::text_mask(text, 4);
+    let sc = size_px / base.h as f64;
+    let side = |n: usize| round_i32(n as f64 * sc).max(1);
+    let (hh, ww) = (side(base.h), side(base.w));
+    let (x0, y0) = (round_i32(cx - f64::from(ww) / 2.0), round_i32(cy - f64::from(hh) / 2.0));
+    (x0, y0, x0.saturating_add(ww), y0.saturating_add(hh))
+}
+
+/// The centre and size at which a count of the count-in stays inside the safe zone: as given when it fits, else as large as fits (down to half its size),
+/// else moved inside. A count drawn where the camera puts the ring's spot can otherwise reach into the apps'
+/// buttons (FIGHT! at 138 BPM did).
+fn inside_safe(text: &str, cx: f64, cy: f64, size_px: f64) -> (f64, f64, f64) {
+    let over = |b: (i32, i32, i32, i32)| safe_overshoot(b.0, b.1, b.2, b.3);
+    if over(big_text_box(text, cx, cy, size_px)) == 0 {
+        return (cx, cy, size_px);
+    }
+    let mut size = size_px;
+    while size > size_px * 0.5 {
+        size *= 0.98;
+        if over(big_text_box(text, cx, cy, size)) == 0 {
+            return (cx, cy, size);
+        }
+    }
+    // still out at half size: slide it in (left of the buttons if it reaches down to them)
+    let (x0, y0, x1, y1) = big_text_box(text, cx, cy, size);
+    let right = safe_x1(y0, y1);
+    let dx = if x0 < SAFE.0 {
+        f64::from(SAFE.0 - x0)
+    } else if x1 > right {
+        f64::from(right - x1)
+    } else {
+        0.0
+    };
+    let dy = if y0 < SAFE.1 {
+        f64::from(SAFE.1 - y0)
+    } else if y1 > SAFE.3 {
+        f64::from(SAFE.3 - y1)
+    } else {
+        0.0
+    };
+    (cx + dx, cy + dy, size)
+}
+
 impl PictureCtx {
     /// `countdown(img, t, cs)`: 3, 2, 1, FIGHT! in the ring, one count a beat, centred on `cs`.
-    pub(super) fn countdown(&self, img: &mut Rgb8, log: &mut DrawLog, t: f64, cs: (f64, f64)) {
+    /// With `inside` every count is kept inside the safe zone ([`inside_safe`]).
+    pub(super) fn countdown(&self, img: &mut Rgb8, log: &mut DrawLog, t: f64, cs: (f64, f64), inside: bool) {
         let count = &self.show.grid.count;
         for (j, &(tc, txt)) in count.iter().enumerate() {
             let tn = count.get(j + 1).map_or(tc + 0.85, |c| c.0);
@@ -256,16 +302,13 @@ impl PictureCtx {
                 let p = py_max(0.0, 1.0 - u / 0.12);
                 let punch = 1.0 + 0.25 * (p * p);
                 let out = ss(tn - 0.1, tn, t);
-                big_text(
-                    img,
-                    log,
-                    txt,
-                    cs.0,
-                    cs.1,
-                    size * punch * (1.0 - 0.35 * out),
-                    col,
-                    1.0 - out,
-                );
+                let size_px = size * punch * (1.0 - 0.35 * out);
+                let (cx, cy, size_px) = if inside {
+                    inside_safe(txt, cs.0, cs.1, size_px)
+                } else {
+                    (cs.0, cs.1, size_px)
+                };
+                big_text(img, log, txt, cx, cy, size_px, col, 1.0 - out);
             }
         }
     }

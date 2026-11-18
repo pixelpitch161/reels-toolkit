@@ -144,7 +144,7 @@ fn apply(x: &[[f64; 2]], gains_db: &[f64]) -> Vec<[f64; 2]> {
 /// `x` with its peaks held at or under `ceiling`: each 5 ms block gets the gain its loudest sample needs, the
 /// lowest of it and its neighbours is taken, and the gains are joined in straight lines from block to block, so
 /// no sample is ever over the ceiling and the gain never jumps.
-fn limit(x: &[[f64; 2]], ceiling: f64) -> Vec<[f64; 2]> {
+pub(crate) fn limit(x: &[[f64; 2]], ceiling: f64) -> Vec<[f64; 2]> {
     let blocks = x.len().div_ceil(BLOCK);
     if blocks == 0 {
         return Vec::new();

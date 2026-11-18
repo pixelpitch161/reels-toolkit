@@ -11,8 +11,8 @@ use std::sync::OnceLock;
 
 use bf_core::dmath;
 
-use super::Picture;
 use super::canvas::circle_angles;
+use super::{Picture, SHARP};
 use crate::camera::V3;
 use crate::config::{FPS, H, W, ss};
 use crate::hull::{self, Unusual};
@@ -336,7 +336,7 @@ impl Picture {
         // ---------------- lens (focus locked on the ring), glows, the spot beam, bloom, grade
         let (img32, depth) = (fr.array(), fr.depth());
         let zf = cam.depth(&[SUBJECT])[0];
-        let coc = lens::coc_map(&depth, zf, 26.0, 0.17);
+        let coc = lens::coc_map(&depth, zf, 26.0, self.sharp_at(f));
         stage!(Stage::Coc, StagePic::F64(coc), None);
         let mut img = match lens::dof(&img32, &coc) {
             Some(blurred) => Pic::F64(blurred),
@@ -483,7 +483,7 @@ impl Picture {
             look.after_post(p, &mut out, &mut log, &fc, &drawn);
         }
         // ---------------- UI: countdown, HP numbers in the balls, fight HUD, captions
-        p.countdown(&mut out, &mut log, t, cs);
+        p.countdown(&mut out, &mut log, t, cs, self.counts_inside);
         stage!(Stage::Countdown, StagePic::U8(out), None);
         // the title card covers the HUD: skip it
         let card_closed = self.card.door_offset(t) == 0.0;
@@ -499,8 +499,81 @@ impl Picture {
     /// check's inner loop (`kit/checks.py` `focus`): the ring's corners, both balls (bottom and top), each
     /// look's `focus_points`, the projectiles in flight and the shards. A frame is in focus when every value is 0.
     pub fn focus_points(&self, f: usize) -> Vec<(f64, String)> {
-        let p = &self.p;
         let f = f.min(self.nf().saturating_sub(1));
+        let sharp = self.sharp_at(f);
+        let top = lens::LEVELS[lens::LEVELS.len() - 1];
+        self.focus_offsets(f)
+            .into_iter()
+            .map(|(off, name)| {
+                // coc_map on float64 depths: np.clip(K * np.maximum(0.0, np.abs(1 - zf / np.maximum(d, 1e-3)) - sharp), 0, top)
+                let off = crate::np::maximum(0.0, off - sharp);
+                (crate::np::clip(26.0 * off, 0.0, top), name)
+            })
+            .collect()
+    }
+
+    /// Keeps every count of the count-in (3, 2, 1, FIGHT!) inside the safe zone from now on: one that would
+    /// reach out of it (into the apps' buttons, as FIGHT! does at 138 BPM) is drawn smaller, or moved in. The
+    /// render turns this on only when the safe-zone check fails, so a video that passes is drawn as before.
+    pub fn keep_counts_inside(&mut self) {
+        self.counts_inside = true;
+    }
+
+    /// The lens's sharp zone on frame `f`: [`SHARP`], or wider where [`Picture::widen_focus`] widened it.
+    pub fn sharp_at(&self, f: usize) -> f64 {
+        self.sharp.get(f).copied().unwrap_or(SHARP)
+    }
+
+    /// Widens the lens's sharp zone on the frames where a subject point would be blurred, so every subject is
+    /// sharp and the focus check passes instead of stopping the render. The zone eases out over half a second on
+    /// either side, so the background's blur never jumps. A picture whose subjects are all sharp already is left
+    /// exactly as it is. Gives `(frames widened, widest zone)`, or `None` when nothing needed it.
+    pub fn widen_focus(&mut self) -> Option<(usize, f64)> {
+        let nf = self.nf();
+        // the zone each frame needs: just past its farthest subject point
+        let need: Vec<f64> = (0..nf)
+            .map(|f| {
+                self.focus_offsets(f)
+                    .iter()
+                    .map(|(off, _)| *off)
+                    .filter(|off| off.is_finite())
+                    .fold(SHARP, f64::max)
+            })
+            .collect();
+        if need.iter().all(|&s| s <= SHARP) {
+            return None;
+        }
+        // held for 3 frames on either side, then eased back to the kit's zone over 15 more
+        const HOLD: usize = 3;
+        const EASE: usize = 15;
+        let mut sharp = vec![SHARP; nf];
+        for (j, &s) in need.iter().enumerate().filter(|&(_, &s)| s > SHARP) {
+            let s = s + 1e-6;
+            for (f, out) in sharp
+                .iter_mut()
+                .enumerate()
+                .take((j + HOLD + EASE + 1).min(nf))
+                .skip(j.saturating_sub(HOLD + EASE))
+            {
+                let d = f.abs_diff(j);
+                let w = if d <= HOLD {
+                    1.0
+                } else {
+                    1.0 - (d - HOLD) as f64 / (EASE + 1) as f64
+                };
+                *out = out.max(SHARP + (s - SHARP) * w);
+            }
+        }
+        let widened = sharp.iter().filter(|&&s| s > SHARP).count();
+        let widest = sharp.iter().copied().fold(SHARP, f64::max);
+        self.sharp = sharp;
+        Some((widened, widest))
+    }
+
+    /// The subject points of frame `f` (see [`Picture::focus_points`]) with how far each lies off the focus
+    /// depth: `|1 - zf / max(d, 1e-3)|`, as a share of the focus depth.
+    fn focus_offsets(&self, f: usize) -> Vec<(f64, String)> {
+        let p = &self.p;
         let t = f as f64 / f64::from(FPS);
         let cam = p.camera(t);
         let zf = cam.depth(&[SUBJECT])[0];
@@ -529,13 +602,10 @@ impl Picture {
         for part in p.parts_at(t) {
             pts.push((scene::to_world(part.p[0], part.p[2], part.p[1]), "shard".to_string()));
         }
-        let top = lens::LEVELS[lens::LEVELS.len() - 1];
         pts.into_iter()
             .map(|(w, name)| {
-                // coc_map on float64 depths: np.clip(K * np.maximum(0.0, np.abs(1 - zf / np.maximum(d, 1e-3)) - sharp), 0, top)
                 let d = crate::np::maximum(cam.depth(&[w])[0], 1e-3);
-                let off = crate::np::maximum(0.0, (1.0 - zf / d).abs() - 0.17);
-                (crate::np::clip(26.0 * off, 0.0, top), name)
+                ((1.0 - zf / d).abs(), name)
             })
             .collect()
     }
