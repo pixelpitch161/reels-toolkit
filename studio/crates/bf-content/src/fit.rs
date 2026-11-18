@@ -110,7 +110,7 @@ const CINEMA: &str = CATEGORIES[2];
 const ROCK: &str = CATEGORIES[3];
 const CLUB: &str = CATEGORIES[4];
 
-const THEMES: [(&str, ThemeFit); 35] = [
+const THEMES: [(&str, ThemeFit); 62] = [
     (
         "hot_jazz",
         t(
@@ -418,6 +418,249 @@ const THEMES: [(&str, ThemeFit); 35] = [
             &[("airy", 2), ("reedy", 1), ("club", 1), ("high", 1)],
             160.0,
             168.0,
+        ),
+    ),
+    // the Studio's second batch (2026-11-18)
+    (
+        "bebop_chase",
+        t(
+            JAZZ,
+            &[("jazz", 2), ("brassy", 1), ("reedy", 1), ("high", 1)],
+            150.0,
+            172.0,
+        ),
+    ),
+    (
+        "big_band_swing",
+        t(JAZZ, &[("brassy", 2), ("jazz", 2), ("reedy", 1)], 128.0, 152.0),
+    ),
+    (
+        "salsa_dura",
+        t(
+            JAZZ,
+            &[("brassy", 2), ("percussive", 1), ("keys", 1), ("jazz", 1)],
+            156.0,
+            172.0,
+        ),
+    ),
+    (
+        "cumbia",
+        t(
+            JAZZ,
+            &[("folk", 1), ("keys", 1), ("reedy", 1), ("percussive", 1)],
+            100.0,
+            118.0,
+        ),
+    ),
+    (
+        "acid_jazz",
+        t(
+            JAZZ,
+            &[("jazz", 2), ("club", 1), ("keys", 1), ("electric", 1)],
+            104.0,
+            122.0,
+        ),
+    ),
+    (
+        "klezmer",
+        t(
+            FOLK,
+            &[("folk", 2), ("reedy", 1), ("bowed", 1), ("keys", 1)],
+            120.0,
+            150.0,
+        ),
+    ),
+    (
+        "bluegrass",
+        t(FOLK, &[("plucked", 2), ("folk", 2), ("bowed", 1)], 138.0, 166.0),
+    ),
+    (
+        "flamenco",
+        t(
+            FOLK,
+            &[("plucked", 2), ("percussive", 1), ("folk", 1), ("bowed", 1)],
+            126.0,
+            156.0,
+        ),
+    ),
+    (
+        "oompah_polka",
+        t(
+            FOLK,
+            &[("folk", 2), ("brassy", 1), ("low", 1), ("keys", 1)],
+            116.0,
+            140.0,
+        ),
+    ),
+    (
+        "bhangra",
+        t(
+            FOLK,
+            &[("percussive", 2), ("plucked", 1), ("folk", 1), ("club", 1)],
+            120.0,
+            144.0,
+        ),
+    ),
+    (
+        "cossack_dance",
+        t(
+            FOLK,
+            &[("folk", 2), ("plucked", 1), ("bowed", 1), ("keys", 1)],
+            124.0,
+            160.0,
+        ),
+    ),
+    (
+        "skeleton_gallop",
+        t(
+            CINEMA,
+            &[("sinister", 2), ("percussive", 1), ("bowed", 1), ("reedy", 1)],
+            120.0,
+            144.0,
+        ),
+    ),
+    (
+        "samurai_duel",
+        t(
+            CINEMA,
+            &[
+                ("classical", 1),
+                ("airy", 1),
+                ("plucked", 1),
+                ("percussive", 1),
+                ("sinister", 1),
+            ],
+            104.0,
+            132.0,
+        ),
+    ),
+    (
+        "starfighter",
+        t(
+            CINEMA,
+            &[
+                ("classical", 1),
+                ("electric", 1),
+                ("brassy", 1),
+                ("keys", 1),
+                ("high", 1),
+            ],
+            124.0,
+            148.0,
+        ),
+    ),
+    (
+        "kaiju_stomp",
+        t(
+            CINEMA,
+            &[("low", 2), ("sinister", 1), ("brassy", 1), ("percussive", 1)],
+            96.0,
+            112.0,
+        ),
+    ),
+    (
+        "desert_raid",
+        t(
+            CINEMA,
+            &[
+                ("reedy", 1),
+                ("plucked", 1),
+                ("percussive", 1),
+                ("classical", 1),
+                ("sinister", 1),
+            ],
+            112.0,
+            136.0,
+        ),
+    ),
+    (
+        "thrash_attack",
+        t(
+            ROCK,
+            &[
+                ("rock", 2),
+                ("electric", 1),
+                ("percussive", 1),
+                ("low", 1),
+                ("sinister", 1),
+            ],
+            150.0,
+            172.0,
+        ),
+    ),
+    (
+        "funk_rock",
+        t(
+            ROCK,
+            &[("rock", 1), ("brassy", 1), ("electric", 1), ("jazz", 1), ("low", 1)],
+            104.0,
+            118.0,
+        ),
+    ),
+    (
+        "rockabilly",
+        t(ROCK, &[("rock", 2), ("plucked", 1), ("electric", 1)], 148.0, 172.0),
+    ),
+    (
+        "boogie_shuffle",
+        t(
+            ROCK,
+            &[("rock", 1), ("jazz", 1), ("keys", 1), ("reedy", 1)],
+            110.0,
+            132.0,
+        ),
+    ),
+    (
+        "glam_stomp",
+        t(ROCK, &[("rock", 2), ("percussive", 1), ("keys", 1)], 118.0, 138.0),
+    ),
+    (
+        "synthwave",
+        t(
+            CLUB,
+            &[("electric", 2), ("keys", 1), ("club", 1), ("high", 1)],
+            108.0,
+            128.0,
+        ),
+    ),
+    (
+        "chiptune",
+        t(
+            CLUB,
+            &[("electric", 2), ("high", 1), ("keys", 1), ("club", 1)],
+            140.0,
+            170.0,
+        ),
+    ),
+    (
+        "dubstep",
+        t(
+            CLUB,
+            &[("club", 2), ("low", 1), ("sinister", 1), ("electric", 1)],
+            138.0,
+            150.0,
+        ),
+    ),
+    (
+        "hardstyle",
+        t(
+            CLUB,
+            &[("club", 2), ("electric", 1), ("percussive", 1), ("high", 1)],
+            145.0,
+            158.0,
+        ),
+    ),
+    (
+        "jersey_club",
+        t(CLUB, &[("club", 2), ("percussive", 1), ("high", 1)], 136.0, 146.0),
+    ),
+    (
+        "amapiano",
+        t(
+            CLUB,
+            &[("club", 2), ("percussive", 1), ("airy", 1), ("jazz", 1)],
+            108.0,
+            116.0,
         ),
     ),
 ];

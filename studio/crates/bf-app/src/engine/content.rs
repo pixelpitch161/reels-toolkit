@@ -508,7 +508,7 @@ mod tests {
         // every theme the registry offers, the big top (the starting pair's) first
         let names: Vec<&str> = r.themes.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, bf_content::theme_names());
-        assert_eq!(names.len(), 35);
+        assert_eq!(names.len(), 62);
         let t = &r.themes[0];
         assert_eq!(
             (t.name.as_str(), t.display.as_str(), t.bars),

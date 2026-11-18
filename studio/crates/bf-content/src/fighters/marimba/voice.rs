@@ -46,7 +46,7 @@ pub fn bar(m: f64, vel: f64, dur: f64) -> Vec<f64> {
     let n = (len * SR) as usize;
     let t = synth::tt(n);
     let seed = (m.round() as i64).rem_euclid(128) as u64 * 31 + 7;
-    let click = synth::bp(&synth::noise(seed, n), 900.0 + f * 2.0, 6000.0, 2);
+    let click = synth::bp(&synth::noise(seed, n), (900.0 + f * 2.0).min(5400.0), 6000.0, 2);
     let bright = 0.15 + 0.25 * vel.clamp(0.0, 1.0);
     let fd = (0.015 * SR) as usize;
     (0..n)
