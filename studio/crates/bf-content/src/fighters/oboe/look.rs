@@ -902,7 +902,6 @@ mod tests {
             t,
             o: [0.0, 0.0],
             aim: 0.0,
-            level: false,
             len: 6.0,
             width: 0.12,
         };
