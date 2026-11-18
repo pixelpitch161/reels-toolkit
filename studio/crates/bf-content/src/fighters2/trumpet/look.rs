@@ -12,6 +12,12 @@
 
 use std::sync::Arc;
 
+use bf_core::dmath::{atan2, cosf, sin, sinf};
+
+fn cube(x: f64) -> f64 {
+    x * x * x
+}
+
 use bf2_fx::tone::Restraint;
 use bf2_fx::{FxError, FxTimeline, frame::LookFx};
 use bf2_render::maths::{self, M4, V3};
@@ -129,7 +135,7 @@ fn unit_disc() -> MeshData {
     let mut idx = Vec::new();
     for i in 0..12u32 {
         let a = std::f32::consts::TAU * i as f32 / 12.0;
-        verts.push(vert([a.cos(), 0.0, a.sin()], UP, [1.0; 3]));
+        verts.push(vert([cosf(a), 0.0, sinf(a)], UP, [1.0; 3]));
         idx.extend([0, 1 + (i + 1) % 12, 1 + i]);
     }
     MeshData { verts, idx }
@@ -192,7 +198,7 @@ fn screen_angle(cam: &Camera, c: V3, d: V3) -> f32 {
         cam.project(c, ART_W, ART_H),
         cam.project(maths::add(c, d), ART_W, ART_H),
     ) {
-        (Some(a), Some(b)) => (b[1] - a[1]).atan2(b[0] - a[0]).to_degrees(),
+        (Some(a), Some(b)) => (atan2(f64::from(b[1] - a[1]), f64::from(b[0] - a[0])) as f32).to_degrees(),
         _ => 0.0,
     }
 }
@@ -524,7 +530,7 @@ impl Look2 for TrumpetLook {
             if mv == HERALD_LINE {
                 drawn.push(id);
                 let life = f64::from(POLE_LIFE);
-                let up = (1.0 - (1.0 - (age / 10.0).clamp(0.0, 1.0)).powi(3))
+                let up = (1.0 - cube(1.0 - (age / 10.0).clamp(0.0, 1.0)))
                     * (1.0 - ((age - (life - 24.0)) / 20.0).clamp(0.0, 1.0));
                 let h = 0.95 * up as f32;
                 if h < 0.02 {
@@ -554,7 +560,7 @@ impl Look2 for TrumpetLook {
                 // the pennant streams away from the foe it fences, fluttering
                 let tc = ball_centre(f.snap.pos[1 - k]);
                 let out_dir = maths::normalize([p[0] - tc[0], 0.0, p[2] - tc[2]]);
-                let flut = (age * 0.5 + idx as f64).sin() as f32 * 0.05;
+                let flut = sin(age * 0.5 + idx as f64) as f32 * 0.05;
                 let tip = maths::add(maths::scale(out_dir, 0.36), [0.0, flut, 0.0]);
                 let o = maths::sub(top, [0.0, 0.11, 0.0]);
                 flat_put(
@@ -588,16 +594,16 @@ impl Look2 for TrumpetLook {
                 for j in 0..3usize {
                     let a = (age * 0.31 + (idx * 3 + j) as f64 * 1.7) as f32;
                     let off = [
-                        ((idx * 5 + j * 3) as f32).sin() * 0.16,
-                        ((j * 7) as f32).cos() * 0.08,
-                        ((idx * 3 + j * 5) as f32).cos() * 0.16,
+                        sinf((idx * 5 + j * 3) as f32) * 0.16,
+                        cosf((j * 7) as f32) * 0.08,
+                        cosf((idx * 3 + j * 5) as f32) * 0.16,
                     ];
                     let at = maths::add(p, if j == 0 { [0.0; 3] } else { off });
                     let landed = at[1] < 0.16;
                     let x = if landed {
-                        [a.cos() * 0.14, 0.0, a.sin() * 0.14]
+                        [cosf(a) * 0.14, 0.0, sinf(a) * 0.14]
                     } else {
-                        maths::scale(maths::normalize([a.cos(), 0.7 * (1.3 * a).sin(), a.sin()]), 0.15)
+                        maths::scale(maths::normalize([cosf(a), 0.7 * sinf(1.3 * a), sinf(a)]), 0.15)
                     };
                     let z = maths::scale(
                         maths::normalize(maths::cross(x, if landed { [0.0, -1.0, 0.0] } else { [0.3, 1.0, 0.2] })),
@@ -672,7 +678,7 @@ impl Look2 for TrumpetLook {
                             col(PISTON.map(|v| v * 0.82)),
                             Material::Unlit,
                         );
-                        let flut = ((since * 0.6) as f32 + i as f32).sin() * 0.05;
+                        let flut = sinf((since * 0.6) as f32 + i as f32) * 0.05;
                         let o = maths::add(base, [0.0, h - 0.09, 0.0]);
                         flat_put(
                             out,

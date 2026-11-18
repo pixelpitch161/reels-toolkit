@@ -17,6 +17,12 @@
 
 pub mod look;
 
+use bf_core::dmath::{exp, sin};
+
+fn cube(x: f64) -> f64 {
+    x * x * x
+}
+
 use bf2_sim::{
     Bone, Brain, Choice, Cue, CueAt, Ease, FighterDef, HitDef, Joint, Key, MoveDef, Phase, ProjDef, Rig, Spawn, Tag,
 };
@@ -118,7 +124,7 @@ fn out_back(x: f64) -> f64 {
     // An ease-out with a little overshoot (1.0 at x = 1, peaks about 1.08).
     let x = x.clamp(0.0, 1.0);
     let c = 1.6;
-    1.0 + (c + 1.0) * (x - 1.0).powi(3) + c * (x - 1.0).powi(2)
+    1.0 + (c + 1.0) * cube(x - 1.0) + c * (x - 1.0) * (x - 1.0)
 }
 
 /// One piston's stroke: out in `t_out` steps (fast ease-out), hold `t_hold`, back in `t_back` with a little spring
@@ -127,14 +133,14 @@ fn stroke(u: f64, len: f64, t_out: f64, t_hold: f64, t_back: f64) -> f64 {
     if u < 0.0 {
         0.0
     } else if u < t_out {
-        len * (1.0 - (1.0 - u / t_out).powi(3))
+        len * (1.0 - cube(1.0 - u / t_out))
     } else if u < t_out + t_hold {
         len
     } else if u < t_out + t_hold + t_back {
         let x = (u - t_out - t_hold) / t_back;
         // home, with a small rebound out and back at the end
         let home = 1.0 - smooth(x);
-        let bounce = (x * std::f64::consts::PI * 2.0).sin().max(0.0) * 0.06 * (1.0 - x);
+        let bounce = sin(x * std::f64::consts::PI * 2.0).max(0.0) * 0.06 * (1.0 - x);
         len * (home + bounce)
     } else {
         0.0
@@ -156,7 +162,7 @@ fn valve_combo() -> MoveDef {
         } else {
             let kick = |at: f64, amt: f64| {
                 let u = act - at;
-                if u < 0.0 { 0.0 } else { amt * (-u / 4.0).exp() }
+                if u < 0.0 { 0.0 } else { amt * exp(-u / 4.0) }
             };
             -0.18 * (1.0 - smooth(act / 4.0)) + kick(1.0, 0.06) + kick(7.0, 0.06) + kick(13.0, 0.14)
         };
@@ -223,9 +229,9 @@ fn lead_pipe_lance() -> MoveDef {
         };
         let len = if act < 0.0 {
             // a short draw back: a touch out, then home, just before the thrust
-            0.12 * (s / wf * std::f64::consts::PI).sin().max(0.0)
+            0.12 * sin(s / wf * std::f64::consts::PI).max(0.0)
         } else if act < 2.0 {
-            2.1 * (1.0 - (1.0 - act / 2.0).powi(3))
+            2.1 * (1.0 - cube(1.0 - act / 2.0))
         } else if act < 7.0 {
             2.1
         } else {
@@ -278,7 +284,7 @@ fn valve_cap_yoyos() -> MoveDef {
         // cord length from the ball's centre (the glass is at 0.6)
         let (len, spin, lift) = if act < 0.0 {
             let x = s / wf;
-            let wobble = (s * 1.3).sin() * 0.08 * x;
+            let wobble = sin(s * 1.3) * 0.08 * x;
             (0.6 + 0.25 * out_back(x), -0.35 * smooth(x) + wobble, 0.9 * smooth(x))
         } else if act <= af {
             let x = act / af;
@@ -404,7 +410,7 @@ fn cavalry_charge() -> MoveDef {
     let keys = sampled(total, |s| {
         let act = s - wf;
         let rock = if act < 0.0 {
-            -0.25 * (s / wf * std::f64::consts::PI).sin().max(0.0)
+            -0.25 * sin(s / wf * std::f64::consts::PI).max(0.0)
         } else {
             0.0
         };
