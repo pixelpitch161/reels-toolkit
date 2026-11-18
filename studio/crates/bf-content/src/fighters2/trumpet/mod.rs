@@ -401,10 +401,10 @@ fn herald_line() -> MoveDef {
     }
 }
 
-/// CAVALRY CHARGE, 40/16/30 (idea 3). Wind-up: the bugle call; the ball rocks back on its heels. Active: it rockets
+/// CAVALRY CHARGE, 36/36/24 (idea 3). Wind-up: the bugle call; the ball rocks back on its heels. Active: it rockets
 /// forward (a big lunge) and bowls the foe over (a launch). Recovery: it skids to a stop.
 fn cavalry_charge() -> MoveDef {
-    let (w, a, r) = (40u32, 16u32, 30u32);
+    let (w, a, r) = (36u32, 36u32, 24u32);
     let total = w + a + r;
     let wf = f64::from(w);
     let keys = sampled(total, |s| {
@@ -416,7 +416,7 @@ fn cavalry_charge() -> MoveDef {
         };
         let mut p = [Joint::REST; BONES];
         p[HORN] = j(0.0, rock, 1.0);
-        p[RAM] = j(0.0, 0.0, if (0.0..=16.0).contains(&act) { reach(0.25) } else { 1.0 });
+        p[RAM] = j(0.0, 0.0, if (0.0..=36.0).contains(&act) { reach(0.25) } else { 1.0 });
         p
     });
     MoveDef {
@@ -427,7 +427,7 @@ fn cavalry_charge() -> MoveDef {
             lift: 8.0,
             hitstun: 30,
             strength: 0.55,
-            ..hit(vec![RAM], (0, 16), 6.0)
+            ..hit(vec![RAM], (0, 36), 6.0)
         }],
         cues: vec![cue(Phase::Windup, 0, Cue::PunchIn)],
         lunge: 10.0,
@@ -436,7 +436,7 @@ fn cavalry_charge() -> MoveDef {
 }
 
 /// The confetti flakes: ten, launched up over the foe.
-pub const FLAKES: usize = 10;
+pub const FLAKES: usize = 16;
 
 /// TICKER TAPE, 22/14/20 (idea 6). Wind-up: the bell tips up. Active: ten brass flakes shoot up and flutter down
 /// over the foe (light homing), each one that lands on it a tiny hit.
@@ -456,8 +456,8 @@ fn ticker_tape() -> MoveDef {
             Spawn {
                 at: (i as u32 * 13) / FLAKES as u32,
                 proj: ProjDef {
-                    speed: 1.6 + 1.2 * ((i * 7 % FLAKES) as f64 / FLAKES as f64),
-                    up: 6.0 + 1.5 * f,
+                    speed: 1.2 + 1.0 * ((i * 7 % FLAKES) as f64 / FLAKES as f64),
+                    up: 7.0 + 1.0 * f,
                     gravity: true,
                     radius: 0.12,
                     life: 200,
@@ -466,10 +466,10 @@ fn ticker_tape() -> MoveDef {
                         "CONFETTI",
                         HitDef {
                             hitstop: 0,
-                            knock: 0.3,
+                            knock: 0.2,
                             hitstun: 2,
-                            strength: 0.05,
-                            ..hit(vec![], (0, 1), 0.5)
+                            strength: 0.03,
+                            ..hit(vec![], (0, 1), 0.35)
                         },
                     )
                 },
@@ -562,7 +562,7 @@ pub fn def() -> FighterDef {
     let special = std::env::var("BF_TRUMPET_SPECIAL").ok();
     let sp_all = [
         ("2", choice(HERALD_LINE, (1.2, 4.0), 50.0, 720)),
-        ("3", choice(CAVALRY_CHARGE, (2.0, 5.5), 50.0, 480)),
+        ("3", choice(CAVALRY_CHARGE, (2.0, 6.0), 50.0, 150)),
         ("6", choice(TICKER_TAPE, (1.4, 3.2), 50.0, 480)),
         ("7", choice(ROYAL_HERALDS, (1.1, 2.0), 50.0, 480)),
     ];

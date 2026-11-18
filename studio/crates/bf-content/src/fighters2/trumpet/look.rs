@@ -591,19 +591,19 @@ impl Look2 for TrumpetLook {
             } else if mv == TICKER_TAPE {
                 drawn.push(id);
                 let colours = [fighter, BRASS_HI, BRASS];
-                for j in 0..3usize {
+                for j in 0..5usize {
                     let a = (age * 0.31 + (idx * 3 + j) as f64 * 1.7) as f32;
                     let off = [
-                        sinf((idx * 5 + j * 3) as f32) * 0.16,
-                        cosf((j * 7) as f32) * 0.08,
-                        cosf((idx * 3 + j * 5) as f32) * 0.16,
+                        sinf((idx * 5 + j * 3) as f32) * 0.26,
+                        cosf((j * 7) as f32) * 0.14,
+                        cosf((idx * 3 + j * 5) as f32) * 0.26,
                     ];
                     let at = maths::add(p, if j == 0 { [0.0; 3] } else { off });
                     let landed = at[1] < 0.16;
                     let x = if landed {
-                        [cosf(a) * 0.14, 0.0, sinf(a) * 0.14]
+                        [cosf(a) * 0.18, 0.0, sinf(a) * 0.18]
                     } else {
-                        maths::scale(maths::normalize([cosf(a), 0.7 * sinf(1.3 * a), sinf(a)]), 0.15)
+                        maths::scale(maths::normalize([cosf(a), 0.7 * sinf(1.3 * a), sinf(a)]), 0.2)
                     };
                     let z = maths::scale(
                         maths::normalize(maths::cross(x, if landed { [0.0, -1.0, 0.0] } else { [0.3, 1.0, 0.2] })),
@@ -649,7 +649,7 @@ impl Look2 for TrumpetLook {
                             lift(cc),
                             0.9,
                             col(mix(fighter, 0.5, 120.0)),
-                            Material::Additive { strength: 0.28 * fade },
+                            Material::Additive { strength: 0.45 * fade },
                         );
                     }
                     for i in 0..3u32 {
@@ -697,7 +697,7 @@ impl Look2 for TrumpetLook {
         // ROYAL HERALDS: three long herald trumpets with hanging banners, cones of air on the blast.
         let blast = match now_mv {
             Some((mv, 1, s)) if mv as usize == ROYAL_HERALDS => Some(f64::from(s) + f.alpha),
-            Some((mv, 2, s)) if mv as usize == ROYAL_HERALDS && s < 8 => Some(8.0 + f64::from(s) + f.alpha),
+            Some((mv, 2, s)) if mv as usize == ROYAL_HERALDS && s < 20 => Some(8.0 + f64::from(s) + f.alpha),
             _ => None,
         };
         for b in [H1, H2, H3] {
@@ -742,12 +742,12 @@ impl Look2 for TrumpetLook {
             );
             // the banner, hanging from the middle of the tube
             let mid = maths::add(a0, maths::scale(maths::sub(tip, a0), 0.55));
-            let bh = (0.32 * (len / 1.5)).min(0.32);
+            let bh = (0.5 * (len / 1.5)).min(0.5);
             flat_put(
                 out,
                 m.strip,
                 [0.0, -bh, 0.0],
-                maths::scale(d, 0.26),
+                maths::scale(d, 0.42),
                 mid,
                 col(BRASS_DK),
                 Material::Unlit,
@@ -756,13 +756,13 @@ impl Look2 for TrumpetLook {
                 out,
                 m.strip,
                 [0.0, -bh + 0.03, 0.0],
-                maths::scale(d, 0.21),
+                maths::scale(d, 0.36),
                 maths::add(mid, [0.0, -0.015, 0.0]),
                 col(fighter),
                 Material::Unlit,
             );
             if let Some(s) = blast {
-                let kk = (s / 16.0).clamp(0.0, 1.0) as f32;
+                let kk = (s / 28.0).clamp(0.0, 1.0) as f32;
                 let l = 0.4 + 1.1 * kk;
                 flat_put(
                     out,
@@ -795,6 +795,18 @@ impl LookFx for TrumpetLook {
     /// A notch lighter than the dummy's (Aedan: fighters' hits land lighter than the dummy's presets), and no
     /// scorch marks (they blur, which the current engine never does).
     fn tone(&self, e: &EvKind) -> Restraint {
+        if matches!(e, EvKind::ProjHit { .. }) {
+            // confetti and herald poles: many small hits, so each barely sparks
+            return Restraint {
+                particles: 0.03,
+                glow: 0.06,
+                life: 0.4,
+                size: 0.25,
+                marks: 0.0,
+                screen: 0.0,
+                lens: false,
+            };
+        }
         if matches!(e, EvKind::Ko { .. }) {
             Restraint {
                 particles: 0.35,
