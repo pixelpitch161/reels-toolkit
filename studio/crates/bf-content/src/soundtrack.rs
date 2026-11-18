@@ -62,9 +62,13 @@ fn player(name: &str, k: usize, ff: &FightFile) -> Result<Player, ContentError> 
     let voice = fighters::voice(name)
         .or_else(|| crate::fighters2::voice(name))
         .ok_or_else(missing)?;
-    let part = fighters::sound(name, k, ff)
-        .or_else(|| crate::fighters2::sound(name, k, ff))
-        .ok_or_else(missing)?;
+    // on Engine 2 a moved fighter plays its Engine 2 part (it reads the Engine 2 shadow), not its current one
+    let part = if ff.engine == bf_core::fightfile::Engine::Two {
+        crate::fighters2::sound(name, k, ff).or_else(|| fighters::sound(name, k, ff))
+    } else {
+        fighters::sound(name, k, ff).or_else(|| crate::fighters2::sound(name, k, ff))
+    }
+    .ok_or_else(missing)?;
     if voice.name() != cfg.pp {
         return Err(ContentError::field(
             format!("fighters[{k}]"),
