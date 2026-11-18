@@ -12,9 +12,6 @@ impl FightFile {
         let mut o = String::new();
         // Always the newest format: the text holds format 2's settings whatever the value says.
         let _ = writeln!(o, "format = {FIGHT_FORMAT}");
-        if self.engine != Engine::One {
-            let _ = writeln!(o, "engine = {}", self.engine.number());
-        }
         let _ = writeln!(o, "app_version = {}", w_str(&self.app_version));
         let _ = writeln!(o, "fighters = {}", w_strs(&self.fighters));
         let _ = writeln!(o, "arena = {}", w_str(&self.arena));
@@ -47,9 +44,6 @@ impl FightFile {
         let _ = writeln!(o, "chord_loop = {}", w_strs(&m.chord_loop));
         let _ = writeln!(o, "chords_tail = {}", w_strs(&m.chords_tail));
         let _ = writeln!(o, "music_seed = {}", m.music_seed);
-        if m.slowmo == SlowmoMusic::Steady {
-            o.push_str("slowmo = \"steady\"\n");
-        }
         o.push_str("\n[music.roles]\n");
         for (k, v) in &m.roles {
             let _ = writeln!(o, "{} = {}", w_key(k), w_str(v));

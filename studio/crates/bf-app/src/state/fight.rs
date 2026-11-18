@@ -23,10 +23,7 @@ impl AppState {
             return;
         };
         if self.fed.as_ref() != Some(&key) {
-            let fighters_changed = self
-                .fed
-                .as_ref()
-                .is_none_or(|fed| fed.fighters != key.fighters || fed.engine != key.engine);
+            let fighters_changed = self.fed.as_ref().is_none_or(|fed| fed.fighters != key.fighters);
             self.fed = Some(key);
             self.begin_generation(fighters_changed, None, fx);
         }
@@ -64,7 +61,6 @@ impl AppState {
         let d = &self.vm.draft;
         let notes_are_a_weapon = (0..2).any(|side| self.vm.fighter(side).is_some_and(|f| f.music_feeds_fight));
         Some(FightKey {
-            engine: d.engine,
             fighters: d.fighters.clone(),
             bars: d.bars,
             handicap: d.handicap,
@@ -158,13 +154,11 @@ impl AppState {
         if side > 1 {
             return;
         }
-        // Only a fighter offered on the draft's engine (ruling E6-R1: no mixed pair).
-        let engine = self.vm.draft.engine;
         let known = self
             .vm
             .roster
             .as_ref()
-            .is_some_and(|r| r.offered(engine).iter().any(|f| f.name == name));
+            .is_some_and(|r| r.fighters.iter().any(|f| f.name == name && f.available));
         if !known || self.vm.draft.fighters[side] == name {
             return;
         }
@@ -252,82 +246,6 @@ impl AppState {
         if let Some(text) = notice {
             self.vm.notices.push(crate::model::Notice { text });
         }
-    }
-
-    /// The engine switch (ruling E6-R1). On Engine 2, a side whose fighter has no Engine 2 version gives its place:
-    /// to the other side's mirror twin (TEST DUMMY and TEST DUMMY 2: a fight file never names one fighter twice),
-    /// with the mirror notice, or else to the first other fighter Engine 2 offers, with a notice that says so. When
-    /// neither side has one, the match-up starts over from Engine 2's first two fighters. Back on the current
-    /// engine, both fighters stay when they have a current-engine version; otherwise the match-up starts over from
-    /// the roster's start. Like a fighter pick, it clears the seed, the base and the handicap, and the pair starts
-    /// from its starter. Nothing changes when the engine offers no pair.
-    pub(super) fn set_engine(&mut self, engine: bf_core::Engine) {
-        let Some(roster) = self.vm.roster.as_ref() else {
-            return;
-        };
-        if self.vm.draft.engine == engine {
-            return;
-        }
-        let offered: Vec<String> = roster.offered(engine).iter().map(|f| f.name.clone()).collect();
-        let has = |n: &str| offered.iter().any(|o| o == n);
-        let was = self.vm.draft.fighters.clone();
-        let start_over = |first: [String; 2]| {
-            let notice = crate::wording::engine_start_over(&was, &first, engine);
-            (first, Some(notice))
-        };
-        let (fighters, notice) = match (has(&was[0]), has(&was[1])) {
-            (true, true) => (was.clone(), None),
-            (keep0, keep1) if engine == bf_core::Engine::Two && keep0 != keep1 => {
-                let keep = if keep0 { 0 } else { 1 };
-                let gone = 1 - keep;
-                let twin = twin_of(&was[keep]).filter(|t| has(t));
-                let Some(partner) = twin
-                    .map(str::to_string)
-                    .or_else(|| offered.iter().find(|o| **o != was[keep]).cloned())
-                else {
-                    return;
-                };
-                let notice = if twin.is_some() {
-                    crate::wording::mirror_notice(&was[gone])
-                } else {
-                    crate::wording::stand_in_notice(&was[gone], &partner)
-                };
-                let mut f = was.clone();
-                f[gone] = partner;
-                (f, Some(notice))
-            }
-            _ if engine == bf_core::Engine::Two => match offered.as_slice() {
-                [a, b, ..] => start_over([a.clone(), b.clone()]),
-                _ => return,
-            },
-            _ => {
-                let start = roster.start.clone();
-                if !(has(&start[0]) && has(&start[1])) {
-                    return;
-                }
-                start_over(start)
-            }
-        };
-        let d = &mut self.vm.draft;
-        d.engine = engine;
-        d.fighters = fighters;
-        d.seed = None;
-        d.base = None;
-        d.handicap = [1.0, 1.0];
-        d.captions_edited = false;
-        self.vm.draft.bass = self.first_bass();
-        self.start_pair();
-        if let Some(text) = notice {
-            self.vm.notices.push(crate::model::Notice { text });
-        }
-    }
-
-    /// Whether both of `draft`'s fighters are offered on its engine (an opened fight must be: ruling E6-R1).
-    pub(super) fn pair_on_its_engine(&self, draft: &Draft) -> bool {
-        self.vm.roster.as_ref().is_none_or(|r| {
-            let offered = r.offered(draft.engine);
-            draft.fighters.iter().all(|n| offered.iter().any(|f| &f.name == n))
-        })
     }
 
     /// The fighters change corners; each keeps its handicap and, if it plays bass, the bass. When each order has a kit
@@ -551,11 +469,4 @@ fn with_first_line(text: &str, line: &str) -> String {
         Some(i) => format!("{line}{}", &text[i..]),
         None => line.to_string(),
     }
-}
-
-/// The mirror twin of a developer fighter: TEST DUMMY and TEST DUMMY 2 are one dummy under two names.
-fn twin_of(name: &str) -> Option<&'static str> {
-    let d = bf_content::fighters2::DUMMIES;
-    let at = d.iter().position(|n| *n == name)?;
-    Some(d[1 - at])
 }

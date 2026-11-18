@@ -1059,8 +1059,6 @@ mod tests {
             paths: crate::store::Paths::under(logs.parent().unwrap()),
             clip: None,
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         assert!(ctx.spawn(

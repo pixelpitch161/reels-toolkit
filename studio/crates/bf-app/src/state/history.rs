@@ -50,13 +50,8 @@ mod tests {
         };
         let (mut s, _) = AppState::new(settings, Queue::new(), Vec::new(), 1);
         s.vm.history = crate::store::history::starter();
-        s.vm.history.record(
-            ["FLUTE".to_string(), "TROMBONE".to_string()],
-            bf_core::Engine::One,
-            2210,
-            None,
-            1_794_744_000,
-        );
+        s.vm.history
+            .record(["FLUTE".to_string(), "TROMBONE".to_string()], 2210, None, 1_794_744_000);
         s
     }
 

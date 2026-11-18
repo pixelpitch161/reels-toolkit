@@ -4,8 +4,6 @@
 pub mod dmath;
 pub mod event;
 pub mod fightfile;
-/// Which fight engine a fight runs on (re-exported from [`fightfile`]).
-pub use fightfile::Engine;
 pub mod grid;
 pub mod harmony;
 pub mod lines;

@@ -74,7 +74,6 @@ fn boot(engine: EngineHandle, temp: &Temp) -> Boot {
         queue: Queue::new(),
         notices: Vec::new(),
         cores: CORES,
-        dev: false,
     }
 }
 
@@ -96,7 +95,6 @@ fn sample_app<'a>(temp: &Temp) -> Harness<'a, BfApp> {
                 queue: Queue::new(),
                 notices: Vec::new(),
                 cores: CORES,
-                dev: false,
             },
         )
     })
@@ -499,7 +497,6 @@ fn the_sample_app_says_so_in_the_status_bar() {
                 queue: Queue::new(),
                 notices: Vec::new(),
                 cores: CORES,
-                dev: false,
             },
         );
         app.status_note = Some("Sample data, not a real fight".to_string());

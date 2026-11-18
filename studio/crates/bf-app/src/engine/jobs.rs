@@ -27,15 +27,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use bf_core::Engine;
 use bf_core::fightfile::FightFile;
-use bf_engine::Fought;
+use bf_core::recording::Recording;
 use bf_export::{CheckResult, EncodeSpeed, ExportError, JobEvent, JobOpts, run_job, stage};
 
 use super::Ctx;
-use super::convert::{dev_allowed, fight_file_dev, plain};
+use super::convert::{fight_file, plain};
 use crate::model::draft::Draft;
-use crate::model::queue::{FailHint, JobSpec, JobUpdate, StepKey, StepState, steps_of};
+use crate::model::queue::{FailHint, JobSpec, JobUpdate, STEP_ORDER, StepKey, StepState};
 use crate::model::{EncodeChoice, JobId};
 use crate::seam::{Command, Event};
 use crate::wording;
@@ -97,7 +96,7 @@ pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
     // A job whose thread has ended leaves the only clone of its flag here.
     state.running.retain(|r| Arc::strong_count(&r.cancel) > 1);
     match command {
-        Command::Enqueue { draft, out_root } => ctx.emit(enqueue(&draft, out_root, ctx.config.dev)),
+        Command::Enqueue { draft, out_root } => ctx.emit(enqueue(&draft, out_root)),
         Command::RunJob {
             id,
             fight_toml,
@@ -158,13 +157,13 @@ fn tools_answer(found: Result<bf_export::Ffmpeg, ExportError>) -> Result<String,
 }
 
 /// The answer to `Enqueue`: the job's spec, fixed now, or why the draft cannot be queued.
-fn enqueue(draft: &Draft, out_root: PathBuf, dev: bool) -> Event {
+fn enqueue(draft: &Draft, out_root: PathBuf) -> Event {
     let Some(seed) = draft.seed else {
         return Event::EnqueueFailed {
             problem: "Pick a seed first.".to_string(),
         };
     };
-    let ff = match fight_file_dev(draft, dev) {
+    let ff = match fight_file(draft) {
         Ok(ff) => ff,
         Err(problem) => return Event::EnqueueFailed { problem },
     };
@@ -262,15 +261,15 @@ fn render(
     let t0 = Instant::now();
     // Nothing after its last word (one a newer job may have sent for it), nor once the engine is ending.
     let send = |update: JobUpdate| send_update(ctx, id, answered, update);
-    let (ff, fought) = match fight(fight_toml, ctx.config.dev) {
+    let (ff, rec) = match fight(fight_toml) {
         Ok(fought) if !cancel.load(Ordering::SeqCst) => fought,
         Ok(_) => return send(JobUpdate::Cancelled),
         Err(_) if cancel.load(Ordering::SeqCst) => return send(JobUpdate::Cancelled),
         Err(update) => return send(update),
     };
-    let winner = fought.winner();
+    let winner = rec.winner;
     let opts = job_opts(out_root, ctx.workers(), ctx.config.clip.clone(), speed);
-    let steps = Mutex::new(Steps::new(ff.engine));
+    let steps = Mutex::new(Steps::default());
     let on = |e: JobEvent| {
         let updates = super::lock(&steps).on(e, Instant::now());
         // A cancelled job's last word is its `Cancelled`, with nothing in between.
@@ -278,17 +277,7 @@ fn render(
             updates.into_iter().for_each(send);
         }
     };
-    let result = match fought {
-        Fought::One(rec) => run_job(&ff, Arc::new(rec), &opts, &on, cancel),
-        // Engine 2 renders through the seam, which fights the seed again (milliseconds) on its own GPU device.
-        Fought::Two(_) => {
-            let seed = ff.seed.unwrap_or_default();
-            bf_engine::render(&ff, seed, &opts, &on, cancel).map_err(|e| match e {
-                bf_engine::EngineError::Export(e) => e,
-                e => ExportError::Content(plain(&format!("This fight cannot be rendered: {e}"))),
-            })
-        }
-    };
+    let result = run_job(&ff, Arc::new(rec), &opts, &on, cancel);
     let (ends, problem) = {
         let mut steps = super::lock(&steps);
         match result {
@@ -332,29 +321,16 @@ fn cancel_problem(e: &ExportError) -> Option<String> {
     (*e != ExportError::cancelled()).then(|| plain(e))
 }
 
-/// The fight of the job's fight file with its recording, on the file's engine, or why there is none (as the job's
-/// failure). A developer fighter needs the developer switch (`dev`).
-fn fight(fight_toml: &str, dev: bool) -> Result<(FightFile, Fought), JobUpdate> {
+/// The fight of the job's fight file with its recording, or why there is none (as the job's failure).
+fn fight(fight_toml: &str) -> Result<(FightFile, Recording), JobUpdate> {
     let ff = FightFile::parse(fight_toml).map_err(|e| not_made(&format!("This fight cannot be used: {e}")))?;
     let Some(seed) = ff.seed else {
         return Err(not_made("This fight file names no seed."));
     };
-    dev_allowed(&ff.fighters, dev).map_err(|words| not_made(&words))?;
-    // The current engine's set-up and run are told apart as before Engine 2: a set-up refused is the fight's, a
-    // run refused the seed's.
-    let rec = match ff.engine {
-        Engine::One => {
-            let setup = bf_engine::classic_setup(&ff, seed)
-                .map_err(|e| not_made(&format!("This fight cannot be fought: {e}")))?;
-            let rec = bf_sim::run(&setup, true).map_err(|e| not_made(&format!("Seed {seed} cannot be fought: {e}")))?;
-            Fought::One(rec)
-        }
-        Engine::Two => bf_engine::fight(&ff, seed, true).map_err(|e| match e {
-            bf_engine::EngineError::Sim2(e) => not_made(&format!("Seed {seed} cannot be fought: {e}")),
-            e => not_made(&format!("This fight cannot be fought: {e}")),
-        })?,
-    };
-    if rec.winner().is_none() || rec.t_ko_video().is_none() {
+    let setup = bf_sim::setup_from(&ff, bf_content::roster(), seed)
+        .map_err(|e| not_made(&format!("This fight cannot be fought: {e}")))?;
+    let rec = bf_sim::run(&setup, true).map_err(|e| not_made(&format!("Seed {seed} cannot be fought: {e}")))?;
+    if rec.winner.is_none() || rec.t_ko.is_none() {
         return Err(JobUpdate::Failed {
             headline: NOT_MADE.to_string(),
             detail: format!(
@@ -468,9 +444,8 @@ pub fn failure(error: &ExportError, failed: Option<&CheckResult>) -> JobUpdate {
 
 /// The check list of one job as its events move it on: turns each [`JobEvent`] into the updates the state
 /// expects, and nothing it would throw away (a line is sent only when it changes; frame counts ten a second).
+#[derive(Default)]
 struct Steps {
-    /// The job's lines, in the check list's order (`steps_of` its engine).
-    lines: &'static [StepKey],
     /// Where each line is, as last sent (missing: to do).
     at: HashMap<StepKey, StepState>,
     /// The summaries of the checks that passed, by name.
@@ -479,23 +454,7 @@ struct Steps {
     frames_sent: Option<Instant>,
 }
 
-impl Default for Steps {
-    fn default() -> Steps {
-        Steps::new(Engine::One)
-    }
-}
-
 impl Steps {
-    /// The check list of a job on `engine`: only the lines its job has (ruling E6-R7).
-    fn new(engine: Engine) -> Steps {
-        Steps {
-            lines: steps_of(engine),
-            at: HashMap::new(),
-            passed: BTreeMap::new(),
-            frames_sent: None,
-        }
-    }
-
     fn state(&self, key: StepKey) -> StepState {
         self.at.get(&key).copied().unwrap_or(StepState::Todo)
     }
@@ -503,7 +462,7 @@ impl Steps {
     /// Moves `key` to `state` with `note`, unless it is there already or has failed.
     fn set(&mut self, key: StepKey, state: StepState, note: Option<String>, out: &mut Vec<JobUpdate>) {
         let now = self.state(key);
-        if now == state || now == StepState::Failed || !self.lines.contains(&key) {
+        if now == state || now == StepState::Failed {
             return;
         }
         self.at.insert(key, state);
@@ -512,9 +471,8 @@ impl Steps {
 
     /// The lines in progress, in the check list's order.
     fn now(&self) -> Vec<StepKey> {
-        self.lines
-            .iter()
-            .copied()
+        STEP_ORDER
+            .into_iter()
             .filter(|&k| self.state(k) == StepState::Now)
             .collect()
     }
@@ -588,22 +546,19 @@ impl Steps {
     /// The video is saved: every line not done yet is done, in the check list's order.
     fn all_done(&mut self) -> Vec<JobUpdate> {
         let mut out = Vec::new();
-        for &key in self.lines {
+        for key in STEP_ORDER {
             self.set(key, StepState::Done, None, &mut out);
         }
         out
     }
 
-    /// The job stopped with `e`: a failed check with a line of this job has marked it already; anything else (a
-    /// check with no line, such as Engine 2's `ko_window`, or an error that is not a check) fails the first line
+    /// The job stopped with `e`: a failed check has marked its line already; anything else fails the first line
     /// in progress.
     fn failed_at(&mut self, e: &ExportError) -> Vec<JobUpdate> {
         let mut out = Vec::new();
-        let marked = match e {
-            ExportError::Check(r) => step_of_check(r.name).is_some_and(|key| self.lines.contains(&key)),
-            _ => false,
-        };
-        if !marked && let Some(&key) = self.now().first() {
+        if !matches!(e, ExportError::Check(_))
+            && let Some(&key) = self.now().first()
+        {
             self.set(key, StepState::Failed, None, &mut out);
         }
         out
@@ -617,9 +572,8 @@ mod tests {
     use std::process::Command as Process;
 
     use super::*;
-    use crate::engine::convert::fight_file;
     use crate::engine::{EngineConfig, wait_for};
-    use crate::model::queue::{JobState, Queue, STEP_ORDER};
+    use crate::model::queue::{JobState, Queue};
     use crate::seam::EngineHandle;
     use crate::store::Paths;
 
@@ -698,8 +652,6 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(CLIP),
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         (super::super::spawn(Arc::new(|| {}), config), root)
     }
@@ -782,123 +734,6 @@ mod tests {
             fight_toml: String::new(),
             out_root: PathBuf::from("unused"),
         }
-    }
-
-    #[test]
-    fn engine2_job_steps_follow_checks2() {
-        use crate::model::queue::{STEP_ORDER, STEPS2};
-        // the current engine's list is as before
-        assert_eq!(steps_of(Engine::One), &STEP_ORDER);
-        let key_of = |u: &JobUpdate| match u {
-            JobUpdate::Step { key, .. } => Some(*key),
-            _ => None,
-        };
-        let mut s = Steps::new(Engine::Two);
-        let t = Instant::now();
-        let mut all = s.on(JobEvent::Stage(stage::SOUNDTRACK), t);
-        all.extend(s.on(JobEvent::Stage(stage::CHECKS), t));
-        for name in [
-            "safezone",
-            "levels",
-            "band",
-            "loudness",
-            "loop_picture",
-            "loop_audio",
-            "focus",
-        ] {
-            all.extend(s.on(JobEvent::Check(result(name, true, "fine")), t));
-        }
-        all.extend(s.on(JobEvent::Check(result("ko_window", true, "K.O. window: fine.")), t));
-        all.extend(s.on(JobEvent::Stage(stage::FRAMES), t));
-        all.extend(s.on(JobEvent::Check(result("mp4_flash", true, "fine")), t));
-        all.extend(s.all_done());
-        let keys: Vec<StepKey> = all.iter().filter_map(key_of).collect();
-        assert!(keys.iter().all(|k| STEPS2.contains(k)), "{keys:?}");
-        assert!(!keys.contains(&StepKey::Flashes));
-        assert_eq!(s.at.len(), STEPS2.len());
-        assert!(s.at.values().all(|&st| st == StepState::Done));
-        // a queued Engine 2 job starts with exactly those lines
-        let d = crate::engine::tests::dummy_draft();
-        let mut ff = fight_file_dev(&d, true).expect("a fight file");
-        ff.seed = Some(1);
-        let spec = JobSpec {
-            fight_toml: ff.to_toml(),
-            ..spec_of("Test dummy vs Test dummy 2")
-        };
-        let mut q = Queue::new();
-        let id = q.add(spec);
-        q.start(id);
-        let lines: Vec<StepKey> = q.job(id).expect("the job").steps.iter().map(|l| l.key).collect();
-        assert_eq!(lines, STEPS2.to_vec());
-    }
-
-    #[test]
-    fn engine2_job_without_ko_is_refused() {
-        let d = crate::engine::tests::dummy_draft();
-        let mut ff = fight_file_dev(&d, true).expect("a fight file");
-        // so little damage that nobody is knocked out: a decision
-        ff.handicap = vec![0.01, 0.01];
-        ff.seed = Some(3);
-        let Err(update) = fight(&ff.to_toml(), true) else {
-            panic!("a fight without a K.O. has no video");
-        };
-        assert_eq!(
-            update,
-            JobUpdate::Failed {
-                headline: NOT_MADE.to_string(),
-                detail: "Seed 3 has no K.O. before 58 s, so it has no video. Nothing was saved. Try another seed, \
-                         then queue it again."
-                    .to_string(),
-                hint: FailHint::OpenInSeeds,
-            }
-        );
-        // and a dummy file without the developer switch is refused in words
-        ff.handicap = vec![1.0, 1.0];
-        let Err(update) = fight(&ff.to_toml(), false) else {
-            panic!("the dummy needs the developer switch");
-        };
-        assert_eq!(update, not_made(bf_content::DEV_ONLY));
-    }
-
-    /// A current-engine file whose set-up is refused is told as before Engine 2: the fight, not the seed.
-    #[test]
-    fn an_engine1_setup_failure_names_the_fight() {
-        let mut ff = FightFile::parse(EPISODE).expect("the example parses");
-        ff.pair_rules
-            .insert("no_rule_of_this_name".to_string(), bf_core::event::Value::Int(1));
-        ff.seed = Some(4);
-        let why = bf_engine::classic_setup(&ff, 4).expect_err("no such rule");
-        let Err(update) = fight(&ff.to_toml(), false) else {
-            panic!("a rule the engine does not have cannot be fought");
-        };
-        assert_eq!(update, not_made(&format!("This fight cannot be fought: {why}")));
-    }
-
-    /// A failed check with no line of its own (Engine 2's K.O. window) fails the first line in progress, so the
-    /// check list of a failed job does not stay in progress.
-    #[test]
-    fn a_failed_ko_window_fails_a_line() {
-        let t = Instant::now();
-        let mut s = Steps::new(Engine::Two);
-        s.on(JobEvent::Stage(stage::SOUNDTRACK), t);
-        s.on(JobEvent::Stage(stage::CHECKS), t);
-        let first = s.now()[0];
-        let r = result("ko_window", false, "The K.O. comes at 47.10 s, before the window.");
-        assert!(s.on(JobEvent::Check(r.clone()), t).is_empty());
-        assert_eq!(
-            s.failed_at(&ExportError::Check(r)),
-            [JobUpdate::Step {
-                key: first,
-                state: StepState::Failed,
-                note: None
-            }]
-        );
-        // a failed check with a line of its own has marked it already: nothing more
-        let mut s = Steps::new(Engine::Two);
-        s.on(JobEvent::Stage(stage::CHECKS), t);
-        let r = result("safezone", false, "A caption sticks out.");
-        s.on(JobEvent::Check(r.clone()), t);
-        assert!(s.failed_at(&ExportError::Check(r)).is_empty());
     }
 
     #[test]
@@ -1541,8 +1376,6 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(0..900),
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         let engine = super::super::spawn(Arc::new(|| {}), config);
         let out = root.join("Videos");
@@ -1625,8 +1458,6 @@ mod tests {
             paths: Paths::under(&root),
             clip: Some(CLIP),
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         let ctx = Ctx::new(side.events.clone(), config);
         let mut state = State::default();

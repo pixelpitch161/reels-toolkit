@@ -90,14 +90,8 @@ pub struct State {
 pub fn handle(state: &mut State, ctx: &Ctx, command: Command) {
     match command {
         Command::ScanLibrary { root } => scan(state, ctx, root),
-        Command::OpenFight { path } => {
-            let dev = ctx.config.dev;
-            open(state, ctx, move || open_file(&path, dev));
-        }
-        Command::OpenFightText { toml } => {
-            let dev = ctx.config.dev;
-            open(state, ctx, move || open_text(toml, dev));
-        }
+        Command::OpenFight { path } => open(state, ctx, move || open_file(&path)),
+        Command::OpenFightText { toml } => open(state, ctx, move || open_text(toml)),
         Command::CheckFolder { root, name } => folder(state, ctx, root, name, false),
         Command::CreateFolder { root } => folder(state, ctx, root, String::new(), true),
         Command::PickFolder { start } => pick(state, ctx, start),
@@ -220,7 +214,7 @@ fn scan_library(ctx: &Ctx, root: PathBuf, cancel: &AtomicBool, covers: usize) {
         if stopped(ctx, cancel) {
             Err(String::new())
         } else {
-            summary(text, ctx.config.dev)
+            summary(text)
         }
     };
     let found = library::scan(&root, &read);
@@ -733,27 +727,22 @@ fn clear_before_scan(
 
 /// A fight file's text read and checked as the engine reads it: parsed, then checked against what this app has
 /// (the fighters, the theme and its chords). The error is the engine's own text (`field: message`).
-fn checked(text: &str, dev: bool) -> Result<FightFile, String> {
+fn checked(text: &str) -> Result<FightFile, String> {
     let ff = FightFile::parse(text).map_err(|e| e.to_string())?;
-    // a developer fighter opens only with the developer switch on (ruling E6-R2)
-    if !dev && ff.fighters.iter().any(|n| bf_content::dev_only(n)) {
-        return Err(bf_content::DEV_ONLY.to_string());
-    }
     bf_content::validate(&ff).map_err(|e| e.to_string())?;
     Ok(ff)
 }
 
 /// What the Library shows of a video's fight file: "Flute vs Trombone", the fighters' colours and the seed; or why
 /// the video cannot be reopened, in words.
-fn summary(text: &str, dev: bool) -> Result<FightSummary, String> {
-    let ff = checked(text, dev).map_err(|e| plain(&format!("this video's fight file cannot be used: {e}")))?;
+fn summary(text: &str) -> Result<FightSummary, String> {
+    let ff = checked(text).map_err(|e| plain(&format!("this video's fight file cannot be used: {e}")))?;
     let name = |i: usize| ff.fighters.get(i).cloned().unwrap_or_default();
     let names = [name(0), name(1)];
     Ok(FightSummary {
         title: wording::versus(&names),
         colors: [color_of(&names[0]), color_of(&names[1])],
         seed: ff.seed,
-        engine: ff.engine,
     })
 }
 
@@ -796,16 +785,16 @@ where
 }
 
 /// The fight file at `path` and its text, or "{file name} cannot be opened: {reason}".
-fn open_file(path: &Path, dev: bool) -> Result<(FightFile, String), String> {
+fn open_file(path: &Path) -> Result<(FightFile, String), String> {
     let cannot = |reason: &dyn Display| format!("{} cannot be opened: {}", file_label(path), plain(reason));
     let text = fight_text(path).map_err(|reason| cannot(&reason))?;
-    let ff = checked(&text, dev).map_err(|e| cannot(&e))?;
+    let ff = checked(&text).map_err(|e| cannot(&e))?;
     Ok((ff, text))
 }
 
 /// A queued video's fight text, or "This fight cannot be opened: {reason}".
-fn open_text(toml: String, dev: bool) -> Result<(FightFile, String), String> {
-    let ff = checked(&toml, dev).map_err(|e| format!("This fight cannot be opened: {}", plain(&e)))?;
+fn open_text(toml: String) -> Result<(FightFile, String), String> {
+    let ff = checked(&toml).map_err(|e| format!("This fight cannot be opened: {}", plain(&e)))?;
     Ok((ff, toml))
 }
 
@@ -1198,24 +1187,6 @@ mod tests {
             assert!(Instant::now() < deadline, "{what} did not happen within 10 s");
             thread::sleep(Duration::from_millis(10));
         }
-    }
-
-    const DUMMY: &str = include_str!("../../../../fights/engine2/test_dummy.toml");
-
-    #[test]
-    fn dummy_file_refused_without_dev() {
-        // ruling E6-R2: the exact words, and the file opens with the switch on
-        assert_eq!(checked(DUMMY, false).map(|_| ()), Err(bf_content::DEV_ONLY.to_string()));
-        assert_eq!(checked(DUMMY, true).map(|ff| ff.engine), Ok(bf_core::Engine::Two));
-        assert_eq!(
-            open_text(DUMMY.to_string(), false).map(|_| ()),
-            Err(format!("This fight cannot be opened: {}", bf_content::DEV_ONLY))
-        );
-        assert!(summary(DUMMY, false).unwrap_err().contains(bf_content::DEV_ONLY));
-        // a current-engine file is not touched by the switch
-        let flute = fight_toml(7, [1.0, 1.0]);
-        assert_eq!(checked(&flute, false), checked(&flute, true));
-        assert!(checked(&flute, false).is_ok());
     }
 
     #[test]
@@ -1700,8 +1671,6 @@ mod tests {
             paths: crate::store::Paths::under(Path::new("unused")),
             clip: None,
             search_limit: None,
-            dev: false,
-            gpu: None,
         };
         (Ctx::new(side.events.clone(), config), handle)
     }

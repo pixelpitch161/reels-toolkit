@@ -26,13 +26,8 @@ use bf_core::py::round_nd;
 use bf_sim::Setup;
 
 use crate::score::BeatSheet;
-use crate::search::{Candidate, Halt, fight_of};
-use crate::stats::{Stats, stats_by};
-
-/// The fight of one seed under a handicap (left fighter first), judged, or why there is none, in one line: what
-/// [`auto_balance_by`] fights. The handicap is the ONLY thing it may change from one call to the next (see
-/// [`auto_balance`]); it must give the fight of the seed it is handed, the same every time.
-pub type BalanceFightFn<'a> = dyn Fn([f64; 2], u64) -> Result<Candidate, String> + Sync + 'a;
+use crate::search::Halt;
+use crate::stats::{Stats, stats_until};
 
 /// The first balance seed.
 pub const BALANCE_SEED0: u64 = 1 << 40;
@@ -175,27 +170,6 @@ pub fn auto_balance_with<'a>(
     progress: &(dyn Fn(BalanceProgress) + Sync),
     cancel: &AtomicBool,
 ) -> Result<BalanceResult, Halt> {
-    auto_balance_by(
-        plan,
-        &|h, seed| fight_of(&|seed| setup_for(h, seed), sheet, seed),
-        start,
-        workers,
-        progress,
-        cancel,
-    )
-}
-
-/// [`auto_balance_with`] over a fight function: `fight_for` fights one seed under a handicap into a candidate (on
-/// whichever engine), and everything else is as [`auto_balance`] and [`auto_balance_with`] say. Both are this with
-/// the fight of their set-up.
-pub fn auto_balance_by(
-    plan: &BalancePlan,
-    fight_for: &BalanceFightFn<'_>,
-    start: [f64; 2],
-    workers: usize,
-    progress: &(dyn Fn(BalanceProgress) + Sync),
-    cancel: &AtomicBool,
-) -> Result<BalanceResult, Halt> {
     if !start.iter().all(|h| h.is_finite() && *h > 0.0) {
         return Err(Halt::Failed(format!(
             "handicap: {start:?} cannot be balanced from (each fighter's handicap is a number above 0)"
@@ -204,7 +178,7 @@ pub fn auto_balance_by(
     let total = ROUNDS * plan.steps + 1;
     let mut done = 0;
     let mut measure = |h: [f64; 2], from: u64, n: u64| -> Result<Stats, Halt> {
-        let got = stats_by(&|seed| fight_for(h, seed), from..from + n, workers, cancel)?;
+        let got = stats_until(&|seed| setup_for(h, seed), sheet, from..from + n, workers, cancel)?;
         done += 1;
         progress(BalanceProgress { done, total });
         Ok(got)

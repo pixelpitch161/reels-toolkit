@@ -306,7 +306,7 @@ pub fn seed_of(ff: &FightFile, path: &Path, seed: Option<u64>) -> Result<u64, Fa
 
 /// The fight of `seed` under the fight file.
 pub fn fight(ff: &FightFile, path: &Path, seed: u64, record: bool) -> Result<Recording, Fail> {
-    let setup = bf_engine::classic_setup(ff, seed).map_err(|e| Fail(format!("{}: {e}.", path.display())))?;
+    let setup = bf_sim::setup_from(ff, roster(), seed).map_err(|e| Fail(format!("{}: {e}.", path.display())))?;
     bf_sim::run(&setup, record).map_err(|e| Fail(format!("{}: seed {seed}: {e}.", path.display())))
 }
 
@@ -500,19 +500,6 @@ mod tests {
     /// The arguments as `ballfight` would be given them, parsed.
     fn parse(args: &[&str]) -> Result<Cli, clap::Error> {
         Cli::try_parse_from(std::iter::once("ballfight").chain(args.iter().copied()))
-    }
-
-    #[test]
-    fn an_engine_two_file_is_refused_in_words() {
-        let text = include_str!("../../../fights/flute_vs_trombone.toml");
-        let ff = FightFile {
-            engine: bf_core::Engine::Two,
-            ..FightFile::parse(text).expect("the example parses")
-        };
-        let Err(Fail(e)) = fight(&ff, Path::new("two.toml"), 1, false) else {
-            panic!("an Engine 2 file was fought");
-        };
-        assert!(e.contains("Engine 2") && e.contains("two.toml"), "{e}");
     }
 
     #[test]

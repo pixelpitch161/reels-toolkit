@@ -187,23 +187,6 @@ pub fn search<'a>(
     progress: &(dyn Fn(SearchProgress) + Sync),
     cancel: &AtomicBool,
 ) -> SearchResult {
-    search_by(&|seed| fight_of(setup_for, sheet, seed), opts, progress, cancel)
-}
-
-/// The fight of one seed, judged, or why there is none, in one line: what [`search_by`] and [`crate::stats_by`]
-/// fight. It must give the fight of the seed it is handed (the seed is the
-/// candidate's), and the same candidate every time it is handed that seed. Its words come back as
-/// "seed N: <words>".
-pub type FightFn<'a> = dyn Fn(u64) -> Result<Candidate, String> + Sync + 'a;
-
-/// [`search`] over a fight function: `fight_for` fights one seed into a candidate (on whichever engine), and
-/// everything else is as [`search`] says. [`search`] is this with the fight of its set-up.
-pub fn search_by(
-    fight_for: &FightFn<'_>,
-    opts: &SearchOpts,
-    progress: &(dyn Fn(SearchProgress) + Sync),
-    cancel: &AtomicBool,
-) -> SearchResult {
     let mut kept = Vec::new();
     let mut misfits: Vec<Candidate> = Vec::new();
     let mut checked = 0u64;
@@ -215,7 +198,7 @@ pub fn search_by(
             opts.from,
             opts.max_seeds,
             opts.workers,
-            fight_for,
+            &|seed| fight_of(setup_for, sheet, seed),
             &mut |_, c: Candidate| {
                 checked += 1;
                 if c.verdict.fits {

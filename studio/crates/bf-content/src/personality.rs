@@ -67,12 +67,12 @@ impl Personality {
 
 macro_rules! fighters {
     ($($name:literal => $m:ident),* $(,)?) => {
-        /// The personality of the fighter `fighter` (its roster name, such as `BASS CLARINET`, or an Engine 2
-        /// fighter's: [`crate::fighters2::personality`]), or `None` for a name that is neither.
+        /// The personality of the fighter `fighter` (its roster name, such as `BASS CLARINET`), or `None` for a
+        /// name that is not one of the thirty.
         pub fn personality(fighter: &str) -> Option<&'static Personality> {
             Some(match fighter {
                 $($name => &crate::fighters::$m::personality::PERSONALITY,)*
-                _ => return crate::fighters2::personality(fighter),
+                _ => return None,
             })
         }
     };
@@ -134,64 +134,5 @@ mod tests {
             }
         }
         assert!(personality("GUITAR").is_none() && personality("SAX").is_none());
-    }
-
-    /// The Engine 2 fall-back leaves every offered fighter's personality where it was: its own module's constant.
-    #[test]
-    fn personality_of_v1_fighters_unchanged() {
-        macro_rules! own {
-            ($($m:ident),* $(,)?) => {
-                vec![$((stringify!($m), &crate::fighters::$m::personality::PERSONALITY as *const Personality),)*]
-            };
-        }
-        let own = own![
-            acoustic,
-            alto_sax,
-            bass_clarinet,
-            bass_drum,
-            bassoon,
-            cello,
-            clarinet,
-            contrabass,
-            electric,
-            euphonium,
-            flute,
-            horn,
-            oboe,
-            organ,
-            piano,
-            sousaphone,
-            tenor_sax,
-            trombone,
-            trumpet,
-            tuba,
-            accordion,
-            bagpipes,
-            bari_sax,
-            drums,
-            harp,
-            synth,
-            turntables,
-            ukulele,
-            viola,
-            violin,
-            cornet,
-            contrabass_clarinet,
-            contrabassoon,
-            marimba,
-            piccolo,
-            soprano_sax,
-            mellophone,
-            timpani,
-            flugelhorn,
-            snare_drum,
-        ];
-        assert_eq!(own.len(), crate::PORTED.len());
-        for name in crate::PORTED {
-            let slug = name.to_lowercase().replace(' ', "_");
-            let (_, constant) = own.iter().find(|(m, _)| *m == slug).unwrap_or_else(|| panic!("{name}"));
-            assert!(std::ptr::eq(personality(name).unwrap(), *constant), "{name}");
-        }
-        assert!(personality("TEST DUMMY").is_some() && personality("KAZOO").is_none());
     }
 }
