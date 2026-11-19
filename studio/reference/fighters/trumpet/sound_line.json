@@ -1,0 +1,60 @@
+{
+ "about": "TRUMPET's part with a line (LINES['TRUMPET']: the punches play it instead of the valve fingerings): the soundtrack of the `left` fight as sound.json's `left`, with the base config's FLUTE line an octave down as its line. The RMS profiles are in the cache (the folder's budget)",
+ "fighter": "TRUMPET",
+ "format": 1,
+ "left": {
+  "buses": ["drums", "calliope", "fx", "trumpet", "glock", "solo"],
+  "cache": "fighters/trumpet/stems_line.npz",
+  "fighters": ["TRUMPET", "FLUTE"],
+  "k": 0,
+  "master_sha256": "a81fa18b7c731d9337efe896371c3cd00679ba3f992402d0953c91710eb970de",
+  "noise": {
+   "end": "289533129354323354318955456298181112347",
+   "start": "289533129354323354318955456298181112347"
+  },
+  "notes": {
+   "count": 79,
+   "head": ["TRUMPET 64 0x1.eb851eb851eb8p-5 0x1.1eb851eb851ecp-2 0x1.999999999999ap-1", "TRUMPET 71 0x1.eb851eb851eb8p-5 0x1.1eb851eb851ecp-2 0x1.999999999999ap-1", "TRUMPET 76 0x1.eb851eb851eb8p-5 0x1.1eb851eb851ecp-2 0x1.999999999999ap-1", "TRUMPET 79 0x1.eb851eb851eb8p-5 0x1.1eb851eb851ecp-2 0x1.999999999999ap-1", "TRUMPET 83 0x1.8000000000000p-1 0x1.199999999999ap+0 0x1.0000000000000p+0", "TRUMPET 86 0x1.47ae147ae147bp-5 0x1.0a3d70a3d70a4p-2 0x1.6666666666666p-1", "TRUMPET 75 0x1.1eb851eb851ecp-3 0x1.70a3d70a3d70ap-2 0x1.ccccccccccccdp-1", "TRUMPET 64 0x1.eb851eb851eb8p-4 0x1.5c28f5c28f5c3p-2 0x1.6666666666666p-1"],
+   "line": "name midi dur cap vel (floats as float.hex()), one first-time note a line",
+   "sha256": "fc2425fc0b86c76002bc852755531ae528d549f487e32ac52bffb673a597ee74"
+  },
+  "rms_cache": "fighters/trumpet/sound_line_rms.json",
+  "seed": 1,
+  "stems": ["calliope", "drums", "fx", "glock", "solo", "trumpet"],
+  "windows": [
+   {
+    "i0": 0,
+    "n": 48000,
+    "t": "0x0.0p+0",
+    "window": "0.0"
+   },
+   {
+    "i0": 576000,
+    "n": 48000,
+    "t": "0x1.8000000000000p+3",
+    "window": "12.0"
+   },
+   {
+    "i0": 1440000,
+    "n": 48000,
+    "t": "0x1.e000000000000p+4",
+    "window": "30.0"
+   },
+   {
+    "i0": 2299435,
+    "n": 48000,
+    "t": "0x1.7f3d3d3d3d3d3p+5",
+    "window": "T_KO - 1.0"
+   },
+   {
+    "i0": 2491435,
+    "n": 48000,
+    "t": "0x1.9f3d3d3d3d3d3p+5",
+    "window": "T_KO + 3.0"
+   }
+  ],
+  "windows_note": "stem windows of 1 s (float32) in the cache file: member w<j>__<bus>"
+ },
+ "line": [64, 67, 71, 67, 64, 63, 64, 59, 69, 72, 71, 69, 67, 64, 65, 64, 63, 66, 69, 66, 71, 69, 66, 63, 64, 59, 64, 67, 71, 72, 71, 67, 72, 71, 67, 64, 60, 64, 67, 72, 69, 64, 60, 64, 69, 72, 76, 72, 71, 75, 74, 75, 78, 75, 71, 69, 66, 63, 59, 63, 66, 69, 71, 63],
+ "tool": "tools.studio_export.fighter_trumpet"
+}

@@ -1,0 +1,391 @@
+{
+ "about": "Gate O (plan m4 Task 2, several fights): BAGPIPES's reference kit module against projects/ballfight_bagpipes_vs_accordion, in each fight (a seed of the episode's config): its layers pixel for pixel (the contribution, on minus off, in int16) and its buses sample for sample (float64) from FIGHT! to the end of the shatter. A frame row is frame_columns: the SHA-256 of the contribution (equal on both sides) and of the four pictures (a kit picture's \"=\" when it is the episode's same picture's hash)",
+ "cache": "studio/reference/.cache/m4/origin/out/ballfight_bagpipes_vs_accordion",
+ "config": {
+  "sha256": "e4b4f322182615afd644ba9eb3e67a85a820ab863ade881634203a82099046f4",
+  "text": ["\"\"\"Gate O: the kit config of projects/ballfight_bagpipes_vs_accordion (made by tools/studio_export/older/origin.py).\"\"\"", "BPM = 121.9672131147541", "CHORDS = ['Am', 'E', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'Am', 'G', 'Am', 'Em', 'E']", "DMG_SCALE = 0.76", "FIGHTERS = ('BAGPIPES', 'ACCORDION')", "FX_SEED = 30", "KEY = 'A'", "LINES = {'BAGPIPES': [69, 69, 72, 74, 76, 74, 72, 71, 67, 67, 71, 74, 79, 78, 74, 71, 69, 72, 76, 81, 79, 76, 74, 72, 71, 71, 67, 71, 76, 74, 71, 68]}", "LOOP = ['Am', 'G', 'Am', 'Em']", "MOOD = 'big_top'", "SCALE = (0, 2, 3, 5, 7, 9, 10)", "SEED = 1442", "SERIES = 'BALLFIGHT #4'", "SOLO = {'BAGPIPES': [(0, 69, 1.0), (1, 71, 0.5), (1.5, 72, 0.5), (2, 74, 0.75), (2.75, 76, 0.25), (3, 76, 1.0), (4, 81, 1.5), (5.5, 79, 0.5), (6, 78, 0.75), (6.75, 76, 0.25), (7, 74, 0.5), (7.5, 72, 0.5), (8, 71, 0.75), (8.75, 72, 0.25), (9, 74, 0.5), (9.5, 71, 0.5), (10, 69, 2.0)], 'ACCORDION': [(0, 69, 0.5), (0.5, 72, 0.5), (1, 76, 0.5), (1.5, 81, 0.5), (2, 80, 0.25), (2.25, 81, 0.25), (2.5, 83, 0.5), (3, 84, 1.0), (4, 83, 0.25), (4.25, 81, 0.25), (4.5, 79, 0.25), (4.75, 78, 0.25), (5, 76, 0.5), (5.5, 74, 0.5), (6, 72, 0.5), (6.5, 74, 0.25), (6.75, 72, 0.25), (7, 71, 0.5), (7.5, 68, 0.5), (8, 69, 0.5), (8.5, 72, 0.5), (9, 76, 0.5), (9.5, 71, 0.5), (10, 69, 2.0)]}"]
+ },
+ "episode": "ballfight_bagpipes_vs_accordion",
+ "episode_commit": "220ebc661d10c9bae11b3feda647cc6793f2bc2a",
+ "fights": [
+  {
+   "buses": [
+    {
+     "bus": "chanter",
+     "peak": "bit-identical",
+     "sha256_episode": "825ea87961e3f4cc3c0c7d4c37b20abc4a9544473c87859ef5bf6baa60286c74",
+     "sha256_kit": "825ea87961e3f4cc3c0c7d4c37b20abc4a9544473c87859ef5bf6baa60286c74",
+     "whole": "-20.5 dBFS",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "drone",
+     "peak": "bit-identical",
+     "sha256_episode": "2d996353237986ced4f82a1b5268c46bed88cc52e690538e7a348413db06c08f",
+     "sha256_kit": "2d996353237986ced4f82a1b5268c46bed88cc52e690538e7a348413db06c08f",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "fx",
+     "peak": "bit-identical",
+     "sha256_episode": "007a108d1f23a0a51e8cc477da9c1b596465ccfd7c48cf43de086cdb9a070bdb",
+     "sha256_kit": "007a108d1f23a0a51e8cc477da9c1b596465ccfd7c48cf43de086cdb9a070bdb",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "stomp",
+     "peak": "bit-identical",
+     "sha256_episode": "dbcbe24f0fc3d399d5473af9cf8fce092364bd4c7705daf45ed63ee1bf58951d",
+     "sha256_kit": "dbcbe24f0fc3d399d5473af9cf8fce092364bd4c7705daf45ed63ee1bf58951d",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "choir",
+     "peak": "bit-identical",
+     "sha256_episode": "f02ffcf31337c18a99cad141fbb6f66c67351a5fa919af60278ff278441c5106",
+     "sha256_kit": "f02ffcf31337c18a99cad141fbb6f66c67351a5fa919af60278ff278441c5106",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    }
+   ],
+   "config_lines": [],
+   "config_sha256": "e4b4f322182615afd644ba9eb3e67a85a820ab863ade881634203a82099046f4",
+   "equal": true,
+   "exceptions": {},
+   "fight": 1,
+   "frame_rows": [
+    [151, 5.033333, "a9819754a379bcb1df0af45ac82a37b6267baa8dd84ba10b3fdeebed6994b756", "db33b720118c1a2c069b417cfdb4ee95603ec329a7064f317b28d97a9feeda4e", "bc2facfc2432099dfc1c2d12992f35630818841cf73d5a83c95a2bcfa060d71d", "=", "=", true],
+    [346, 11.533333, "00f8b00af496b726282c94482b55541436592e01fdbbb21840cdf1fe36d49478", "d9df04442476314387420889ccd7e2a3b4131cd36fcb0db4a7073dcbe97db995", "b158bd68df2d0e196009d136d07e9ca3eb0a4acc7377a296cf86493b2bca540b", "=", "=", true],
+    [358, 11.933333, "865f3ab09f909ba9f2fccc748321dacf560636b4d2bcaa6368e646f3e469249a", "4d8422f15b210ddf290f8154f94cbb3472a87e4e8858d6cefcd39ac099987eea", "808304831ef05d3dd232f91ec3a63fbbf3b93cb629f7e80cf851ff7fed25fe0a", "=", "=", true],
+    [384, 12.8, "b95760fed3f6094b47a925f27563647560ce53226af9b833552c040cbd14222e", "8a2427b9de50c3d6f1464d09a666759c5127156cfc6de8fd7583a501072f7d49", "bf24ad9099fb38f97ea0d2715650b6a9dd4a39040436ba3ebe4f56cbac458ded", "=", "=", true],
+    [437, 14.566667, "f300322156f0b17a4bbc65273f0cbdd3b67427cf22aa0d2e2d56f8484d308363", "37fe0934d9062a36c442c2b12ea75b4025202e349afeaf9337bbfdc2f577c9f7", "411915de995ab3ee2ecd891b67f01da81e8d440add5a42e113bf264e53f9fc12", "=", "=", true],
+    [517, 17.233333, "d902be3ff68621f3d86d4d2d294a82a6f51a02ee151fb0531d1dd74e0a44d78d", "12c06a8fd25e94d48a44364b0d0d168694aa1e79db3dcf4205526fae42fffd0f", "201bf01038b1794c5f9e79efbf39e1a057caa380930c8469250494c5d3604feb", "=", "=", true],
+    [649, 21.633333, "3a934dab7769b92b2c610a82beaacf11953eaaa05fb782f96966f1701aa642f2", "854266e480c1f0fd64a42fc97111e5c039aefff707e4fee78313b6ea011530db", "877b703504fc87fe6c7783ccd8e9ebc8cc6541fe78ff01369acc293051b8833a", "=", "=", true],
+    [656, 21.866667, "8f2687e860078ced96e629f6f052ba55718346adb0a1cec9483f6b9e55b787f4", "92897adb2fa1bcedcd0ad86b8c68e754f86a9d7bbb80b9311c0e76381fc48302", "8977d5412dcf09752820402f4b370a82f38ced7120be4b438f916c6615b8101a", "=", "=", true],
+    [668, 22.266667, "0a9e2cab1387fd7d5aa13dda6618a8901adb8a7c9358baef94c9c14875206156", "941d93bffff4ccfe3b5d95cb35d9f36775ae2d6d7494a82d24a1bee7718da944", "8c31dd9c975e7d01535a835af463b0d9207b9081ad6e7c1090923742556261ab", "=", "=", true],
+    [755, 25.166667, "c296c77f7009cf7de95138640a246392124ff03e4f586efa0cd24671043a376b", "ead9cf73e13fca6fba5bce1ceef662d9a198733caa5905bdaf659a9788cae2a7", "53d7e06348b6924cd5b4080191650fcac1fcbd22a484d3af448f1df2e391b85d", "=", "=", true],
+    [915, 30.5, "2fe57f96a9a238b76fc0c77223cbb66d6a868833e120ad48a09c924960174a08", "5226d46e8c6986f809b733071944a9dfbb86a3fcf757ce685e352e29103b404d", "fb07a869500429f61f910f181334c5f18a9493bc1cbb92543f0f3fd96e8183fb", "=", "=", true],
+    [1074, 35.8, "ea82facd446b08a00928bb65062f6e6fd3ec442d20e362284f12e7454c5d123f", "532a02d70a9529586cd3f5d56dd7cf6bb30940ae7bee648a7464cb15176df679", "c90badc18554c1c1a5455ae7322bc76bee9c9bb52a23c639cd1d1f3095f5eb66", "=", "=", true],
+    [1180, 39.333333, "f60d2d793cedf866ba05b5f6708b31c8486ed959e1c0c24fc24ab2b4790f6f5b", "ec9711861bc770939d5e88f883231ed61c09d7db4fc5b0cbe95c0e314ab055a1", "e6af98dbf2e6038e1b1003a6e4358934731a72f3ac2400fcda7bef21279e991a", "=", "=", true],
+    [1313, 43.766667, "06ba50a36cd54a5730e4c8405a8a9da1a87524371edc85c7e7b861064e0d043c", "0d2b00b2638ac1572522b21e861b43d9665d96d7141929bf03f162fd976e6c7a", "cfab89a919f4622712861ee564f38842b72a081a1760a083314eec55439c6962", "=", "=", true],
+    [1368, 45.6, "88369c5f5b85c86aa54b0fb7bcf9620a27942c0a7d24ddda6790e6989b9806d7", "f07b9fd36b19c316a67011386ac739c1d525e1ab226a4704883911d41ecb3dff", "b235aaa9c830d5005cc8147c1f71ac7d6d8169c8af7c1a26d04375669432966f", "=", "=", true],
+    [1379, 45.966667, "dbddcb923929c6bcda39769dfb4de65239eaa0d567d2cab5a557dfd8a066a2d0", "7ba221992769f640d18f19d8e60e9c32277ecfc26636fa9b5b57dc4fc26e5b82", "0d942313c2c5f282ba614f55d05f5f0fc782fe3121a5c5ad3b677580507fc194", "=", "=", true],
+    [1391, 46.366667, "577537c10ff1710090ba4490bf56fdf07cf16278adbff6f36597907b7e618a8c", "c812dcf009ad4b552e04c63f1fb0fd1448dddc077ceaeb8bfd50b177ef1d8040", "ade9867f320ecca2ae326f0467878c748211b9bfb8fdb820710178d0855be6ab", "=", "=", true],
+    [1392, 46.4, "1d8eaae29a7ec9c7fb3e26a0dd3f572e0603624a4968e352a6d30e3afdd7c056", "5462b085d1fed30b9684f064000236b172cab03c0fe0daa6640a6556e5253d3e", "8823d5f90f3c7a713a694abd82575f6378ec1bd0f0dd5fef5e4b7025516a04fa", "=", "=", true],
+    [1557, 51.9, "6dc3deebf131c41d99952e9c80a24e528ce19b792f93b4731147a5261205031d", "d1bb16ae0ee0f73929301ce5b5e3f6d79f00415147567abf51ce7454c713c21a", "a6ba75bb1edca8d049881419785a08a9b0f0064934e88afc4b1aea96613839fe", "=", "=", true],
+    [1575, 52.5, "6794a5700446e2537f6d514769c1f33ccbfe5309e134e908095a4ceebdde19d3", "48a2d1dc5f5e94b8bea079efbaefaad3a0b2f9e288990e1cc805d112351ac728", "df2b539a65651e7366b3d44098b2c160215622f5875f6db62e9dc18113147bf3", "=", "=", true],
+    [1585, 52.833333, "9e38940f3d9d4936333e19d84feda215a5daf91e51e9f7679fb62d736a95ae09", "17638900341f06c64cc1f4510bfab36fd31b0378fa4ec47f31268d0c39d35be8", "0a5b217bc7001d11e71d4499b30c0ae705eff75a8a15e3b2802d4b4a4682ab91", "=", "=", true],
+    [1600, 53.333333, "4f6996f6d35907f48e271c672478ba0e14886c30dbf508ef7cb6feb552c32078", "7ceb7e8c3cf78f6a1bd6bbafe9ea2d04a7895f36dc1037b39677f516e79b60f6", "55f593edf32e02d344cad7dbe65351f15305e37626ba645d5be6e7abaf48229d", "=", "=", true],
+    [1627, 54.233333, "84680a3a0cdc8f775e7b5d77fe883db22c972d3dc08dc667c8caa873643a5f07", "3787e44c79709832152dd0b1dcb755ac2a6e74ed03b60e97d074dee242a2daa6", "e0be563f2f20b6c91eae8fcaacf3d20f81d395b0d436eb214ee614bbfce16a07", "=", "=", true],
+    [1672, 55.733333, "c6908f7c6b7a98eb440de19e4fed6d5d9af03852f0b78cfc272ee0e16353edb1", "74aad06fde8373bfd130e92788266ad5b083276ec1b0466763d79e581d5873b9", "c5ce75a4312d3281835dc6514e46bcda0aa504d003ea3d55c3c9df54456fdbbf", "=", "=", true]
+   ],
+   "layers": ["swell", "shake", "flashbulbs", "sparks", "hit_glow", "fringe", "effects", "canvas", "shimmer", "shards"],
+   "line": "1442 1 52.39381720430108 481 c2e0d04ed48710b0",
+   "seed": 1442,
+   "state_keys": ["glow", "infl", "p", "phase", "scale"],
+   "t_ko": 52.39381720430108,
+   "window": {
+    "frames": [118, 1712],
+    "t0": 3.935483870967742,
+    "t1": 57.064516129032256
+   },
+   "winner": 1,
+   "wins": false
+  },
+  {
+   "buses": [
+    {
+     "bus": "chanter",
+     "peak": "bit-identical",
+     "sha256_episode": "32aa21e71eaff9399481e3c3fdad0a214d84e7eed49ee09487d2068f18f20ab2",
+     "sha256_kit": "32aa21e71eaff9399481e3c3fdad0a214d84e7eed49ee09487d2068f18f20ab2",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "drone",
+     "peak": "bit-identical",
+     "sha256_episode": "0d107f7d906b527a7bae034a80dc603abeaa65ec1f569f8fb2bdccb0283993b0",
+     "sha256_kit": "0d107f7d906b527a7bae034a80dc603abeaa65ec1f569f8fb2bdccb0283993b0",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "fx",
+     "peak": "bit-identical",
+     "sha256_episode": "6907660282591b541e8c0f297585d1792afdfe5382b14201e308330f2b7bf25f",
+     "sha256_kit": "6907660282591b541e8c0f297585d1792afdfe5382b14201e308330f2b7bf25f",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "stomp",
+     "peak": "bit-identical",
+     "sha256_episode": "99aa3d4b347b08b9b7d2f68847a1bee9336ce302ed3068afb13dcc1ba7029999",
+     "sha256_kit": "99aa3d4b347b08b9b7d2f68847a1bee9336ce302ed3068afb13dcc1ba7029999",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "choir",
+     "peak": "bit-identical",
+     "sha256_episode": "f02ffcf31337c18a99cad141fbb6f66c67351a5fa919af60278ff278441c5106",
+     "sha256_kit": "f02ffcf31337c18a99cad141fbb6f66c67351a5fa919af60278ff278441c5106",
+     "whole": "bit-identical",
+     "window": [188903, 2739097]
+    },
+    {
+     "bus": "solo",
+     "peak": "bit-identical",
+     "sha256_episode": "9b02e748171deda304e6db0d179d5a11c4e1cc73b37a184dfbff2edc5b3f8a90",
+     "sha256_kit": "9b02e748171deda304e6db0d179d5a11c4e1cc73b37a184dfbff2edc5b3f8a90",
+     "whole": "-14.5 dBFS",
+     "window": [188903, 2739097]
+    }
+   ],
+   "config_lines": ["SEED = 628"],
+   "config_sha256": "ce73deba3261ca1b184f4d3611a1cd57334c94c1bd32432fc112b10c69d6d297",
+   "equal": true,
+   "exceptions": {},
+   "fight": 2,
+   "frame_rows": [
+    [148, 4.933333, "288df44b770cc9c3c8b204301e5348bc965fa382cbc86f7bb1b694ade6d59c08", "dc5c44334c7beb159a7e668fae2d560deda4d8b0869be7f059d246e0bc6eafee", "baa01e3aa7680a0360d6b8d049b8bfd184241ec765875695916c28b20b0d96e8", "=", "=", true],
+    [360, 12.0, "6ffc6ca22ba8f4ca9176b0b7e95b3b822a427a0fff6c175ef41e21fb64e88949", "9771b528a02f211ba823048095484013960e3f3dff49fafbdf5ea6fa4de56aba", "b04b08e73c658f9060743a3950e8ed3a06502c4fb87d4e25346ffa12a41fb825", "=", "=", true],
+    [372, 12.4, "d70fb150cfd130721a3effa4386a5ba5e4ddf818feed91491388cca0f7fac68e", "3bd870d0d9a9cf6a24c3129e340c25d5e2adf39fdfdeca92711aff7ec57c9d44", "02c281dc87093add6f5e83eed7e241e76619189fc9af3fa2a11919237d7be838", "=", "=", true],
+    [656, 21.866667, "bbe6315e6fd61423ce5ff89eff524a87d4298fe0e7c288593765eef242b1c80c", "2173fd2baf6419a875d71cdd5d6c94b93fe3c93ddc2ac5725396f614121d2e95", "3379207eb7a463036eaaed784cf56d6838ef9b5947211575b27e345bf46a774a", "=", "=", true],
+    [668, 22.266667, "40ae897d474b289f22ae72a33ffe3ed67dfbe541619f7b003785e27fc31b7832", "167e690f6436fbc8dc49e117a3e9d6439ff78574a45fab983599002e2e0e0767", "bfa5ea302420a83c53f6b5aec7f306bcde649664a21154bb9d712707a7b44117", "=", "=", true],
+    [1361, 45.366667, "cbaf342cfa2ddf7fdbf01689d24396a6d856ea00e806d1e69d40259d704c9367", "f3bdea75452dc1dbba8b25d2e024b66d025a68f54b30c356644fb7cc9d9d3790", "25904a9187361a01eaa3e467af1d759fe184b37c11fc90dd56567c2fadf4f362", "=", "=", true],
+    [1379, 45.966667, "2c53202eedb8fe035e91b95f5ca97eecf820a499eb7557d9142e45846006d98e", "913b98e16434db5a764e1f5ea16c33567d04430241a4be80c82083df2e3d1cdf", "59465f8de9ca7d5a02340f14d7169a3eafde8180f5aa07ae0f5333dfde7ac1d0", "=", "=", true],
+    [1391, 46.366667, "699d842fdc3e004e31879427cc470fbe2253baaa8e411eb4270f98dcfe66f76e", "f44039db69d3a1d989d4e256e52ecb5e3730177fe7e90cd7308b46568cad2a66", "b3290798e0547e650f1eb94a0668dff9e909e55d7a995127625f89aebf8bcc70", "=", "=", true],
+    [1509, 50.3, "78d86b36ea0a4db0a86cc6bea2b627431b69e0439d6689c4626342b6735de1cc", "ae09765db37f95f4d66bae7143cdf3a6662697f4091ad984772a7ef5686d1851", "2879d7cc3ae9dfd5f5449d94e437a048253a479d1eccdd55d0cfb60e1e22de87", "=", "=", true],
+    [1527, 50.9, "77280bf8c64daa53d7a5cee4554c379cf11a9d45729985e755babfa16578fb35", "62356980df433667f59424cb8d63801340aed62bdc87d36c59b89b5c523a1f00", "4f3ca760dbecbbbf1bb87508d564a755f2cfcd432dee19f07694aaf73531040e", "=", "=", true],
+    [1549, 51.633333, "50a7fcaf56da1a3a95a3f7df6167b1ca3f7f9b479e6be3fa85d0e357ef61c3e4", "8d7980916631cc6890b9c61f5c9dc50646b6fff6d211abca9eec0c0155f617c7", "ff0b8ac3187e6456bab4479aa61c3bf6a9cf28edd86c313b190968e5c36f1dc7", "=", "=", true],
+    [1594, 53.133333, "033ce09e16420172f8107375b0d0198f94bc016033a9ae34fe27a785c26b413c", "83259a36413594ef48530c47058ab4f84e4d3503d0e17774cd68c9245474be69", "e9d14eefd6d087b4939e20abf5150ae6b0e62e4b9ef88874984cbd522fcaa35c", "=", "=", true],
+    [1639, 54.633333, "0798fa91df5cf73014473b237401701eb42b77adf5ae551eaa7633a512d305a0", "2519813508c885129579cd2572cba11322738d0a4dfd5ce5e4794f8ca6fb3060", "5ee45763bcf820dfb5264503a658640901b75f5cc558415a78b8d43a61a0a526", "=", "=", true]
+   ],
+   "layers": ["swell", "shake", "flashbulbs", "sparks", "hit_glow", "fringe", "effects", "canvas", "shimmer", "shards"],
+   "line": "628 0 50.785483870967745 451 9d4e11289cef4032",
+   "seed": 628,
+   "state_keys": ["glow", "infl", "p", "phase", "scale"],
+   "t_ko": 50.785483870967745,
+   "window": {
+    "frames": [118, 1712],
+    "t0": 3.935483870967742,
+    "t1": 57.064516129032256
+   },
+   "winner": 0,
+   "wins": true
+  }
+ ],
+ "frame_columns": ["frame", "t", "contribution_sha256", "episode_on", "episode_off", "kit_on", "kit_off", "whole_frame_equal"],
+ "harness": [
+  {
+   "beat_pulse_pre": 0.07,
+   "name": "#30's beat ramp (0.07 s; the kit's 0.12 s)"
+  },
+  {
+   "call": "tools.studio_export.fighter_bagpipes:no_ability_list",
+   "name": "#30's HUD: no ability list"
+  },
+  {
+   "call": "tools.studio_export.fighter_bagpipes:episode_bus_names",
+   "name": "#30's bus names (M4-R9)"
+  }
+ ],
+ "layers": [
+  {
+   "name": "swell",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if k in INFL:",
+     "sha256": "9e2ca966e3662b6003c13950376d4dd354cbbe226efb509f4dda162d600aaa15"
+    }
+   ]
+  },
+  {
+   "name": "shake",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'clamp', 'wave', 'shockwave'):",
+     "sha256": "5d3b0be574c102e9a6b6f2b62c3a905f2eba3f3f8213933c96277fe6a82fac87"
+    }
+   ]
+  },
+  {
+   "name": "flashbulbs",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'clamp', 'wave', 'shockwave')) or",
+     "sha256": "8af7c759f30642b9063f821792df291ba3f65e9a891b09f02d8d5765e658d5a4"
+    }
+   ]
+  },
+  {
+   "name": "sparks",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "bp = NAMES[att] == 'BAGPIPES'",
+     "sha256": "b496c9d40873cdd57f2439e0132162a3439fbe930ef448766c237476b4bd9194"
+    },
+    {
+     "file": "render.py",
+     "old": "'clamp') and dt < 0.08",
+     "sha256": "850f489ede31b4b638631df8a5b2922dd7a3105ad64dab095c22136953f44a75"
+    }
+   ]
+  },
+  {
+   "name": "hit_glow",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "'shockwave', 'bite'):",
+     "sha256": "14756d516fcc4f2350e8cec26890037b93e6d3374b7e240501bf34f1d6ea9c19"
+    }
+   ]
+  },
+  {
+   "name": "fringe",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "t - 0.1, t, ('hit',)):              # chromatic fringing on the big hits (local)",
+     "sha256": "c1c7e77ea030496fd19c1cdafabb759d04182f6aa4b6f7f51f3123de863e59ff"
+    }
+   ]
+  },
+  {
+   "name": "effects",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if t0 > T_KO + 0.01:",
+     "sha256": "da082ccdeee5cfd7be76032a668507545caabc72beda8b05ad56cd8b599fc657"
+    },
+    {
+     "file": "render.py",
+     "old": "if c['t_land'] > T_KO + 1:",
+     "sha256": "656286e46f0840349a283590647a2f9c54c54dbc72a8723c7c012d0023902953"
+    }
+   ]
+  },
+  {
+   "name": "canvas",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "wav = RUN['WAVES'][i] if in_fight else []",
+     "sha256": "d9d25a1f4e701aa8bee214761f23f3ba206fb05d801ccf34ed0bac474e9b8318"
+    }
+   ]
+  },
+  {
+   "name": "shimmer",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "if in_fight:",
+     "sha256": "8b0e023a8bc7099839e5df2ea696f6646336e5a438fa28dab79e0b9fbde4f9db"
+    }
+   ]
+  },
+  {
+   "name": "shards",
+   "patches": [
+    {
+     "file": "render.py",
+     "old": "['pipe'] * 5 + ['tartan'] * 7 + ['reed'] * 2 if",
+     "sha256": "124012f0b70f215cadc01671127c689a6e484ebe22bff7a2ae23e40566ea4da7"
+    }
+   ]
+  }
+ ],
+ "name": "BAGPIPES",
+ "other": [
+  {
+   "file": "render.py",
+   "old": "EV = RUN['events']",
+   "sha256": "3aaa9c66b54f8f98edc3cd0c749549a82bb676bd4d0b4fe1ad6b501b8b3f1faa"
+  },
+  {
+   "file": "render.py",
+   "old": "FL.apply(L, t)",
+   "sha256": "0ade0f25013e1e10a44dd7543d3deec330bfa421363961f623f2a13a729ae7f7"
+  },
+  {
+   "file": "render.py",
+   "old": "FL.tint(heads, t)",
+   "sha256": "b04cfd87291078efc783c6134695d447754e07466598d7f8ae86dad94144c3e8"
+  },
+  {
+   "file": "render.py",
+   "old": "MK.apply(alb, sxp, szp, t,",
+   "sha256": "8a168fd23d1f1deba705bd3de7e50d5e0803e405b7d0263e340ba28dd16d7895"
+  },
+  {
+   "file": "render.py",
+   "old": "cam, t, light=lambda P: 1.0 + 0.6 * FL.tint(P, t))",
+   "sha256": "179e768cc83faeb9e0ccb74bb6afc7ac2e5b6d654dce20a5065a64eab222ac16"
+  },
+  {
+   "file": "render.py",
+   "old": "pk[1], 1.2), COL",
+   "sha256": "6e04724b3d268c5bed4b3f27d8fdbe7c808ac19e5cf4d2379e8de8faa6f3b509"
+  },
+  {
+   "file": "render.py",
+   "old": "t - 0.1))['p']",
+   "sha256": "2a7f680b1544d02316e1ba827eb73d9960139bed0eafe824ea515cae09642ff1"
+  },
+  {
+   "file": "render.py",
+   "old": "col = COL[att] * 0.6 + 100",
+   "sha256": "d8127029d3aee78fb7f7467df0f61a85211a40e879cf150db594fd1a2725be4f"
+  },
+  {
+   "file": "render.py",
+   "old": "(255, 214, 250), 0.6, bright=False)",
+   "sha256": "33b5fa069d567ca7c738a83064ab64d53a0396da69fe772839196453974c8471"
+  },
+  {
+   "file": "render.py",
+   "old": "if st['shield'] > 0:",
+   "sha256": "789f8c2c6188cfff1dc7b605de53957ccaa4beb49577545277b65f5a5f79be22"
+  },
+  {
+   "file": "render.py",
+   "old": "['button'] * 6 + ['pleat'] * 6 + ['key'] * 4)",
+   "sha256": "99ee3c16fe66d0bd701fd593e14906b578d9b8461a105cabc1e31f7739a33cf3"
+  },
+  {
+   "file": "render.py",
+   "old": "'puffs', n=24, spread=180, speed=(1.2, 3.0), scale=1.3)",
+   "sha256": "b7cc91e95ad4e1e1405d59243079f4e972853dbc7ff45a0d720a596b1b05bde2"
+  },
+  {
+   "file": "audio.py",
+   "old": "mix.place('solo', chanter(81, 1.2, 1.0, grace=True), tw, 0.36)",
+   "sha256": "5347883a730dcdda9b7da289bfe2ea40856ca1f33da6513d150eac6d290decf6"
+  }
+ ],
+ "side": 0,
+ "silence": {
+  "kit_own_placements_only": true,
+  "patches": [
+   {
+    "file": "audio.py",
+    "old": "mix = A.Mix(T.DUR + 4.0)",
+    "sha256": "12c6c3cf6eafbc07dfd6851467d36aa5bbf12f7955acc9585caaae3227c180ca"
+   }
+  ],
+  "sha256": "29dd3525d40f929e36f4f06526461c18a663603a488fdba2f4dce7b82d351879"
+ },
+ "spec_sha256": "d539b24bf04a53d90f2f4433a4e63060de26412998024a994c28df144c0e54f0"
+}

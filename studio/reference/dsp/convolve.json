@@ -1,0 +1,751 @@
+{
+ "about": "np.dot of 1-D float64 arrays (one cblas_ddot) and np.convolve(a, v, mode) for float64, whose sums numpy adds in its own order (small_correlate, DOUBLE_dot and the BLAS dot product)",
+ "cases": [
+  {
+   "args": {
+    "n": 1
+   },
+   "arrays": {
+    "out": "c000__out",
+    "x": "c000__x",
+    "y": "c000__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c000",
+   "result": "0x1.0cef6e50af4f1p+0",
+   "what": "1 products"
+  },
+  {
+   "args": {
+    "n": 2
+   },
+   "arrays": {
+    "out": "c001__out",
+    "x": "c001__x",
+    "y": "c001__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c001",
+   "result": "0x1.27615e7813dddp-6",
+   "what": "2 products"
+  },
+  {
+   "args": {
+    "n": 7
+   },
+   "arrays": {
+    "out": "c002__out",
+    "x": "c002__x",
+    "y": "c002__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c002",
+   "result": "-0x1.9d974012a8872p-2",
+   "what": "7 products"
+  },
+  {
+   "args": {
+    "n": 15
+   },
+   "arrays": {
+    "out": "c003__out",
+    "x": "c003__x",
+    "y": "c003__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c003",
+   "result": "0x1.a590f9c567824p+1",
+   "what": "15 products"
+  },
+  {
+   "args": {
+    "n": 16
+   },
+   "arrays": {
+    "out": "c004__out",
+    "x": "c004__x",
+    "y": "c004__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c004",
+   "result": "-0x1.2df252e4de71ap+0",
+   "what": "16 products"
+  },
+  {
+   "args": {
+    "n": 17
+   },
+   "arrays": {
+    "out": "c005__out",
+    "x": "c005__x",
+    "y": "c005__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c005",
+   "result": "0x1.9edf1374e5a1dp+4",
+   "what": "17 products"
+  },
+  {
+   "args": {
+    "n": 31
+   },
+   "arrays": {
+    "out": "c006__out",
+    "x": "c006__x",
+    "y": "c006__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c006",
+   "result": "-0x1.8240286a849e5p+2",
+   "what": "31 products"
+  },
+  {
+   "args": {
+    "n": 32
+   },
+   "arrays": {
+    "out": "c007__out",
+    "x": "c007__x",
+    "y": "c007__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c007",
+   "result": "0x1.148900928818ep+4",
+   "what": "32 products"
+  },
+  {
+   "args": {
+    "n": 33
+   },
+   "arrays": {
+    "out": "c008__out",
+    "x": "c008__x",
+    "y": "c008__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c008",
+   "result": "-0x1.01c60f0a5289dp+6",
+   "what": "33 products"
+  },
+  {
+   "args": {
+    "n": 47
+   },
+   "arrays": {
+    "out": "c009__out",
+    "x": "c009__x",
+    "y": "c009__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c009",
+   "result": "0x1.261f137b4dfaap-3",
+   "what": "47 products"
+  },
+  {
+   "args": {
+    "n": 48
+   },
+   "arrays": {
+    "out": "c010__out",
+    "x": "c010__x",
+    "y": "c010__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c010",
+   "result": "0x1.77053b86cabf2p-2",
+   "what": "48 products"
+  },
+  {
+   "args": {
+    "n": 49
+   },
+   "arrays": {
+    "out": "c011__out",
+    "x": "c011__x",
+    "y": "c011__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c011",
+   "result": "-0x1.57633423f9d98p-4",
+   "what": "49 products"
+  },
+  {
+   "args": {
+    "n": 64
+   },
+   "arrays": {
+    "out": "c012__out",
+    "x": "c012__x",
+    "y": "c012__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c012",
+   "result": "0x1.008ee020329eep+2",
+   "what": "64 products"
+  },
+  {
+   "args": {
+    "n": 65
+   },
+   "arrays": {
+    "out": "c013__out",
+    "x": "c013__x",
+    "y": "c013__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c013",
+   "result": "-0x1.1acb0baa2058ap+5",
+   "what": "65 products"
+  },
+  {
+   "args": {
+    "n": 129
+   },
+   "arrays": {
+    "out": "c014__out",
+    "x": "c014__x",
+    "y": "c014__y"
+   },
+   "call": "np.dot(x, y)",
+   "id": "c014",
+   "result": "0x1.4a383419bc496p+4",
+   "what": "129 products"
+  },
+  {
+   "args": {
+    "n_a": 32,
+    "n_v": 1
+   },
+   "arrays": {
+    "a": "a015",
+    "out": "c015__out",
+    "v": "v015"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c015",
+   "what": "noise, a 1-sample window"
+  },
+  {
+   "args": {
+    "n_a": 32,
+    "n_v": 1
+   },
+   "arrays": {
+    "a": "a015",
+    "out": "c016__out",
+    "v": "v015"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c016",
+   "what": "noise, a 1-sample window"
+  },
+  {
+   "args": {
+    "n_a": 34,
+    "n_v": 2
+   },
+   "arrays": {
+    "a": "a017",
+    "out": "c017__out",
+    "v": "v017"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c017",
+   "what": "noise, a 2-sample window"
+  },
+  {
+   "args": {
+    "n_a": 34,
+    "n_v": 2
+   },
+   "arrays": {
+    "a": "a017",
+    "out": "c018__out",
+    "v": "v017"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c018",
+   "what": "noise, a 2-sample window"
+  },
+  {
+   "args": {
+    "n_a": 42,
+    "n_v": 6
+   },
+   "arrays": {
+    "a": "a019",
+    "out": "c019__out",
+    "v": "v019"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c019",
+   "what": "noise, a 6-sample window"
+  },
+  {
+   "args": {
+    "n_a": 42,
+    "n_v": 6
+   },
+   "arrays": {
+    "a": "a019",
+    "out": "c020__out",
+    "v": "v019"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c020",
+   "what": "noise, a 6-sample window"
+  },
+  {
+   "args": {
+    "n_a": 52,
+    "n_v": 11
+   },
+   "arrays": {
+    "a": "a021",
+    "out": "c021__out",
+    "v": "v021"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c021",
+   "what": "noise, a 11-sample window"
+  },
+  {
+   "args": {
+    "n_a": 52,
+    "n_v": 11
+   },
+   "arrays": {
+    "a": "a021",
+    "out": "c022__out",
+    "v": "v021"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c022",
+   "what": "noise, a 11-sample window"
+  },
+  {
+   "args": {
+    "n_a": 54,
+    "n_v": 12
+   },
+   "arrays": {
+    "a": "a023",
+    "out": "c023__out",
+    "v": "v023"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c023",
+   "what": "noise, a 12-sample window"
+  },
+  {
+   "args": {
+    "n_a": 54,
+    "n_v": 12
+   },
+   "arrays": {
+    "a": "a023",
+    "out": "c024__out",
+    "v": "v023"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c024",
+   "what": "noise, a 12-sample window"
+  },
+  {
+   "args": {
+    "n_a": 62,
+    "n_v": 16
+   },
+   "arrays": {
+    "a": "a025",
+    "out": "c025__out",
+    "v": "v025"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c025",
+   "what": "noise, a 16-sample window"
+  },
+  {
+   "args": {
+    "n_a": 62,
+    "n_v": 16
+   },
+   "arrays": {
+    "a": "a025",
+    "out": "c026__out",
+    "v": "v025"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c026",
+   "what": "noise, a 16-sample window"
+  },
+  {
+   "args": {
+    "n_a": 64,
+    "n_v": 17
+   },
+   "arrays": {
+    "a": "a027",
+    "out": "c027__out",
+    "v": "v027"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c027",
+   "what": "noise, a 17-sample window"
+  },
+  {
+   "args": {
+    "n_a": 64,
+    "n_v": 17
+   },
+   "arrays": {
+    "a": "a027",
+    "out": "c028__out",
+    "v": "v027"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c028",
+   "what": "noise, a 17-sample window"
+  },
+  {
+   "args": {
+    "n_a": 94,
+    "n_v": 32
+   },
+   "arrays": {
+    "a": "a029",
+    "out": "c029__out",
+    "v": "v029"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c029",
+   "what": "noise, a 32-sample window"
+  },
+  {
+   "args": {
+    "n_a": 94,
+    "n_v": 32
+   },
+   "arrays": {
+    "a": "a029",
+    "out": "c030__out",
+    "v": "v029"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c030",
+   "what": "noise, a 32-sample window"
+  },
+  {
+   "args": {
+    "n_a": 96,
+    "n_v": 33
+   },
+   "arrays": {
+    "a": "a031",
+    "out": "c031__out",
+    "v": "v031"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c031",
+   "what": "noise, a 33-sample window"
+  },
+  {
+   "args": {
+    "n_a": 96,
+    "n_v": 33
+   },
+   "arrays": {
+    "a": "a031",
+    "out": "c032__out",
+    "v": "v031"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c032",
+   "what": "noise, a 33-sample window"
+  },
+  {
+   "args": {
+    "n_a": 110,
+    "n_v": 40
+   },
+   "arrays": {
+    "a": "a033",
+    "out": "c033__out",
+    "v": "v033"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c033",
+   "what": "noise, a 40-sample window"
+  },
+  {
+   "args": {
+    "n_a": 110,
+    "n_v": 40
+   },
+   "arrays": {
+    "a": "a033",
+    "out": "c034__out",
+    "v": "v033"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c034",
+   "what": "noise, a 40-sample window"
+  },
+  {
+   "args": {
+    "n_a": 126,
+    "n_v": 48
+   },
+   "arrays": {
+    "a": "a035",
+    "out": "c035__out",
+    "v": "v035"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c035",
+   "what": "noise, a 48-sample window"
+  },
+  {
+   "args": {
+    "n_a": 126,
+    "n_v": 48
+   },
+   "arrays": {
+    "a": "a035",
+    "out": "c036__out",
+    "v": "v035"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c036",
+   "what": "noise, a 48-sample window"
+  },
+  {
+   "args": {
+    "n_a": 150,
+    "n_v": 60
+   },
+   "arrays": {
+    "a": "a037",
+    "out": "c037__out",
+    "v": "v037"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c037",
+   "what": "noise, a 60-sample window"
+  },
+  {
+   "args": {
+    "n_a": 150,
+    "n_v": 60
+   },
+   "arrays": {
+    "a": "a037",
+    "out": "c038__out",
+    "v": "v037"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c038",
+   "what": "noise, a 60-sample window"
+  },
+  {
+   "args": {
+    "n_a": 160,
+    "n_v": 65
+   },
+   "arrays": {
+    "a": "a039",
+    "out": "c039__out",
+    "v": "v039"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c039",
+   "what": "noise, a 65-sample window"
+  },
+  {
+   "args": {
+    "n_a": 160,
+    "n_v": 65
+   },
+   "arrays": {
+    "a": "a039",
+    "out": "c040__out",
+    "v": "v039"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c040",
+   "what": "noise, a 65-sample window"
+  },
+  {
+   "args": {
+    "n_a": 42,
+    "n_v": 6
+   },
+   "arrays": {
+    "a": "a041",
+    "out": "c041__out",
+    "v": "v041"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c041",
+   "what": "noise, the moving average np.ones(6) / 6"
+  },
+  {
+   "args": {
+    "n_a": 42,
+    "n_v": 6
+   },
+   "arrays": {
+    "a": "a041",
+    "out": "c042__out",
+    "v": "v041"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c042",
+   "what": "noise, the moving average np.ones(6) / 6"
+  },
+  {
+   "args": {
+    "n_a": 110,
+    "n_v": 40
+   },
+   "arrays": {
+    "a": "a043",
+    "out": "c043__out",
+    "v": "v043"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c043",
+   "what": "noise, the moving average np.ones(40) / 40"
+  },
+  {
+   "args": {
+    "n_a": 110,
+    "n_v": 40
+   },
+   "arrays": {
+    "a": "a043",
+    "out": "c044__out",
+    "v": "v043"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c044",
+   "what": "noise, the moving average np.ones(40) / 40"
+  },
+  {
+   "args": {
+    "n_a": 126,
+    "n_v": 48
+   },
+   "arrays": {
+    "a": "a045",
+    "out": "c045__out",
+    "v": "v045"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c045",
+   "what": "noise, the moving average np.ones(48) / 48"
+  },
+  {
+   "args": {
+    "n_a": 126,
+    "n_v": 48
+   },
+   "arrays": {
+    "a": "a045",
+    "out": "c046__out",
+    "v": "v045"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c046",
+   "what": "noise, the moving average np.ones(48) / 48"
+  },
+  {
+   "args": {
+    "n_a": 150,
+    "n_v": 60
+   },
+   "arrays": {
+    "a": "a047",
+    "out": "c047__out",
+    "v": "v047"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c047",
+   "what": "noise, the moving average np.ones(60) / 60"
+  },
+  {
+   "args": {
+    "n_a": 150,
+    "n_v": 60
+   },
+   "arrays": {
+    "a": "a047",
+    "out": "c048__out",
+    "v": "v047"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c048",
+   "what": "noise, the moving average np.ones(60) / 60"
+  },
+  {
+   "args": {
+    "n_a": 20,
+    "n_v": 53
+   },
+   "arrays": {
+    "a": "a049",
+    "out": "c049__out",
+    "v": "v049"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c049",
+   "what": "the window first: v is the longer, so numpy swaps them"
+  },
+  {
+   "args": {
+    "n_a": 20,
+    "n_v": 53
+   },
+   "arrays": {
+    "a": "a049",
+    "out": "c050__out",
+    "v": "v049"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c050",
+   "what": "the window first: v is the longer, so numpy swaps them"
+  },
+  {
+   "args": {
+    "n_a": 37,
+    "n_v": 37
+   },
+   "arrays": {
+    "a": "a051",
+    "out": "c051__out",
+    "v": "v051"
+   },
+   "call": "np.convolve(a, v, 'same')",
+   "id": "c051",
+   "what": "as long as each other: numpy keeps the order"
+  },
+  {
+   "args": {
+    "n_a": 37,
+    "n_v": 37
+   },
+   "arrays": {
+    "a": "a051",
+    "out": "c052__out",
+    "v": "v051"
+   },
+   "call": "np.convolve(a, v)",
+   "id": "c052",
+   "what": "as long as each other: numpy keeps the order"
+  }
+ ],
+ "notes": {
+  "out": "float64; a dot product is a 1-element array, and float.hex() in `result`"
+ },
+ "tool": "convolve"
+}

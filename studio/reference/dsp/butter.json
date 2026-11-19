@@ -1,0 +1,4991 @@
+{
+ "about": "scipy.signal.butter for every design asked for while the flute_vs_trombone soundtrack is built (kit.music.main) and its band and loudness checks run",
+ "cases": [
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d0662af4f8742p-4"],
+    "btype": "low",
+    "fs": null,
+    "output": "ba"
+   },
+   "arrays": {
+    "a": "c000__a",
+    "b": "c000__b"
+   },
+   "call": "scipy.signal.butter(2, 0.11337868480725624, 'low', output='ba')",
+   "id": "c000",
+   "requests": 96,
+   "used_by": ["flute60_lowpoly flute_tone"]
+  },
+  {
+   "args": {
+    "N": 4,
+    "Wn": ["0x1.1800000000000p+6", "0x1.5e00000000000p+9"],
+    "btype": "band",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c001__sos"
+   },
+   "call": "scipy.signal.butter(4, [70.0, 700.0], 'band', fs=48000, output='sos')",
+   "id": "c001",
+   "requests": 5,
+   "used_by": ["ballfight.kit.checks band"]
+  },
+  {
+   "args": {
+    "N": 4,
+    "Wn": ["0x1.2c00000000000p+9", "0x1.9000000000000p+11"],
+    "btype": "band",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c002__sos"
+   },
+   "call": "scipy.signal.butter(4, [600.0, 3200.0], 'band', fs=48000, output='sos')",
+   "id": "c002",
+   "requests": 5,
+   "used_by": ["ballfight.kit.checks band"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f980e66015112p+6", "0x1.8aecb3fb10756p+7"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c003__sos"
+   },
+   "call": "scipy.signal.butter(2, [126.37587881210882, 197.46231064392003], 'bp', fs=48000, output='sos')",
+   "id": "c003",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1852e8b26d976p+7", "0x1.b6018b96cb3c8p+7"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c004__sos"
+   },
+   "call": "scipy.signal.butter(2, [140.16193158710274, 219.00301810484802], 'bp', fs=48000, output='sos')",
+   "id": "c004",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.36e75be69c956p+7", "0x1.e5c97f9854a96p+7"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c005__sos"
+   },
+   "call": "scipy.signal.butter(2, [155.4518730226652, 242.89355159791438], 'bp', fs=48000, output='sos')",
+   "id": "c005",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4db7f696b65a3p+7", "0x1.04b7b8a5be767p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c006__sos"
+   },
+   "call": "scipy.signal.butter(2, [166.85930319763165, 260.71766124629943], 'bp', fs=48000, output='sos')",
+   "id": "c006",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.58d1cbe9cc17bp+7", "0x1.0d63e74ea7728p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c007__sos"
+   },
+   "call": "scipy.signal.butter(2, [172.40975885979046, 269.3902482184226], 'bp', fs=48000, output='sos')",
+   "id": "c007",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6af206535176dp+7", "0x1.1b8d14f117a4dp+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c008__sos"
+   },
+   "call": "scipy.signal.butter(2, [181.47270450944362, 283.55110079600564], 'bp', fs=48000, output='sos')",
+   "id": "c008",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7e6f6192ce102p+7", "0x1.2ac7043ab0fc9p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c009__sos"
+   },
+   "call": "scipy.signal.butter(2, [191.2175413013975, 298.77740828343354], 'bp', fs=48000, output='sos')",
+   "id": "c009",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8abb5be7c2993p+7", "0x1.34625fcd1007ap+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c010__sos"
+   },
+   "call": "scipy.signal.butter(2, [197.36593555689305, 308.38427430764534], 'bp', fs=48000, output='sos')",
+   "id": "c010",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a8276f55d71cfp+7", "0x1.4b5ecefb100e9p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c011__sos"
+   },
+   "call": "scipy.signal.butter(2, [212.07702129603283, 331.37034577505125], 'bp', fs=48000, output='sos')",
+   "id": "c011",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ad4d5ab8eb75cp+7", "0x1.4f646ee077f3fp+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c012__sos"
+   },
+   "call": "scipy.signal.butter(2, [214.65108278154628, 335.392316846166], 'bp', fs=48000, output='sos')",
+   "id": "c012",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c4a5f20d9c2e0p+7", "0x1.c4a5f20d9c2e0p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c013__sos"
+   },
+   "call": "scipy.signal.butter(2, [226.32411234408846, 452.6482246881769], 'bp', fs=48000, output='sos')",
+   "id": "c013",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c4e26d1735f80p+7", "0x1.c4e26d1735f80p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c014__sos"
+   },
+   "call": "scipy.signal.butter(2, [226.4422385457401, 452.8844770914802], 'bp', fs=48000, output='sos')",
+   "id": "c014",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d2e66cd4b5b35p+7", "0x1.6cc405062df41p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c015__sos"
+   },
+   "call": "scipy.signal.butter(2, [233.45004906385444, 364.76570166227253], 'bp', fs=48000, output='sos')",
+   "id": "c015",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d66c8d125b3efp+7", "0x1.6f84ce3657492p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c016__sos"
+   },
+   "call": "scipy.signal.butter(2, [235.21201379169312, 367.51877154952047], 'bp', fs=48000, output='sos')",
+   "id": "c016",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ef00000000001p+7", "0x1.9500000000000p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c017__sos"
+   },
+   "call": "scipy.signal.butter(2, [247.50000000000003, 810.0], 'bp', fs=48000, output='sos')",
+   "id": "c017",
+   "requests": 385,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f655c1fbf677ap+7", "0x1.9b0058e56c907p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c018__sos"
+   },
+   "call": "scipy.signal.butter(2, [251.16749560722002, 822.0027128963565], 'bp', fs=48000, output='sos')",
+   "id": "c018",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fbca73a158760p+7", "0x1.8cb62a560d1c3p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c019__sos"
+   },
+   "call": "scipy.signal.butter(2, [253.8954134388432, 396.7115834981925], 'bp', fs=48000, output='sos')",
+   "id": "c019",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fcf997308883cp+7", "0x1.8da2fe1deaa6ep+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c020__sos"
+   },
+   "call": "scipy.signal.butter(2, [254.4874816099781, 397.6366900155907], 'bp', fs=48000, output='sos')",
+   "id": "c020",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fd86027d532f6p+7", "0x1.a0e20209729b1p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c021__sos"
+   },
+   "call": "scipy.signal.butter(2, [254.76173774376338, 833.7656871614073], 'bp', fs=48000, output='sos')",
+   "id": "c021",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.04dee96b4776fp+8", "0x1.979c4cb79fa9ep+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c022__sos"
+   },
+   "call": "scipy.signal.butter(2, [260.8707491921877, 407.6105456127933], 'bp', fs=48000, output='sos')",
+   "id": "c022",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.06e5653290b3ap+8", "0x1.06e5653290b3ap+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c023__sos"
+   },
+   "call": "scipy.signal.butter(2, [262.89607540161853, 525.7921508032371], 'bp', fs=48000, output='sos')",
+   "id": "c023",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.074a2432a09c9p+8", "0x1.074a2432a09c9p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c024__sos"
+   },
+   "call": "scipy.signal.butter(2, [263.2896148340338, 526.5792296680676], 'bp', fs=48000, output='sos')",
+   "id": "c024",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1421a13584c5fp+8", "0x1.af748be39f754p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c025__sos"
+   },
+   "call": "scipy.signal.butter(2, [276.1313661049989, 431.45525953906076], 'bp', fs=48000, output='sos')",
+   "id": "c025",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.183d933c29009p+8", "0x1.ca934e055a5e0p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c026__sos"
+   },
+   "call": "scipy.signal.butter(2, [280.24052787781744, 917.1508185092207], 'bp', fs=48000, output='sos')",
+   "id": "c026",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1e2389ff5e2c7p+8", "0x1.bf17879f03257p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c027__sos"
+   },
+   "call": "scipy.signal.butter(2, [286.1388244252125, 447.0919131643945], 'bp', fs=48000, output='sos')",
+   "id": "c027",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.21541afc91c95p+8", "0x1.c4136a2aa3ca8p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c028__sos"
+   },
+   "call": "scipy.signal.butter(2, [289.32853678282964, 452.0758387231713], 'bp', fs=48000, output='sos')",
+   "id": "c028",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2c00000000000p+8", "0x1.4500000000000p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c029__sos"
+   },
+   "call": "scipy.signal.butter(2, [300.0, 2600.0], 'bp', fs=48000, output='sos')",
+   "id": "c029",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music roar"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2c5091d6aea24p+8", "0x1.d53de3df70dd8p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c030__sos"
+   },
+   "call": "scipy.signal.butter(2, [300.31472532046814, 469.24175831323146], 'bp', fs=48000, output='sos')",
+   "id": "c030",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3160b3b8987b1p+8", "0x1.3160b3b8987b1p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c031__sos"
+   },
+   "call": "scipy.signal.butter(2, [305.377742325999, 610.755484651998], 'bp', fs=48000, output='sos')",
+   "id": "c031",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3224c0450a2c1p+8", "0x1.3224c0450a2c1p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c032__sos"
+   },
+   "call": "scipy.signal.butter(2, [306.14355880258887, 612.2871176051777], 'bp', fs=48000, output='sos')",
+   "id": "c032",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3738ec1aaf108p+8", "0x1.fd45df717b8f5p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c033__sos"
+   },
+   "call": "scipy.signal.butter(2, [311.2223526646999, 1018.5458814481086], 'bp', fs=48000, output='sos')",
+   "id": "c033",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.40e4062413af0p+8", "0x1.f56449985ec16p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c034__sos"
+   },
+   "call": "scipy.signal.butter(2, [320.89071870308453, 501.3917479735695], 'bp', fs=48000, output='sos')",
+   "id": "c034",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.41ba0b60f855ep+8", "0x1.f6b2b1c784062p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c035__sos"
+   },
+   "call": "scipy.signal.butter(2, [321.7267361265457, 502.6980251977276], 'bp', fs=48000, output='sos')",
+   "id": "c035",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.469db5047c5edp+8", "0x1.fe566ad702542p+8"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c036__sos"
+   },
+   "call": "scipy.signal.butter(2, [326.6160433581961, 510.3375677471814], 'bp', fs=48000, output='sos')",
+   "id": "c036",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5037c53dd39dfp+8", "0x1.13165b8fad242p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c037__sos"
+   },
+   "call": "scipy.signal.butter(2, [336.21785341659955, 1100.3493384543258], 'bp', fs=48000, output='sos')",
+   "id": "c037",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.52929989aa181p+8", "0x1.088287f38ce2dp+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c038__sos"
+   },
+   "call": "scipy.signal.butter(2, [338.572655300166, 529.0197739065094], 'bp', fs=48000, output='sos')",
+   "id": "c038",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.62b95c90bfbefp+8", "0x1.62b95c90bfbefp+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c039__sos"
+   },
+   "call": "scipy.signal.butter(2, [354.7240686863069, 709.4481373726138], 'bp', fs=48000, output='sos')",
+   "id": "c039",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.633886f5a6ce6p+8", "0x1.1584296fea513p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c040__sos"
+   },
+   "call": "scipy.signal.butter(2, [355.22080931970993, 555.0325145620467], 'bp', fs=48000, output='sos')",
+   "id": "c040",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.63e55cba45a5fp+8", "0x1.160b30718669ap+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c041__sos"
+   },
+   "call": "scipy.signal.butter(2, [355.8959461612739, 556.0874158769905], 'bp', fs=48000, output='sos')",
+   "id": "c041",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.63f5ce4431f92p+8", "0x1.63f5ce4431f92p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c042__sos"
+   },
+   "call": "scipy.signal.butter(2, [355.960178625298, 711.920357250596], 'bp', fs=48000, output='sos')",
+   "id": "c042",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.69bda652ec305p+8", "0x1.1a9c29f0c885cp+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c043__sos"
+   },
+   "call": "scipy.signal.butter(2, [361.7408191515572, 565.2200299243082], 'bp', fs=48000, output='sos')",
+   "id": "c043",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7b03ae1600f10p+8", "0x1.281ae00130bc4p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c044__sos"
+   },
+   "call": "scipy.signal.butter(2, [379.01437509081825, 592.2099610794035], 'bp', fs=48000, output='sos')",
+   "id": "c044",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8254ac8280f77p+8", "0x1.2dd226c5f4c14p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c045__sos"
+   },
+   "call": "scipy.signal.butter(2, [386.33075729034994, 603.6418082661717], 'bp', fs=48000, output='sos')",
+   "id": "c045",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8ab845aaeb1bap+8", "0x1.345ff66d87ad9p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c046__sos"
+   },
+   "call": "scipy.signal.butter(2, [394.71981304397525, 616.7497078812113], 'bp', fs=48000, output='sos')",
+   "id": "c046",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9000000000000p+8", "0x1.3880000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c047__sos"
+   },
+   "call": "scipy.signal.butter(2, [400.0, 5000.0], 'bp', fs=48000, output='sos')",
+   "id": "c047",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music score"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.96bb481e98bbbp+8", "0x1.3dc25057e752ap+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c048__sos"
+   },
+   "call": "scipy.signal.butter(2, [406.7315692065128, 635.5180768851762], 'bp', fs=48000, output='sos')",
+   "id": "c048",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9c0b58b6128a3p+8", "0x1.9c0b58b6128a3p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c049__sos"
+   },
+   "call": "scipy.signal.butter(2, [412.0443223757995, 824.088644751599], 'bp', fs=48000, output='sos')",
+   "id": "c049",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9de5c32ff9b9ap+8", "0x1.9de5c32ff9b9ap+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c050__sos"
+   },
+   "call": "scipy.signal.butter(2, [413.89750957342915, 827.7950191468583], 'bp', fs=48000, output='sos')",
+   "id": "c050",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9ed2fa13063b2p+8", "0x1.5366cc9b33a4bp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c051__sos"
+   },
+   "call": "scipy.signal.butter(2, [414.82412833120463, 1357.6062381748513], 'bp', fs=48000, output='sos')",
+   "id": "c051",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9fb453bfb3c6fp+8", "0x1.541f2d3fc1a2cp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c052__sos"
+   },
+   "call": "scipy.signal.butter(2, [415.70440290583696, 1360.487136782739], 'bp', fs=48000, output='sos')",
+   "id": "c052",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a42a50624a3f5p+8", "0x1.48410eccca017p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c053__sos"
+   },
+   "call": "scipy.signal.butter(2, [420.16528906166724, 656.508264158855], 'bp', fs=48000, output='sos')",
+   "id": "c053",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a8496968ee502p+8", "0x1.4b795a59fa2e9p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c054__sos"
+   },
+   "call": "scipy.signal.butter(2, [424.2867646772212, 662.948069808158], 'bp', fs=48000, output='sos')",
+   "id": "c054",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b5c765111bf08p+8", "0x1.5603c6f55dd3ep+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c055__sos"
+   },
+   "call": "scipy.signal.butter(2, [437.77888590747943, 684.0295092304366], 'bp', fs=48000, output='sos')",
+   "id": "c055",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c8f68892f5367p+8", "0x1.65009ab2cf928p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c056__sos"
+   },
+   "call": "scipy.signal.butter(2, [456.96302145468366, 714.0047210229432], 'bp', fs=48000, output='sos')",
+   "id": "c056",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c9516516a77ecp+8", "0x1.654796f9b2db0p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c057__sos"
+   },
+   "call": "scipy.signal.butter(2, [457.3179487379955, 714.5592949031179], 'bp', fs=48000, output='sos')",
+   "id": "c057",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.daf78296d2257p+8", "0x1.73115e05d42d4p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c058__sos"
+   },
+   "call": "scipy.signal.butter(2, [474.9668363822033, 742.1356818471927], 'bp', fs=48000, output='sos')",
+   "id": "c058",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.dea084530e3f7p+8", "0x1.dea084530e3f7p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c059__sos"
+   },
+   "call": "scipy.signal.butter(2, [478.6270191106591, 957.2540382213182], 'bp', fs=48000, output='sos')",
+   "id": "c059",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e143d214bb2bep+8", "0x1.e143d214bb2bep+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c060__sos"
+   },
+   "call": "scipy.signal.butter(2, [481.26492433137525, 962.5298486627505], 'bp', fs=48000, output='sos')",
+   "id": "c060",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e5890122f213fp+8", "0x1.7b5308e34d1f9p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c061__sos"
+   },
+   "call": "scipy.signal.butter(2, [485.53517359171013, 758.6487087370471], 'bp', fs=48000, output='sos')",
+   "id": "c061",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f0fbc4a2779d8p+8", "0x1.8444b19eed731p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c062__sos"
+   },
+   "call": "scipy.signal.butter(2, [496.9834691564588, 776.5366705569669], 'bp', fs=48000, output='sos')",
+   "id": "c062",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fe0e41d704398p+8", "0x1.a1517bafec2f1p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c063__sos"
+   },
+   "call": "scipy.signal.butter(2, [510.0556921372713, 1669.2731742674334], 'bp', fs=48000, output='sos')",
+   "id": "c063",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.01191353edc0cp+9", "0x1.91b72e33237d3p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c064__sos"
+   },
+   "call": "scipy.signal.butter(2, [514.1959023390677, 803.4310974047934], 'bp', fs=48000, output='sos')",
+   "id": "c064",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.09d9aad042278p+9", "0x1.9f641ae5675dcp+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c065__sos"
+   },
+   "call": "scipy.signal.butter(2, [531.700525314619, 830.7820708040922], 'bp', fs=48000, output='sos')",
+   "id": "c065",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0d402388b9573p+9", "0x1.a4b43785a1983p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c066__sos"
+   },
+   "call": "scipy.signal.butter(2, [538.5010844140037, 841.4079443968807], 'bp', fs=48000, output='sos')",
+   "id": "c066",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0e4122d06075fp+9", "0x1.a645c66596b84p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c067__sos"
+   },
+   "call": "scipy.signal.butter(2, [540.5088749381065, 844.5451170907913], 'bp', fs=48000, output='sos')",
+   "id": "c067",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.144ba3c3646edp+9", "0x1.c41eaee2a4584p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c068__sos"
+   },
+   "call": "scipy.signal.butter(2, [552.5909351578135, 1808.4794241528443], 'bp', fs=48000, output='sos')",
+   "id": "c068",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.15f98ac4f1c23p+9", "0x1.15f98ac4f1c23p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c069__sos"
+   },
+   "call": "scipy.signal.butter(2, [555.9495474033796, 1111.8990948067592], 'bp', fs=48000, output='sos')",
+   "id": "c069",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.17c9f658dd312p+9", "0x1.17c9f658dd312p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c070__sos"
+   },
+   "call": "scipy.signal.butter(2, [559.5778304176367, 1119.1556608352735], 'bp', fs=48000, output='sos')",
+   "id": "c070",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2112ef6931419p+9", "0x1.c3ad96145cf67p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c071__sos"
+   },
+   "call": "scipy.signal.butter(2, [578.1479312410839, 903.3561425641936], 'bp', fs=48000, output='sos')",
+   "id": "c071",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.25ec5049726afp+9", "0x1.cb413d72c2c72p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c072__sos"
+   },
+   "call": "scipy.signal.butter(2, [587.846200161808, 918.5096877528251], 'bp', fs=48000, output='sos')",
+   "id": "c072",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.299aff7e48870p+9", "0x1.d1022f355152fp+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c073__sos"
+   },
+   "call": "scipy.signal.butter(2, [595.2109220365655, 930.0170656821336], 'bp', fs=48000, output='sos')",
+   "id": "c073",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2a9f59ac87d98p+9", "0x1.d298fc1d9443ep+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c074__sos"
+   },
+   "call": "scipy.signal.butter(2, [597.2449241317108, 933.1951939557982], 'bp', fs=48000, output='sos')",
+   "id": "c074",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2c00000000000p+9", "0x1.b580000000000p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c075__sos"
+   },
+   "call": "scipy.signal.butter(2, [600.0, 3500.0], 'bp', fs=48000, output='sos')",
+   "id": "c075",
+   "requests": 23,
+   "used_by": ["ballfight.kit.fighters.flute Sound.swat_sound"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3351ce3506018p+9", "0x1.f6e2f456c4026p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c076__sos"
+   },
+   "call": "scipy.signal.butter(2, [614.6391054419828, 2011.5461632646707], 'bp', fs=48000, output='sos')",
+   "id": "c076",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3faa26297f3fbp+9", "0x1.f379dba0d6d37p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c077__sos"
+   },
+   "call": "scipy.signal.butter(2, [639.3292896148045, 998.9520150231318], 'bp', fs=48000, output='sos')",
+   "id": "c077",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.42e49d3a9c8cep+9", "0x1.42e49d3a9c8cep+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c078__sos"
+   },
+   "call": "scipy.signal.butter(2, [645.7860482468038, 1291.5720964936077], 'bp', fs=48000, output='sos')",
+   "id": "c078",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4506e4d6ca0e7p+9", "0x1.fbdac58f9bb68p+9"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c079__sos"
+   },
+   "call": "scipy.signal.butter(2, [650.0538586126903, 1015.7091540823285], 'bp', fs=48000, output='sos')",
+   "id": "c079",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.45540e4f53743p+9", "0x1.45540e4f53743p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c080__sos"
+   },
+   "call": "scipy.signal.butter(2, [650.6566867024889, 1301.3133734049777], 'bp', fs=48000, output='sos')",
+   "id": "c080",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4b32d0b03b9b4p+9", "0x1.02bfb309ae914p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c081__sos"
+   },
+   "call": "scipy.signal.butter(2, [662.3969936648414, 1034.9953026013145], 'bp', fs=48000, output='sos')",
+   "id": "c081",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4d275bc95c421p+9", "0x1.0446bfb55013ap+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c082__sos"
+   },
+   "call": "scipy.signal.butter(2, [666.3074886036376, 1041.1054509431838], 'bp', fs=48000, output='sos')",
+   "id": "c082",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5ba91dee78aecp+9", "0x1.0f9c1f624e488p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c083__sos"
+   },
+   "call": "scipy.signal.butter(2, [695.3212259377738, 1086.4394155277714], 'bp', fs=48000, output='sos')",
+   "id": "c083",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5eb5f36fbc860p+9", "0x1.1ef1f5b882f94p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c084__sos"
+   },
+   "call": "scipy.signal.butter(2, [701.4214915915036, 2295.561245208557], 'bp', fs=48000, output='sos')",
+   "id": "c084",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.684b17f5d0f48p+9", "0x1.26c9139a93b0cp+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c085__sos"
+   },
+   "call": "scipy.signal.butter(2, [720.5866687078751, 2358.2836430439547], 'bp', fs=48000, output='sos')",
+   "id": "c085",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6d739355729c4p+9", "0x1.1d824b1ac18a1p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c086__sos"
+   },
+   "call": "scipy.signal.butter(2, [730.9029337701436, 1142.0358340158493], 'bp', fs=48000, output='sos')",
+   "id": "c086",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6f540357ae7afp+9", "0x1.1ef9a29c80500p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c087__sos"
+   },
+   "call": "scipy.signal.butter(2, [734.6563520051913, 1147.9005500081112], 'bp', fs=48000, output='sos')",
+   "id": "c087",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.74f2bc6e2f8d0p+9", "0x1.235da33615262p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c088__sos"
+   },
+   "call": "scipy.signal.butter(2, [745.8963754398519, 1165.4630866247685], 'bp', fs=48000, output='sos')",
+   "id": "c088",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7711d5834837fp+9", "0x1.7711d5834837fp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c089__sos"
+   },
+   "call": "scipy.signal.butter(2, [750.1393283941869, 1500.2786567883738], 'bp', fs=48000, output='sos')",
+   "id": "c089",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7a1bc30f4dda4p+9", "0x1.2765b063f4d28p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c090__sos"
+   },
+   "call": "scipy.signal.butter(2, [756.2168902521266, 1181.5888910189478], 'bp', fs=48000, output='sos')",
+   "id": "c090",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7a47a96dbf1f9p+9", "0x1.7a47a96dbf1f9p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c091__sos"
+   },
+   "call": "scipy.signal.butter(2, [756.5598580535144, 1513.1197161070288], 'bp', fs=48000, output='sos')",
+   "id": "c091",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9000000000000p+9", "0x1.7700000000000p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c092__sos"
+   },
+   "call": "scipy.signal.butter(2, [800.0, 3000.0], 'bp', fs=48000, output='sos')",
+   "id": "c092",
+   "requests": 159,
+   "used_by": ["ballfight.kit.moods.big_top Bed.calliope"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.97662f3f544a7p+9", "0x1.3e47d4e979da2p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c093__sos"
+   },
+   "call": "scipy.signal.butter(2, [814.7983168756081, 1273.1223701181375], 'bp', fs=48000, output='sos')",
+   "id": "c093",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.99e73b2eab58bp+9", "0x1.4f6019262f1a0p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c094__sos"
+   },
+   "call": "scipy.signal.butter(2, [819.8064936005261, 2683.003069965358], 'bp', fs=48000, output='sos')",
+   "id": "c094",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9ae75a40f00f4p+9", "0x1.4104be82bb8bep+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c095__sos"
+   },
+   "call": "scipy.signal.butter(2, [821.8074418232122, 1284.074127848769], 'bp', fs=48000, output='sos')",
+   "id": "c095",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9b390e3d3a27fp+9", "0x1.4144931fd56f3p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c096__sos"
+   },
+   "call": "scipy.signal.butter(2, [822.4457470449414, 1285.071479757721], 'bp', fs=48000, output='sos')",
+   "id": "c096",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a17ef8e400a77p+9", "0x1.462b32722082cp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c097__sos"
+   },
+   "call": "scipy.signal.butter(2, [834.9919705393976, 1304.6749539678085], 'bp', fs=48000, output='sos')",
+   "id": "c097",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a3f9a4b26d5c8p+9", "0x1.579db54c2aee9p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c098__sos"
+   },
+   "call": "scipy.signal.butter(2, [839.9503386529914, 2748.9283810461534], 'bp', fs=48000, output='sos')",
+   "id": "c098",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b3ad7637d9eecp+9", "0x1.b3ad7637d9eecp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c099__sos"
+   },
+   "call": "scipy.signal.butter(2, [871.3551702322125, 1742.710340464425], 'bp', fs=48000, output='sos')",
+   "id": "c099",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b7d5b57c1c23dp+9", "0x1.b7d5b57c1c23dp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c100__sos"
+   },
+   "call": "scipy.signal.butter(2, [879.6696009766962, 1759.3392019533924], 'bp', fs=48000, output='sos')",
+   "id": "c100",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.bf3cc8a30af80p+9", "0x1.5d677cbf6091cp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c101__sos"
+   },
+   "call": "scipy.signal.butter(2, [894.4748729518469, 1397.6169889872608], 'bp', fs=48000, output='sos')",
+   "id": "c101",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c200000000000p+9", "0x1.3880000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c102__sos"
+   },
+   "call": "scipy.signal.butter(2, [900.0, 5000.0], 'bp', fs=48000, output='sos')",
+   "id": "c102",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music roar"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c3d76574209c5p+9", "0x1.61004742b97a2p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c103__sos"
+   },
+   "call": "scipy.signal.butter(2, [903.6827836188537, 1412.004349404459], 'bp', fs=48000, output='sos')",
+   "id": "c103",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c45c3a63a1704p+9", "0x1.721ce9f46cd03p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c104__sos"
+   },
+   "call": "scipy.signal.butter(2, [904.7205318964266, 2960.9035589337595], 'bp', fs=48000, output='sos')",
+   "id": "c104",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ce024e053572dp+9", "0x1.68f1ccf411c1bp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c105__sos"
+   },
+   "call": "scipy.signal.butter(2, [924.0180059920291, 1443.7781343625454], 'bp', fs=48000, output='sos')",
+   "id": "c105",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d35d6b02a0057p+9", "0x1.6d20fb9a0d044p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c106__sos"
+   },
+   "call": "scipy.signal.butter(2, [934.7298281937937, 1460.5153565528026], 'bp', fs=48000, output='sos')",
+   "id": "c106",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d9bc5b77d4597p+9", "0x1.839a1c4ac5036p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c107__sos"
+   },
+   "call": "scipy.signal.butter(2, [947.4715413843977, 3100.8159536216654], 'bp', fs=48000, output='sos')",
+   "id": "c107",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e46bf3316103ep+9", "0x1.8c58529cc3bd5p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c108__sos"
+   },
+   "call": "scipy.signal.butter(2, [968.8433591579158, 3170.760084516815], 'bp', fs=48000, output='sos')",
+   "id": "c108",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e667f7d58b477p+9", "0x1.7c01399ed4cfcp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c109__sos"
+   },
+   "call": "scipy.signal.butter(2, [972.8122507982324, 1520.019141872238], 'bp', fs=48000, output='sos')",
+   "id": "c109",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f521b8c7fd042p+9", "0x1.8782585c3dab3p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c110__sos"
+   },
+   "call": "scipy.signal.butter(2, [1002.2634515748434, 1566.0366430856927], 'bp', fs=48000, output='sos')",
+   "id": "c110",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f7a3856010ba6p+9", "0x1.9c116d200dafbp+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c111__sos"
+   },
+   "call": "scipy.signal.butter(2, [1007.277507789772, 3296.5445709483442], 'bp', fs=48000, output='sos')",
+   "id": "c111",
+   "requests": 15,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f7f4fa246999cp+9", "0x1.9c54127ae2097p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c112__sos"
+   },
+   "call": "scipy.signal.butter(2, [1007.9138837352398, 3298.6272558607848], 'bp', fs=48000, output='sos')",
+   "id": "c112",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fa1446e688088p+9", "0x1.fa1446e688088p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c113__sos"
+   },
+   "call": "scipy.signal.butter(2, [1012.1584137119507, 2024.3168274239015], 'bp', fs=48000, output='sos')",
+   "id": "c113",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fcc0000000001p+9", "0x1.a040000000000p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c114__sos"
+   },
+   "call": "scipy.signal.butter(2, [1017.5000000000001, 3330.0], 'bp', fs=48000, output='sos')",
+   "id": "c114",
+   "requests": 370,
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ff6c82162964ep+9", "0x1.ff6c82162964ep+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c115__sos"
+   },
+   "call": "scipy.signal.butter(2, [1022.8477199270362, 2045.6954398540724], 'bp', fs=48000, output='sos')",
+   "id": "c115",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.03bc35f455bf7p+10", "0x1.95d6144dc5fb1p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c116__sos"
+   },
+   "call": "scipy.signal.butter(2, [1038.9407931172734, 1623.3449892457395], 'bp', fs=48000, output='sos')",
+   "id": "c116",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.059864a185be1p+10", "0x1.98be1d3c60f8fp+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c117__sos"
+   },
+   "call": "scipy.signal.butter(2, [1046.3811420255736, 1634.9705344149586], 'bp', fs=48000, output='sos')",
+   "id": "c117",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0880a99bfad4bp+10", "0x1.9d490903b7ec4p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c118__sos"
+   },
+   "call": "scipy.signal.butter(2, [1058.0103521298904, 1653.1411752029535], 'bp', fs=48000, output='sos')",
+   "id": "c118",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.15e646909fd58p+10", "0x1.b237ce41f9bdap+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c119__sos"
+   },
+   "call": "scipy.signal.butter(2, [1111.59805694207, 1736.8719639719843], 'bp', fs=48000, output='sos')",
+   "id": "c119",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1faae1d42f1bfp+10", "0x1.c17b00db899bap+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c120__sos"
+   },
+   "call": "scipy.signal.butter(2, [1150.6700334987688, 1797.9219273418262], 'bp', fs=48000, output='sos')",
+   "id": "c120",
+   "requests": 5,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.240a09fa9f352p+10", "0x1.c84faf9798c30p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c121__sos"
+   },
+   "call": "scipy.signal.butter(2, [1168.1568590693246, 1825.2450922958196], 'bp', fs=48000, output='sos')",
+   "id": "c121",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.24d79cd301c2ap+10", "0x1.c990e509b2c01p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c122__sos"
+   },
+   "call": "scipy.signal.butter(2, [1171.3689467923346, 1830.2639793630226], 'bp', fs=48000, output='sos')",
+   "id": "c122",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.25edb59851abap+10", "0x1.25edb59851abap+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c123__sos"
+   },
+   "call": "scipy.signal.butter(2, [1175.7142086789668, 2351.4284173579335], 'bp', fs=48000, output='sos')",
+   "id": "c123",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.29551eefc61e6p+10", "0x1.29551eefc61e6p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c124__sos"
+   },
+   "call": "scipy.signal.butter(2, [1189.3300132212403, 2378.6600264424806], 'bp', fs=48000, output='sos')",
+   "id": "c124",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2c00000000000p+10", "0x1.3880000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c125__sos"
+   },
+   "call": "scipy.signal.butter(2, [1200.0, 5000.0], 'bp', fs=48000, output='sos')",
+   "id": "c125",
+   "requests": 159,
+   "used_by": ["ballfight.kit.moods.big_top Bed.calliope"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.343705af14a1fp+10", "0x1.e195f8e1903d0p+10"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c126__sos"
+   },
+   "call": "scipy.signal.butter(2, [1232.8597219182482, 1926.3433154972627], 'bp', fs=48000, output='sos')",
+   "id": "c126",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.47d252026a6d4p+10", "0x1.001c5011e3256p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c127__sos"
+   },
+   "call": "scipy.signal.butter(2, [1311.2862554587673, 2048.884774154324], 'bp', fs=48000, output='sos')",
+   "id": "c127",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.485c68dc645c8p+10", "0x1.008831ec2e684p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c128__sos"
+   },
+   "call": "scipy.signal.butter(2, [1313.4439002018062, 2052.256094065322], 'bp', fs=48000, output='sos')",
+   "id": "c128",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.556cbf1eb4024p+10", "0x1.556cbf1eb4024p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c129__sos"
+   },
+   "call": "scipy.signal.butter(2, [1365.6991650350474, 2731.3983300700947], 'bp', fs=48000, output='sos')",
+   "id": "c129",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.55d65ee4f5399p+10", "0x1.0b0f7a22df94fp+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c130__sos"
+   },
+   "call": "scipy.signal.butter(2, [1367.349541892507, 2136.483659207042], 'bp', fs=48000, output='sos')",
+   "id": "c130",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.59b721e81e9b1p+10", "0x1.59b721e81e9b1p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c131__sos"
+   },
+   "call": "scipy.signal.butter(2, [1382.8614445017704, 2765.722889003541], 'bp', fs=48000, output='sos')",
+   "id": "c131",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6efaa5afbce3fp+10", "0x1.1eb3d1714b921p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c132__sos"
+   },
+   "call": "scipy.signal.butter(2, [1467.9163626999505, 2293.6193167186725], 'bp', fs=48000, output='sos')",
+   "id": "c132",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.71333ed58f324p+10", "0x1.20700916d7df4p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c133__sos"
+   },
+   "call": "scipy.signal.butter(2, [1476.8007100962068, 2307.501109525323], 'bp', fs=48000, output='sos')",
+   "id": "c133",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7700000000000p+10", "0x1.b580000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c134__sos"
+   },
+   "call": "scipy.signal.butter(2, [1500.0, 7000.0], 'bp', fs=48000, output='sos')",
+   "id": "c134",
+   "requests": 111,
+   "used_by": ["ballfight.kit.fighters.flute Sound.breath"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7700000000000p+10", "0x1.f400000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c135__sos"
+   },
+   "call": "scipy.signal.butter(2, [1500.0, 8000.0], 'bp', fs=48000, output='sos')",
+   "id": "c135",
+   "requests": 221,
+   "used_by": ["reelkit.audio snare"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7700000000000p+10", "0x1.1940000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c136__sos"
+   },
+   "call": "scipy.signal.butter(2, [1500.0, 9000.0], 'bp', fs=48000, output='sos')",
+   "id": "c136",
+   "requests": 1,
+   "used_by": ["ballfight.kit.moods.big_top Bed.vs"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8c950b53a844ap+10", "0x1.8c950b53a844ap+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c137__sos"
+   },
+   "call": "scipy.signal.butter(2, [1586.3288163321727, 3172.6576326643453], 'bp', fs=48000, output='sos')",
+   "id": "c137",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.91fc36b130114p+10", "0x1.91fc36b130114p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c138__sos"
+   },
+   "call": "scipy.signal.butter(2, [1607.9408381432922, 3215.8816762865845], 'bp', fs=48000, output='sos')",
+   "id": "c138",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9ad05b516b5a0p+10", "0x1.40f2c7579bde5p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c139__sos"
+   },
+   "call": "scipy.signal.butter(2, [1643.2555736111026, 2567.586833767348], 'bp', fs=48000, output='sos')",
+   "id": "c139",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9f1e61201891cp+10", "0x1.444fbbe11331dp+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c140__sos"
+   },
+   "call": "scipy.signal.butter(2, [1660.4746780624328, 2594.491684472551], 'bp', fs=48000, output='sos')",
+   "id": "c140",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.cbe2793290297p+10", "0x1.6748eeaf80a06p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c141__sos"
+   },
+   "call": "scipy.signal.butter(2, [1839.5386473090964, 2874.279136420463], 'bp', fs=48000, output='sos')",
+   "id": "c141",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ccaa9692acbe2p+10", "0x1.ccaa9692acbe2p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c142__sos"
+   },
+   "call": "scipy.signal.butter(2, [1842.6654402434292, 3685.3308804868584], 'bp', fs=48000, output='sos')",
+   "id": "c142",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d2bf8885e84e0p+10", "0x1.6ca5a2a89d7cfp+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c143__sos"
+   },
+   "call": "scipy.signal.butter(2, [1866.9927077072716, 2917.176105792612], 'bp', fs=48000, output='sos')",
+   "id": "c143",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d369eaa17c553p+10", "0x1.d369eaa17c553p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c144__sos"
+   },
+   "call": "scipy.signal.butter(2, [1869.6549457277476, 3739.3098914554953], 'bp', fs=48000, output='sos')",
+   "id": "c144",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f400000000000p+10", "0x1.f400000000000p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c145__sos"
+   },
+   "call": "scipy.signal.butter(2, [2000.0, 8000.0], 'bp', fs=48000, output='sos')",
+   "id": "c145",
+   "requests": 10,
+   "used_by": ["ballfight.kit.music clank"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.01688d8e2f6a0p+11", "0x1.92335d2e2a15ap+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c146__sos"
+   },
+   "call": "scipy.signal.butter(2, [2059.2672797132545, 3217.60512455196], 'bp', fs=48000, output='sos')",
+   "id": "c146",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.06664579cf075p+11", "0x1.99ffcc8e537b6p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c147__sos"
+   },
+   "call": "scipy.signal.butter(2, [2099.1959809344794, 3279.9937202101237], 'bp', fs=48000, output='sos')",
+   "id": "c147",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0b8d8f9f6cd6cp+11", "0x1.0b8d8f9f6cd6cp+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c148__sos"
+   },
+   "call": "scipy.signal.butter(2, [2140.423782074524, 4280.847564149048], 'bp', fs=48000, output='sos')",
+   "id": "c148",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0fbc82920f0e6p+11", "0x1.0fbc82920f0e6p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c149__sos"
+   },
+   "call": "scipy.signal.butter(2, [2173.8909387868944, 4347.781877573789], 'bp', fs=48000, output='sos')",
+   "id": "c149",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2027be5eb9ecbp+11", "0x1.c23e19740281ep+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c150__sos"
+   },
+   "call": "scipy.signal.butter(2, [2305.2419885283794, 3601.940607075593], 'bp', fs=48000, output='sos')",
+   "id": "c150",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2708edf12156bp+11", "0x1.ccfdf3c8c4176p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c151__sos"
+   },
+   "call": "scipy.signal.butter(2, [2360.2790456439157, 3687.9360088186177], 'bp', fs=48000, output='sos')",
+   "id": "c151",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.36c982d9aaa0cp+11", "0x1.36c982d9aaa0cp+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c152__sos"
+   },
+   "call": "scipy.signal.butter(2, [2486.2972229321076, 4972.594445864215], 'bp', fs=48000, output='sos')",
+   "id": "c152",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3880000000000p+11", "0x1.1940000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c153__sos"
+   },
+   "call": "scipy.signal.butter(2, [2500.0, 9000.0], 'bp', fs=48000, output='sos')",
+   "id": "c153",
+   "requests": 23,
+   "used_by": ["ballfight.kit.fighters.flute Sound.swat_sound"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3bf7130d81756p+11", "0x1.3bf7130d81756p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c154__sos"
+   },
+   "call": "scipy.signal.butter(2, [2527.721075775956, 5055.442151551912], 'bp', fs=48000, output='sos')",
+   "id": "c154",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4293213bc2104p+11", "0x1.f805e3ed5f396p+11"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c155__sos"
+   },
+   "call": "scipy.signal.butter(2, [2580.597806815176, 4032.1840731487127], 'bp', fs=48000, output='sos')",
+   "id": "c155",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4bbaae33afe31p+11", "0x1.0329d81861696p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c156__sos"
+   },
+   "call": "scipy.signal.butter(2, [2653.833764880685, 4146.61525762607], 'bp', fs=48000, output='sos')",
+   "id": "c156",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6901f18a06fdap+11", "0x1.6901f18a06fdap+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c157__sos"
+   },
+   "call": "scipy.signal.butter(2, [2888.0607347618616, 5776.121469523723], 'bp', fs=48000, output='sos')",
+   "id": "c157",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.691b0403c3060p+11", "0x1.1a1d1b22f05cbp+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c158__sos"
+   },
+   "call": "scipy.signal.butter(2, [2888.844240075021, 4513.81912511722], 'bp', fs=48000, output='sos')",
+   "id": "c158",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6f648a0a5c064p+11", "0x1.6f648a0a5c064p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c159__sos"
+   },
+   "call": "scipy.signal.butter(2, [2939.1418506429054, 5878.283701285811], 'bp', fs=48000, output='sos')",
+   "id": "c159",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.74fcc269c05d4p+11", "0x1.236577e29e48ep+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c160__sos"
+   },
+   "call": "scipy.signal.butter(2, [2983.898732066833, 4662.341768854427], 'bp', fs=48000, output='sos')",
+   "id": "c160",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7700000000000p+11", "0x1.1940000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c161__sos"
+   },
+   "call": "scipy.signal.butter(2, [3000.0, 9000.0], 'bp', fs=48000, output='sos')",
+   "id": "c161",
+   "requests": 23,
+   "used_by": ["ballfight.kit.music hiss"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.943d1eb02cb6bp+11", "0x1.3bcfbff9a2eebp+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c162__sos"
+   },
+   "call": "scipy.signal.butter(2, [3233.9099961160005, 5052.98436893125], 'bp', fs=48000, output='sos')",
+   "id": "c162",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a357dc69906f5p+11", "0x1.a357dc69906f5p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c163__sos"
+   },
+   "call": "scipy.signal.butter(2, [3354.7456558056824, 6709.491311611365], 'bp', fs=48000, output='sos')",
+   "id": "c163",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a360798144dc7p+11", "0x1.47a35eecfdcc3p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c164__sos"
+   },
+   "call": "scipy.signal.butter(2, [3355.0148321480697, 5242.210675231358], 'bp', fs=48000, output='sos')",
+   "id": "c164",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ab2d0ea27608fp+11", "0x1.ab2d0ea27608fp+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c165__sos"
+   },
+   "call": "scipy.signal.butter(2, [3417.408036451852, 6834.816072903704], 'bp', fs=48000, output='sos')",
+   "id": "c165",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b580000000000p+11", "0x1.3880000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c166__sos"
+   },
+   "call": "scipy.signal.butter(2, [3500.0, 10000.0], 'bp', fs=48000, output='sos')",
+   "id": "c166",
+   "requests": 58,
+   "used_by": ["ballfight.kit.music hiss"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c4862d878c04ap+11", "0x1.6188d391e563ap+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c167__sos"
+   },
+   "call": "scipy.signal.butter(2, [3620.193057797883, 5656.551652809192], 'bp', fs=48000, output='sos')",
+   "id": "c167",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d78934f1fa92cp+11", "0x1.7063315d0bc2ap+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c168__sos"
+   },
+   "call": "scipy.signal.butter(2, [3772.287713040734, 5894.199551626147], 'bp', fs=48000, output='sos')",
+   "id": "c168",
+   "requests": 2,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e71af777397a2p+11", "0x1.e71af777397a2p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c169__sos"
+   },
+   "call": "scipy.signal.butter(2, [3896.8427082178687, 7793.685416435737], 'bp', fs=48000, output='sos')",
+   "id": "c169",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f0b46581c2144p+11", "0x1.f0b46581c2144p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c170__sos"
+   },
+   "call": "scipy.signal.butter(2, [3973.6373909750564, 7947.274781950113], 'bp', fs=48000, output='sos')",
+   "id": "c170",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f400000000000p+11", "0x1.57c0000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c171__sos"
+   },
+   "call": "scipy.signal.butter(2, [4000.0, 11000.0], 'bp', fs=48000, output='sos')",
+   "id": "c171",
+   "requests": 12,
+   "used_by": ["ballfight.kit.music hiss"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fa93bc4eeb6a8p+11", "0x1.8bc36b1da7eb3p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c172__sos"
+   },
+   "call": "scipy.signal.butter(2, [4052.616736850545, 6332.213651328976], 'bp', fs=48000, output='sos')",
+   "id": "c172",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1b8b142a57157p+12", "0x1.bb094f8228117p+12"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c173__sos"
+   },
+   "call": "scipy.signal.butter(2, [4536.6924231912335, 7088.5819112363015], 'bp', fs=48000, output='sos')",
+   "id": "c173",
+   "requests": 1,
+   "used_by": ["reelkit.audio whoosh"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.57c0000000000p+12", "0x1.7700000000000p+13"],
+    "btype": "bp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c174__sos"
+   },
+   "call": "scipy.signal.butter(2, [5500.0, 12000.0], 'bp', fs=48000, output='sos')",
+   "id": "c174",
+   "requests": 256,
+   "used_by": ["ballfight.kit.moods.big_top Bed.tambourine"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e000000000000p+4"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c175__sos"
+   },
+   "call": "scipy.signal.butter(2, 30.0, 'hp', fs=48000, output='sos')",
+   "id": "c175",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e758522938389p+4"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c176__sos"
+   },
+   "call": "scipy.signal.butter(2, 30.45906272984897, 'hp', fs=48000, output='sos')",
+   "id": "c176",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ee0d4fa40804fp+4"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c177__sos"
+   },
+   "call": "scipy.signal.butter(2, 30.8782497794603, 'hp', fs=48000, output='sos')",
+   "id": "c177",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f644113431862p+4"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c178__sos"
+   },
+   "call": "scipy.signal.butter(2, 31.391617969399142, 'hp', fs=48000, output='sos')",
+   "id": "c178",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ffd1d79f5ae93p+4"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c179__sos"
+   },
+   "call": "scipy.signal.butter(2, 31.988731024247112, 'hp', fs=48000, output='sos')",
+   "id": "c179",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.054c8107b96bep+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c180__sos"
+   },
+   "call": "scipy.signal.butter(2, 32.66235548052417, 'hp', fs=48000, output='sos')",
+   "id": "c180",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0b41ad4bfaee8p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c181__sos"
+   },
+   "call": "scipy.signal.butter(2, 33.40706881866009, 'hp', fs=48000, output='sos')",
+   "id": "c181",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.11bfafb0a7b39p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c182__sos"
+   },
+   "call": "scipy.signal.butter(2, 34.21859682094368, 'hp', fs=48000, output='sos')",
+   "id": "c182",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.18bf62c5f67a1p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c183__sos"
+   },
+   "call": "scipy.signal.butter(2, 35.09345011385381, 'hp', fs=48000, output='sos')",
+   "id": "c183",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.203ac9bfee373p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c184__sos"
+   },
+   "call": "scipy.signal.butter(2, 36.028705119569075, 'hp', fs=48000, output='sos')",
+   "id": "c184",
+   "requests": 19,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.282cc6643b1ddp+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c185__sos"
+   },
+   "call": "scipy.signal.butter(2, 37.02186277680787, 'hp', fs=48000, output='sos')",
+   "id": "c185",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3090e6bf4ed27p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c186__sos"
+   },
+   "call": "scipy.signal.butter(2, 38.070752615540464, 'hp', fs=48000, output='sos')",
+   "id": "c186",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3963419657d7fp+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c187__sos"
+   },
+   "call": "scipy.signal.butter(2, 39.173464941554805, 'hp', fs=48000, output='sos')",
+   "id": "c187",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.42a05c6f099b1p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c188__sos"
+   },
+   "call": "scipy.signal.butter(2, 40.32830130336823, 'hp', fs=48000, output='sos')",
+   "id": "c188",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4c451813160b8p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c189__sos"
+   },
+   "call": "scipy.signal.butter(2, 41.53373732481981, 'hp', fs=48000, output='sos')",
+   "id": "c189",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.564ea19b524aap+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c190__sos"
+   },
+   "call": "scipy.signal.butter(2, 42.78839417786487, 'hp', fs=48000, output='sos')",
+   "id": "c190",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.60ba66bbb032ap+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c191__sos"
+   },
+   "call": "scipy.signal.butter(2, 44.09101626044715, 'hp', fs=48000, output='sos')",
+   "id": "c191",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6b860c738a490p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c192__sos"
+   },
+   "call": "scipy.signal.butter(2, 45.44045343652499, 'hp', fs=48000, output='sos')",
+   "id": "c192",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7000000000000p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c193__sos"
+   },
+   "call": "scipy.signal.butter(2, 46.0, 'hp', fs=48000, output='sos')",
+   "id": "c193",
+   "requests": 73,
+   "used_by": ["ballfight.kit.moods.big_top Bed.bass_drum"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.76af678961ecap+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c194__sos"
+   },
+   "call": "scipy.signal.butter(2, 46.835646699238694, 'hp', fs=48000, output='sos')",
+   "id": "c194",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8e135bfd1a6e2p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c195__sos"
+   },
+   "call": "scipy.signal.butter(2, 49.759452798241696, 'hp', fs=48000, output='sos')",
+   "id": "c195",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9a4a5b93175c3p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c196__sos"
+   },
+   "call": "scipy.signal.butter(2, 51.2863074771408, 'hp', fs=48000, output='sos')",
+   "id": "c196",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a6d7d524495acp+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c197__sos"
+   },
+   "call": "scipy.signal.butter(2, 52.85538700436459, 'hp', fs=48000, output='sos')",
+   "id": "c197",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b3ba425c90538p+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c198__sos"
+   },
+   "call": "scipy.signal.butter(2, 54.465946887163625, 'hp', fs=48000, output='sos')",
+   "id": "c198",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c0f033fc2260ap+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c199__sos"
+   },
+   "call": "scipy.signal.butter(2, 56.1172866533271, 'hp', fs=48000, output='sos')",
+   "id": "c199",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.dc514daaec65cp+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c200__sos"
+   },
+   "call": "scipy.signal.butter(2, 59.5396989205735, 'hp', fs=48000, output='sos')",
+   "id": "c200",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f8f12783dceadp+5"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c201__sos"
+   },
+   "call": "scipy.signal.butter(2, 63.117751150302276, 'hp', fs=48000, output='sos')",
+   "id": "c201",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0b6361b47ab94p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c202__sos"
+   },
+   "call": "scipy.signal.butter(2, 66.84705240248724, 'hp', fs=48000, output='sos')",
+   "id": "c202",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.131192ded7a11p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c203__sos"
+   },
+   "call": "scipy.signal.butter(2, 68.76716182890983, 'hp', fs=48000, output='sos')",
+   "id": "c203",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1ae4fbe3511e8p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c204__sos"
+   },
+   "call": "scipy.signal.butter(2, 70.72361712629902, 'hp', fs=48000, output='sos')",
+   "id": "c204",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6800000000000p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c205__sos"
+   },
+   "call": "scipy.signal.butter(2, 90.0, 'hp', fs=48000, output='sos')",
+   "id": "c205",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6a3f9550c3c86p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c206__sos"
+   },
+   "call": "scipy.signal.butter(2, 90.56209303088153, 'hp', fs=48000, output='sos')",
+   "id": "c206",
+   "requests": 7,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6b53c82c3a3f8p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c207__sos"
+   },
+   "call": "scipy.signal.butter(2, 90.8318182859947, 'hp', fs=48000, output='sos')",
+   "id": "c207",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6ed0d798db505p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c208__sos"
+   },
+   "call": "scipy.signal.butter(2, 91.70394743765435, 'hp', fs=48000, output='sos')",
+   "id": "c208",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7492942bfd194p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c209__sos"
+   },
+   "call": "scipy.signal.butter(2, 93.14314335567752, 'hp', fs=48000, output='sos')",
+   "id": "c209",
+   "requests": 7,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.750a1f27318b3p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c210__sos"
+   },
+   "call": "scipy.signal.butter(2, 93.25988446464434, 'hp', fs=48000, output='sos')",
+   "id": "c210",
+   "requests": 7,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.75a4064c8cfb5p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c211__sos"
+   },
+   "call": "scipy.signal.butter(2, 93.41018027887806, 'hp', fs=48000, output='sos')",
+   "id": "c211",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7ca95f549a81fp+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c212__sos"
+   },
+   "call": "scipy.signal.butter(2, 95.1654027194313, 'hp', fs=48000, output='sos')",
+   "id": "c212",
+   "requests": 13,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7df251ea387bdp+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c213__sos"
+   },
+   "call": "scipy.signal.butter(2, 95.48664060563802, 'hp', fs=48000, output='sos')",
+   "id": "c213",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8218b879c5c01p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c214__sos"
+   },
+   "call": "scipy.signal.butter(2, 96.52414121884796, 'hp', fs=48000, output='sos')",
+   "id": "c214",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8586ed5ed5014p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c215__sos"
+   },
+   "call": "scipy.signal.butter(2, 97.38176487135962, 'hp', fs=48000, output='sos')",
+   "id": "c215",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8f874aee4b0d5p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c216__sos"
+   },
+   "call": "scipy.signal.butter(2, 99.88212177594262, 'hp', fs=48000, output='sos')",
+   "id": "c216",
+   "requests": 18,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9a95dbc379106p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c217__sos"
+   },
+   "call": "scipy.signal.butter(2, 102.64634614397445, 'hp', fs=48000, output='sos')",
+   "id": "c217",
+   "requests": 19,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a6a260f2794fap+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c218__sos"
+   },
+   "call": "scipy.signal.butter(2, 105.65857294907974, 'hp', fs=48000, output='sos')",
+   "id": "c218",
+   "requests": 19,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b39f973bba6e6p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c219__sos"
+   },
+   "call": "scipy.signal.butter(2, 108.90585034680734, 'hp', fs=48000, output='sos')",
+   "id": "c219",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b71c2865d5478p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c220__sos"
+   },
+   "call": "scipy.signal.butter(2, 109.7774978553224, 'hp', fs=48000, output='sos')",
+   "id": "c220",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c18261e83c348p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c221__sos"
+   },
+   "call": "scipy.signal.butter(2, 112.37732661120856, 'hp', fs=48000, output='sos')",
+   "id": "c221",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.cd3d15f5a4082p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c222__sos"
+   },
+   "call": "scipy.signal.butter(2, 115.30965408147497, 'hp', fs=48000, output='sos')",
+   "id": "c222",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d0414151b4e0dp+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c223__sos"
+   },
+   "call": "scipy.signal.butter(2, 116.06372573534482, 'hp', fs=48000, output='sos')",
+   "id": "c223",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.dd8dbeccb6f00p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c224__sos"
+   },
+   "call": "scipy.signal.butter(2, 119.38842315546572, 'hp', fs=48000, output='sos')",
+   "id": "c224",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e000000000000p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c225__sos"
+   },
+   "call": "scipy.signal.butter(2, 120.0, 'hp', fs=48000, output='sos')",
+   "id": "c225",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music inst_gain"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e55a436b93766p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c226__sos"
+   },
+   "call": "scipy.signal.butter(2, 121.33814781272449, 'hp', fs=48000, output='sos')",
+   "id": "c226",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.edd035ae96c0ep+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c227__sos"
+   },
+   "call": "scipy.signal.butter(2, 123.45332978053213, 'hp', fs=48000, output='sos')",
+   "id": "c227",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fed9ab8ba43eap+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c228__sos"
+   },
+   "call": "scipy.signal.butter(2, 127.71256845655412, 'hp', fs=48000, output='sos')",
+   "id": "c228",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ff5925bab80e8p+6"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c229__sos"
+   },
+   "call": "scipy.signal.butter(2, 127.83705798862832, 'hp', fs=48000, output='sos')",
+   "id": "c229",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.08521f66a8dcep+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c230__sos"
+   },
+   "call": "scipy.signal.butter(2, 132.16039582072557, 'hp', fs=48000, output='sos')",
+   "id": "c230",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0d91bfd2281d6p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c231__sos"
+   },
+   "call": "scipy.signal.butter(2, 134.78466660251314, 'hp', fs=48000, output='sos')",
+   "id": "c231",
+   "requests": 24,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.11954f849c36fp+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c232__sos"
+   },
+   "call": "scipy.signal.butter(2, 136.7916222992603, 'hp', fs=48000, output='sos')",
+   "id": "c232",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1b33fb445692ep+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c233__sos"
+   },
+   "call": "scipy.signal.butter(2, 141.60152638966377, 'hp', fs=48000, output='sos')",
+   "id": "c233",
+   "requests": 12,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1c53274c6dc9ap+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c234__sos"
+   },
+   "call": "scipy.signal.butter(2, 142.16240919914418, 'hp', fs=48000, output='sos')",
+   "id": "c234",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.252bec391d436p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c235__sos"
+   },
+   "call": "scipy.signal.butter(2, 146.58578661424843, 'hp', fs=48000, output='sos')",
+   "id": "c235",
+   "requests": 11,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2f7b19353f3f2p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c236__sos"
+   },
+   "call": "scipy.signal.butter(2, 151.74042669674924, 'hp', fs=48000, output='sos')",
+   "id": "c236",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3c4a9e6059fecp+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c237__sos"
+   },
+   "call": "scipy.signal.butter(2, 158.1457395658357, 'hp', fs=48000, output='sos')",
+   "id": "c237",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4517c29cd484ep+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c238__sos"
+   },
+   "call": "scipy.signal.butter(2, 162.54640665144183, 'hp', fs=48000, output='sos')",
+   "id": "c238",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4d72f4ce36692p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c239__sos"
+   },
+   "call": "scipy.signal.butter(2, 166.72452396787827, 'hp', fs=48000, output='sos')",
+   "id": "c239",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5061df0341ae0p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c240__sos"
+   },
+   "call": "scipy.signal.butter(2, 168.19115457703356, 'hp', fs=48000, output='sos')",
+   "id": "c240",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5bfc6ff61a1c2p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c241__sos"
+   },
+   "call": "scipy.signal.butter(2, 173.99304169720386, 'hp', fs=48000, output='sos')",
+   "id": "c241",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5f5bbefedfcc2p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c242__sos"
+   },
+   "call": "scipy.signal.butter(2, 175.67919155580427, 'hp', fs=48000, output='sos')",
+   "id": "c242",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.67e60801522eep+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c243__sos"
+   },
+   "call": "scipy.signal.butter(2, 179.94927982452595, 'hp', fs=48000, output='sos')",
+   "id": "c243",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.71ffbe6998d3cp+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c244__sos"
+   },
+   "call": "scipy.signal.butter(2, 184.9994996069962, 'hp', fs=48000, output='sos')",
+   "id": "c244",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.741d4f6e48af0p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c245__sos"
+   },
+   "call": "scipy.signal.butter(2, 186.05724663388492, 'hp', fs=48000, output='sos')",
+   "id": "c245",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.80a1022329087p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c246__sos"
+   },
+   "call": "scipy.signal.butter(2, 192.3144694316472, 'hp', fs=48000, output='sos')",
+   "id": "c246",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.855a2c8122a72p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c247__sos"
+   },
+   "call": "scipy.signal.butter(2, 194.67612079189308, 'hp', fs=48000, output='sos')",
+   "id": "c247",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8d6fedcadeb01p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c248__sos"
+   },
+   "call": "scipy.signal.butter(2, 198.7186110874973, 'hp', fs=48000, output='sos')",
+   "id": "c248",
+   "requests": 19,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9966a968dc3e7p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c249__sos"
+   },
+   "call": "scipy.signal.butter(2, 204.70051124275707, 'hp', fs=48000, output='sos')",
+   "id": "c249",
+   "requests": 1,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9a88f0398e366p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c250__sos"
+   },
+   "call": "scipy.signal.butter(2, 205.26745776997558, 'hp', fs=48000, output='sos')",
+   "id": "c250",
+   "requests": 12,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a7eaf603e6048p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c251__sos"
+   },
+   "call": "scipy.signal.butter(2, 211.95890819723923, 'hp', fs=48000, output='sos')",
+   "id": "c251",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ae212dff2392ep+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c252__sos"
+   },
+   "call": "scipy.signal.butter(2, 215.06480405148744, 'hp', fs=48000, output='sos')",
+   "id": "c252",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b594f9416e382p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c253__sos"
+   },
+   "call": "scipy.signal.butter(2, 218.79096416922044, 'hp', fs=48000, output='sos')",
+   "id": "c253",
+   "requests": 9,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c38600736ea81p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c254__sos"
+   },
+   "call": "scipy.signal.butter(2, 225.7617221901492, 'hp', fs=48000, output='sos')",
+   "id": "c254",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d1bd1d8b24983p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c255__sos"
+   },
+   "call": "scipy.signal.butter(2, 232.86936602422438, 'hp', fs=48000, output='sos')",
+   "id": "c255",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d991aad60c836p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c256__sos"
+   },
+   "call": "scipy.signal.butter(2, 236.78450650122403, 'hp', fs=48000, output='sos')",
+   "id": "c256",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e0396d0ae90ebp+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c257__sos"
+   },
+   "call": "scipy.signal.butter(2, 240.11216005415858, 'hp', fs=48000, output='sos')",
+   "id": "c257",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.eefa153ea2a28p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c258__sos"
+   },
+   "call": "scipy.signal.butter(2, 247.48844333396232, 'hp', fs=48000, output='sos')",
+   "id": "c258",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f040f335bdab3p+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c259__sos"
+   },
+   "call": "scipy.signal.butter(2, 248.12685554447452, 'hp', fs=48000, output='sos')",
+   "id": "c259",
+   "requests": 10,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.fdfe458873f4bp+7"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c260__sos"
+   },
+   "call": "scipy.signal.butter(2, 254.99662424483753, 'hp', fs=48000, output='sos')",
+   "id": "c260",
+   "requests": 9,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.03c86a7d1f8b2p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c261__sos"
+   },
+   "call": "scipy.signal.butter(2, 259.7828748895655, 'hp', fs=48000, output='sos')",
+   "id": "c261",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.06a29adf8940fp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c262__sos"
+   },
+   "call": "scipy.signal.butter(2, 262.63517567730827, 'hp', fs=48000, output='sos')",
+   "id": "c262",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0e6712cdcaefep+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c263__sos"
+   },
+   "call": "scipy.signal.butter(2, 270.40263067440526, 'hp', fs=48000, output='sos')",
+   "id": "c263",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0fbf3d9f184d8p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c264__sos"
+   },
+   "call": "scipy.signal.butter(2, 271.74703401892975, 'hp', fs=48000, output='sos')",
+   "id": "c264",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.164c2e1a71248p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c265__sos"
+   },
+   "call": "scipy.signal.butter(2, 278.2975784803607, 'hp', fs=48000, output='sos')",
+   "id": "c265",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1c039dfc69109p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c266__sos"
+   },
+   "call": "scipy.signal.butter(2, 284.0141294247156, 'hp', fs=48000, output='sos')",
+   "id": "c266",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1e5193c38b01fp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c267__sos"
+   },
+   "call": "scipy.signal.butter(2, 286.31866094726314, 'hp', fs=48000, output='sos')",
+   "id": "c267",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2676ee02cd3a8p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c268__sos"
+   },
+   "call": "scipy.signal.butter(2, 294.46456925878965, 'hp', fs=48000, output='sos')",
+   "id": "c268",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.2ebbea1b54d5ap+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c269__sos"
+   },
+   "call": "scipy.signal.butter(2, 302.7340409357181, 'hp', fs=48000, output='sos')",
+   "id": "c269",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.357011434939ep+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c270__sos"
+   },
+   "call": "scipy.signal.butter(2, 309.43776340997454, 'hp', fs=48000, output='sos')",
+   "id": "c270",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3fa38b0350312p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c271__sos"
+   },
+   "call": "scipy.signal.butter(2, 319.63883991916475, 'hp', fs=48000, output='sos')",
+   "id": "c271",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5004801f03feap+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c272__sos"
+   },
+   "call": "scipy.signal.butter(2, 336.01757997367406, 'hp', fs=48000, output='sos')",
+   "id": "c272",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.510616d6b8a0ep+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c273__sos"
+   },
+   "call": "scipy.signal.butter(2, 337.0237859917405, 'hp', fs=48000, output='sos')",
+   "id": "c273",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.59e4c19848176p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c274__sos"
+   },
+   "call": "scipy.signal.butter(2, 345.89357902298013, 'hp', fs=48000, output='sos')",
+   "id": "c274",
+   "requests": 14,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.62e1546d2a1ecp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c275__sos"
+   },
+   "call": "scipy.signal.butter(2, 354.8801944949944, 'hp', fs=48000, output='sos')",
+   "id": "c275",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6bb890e176338p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c276__sos"
+   },
+   "call": "scipy.signal.butter(2, 363.72096070419093, 'hp', fs=48000, output='sos')",
+   "id": "c276",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.6bfb8d8bdd705p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c277__sos"
+   },
+   "call": "scipy.signal.butter(2, 363.98262857586116, 'hp', fs=48000, output='sos')",
+   "id": "c277",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.75332d1ac74e9p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c278__sos"
+   },
+   "call": "scipy.signal.butter(2, 373.1999069916333, 'hp', fs=48000, output='sos')",
+   "id": "c278",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.79fc10c26be1fp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c279__sos"
+   },
+   "call": "scipy.signal.butter(2, 377.98463072904445, 'hp', fs=48000, output='sos')",
+   "id": "c279",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.7e87f517aed05p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c280__sos"
+   },
+   "call": "scipy.signal.butter(2, 382.53108356492913, 'hp', fs=48000, output='sos')",
+   "id": "c280",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.87f9a940e6f93p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c281__sos"
+   },
+   "call": "scipy.signal.butter(2, 391.9752388538265, 'hp', fs=48000, output='sos')",
+   "id": "c281",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.8884af3872142p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c282__sos"
+   },
+   "call": "scipy.signal.butter(2, 392.51829865250704, 'hp', fs=48000, output='sos')",
+   "id": "c282",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.91880f00021cep+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c283__sos"
+   },
+   "call": "scipy.signal.butter(2, 401.53147888232786, 'hp', fs=48000, output='sos')",
+   "id": "c283",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.9b32ed55ecf96p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c284__sos"
+   },
+   "call": "scipy.signal.butter(2, 411.19893395457746, 'hp', fs=48000, output='sos')",
+   "id": "c284",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.a4fa0cc85366dp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c285__sos"
+   },
+   "call": "scipy.signal.butter(2, 420.97675754581616, 'hp', fs=48000, output='sos')",
+   "id": "c285",
+   "requests": 5,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.aedd375033858p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c286__sos"
+   },
+   "call": "scipy.signal.butter(2, 430.8641252637658, 'hp', fs=48000, output='sos')",
+   "id": "c286",
+   "requests": 7,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.b8dc38498704cp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c287__sos"
+   },
+   "call": "scipy.signal.butter(2, 440.860233874763, 'hp', fs=48000, output='sos')",
+   "id": "c287",
+   "requests": 3,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.c2f6dc63ec764p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c288__sos"
+   },
+   "call": "scipy.signal.butter(2, 450.96430038950916, 'hp', fs=48000, output='sos')",
+   "id": "c288",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.cd2cf1943cc43p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c289__sos"
+   },
+   "call": "scipy.signal.butter(2, 461.17556120379976, 'hp', fs=48000, output='sos')",
+   "id": "c289",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.d77e4706fab8dp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c290__sos"
+   },
+   "call": "scipy.signal.butter(2, 471.49327129002705, 'hp', fs=48000, output='sos')",
+   "id": "c290",
+   "requests": 6,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.e1eaad138c341p+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c291__sos"
+   },
+   "call": "scipy.signal.butter(2, 481.9167034356397, 'hp', fs=48000, output='sos')",
+   "id": "c291",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.ec71f5302e27fp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c292__sos"
+   },
+   "call": "scipy.signal.butter(2, 492.4451475250898, 'hp', fs=48000, output='sos')",
+   "id": "c292",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f713f1e695c6fp+8"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c293__sos"
+   },
+   "call": "scipy.signal.butter(2, 503.07790986210506, 'hp', fs=48000, output='sos')",
+   "id": "c293",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.00e83b6499426p+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c294__sos"
+   },
+   "call": "scipy.signal.butter(2, 513.8143125294052, 'hp', fs=48000, output='sos')",
+   "id": "c294",
+   "requests": 8,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.058ca9bbcf97cp+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c295__sos"
+   },
+   "call": "scipy.signal.butter(2, 523.0989298595082, 'hp', fs=48000, output='sos')",
+   "id": "c295",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0b0355f0df5fap+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c296__sos"
+   },
+   "call": "scipy.signal.butter(2, 534.0260602083865, 'hp', fs=48000, output='sos')",
+   "id": "c296",
+   "requests": 9,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0ef25e7236166p+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c297__sos"
+   },
+   "call": "scipy.signal.butter(2, 541.8935072673892, 'hp', fs=48000, output='sos')",
+   "id": "c297",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.108709713d82ap+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c298__sos"
+   },
+   "call": "scipy.signal.butter(2, 545.0549756574958, 'hp', fs=48000, output='sos')",
+   "id": "c298",
+   "requests": 4,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.17881bdfb429cp+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c299__sos"
+   },
+   "call": "scipy.signal.butter(2, 559.0633506421759, 'hp', fs=48000, output='sos')",
+   "id": "c299",
+   "requests": 10,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.1bb5352c1d2fap+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c300__sos"
+   },
+   "call": "scipy.signal.butter(2, 567.4156851904402, 'hp', fs=48000, output='sos')",
+   "id": "c300",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.203c70a2a229ep+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c301__sos"
+   },
+   "call": "scipy.signal.butter(2, 576.4721873561682, 'hp', fs=48000, output='sos')",
+   "id": "c301",
+   "requests": 9,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.215f85e2030a0p+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c302__sos"
+   },
+   "call": "scipy.signal.butter(2, 578.7462732806052, 'hp', fs=48000, output='sos')",
+   "id": "c302",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.27168ed25aeb2p+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c303__sos"
+   },
+   "call": "scipy.signal.butter(2, 590.1762335723818, 'hp', fs=48000, output='sos')",
+   "id": "c303",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3100000000000p+9"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c304__sos"
+   },
+   "call": "scipy.signal.butter(2, 610.0, 'hp', fs=48000, output='sos')",
+   "id": "c304",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.f400000000000p+11"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c305__sos"
+   },
+   "call": "scipy.signal.butter(2, 4000.0, 'hp', fs=48000, output='sos')",
+   "id": "c305",
+   "requests": 12,
+   "used_by": ["reelkit.audio crash"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.0680000000000p+12"],
+    "btype": "hp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c306__sos"
+   },
+   "call": "scipy.signal.butter(2, 4200.0, 'hp', fs=48000, output='sos')",
+   "id": "c306",
+   "requests": 63,
+   "used_by": ["ballfight.kit.moods.big_top Bed.choke"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.4000000000000p+7"],
+    "btype": "lp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c307__sos"
+   },
+   "call": "scipy.signal.butter(2, 160.0, 'lp', fs=48000, output='sos')",
+   "id": "c307",
+   "requests": 1,
+   "used_by": ["ballfight.kit.moods.big_top Bed.vs"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.5e00000000000p+9"],
+    "btype": "lp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c308__sos"
+   },
+   "call": "scipy.signal.butter(2, 700.0, 'lp', fs=48000, output='sos')",
+   "id": "c308",
+   "requests": 259,
+   "used_by": ["reelkit.audio thud"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3880000000000p+11"],
+    "btype": "lp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c309__sos"
+   },
+   "call": "scipy.signal.butter(2, 2500.0, 'lp', fs=48000, output='sos')",
+   "id": "c309",
+   "requests": 2,
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "N": 2,
+    "Wn": ["0x1.3880000000000p+12"],
+    "btype": "lp",
+    "fs": "0x1.7700000000000p+15",
+    "output": "sos"
+   },
+   "arrays": {
+    "sos": "c310__sos"
+   },
+   "call": "scipy.signal.butter(2, 5000.0, 'lp', fs=48000, output='sos')",
+   "id": "c310",
+   "requests": 1,
+   "used_by": ["reelkit.audio reverb"]
+  }
+ ],
+ "notes": {
+  "Wn": "the cutoff(s) as float.hex(): one for a low- or high-pass, two for a band-pass; in Hz when fs is given, else as a fraction of the Nyquist frequency (the Pixel Pitch series passes f / (44100 / 2))",
+  "ba": "output \"ba\": float64 b and a",
+  "btype": "as the caller wrote it: 'hp', 'lp', 'bp' (reelkit.audio.sos) or 'high', 'low', 'band'",
+  "requests": "how many times the design was asked for",
+  "sos": "output \"sos\": float64 (sections, 6), each row b0 b1 b2 a0 a1 a2, as scipy orders the sections",
+  "used_by": "the kit functions that asked (module, then function)"
+ },
+ "tool": "dsp"
+}

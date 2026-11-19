@@ -1,0 +1,354 @@
+{
+ "about": "ballfight_cello_vs_contrabass: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008333333333333748,
+   "event": [4.075, "rush", 0, -0.7549858703888601, 4.329166666666667],
+   "index": 0,
+   "item": "rush",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.075
+  },
+  {
+   "after_fight": 0.2666633333333337,
+   "event": [4.33333, "grab", 0, 0, -0.5745348005936433, 0.5761465239439871, 0.22],
+   "index": 2,
+   "item": "grab",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.33333
+  },
+  {
+   "after_fight": 2.2333333333333334,
+   "event": [6.3, "hit", 0, 1, 0.85, -0.35796207687712844, 0.201735613695937, "grab", 0],
+   "index": 12,
+   "item": "hit/grab",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 6.3
+  },
+  {
+   "after_fight": 2.2333333333333334,
+   "event": [6.3, "hold", 0, -0.7397003460033239, 3.1675598477328113, 6.808333333333334, 3.907260193736135],
+   "index": 14,
+   "item": "hold",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 6.3
+  },
+  {
+   "after_fight": 2.7416633333333333,
+   "event": [6.80833, "throw", 0, 3.1675598477328113, 1.6600000000000001, -2.0307497558319056, 0.5742395120195493],
+   "index": 16,
+   "item": "throw",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 6.80833
+  },
+  {
+   "after_fight": 2.7416633333333333,
+   "event": [6.80833, "hit", 0, 1, 0.85, -2.0307497558319056, 0.5742395120195493, "throw", 0],
+   "index": 15,
+   "item": "hit/throw",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 6.80833
+  },
+  {
+   "after_fight": 2.8166633333333335,
+   "event": [6.88333, "ropeslam", 0, -0.5989517881350024, 2.393802942845965],
+   "index": 19,
+   "item": "ropeslam",
+   "scenario": "plain",
+   "seed": 6,
+   "t": 6.88333
+  },
+  {
+   "after_fight": 2.8166633333333335,
+   "event": [6.88333, "hit", 0, 1, 1.87, -0.5989517881350024, 2.393802942845965, "ropeslam", 0],
+   "index": 18,
+   "item": "hit/ropeslam",
+   "scenario": "plain",
+   "seed": 6,
+   "t": 6.88333
+  },
+  {
+   "after_fight": 12.708333333333332,
+   "event": [16.775, "release", 0, "slap"],
+   "index": 107,
+   "item": "release",
+   "scenario": "plain",
+   "seed": 6,
+   "t": 16.775
+  },
+  {
+   "after_fight": 3.0500033333333336,
+   "event": [7.11667, "vibrato", 0, 11.183333333333334],
+   "index": 22,
+   "item": "vibrato",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 7.11667
+  },
+  {
+   "after_fight": 4.200003333333333,
+   "event": [8.26667, "hit", 0, 1, 0.425, 0.08187427197952823, -0.45382538224074487, "vibrato", 0],
+   "index": 31,
+   "item": "hit/vibrato",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 8.26667
+  },
+  {
+   "after_fight": 4.575003333333333,
+   "event": [8.64167, "prelude", 0, 10.674999999999999],
+   "index": 37,
+   "item": "prelude",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 8.64167
+  },
+  {
+   "after_fight": 4.583333333333334,
+   "event": [8.65, "prelude_note", 0, 0, 1.0578444602065806, -1.1500000000000001, 2.3],
+   "index": 38,
+   "item": "prelude_note",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 8.65
+  },
+  {
+   "after_fight": 4.641663333333334,
+   "event": [8.70833, "hit", 0, 1, 0.595, 0.4378771429465501, -1.1436340335061557, "prelude", 0],
+   "index": 39,
+   "item": "hit/prelude",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 8.70833
+  },
+  {
+   "after_fight": 6.608333333333334,
+   "event": [10.675, "swan", 0, 10.675, 11.183333333333334, 12.2, 12.454166666666666, -1.8755650849835825, 0.9550291191230572, 0.06918664758889359, -0.22646967945567925, -0.6044339118220765, -2.4, 1.6],
+   "index": 87,
+   "item": "swan",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 10.675
+  },
+  {
+   "after_fight": 8.391663333333334,
+   "event": [12.45833, "swan_land", 0, -0.6044339118220765, -2.4, 0],
+   "index": 98,
+   "item": "swan_land",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 12.45833
+  },
+  {
+   "after_fight": 9.916663333333334,
+   "event": [13.98333, "hit", 0, 1, 9.35, 1.4881743564806775, 1.2246500751240466, "swan", 0],
+   "index": 121,
+   "item": "hit/swan",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 13.98333
+  },
+  {
+   "after_fight": 0.25833333333333375,
+   "event": [4.325, "step", 1, 1.85, -1.85, 1.3484406117871481, -1.292381689598028, 4.579166666666666, 0],
+   "index": 1,
+   "item": "step",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.325
+  },
+  {
+   "after_fight": 0.5083333333333337,
+   "event": [4.575, "step_land", 1, 1.3484406117871481, -1.292381689598028, 0.66, 0],
+   "index": 3,
+   "item": "step_land",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.575
+  },
+  {
+   "after_fight": 6.158333333333333,
+   "event": [10.225, "hit", 1, 0, 2.72, -0.5160074604601029, 1.061154428787829, "step", 0],
+   "index": 42,
+   "item": "hit/step",
+   "scenario": "plain",
+   "seed": 6,
+   "t": 10.225
+  },
+  {
+   "after_fight": 7.625003333333334,
+   "event": [11.69167, "slap", 1, 0],
+   "index": 99,
+   "item": "slap",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.69167
+  },
+  {
+   "after_fight": 9.225003333333333,
+   "event": [13.29167, "hit", 1, 0, 2.55, -1.620268939846114, -0.6074018961601545, "slap", 0],
+   "index": 110,
+   "item": "hit/slap",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 13.29167
+  },
+  {
+   "after_fight": 5.083333333333334,
+   "event": [9.15, "stampede", 1, 12.2],
+   "index": 53,
+   "item": "stampede",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 9.15
+  },
+  {
+   "after_fight": 5.091663333333333,
+   "event": [9.15833, "stampede_stomp", 1, 0.9206741514140742, -1.6259396581448853, 1.7000000000000002],
+   "index": 54,
+   "item": "stampede_stomp",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 9.15833
+  },
+  {
+   "after_fight": 5.191663333333334,
+   "event": [9.25833, "hit", 1, 0, 0.68, 0.31823252747606057, -0.6192028384839829, "stampede", 0],
+   "index": 55,
+   "item": "hit/stampede",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 9.25833
+  },
+  {
+   "after_fight": 5.491663333333333,
+   "event": [9.55833, "trample", 1, -0.22574460445241193, 0.20398300855160723],
+   "index": 63,
+   "item": "trample",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 9.55833
+  },
+  {
+   "after_fight": 5.491663333333333,
+   "event": [9.55833, "hit", 1, 0, 3.4, -0.22574460445241193, 0.20398300855160723, "trample", 0],
+   "index": 62,
+   "item": "hit/trample",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 9.55833
+  },
+  {
+   "after_fight": 8.133333333333333,
+   "event": [12.2, "stampede_end", 1],
+   "index": 95,
+   "item": "stampede_end",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 12.2
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/cello_vs_contrabass/scenarios/plain_s1.bfrec", "episodes/cello_vs_contrabass/scenarios/plain_s2.bfrec", "episodes/cello_vs_contrabass/scenarios/plain_s3.bfrec", "episodes/cello_vs_contrabass/scenarios/plain_s4.bfrec", "episodes/cello_vs_contrabass/scenarios/plain_s5.bfrec", "episodes/cello_vs_contrabass/scenarios/plain_s6.bfrec"],
+   "fighters": ["CELLO", "CONTRABASS"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["5eb95e0283a3a1e9", "bdd4dc35249c7d50", "7cae29d755d69a5e", "3973a419fddc8b27", "27d00653ae2f6e37", "efd1dd40e8c97df2"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.5083333333333333,
+    "bpm": 118.0327868852459,
+    "dmg_scale": 0.85,
+    "t_fight": 4.066666666666666,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3, 4, 5, 6],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/cello_vs_contrabass/scenarios/swapped_s1.bfrec", "episodes/cello_vs_contrabass/scenarios/swapped_s2.bfrec", "episodes/cello_vs_contrabass/scenarios/swapped_s3.bfrec"],
+   "fighters": ["CONTRABASS", "CELLO"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["ecfdafc12e0e29fe", "2c0bf3533054e70c", "f6e78e0523b1a73e"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.5083333333333333,
+    "bpm": 118.0327868852459,
+    "dmg_scale": 0.85,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 4.066666666666666,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/cello_vs_contrabass/scenarios/early_low_s1.bfrec", "episodes/cello_vs_contrabass/scenarios/early_low_s2.bfrec", "episodes/cello_vs_contrabass/scenarios/early_low_s3.bfrec"],
+   "fighters": ["CELLO", "CONTRABASS"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["49bb4ee5f84a0f3b", "cfe97ef1276ec13a", "d723a01760bc62ab"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.5083333333333333,
+    "bpm": 118.0327868852459,
+    "dmg_scale": 0.85,
+    "t_fight": 4.066666666666666,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  }
+ ],
+ "t_fight": 4.066666666666666,
+ "tool": "tools.studio_export.episode_cello_vs_contrabass",
+ "window": 20.0
+}

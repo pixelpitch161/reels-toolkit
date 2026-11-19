@@ -1,0 +1,111 @@
+{
+ "about": "mambo: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "bass": [1.7, 0.08],
+      "perc": [1.35, 0.12],
+      "piano": [1.25, 0.22],
+      "sax": [0.85, 0.35]
+     },
+     "comp": [0.18, 0.55],
+     "reverb": [1.6, 0.5, 0.17]
+    },
+    "buses": ["piano", "bass", "sax", "perc", "fx"],
+    "master_sha256": "be5ebdf264123e43076242453012b6df8a8556205687815383ddd38f8027ba47",
+    "stems": ["piano", "bass", "sax", "perc", "fx"]
+   },
+   "bpm": 132,
+   "chords": ["Gm", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7"],
+   "config": "ballfight_trumpet_vs_trombone",
+   "fighters": ["TRUMPET", "TROMBONE"],
+   "intro": ["Gm", "D7"],
+   "key": "G",
+   "lines": {
+    "TROMBONE": [55, 50, 58, 55, 53, 55, 50, 46, 48, 51, 55, 51, 58, 55, 51, 48, 50, 54, 57, 54, 60, 57, 54, 50, 55, 58, 62, 58, 55, 53, 50, 49, 46, 50, 55, 50, 58, 55, 50, 53, 48, 55, 51, 48, 60, 58, 55, 51, 51, 55, 58, 61, 58, 55, 51, 49, 50, 54, 57, 54, 60, 57, 54, 45],
+    "TRUMPET": [74, 77, 79, 77, 79, 77, 74, 70, 72, 75, 79, 77, 79, 75, 72, 74, 74, 78, 81, 78, 81, 78, 74, 72, 79, 82, 79, 77, 74, 70, 67, 70, 67, 70, 74, 77, 79, 74, 70, 74, 72, 75, 79, 82, 80, 79, 75, 72, 75, 79, 82, 79, 77, 73, 70, 73, 78, 81, 78, 74, 72, 69, 66, 67]
+   },
+   "loop": ["Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7"],
+   "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+   "mix": {
+    "bass": [1.5, 0.08],
+    "sax": [0.7, 0.35],
+    "trombone": [2.4, 0.2]
+   },
+   "mood": "mambo",
+   "n_bars": 34,
+   "recording": {
+    "cache": "themes/mambo/trumpet_vs_trombone.bfrec",
+    "sha256": "680008c77d5a9a560189070ddc87dc59a98d9d8887374577571ba2a77f6c1a02"
+   },
+   "roles": {
+    "TROMBONE": "riff",
+    "TRUMPET": "melody"
+   },
+   "scale": "harmonic minor",
+   "seed": 1001,
+   "solos": {
+    "TROMBONE": [
+     [0.0, 46, 0.5],
+     [0.5, 50, 0.5],
+     [1.0, 55, 1.0],
+     [2.0, 58, 0.5],
+     [2.5, 57, 0.25],
+     [2.75, 55, 0.25],
+     [3.0, 54, 0.5],
+     [3.5, 50, 0.5],
+     [4.0, 51, 0.75],
+     [4.75, 50, 0.25],
+     [5.0, 48, 0.5],
+     [5.5, 51, 0.5],
+     [6.0, 54, 0.5],
+     [6.5, 57, 0.5],
+     [7.0, 55, 1.0],
+     [8.0, 58, 0.5],
+     [8.5, 62, 0.5],
+     [9.0, 61, 0.5],
+     [9.5, 58, 0.5],
+     [10.0, 57, 0.5],
+     [10.5, 54, 0.5],
+     [11.0, 55, 1.0]
+    ],
+    "TRUMPET": [
+     [0.0, 67, 0.5],
+     [0.5, 70, 0.5],
+     [1.0, 74, 0.5],
+     [1.5, 79, 1.0],
+     [2.5, 77, 0.25],
+     [2.75, 74, 0.25],
+     [3.0, 78, 1.0],
+     [4.0, 79, 0.5],
+     [4.5, 82, 0.75],
+     [5.25, 81, 0.25],
+     [5.5, 79, 0.5],
+     [6.0, 77, 0.5],
+     [6.5, 74, 0.5],
+     [7.0, 78, 1.0],
+     [8.0, 74, 0.25],
+     [8.25, 79, 0.25],
+     [8.5, 82, 0.5],
+     [9.0, 81, 0.5],
+     [9.5, 78, 0.5],
+     [10.0, 74, 0.5],
+     [10.5, 78, 0.5],
+     [11.0, 79, 1.0]
+    ]
+   },
+   "t_ko": 50.27990196078431,
+   "tail": [],
+   "title_hits": {
+    "TROMBONE": [46, 58],
+    "TRUMPET": [67, 74, 79, 82]
+   },
+   "winner": 0
+  }
+ ],
+ "theme": "mambo",
+ "voicing_methods": ["tones"]
+}

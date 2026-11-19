@@ -1,0 +1,3008 @@
+{
+ "about": "Image.resize(size, Image.BILINEAR) on L, RGB and RGBA images",
+ "cases": [
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 64],
+    "size_out": [24, 16]
+   },
+   "arrays": {
+    "in": "c000__in",
+    "out": "c000__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 96],
+    "size_out": [16, 24]
+   },
+   "arrays": {
+    "in": "c001__in",
+    "out": "c001__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [88, 92],
+    "size_out": [22, 23]
+   },
+   "arrays": {
+    "in": "c002__in",
+    "out": "c002__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 72],
+    "size_out": [10, 18]
+   },
+   "arrays": {
+    "in": "c003__in",
+    "out": "c003__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 64],
+    "size_out": [24, 16]
+   },
+   "arrays": {
+    "in": "c004__in",
+    "out": "c004__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 96],
+    "size_out": [16, 24]
+   },
+   "arrays": {
+    "in": "c005__in",
+    "out": "c005__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [88, 92],
+    "size_out": [22, 23]
+   },
+   "arrays": {
+    "in": "c006__in",
+    "out": "c006__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 72],
+    "size_out": [10, 18]
+   },
+   "arrays": {
+    "in": "c007__in",
+    "out": "c007__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 64],
+    "size_out": [24, 16]
+   },
+   "arrays": {
+    "in": "c008__in",
+    "out": "c008__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 96],
+    "size_out": [16, 24]
+   },
+   "arrays": {
+    "in": "c009__in",
+    "out": "c009__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [88, 92],
+    "size_out": [22, 23]
+   },
+   "arrays": {
+    "in": "c010__in",
+    "out": "c010__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 72],
+    "size_out": [10, 18]
+   },
+   "arrays": {
+    "in": "c011__in",
+    "out": "c011__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 64],
+    "size_out": [24, 16]
+   },
+   "arrays": {
+    "in": "c012__in",
+    "out": "c012__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 96],
+    "size_out": [16, 24]
+   },
+   "arrays": {
+    "in": "c013__in",
+    "out": "c013__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [88, 92],
+    "size_out": [22, 23]
+   },
+   "arrays": {
+    "in": "c014__in",
+    "out": "c014__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 72],
+    "size_out": [10, 18]
+   },
+   "arrays": {
+    "in": "c015__in",
+    "out": "c015__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 16],
+    "size_out": [96, 64]
+   },
+   "arrays": {
+    "in": "c016__in",
+    "out": "c016__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 24],
+    "size_out": [64, 96]
+   },
+   "arrays": {
+    "in": "c017__in",
+    "out": "c017__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 23],
+    "size_out": [88, 92]
+   },
+   "arrays": {
+    "in": "c018__in",
+    "out": "c018__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 18],
+    "size_out": [40, 72]
+   },
+   "arrays": {
+    "in": "c019__in",
+    "out": "c019__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 16],
+    "size_out": [96, 64]
+   },
+   "arrays": {
+    "in": "c020__in",
+    "out": "c020__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 24],
+    "size_out": [64, 96]
+   },
+   "arrays": {
+    "in": "c021__in",
+    "out": "c021__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 23],
+    "size_out": [88, 92]
+   },
+   "arrays": {
+    "in": "c022__in",
+    "out": "c022__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 18],
+    "size_out": [40, 72]
+   },
+   "arrays": {
+    "in": "c023__in",
+    "out": "c023__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 16],
+    "size_out": [96, 64]
+   },
+   "arrays": {
+    "in": "c024__in",
+    "out": "c024__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 24],
+    "size_out": [64, 96]
+   },
+   "arrays": {
+    "in": "c025__in",
+    "out": "c025__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 23],
+    "size_out": [88, 92]
+   },
+   "arrays": {
+    "in": "c026__in",
+    "out": "c026__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 18],
+    "size_out": [40, 72]
+   },
+   "arrays": {
+    "in": "c027__in",
+    "out": "c027__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 16],
+    "size_out": [96, 64]
+   },
+   "arrays": {
+    "in": "c028__in",
+    "out": "c028__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 24],
+    "size_out": [64, 96]
+   },
+   "arrays": {
+    "in": "c029__in",
+    "out": "c029__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 23],
+    "size_out": [88, 92]
+   },
+   "arrays": {
+    "in": "c030__in",
+    "out": "c030__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 18],
+    "size_out": [40, 72]
+   },
+   "arrays": {
+    "in": "c031__in",
+    "out": "c031__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [73, 67]
+   },
+   "arrays": {
+    "in": "c032__in",
+    "out": "c032__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [29, 32],
+    "size_out": [9, 6]
+   },
+   "arrays": {
+    "in": "c033__in",
+    "out": "c033__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 32],
+    "size_out": [48, 64]
+   },
+   "arrays": {
+    "in": "c034__in",
+    "out": "c034__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [6, 34],
+    "size_out": [5, 17]
+   },
+   "arrays": {
+    "in": "c035__in",
+    "out": "c035__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [71, 21],
+    "size_out": [96, 48]
+   },
+   "arrays": {
+    "in": "c036__in",
+    "out": "c036__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [48, 96]
+   },
+   "arrays": {
+    "in": "c037__in",
+    "out": "c037__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 60],
+    "size_out": [53, 75]
+   },
+   "arrays": {
+    "in": "c038__in",
+    "out": "c038__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [8, 10]
+   },
+   "arrays": {
+    "in": "c039__in",
+    "out": "c039__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [12, 20],
+    "size_out": [24, 40]
+   },
+   "arrays": {
+    "in": "c040__in",
+    "out": "c040__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [30, 30],
+    "size_out": [10, 24]
+   },
+   "arrays": {
+    "in": "c041__in",
+    "out": "c041__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [95, 96]
+   },
+   "arrays": {
+    "in": "c042__in",
+    "out": "c042__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [14, 22],
+    "size_out": [14, 11]
+   },
+   "arrays": {
+    "in": "c043__in",
+    "out": "c043__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [11, 25],
+    "size_out": [88, 19]
+   },
+   "arrays": {
+    "in": "c044__in",
+    "out": "c044__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [10, 10]
+   },
+   "arrays": {
+    "in": "c045__in",
+    "out": "c045__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [12, 20],
+    "size_out": [24, 40]
+   },
+   "arrays": {
+    "in": "c046__in",
+    "out": "c046__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [43, 51],
+    "size_out": [24, 49]
+   },
+   "arrays": {
+    "in": "c047__in",
+    "out": "c047__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [32, 79]
+   },
+   "arrays": {
+    "in": "c048__in",
+    "out": "c048__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [16, 32]
+   },
+   "arrays": {
+    "in": "c049__in",
+    "out": "c049__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [20, 70]
+   },
+   "arrays": {
+    "in": "c050__in",
+    "out": "c050__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c051__in",
+    "out": "c051__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [38, 4],
+    "size_out": [76, 8]
+   },
+   "arrays": {
+    "in": "c052__in",
+    "out": "c052__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [29, 39],
+    "size_out": [26, 19]
+   },
+   "arrays": {
+    "in": "c053__in",
+    "out": "c053__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [94, 25],
+    "size_out": [96, 37]
+   },
+   "arrays": {
+    "in": "c054__in",
+    "out": "c054__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [64, 24]
+   },
+   "arrays": {
+    "in": "c055__in",
+    "out": "c055__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [19, 91]
+   },
+   "arrays": {
+    "in": "c056__in",
+    "out": "c056__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [9, 32]
+   },
+   "arrays": {
+    "in": "c057__in",
+    "out": "c057__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [20, 20],
+    "size_out": [40, 40]
+   },
+   "arrays": {
+    "in": "c058__in",
+    "out": "c058__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [29, 36]
+   },
+   "arrays": {
+    "in": "c059__in",
+    "out": "c059__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [92, 32],
+    "size_out": [96, 55]
+   },
+   "arrays": {
+    "in": "c060__in",
+    "out": "c060__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [1, 96]
+   },
+   "arrays": {
+    "in": "c061__in",
+    "out": "c061__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [84, 15]
+   },
+   "arrays": {
+    "in": "c062__in",
+    "out": "c062__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [9, 21]
+   },
+   "arrays": {
+    "in": "c063__in",
+    "out": "c063__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 16],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c064__in",
+    "out": "c064__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [87, 40],
+    "size_out": [49, 36]
+   },
+   "arrays": {
+    "in": "c065__in",
+    "out": "c065__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [96, 60]
+   },
+   "arrays": {
+    "in": "c066__in",
+    "out": "c066__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [64, 1]
+   },
+   "arrays": {
+    "in": "c067__in",
+    "out": "c067__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [4, 59]
+   },
+   "arrays": {
+    "in": "c068__in",
+    "out": "c068__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [49, 46],
+    "size_out": [9, 15]
+   },
+   "arrays": {
+    "in": "c069__in",
+    "out": "c069__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [8, 13],
+    "size_out": [24, 39]
+   },
+   "arrays": {
+    "in": "c070__in",
+    "out": "c070__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [16, 21]
+   },
+   "arrays": {
+    "in": "c071__in",
+    "out": "c071__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [34, 45]
+   },
+   "arrays": {
+    "in": "c072__in",
+    "out": "c072__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [17, 13],
+    "size_out": [17, 1]
+   },
+   "arrays": {
+    "in": "c073__in",
+    "out": "c073__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [49, 37]
+   },
+   "arrays": {
+    "in": "c074__in",
+    "out": "c074__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [12, 13]
+   },
+   "arrays": {
+    "in": "c075__in",
+    "out": "c075__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 12],
+    "size_out": [72, 36]
+   },
+   "arrays": {
+    "in": "c076__in",
+    "out": "c076__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [17, 14]
+   },
+   "arrays": {
+    "in": "c077__in",
+    "out": "c077__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 29],
+    "size_out": [53, 60]
+   },
+   "arrays": {
+    "in": "c078__in",
+    "out": "c078__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [14, 39],
+    "size_out": [1, 1]
+   },
+   "arrays": {
+    "in": "c079__in",
+    "out": "c079__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [28, 40],
+    "size_out": [33, 73]
+   },
+   "arrays": {
+    "in": "c080__in",
+    "out": "c080__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [6, 16]
+   },
+   "arrays": {
+    "in": "c081__in",
+    "out": "c081__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 10],
+    "size_out": [30, 30]
+   },
+   "arrays": {
+    "in": "c082__in",
+    "out": "c082__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [67, 37]
+   },
+   "arrays": {
+    "in": "c083__in",
+    "out": "c083__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [96, 82]
+   },
+   "arrays": {
+    "in": "c084__in",
+    "out": "c084__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [48, 1]
+   },
+   "arrays": {
+    "in": "c085__in",
+    "out": "c085__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [40, 63]
+   },
+   "arrays": {
+    "in": "c086__in",
+    "out": "c086__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [24, 48]
+   },
+   "arrays": {
+    "in": "c087__in",
+    "out": "c087__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [9, 13],
+    "size_out": [36, 52]
+   },
+   "arrays": {
+    "in": "c088__in",
+    "out": "c088__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [21, 16]
+   },
+   "arrays": {
+    "in": "c089__in",
+    "out": "c089__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [46, 96]
+   },
+   "arrays": {
+    "in": "c090__in",
+    "out": "c090__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [32, 66],
+    "size_out": [32, 33]
+   },
+   "arrays": {
+    "in": "c091__in",
+    "out": "c091__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [5, 16],
+    "size_out": [94, 58]
+   },
+   "arrays": {
+    "in": "c092__in",
+    "out": "c092__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [12, 9]
+   },
+   "arrays": {
+    "in": "c093__in",
+    "out": "c093__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 16],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c094__in",
+    "out": "c094__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [64, 39]
+   },
+   "arrays": {
+    "in": "c095__in",
+    "out": "c095__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [57, 91]
+   },
+   "arrays": {
+    "in": "c096__in",
+    "out": "c096__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [1, 40]
+   },
+   "arrays": {
+    "in": "c097__in",
+    "out": "c097__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [37, 58]
+   },
+   "arrays": {
+    "in": "c098__in",
+    "out": "c098__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [52, 25],
+    "size_out": [17, 12]
+   },
+   "arrays": {
+    "in": "c099__in",
+    "out": "c099__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 16],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c100__in",
+    "out": "c100__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [29, 41]
+   },
+   "arrays": {
+    "in": "c101__in",
+    "out": "c101__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [58, 41]
+   },
+   "arrays": {
+    "in": "c102__in",
+    "out": "c102__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [40, 20]
+   },
+   "arrays": {
+    "in": "c103__in",
+    "out": "c103__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [37, 77],
+    "size_out": [66, 41]
+   },
+   "arrays": {
+    "in": "c104__in",
+    "out": "c104__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [7, 21],
+    "size_out": [1, 7]
+   },
+   "arrays": {
+    "in": "c105__in",
+    "out": "c105__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [96, 96]
+   },
+   "arrays": {
+    "in": "c106__in",
+    "out": "c106__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [16, 29]
+   },
+   "arrays": {
+    "in": "c107__in",
+    "out": "c107__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [94, 96]
+   },
+   "arrays": {
+    "in": "c108__in",
+    "out": "c108__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [20, 40]
+   },
+   "arrays": {
+    "in": "c109__in",
+    "out": "c109__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [43, 40]
+   },
+   "arrays": {
+    "in": "c110__in",
+    "out": "c110__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [16, 32]
+   },
+   "arrays": {
+    "in": "c111__in",
+    "out": "c111__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [96, 96]
+   },
+   "arrays": {
+    "in": "c112__in",
+    "out": "c112__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [21, 37]
+   },
+   "arrays": {
+    "in": "c113__in",
+    "out": "c113__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [58, 96]
+   },
+   "arrays": {
+    "in": "c114__in",
+    "out": "c114__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [1, 40]
+   },
+   "arrays": {
+    "in": "c115__in",
+    "out": "c115__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [8, 33],
+    "size_out": [88, 77]
+   },
+   "arrays": {
+    "in": "c116__in",
+    "out": "c116__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 26],
+    "size_out": [10, 8]
+   },
+   "arrays": {
+    "in": "c117__in",
+    "out": "c117__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [22, 21],
+    "size_out": [88, 84]
+   },
+   "arrays": {
+    "in": "c118__in",
+    "out": "c118__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [8, 24]
+   },
+   "arrays": {
+    "in": "c119__in",
+    "out": "c119__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [39, 10],
+    "size_out": [84, 18]
+   },
+   "arrays": {
+    "in": "c120__in",
+    "out": "c120__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [1, 96]
+   },
+   "arrays": {
+    "in": "c121__in",
+    "out": "c121__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [31, 70]
+   },
+   "arrays": {
+    "in": "c122__in",
+    "out": "c122__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [57, 41],
+    "size_out": [11, 8]
+   },
+   "arrays": {
+    "in": "c123__in",
+    "out": "c123__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [3, 23],
+    "size_out": [12, 92]
+   },
+   "arrays": {
+    "in": "c124__in",
+    "out": "c124__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [17, 10]
+   },
+   "arrays": {
+    "in": "c125__in",
+    "out": "c125__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [49, 29],
+    "size_out": [92, 58]
+   },
+   "arrays": {
+    "in": "c126__in",
+    "out": "c126__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [96, 1]
+   },
+   "arrays": {
+    "in": "c127__in",
+    "out": "c127__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [30, 22],
+    "size_out": [50, 14]
+   },
+   "arrays": {
+    "in": "c128__in",
+    "out": "c128__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [7, 33],
+    "size_out": [2, 16]
+   },
+   "arrays": {
+    "in": "c129__in",
+    "out": "c129__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [10, 10],
+    "size_out": [30, 30]
+   },
+   "arrays": {
+    "in": "c130__in",
+    "out": "c130__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [10, 18]
+   },
+   "arrays": {
+    "in": "c131__in",
+    "out": "c131__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [80, 45],
+    "size_out": [96, 70]
+   },
+   "arrays": {
+    "in": "c132__in",
+    "out": "c132__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [1, 48]
+   },
+   "arrays": {
+    "in": "c133__in",
+    "out": "c133__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [64, 27]
+   },
+   "arrays": {
+    "in": "c134__in",
+    "out": "c134__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [22, 40],
+    "size_out": [7, 13]
+   },
+   "arrays": {
+    "in": "c135__in",
+    "out": "c135__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 16],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c136__in",
+    "out": "c136__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [27, 29],
+    "size_out": [10, 19]
+   },
+   "arrays": {
+    "in": "c137__in",
+    "out": "c137__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [26, 39],
+    "size_out": [48, 41]
+   },
+   "arrays": {
+    "in": "c138__in",
+    "out": "c138__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [1, 40]
+   },
+   "arrays": {
+    "in": "c139__in",
+    "out": "c139__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [37, 19]
+   },
+   "arrays": {
+    "in": "c140__in",
+    "out": "c140__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [8, 10]
+   },
+   "arrays": {
+    "in": "c141__in",
+    "out": "c141__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [17, 19],
+    "size_out": [68, 76]
+   },
+   "arrays": {
+    "in": "c142__in",
+    "out": "c142__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [15, 21]
+   },
+   "arrays": {
+    "in": "c143__in",
+    "out": "c143__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [36, 36]
+   },
+   "arrays": {
+    "in": "c144__in",
+    "out": "c144__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [69, 15],
+    "size_out": [69, 1]
+   },
+   "arrays": {
+    "in": "c145__in",
+    "out": "c145__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [70, 21]
+   },
+   "arrays": {
+    "in": "c146__in",
+    "out": "c146__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [32, 48]
+   },
+   "arrays": {
+    "in": "c147__in",
+    "out": "c147__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 23],
+    "size_out": [64, 92]
+   },
+   "arrays": {
+    "in": "c148__in",
+    "out": "c148__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [8, 5],
+    "size_out": [5, 3]
+   },
+   "arrays": {
+    "in": "c149__in",
+    "out": "c149__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 45],
+    "size_out": [43, 75]
+   },
+   "arrays": {
+    "in": "c150__in",
+    "out": "c150__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [1, 48]
+   },
+   "arrays": {
+    "in": "c151__in",
+    "out": "c151__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [62, 66]
+   },
+   "arrays": {
+    "in": "c152__in",
+    "out": "c152__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [19, 19],
+    "size_out": [3, 3]
+   },
+   "arrays": {
+    "in": "c153__in",
+    "out": "c153__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [16, 16],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c154__in",
+    "out": "c154__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [9, 13]
+   },
+   "arrays": {
+    "in": "c155__in",
+    "out": "c155__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [60, 81]
+   },
+   "arrays": {
+    "in": "c156__in",
+    "out": "c156__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [1, 48]
+   },
+   "arrays": {
+    "in": "c157__in",
+    "out": "c157__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [90, 63],
+    "size_out": [95, 89]
+   },
+   "arrays": {
+    "in": "c158__in",
+    "out": "c158__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [29, 35],
+    "size_out": [14, 17]
+   },
+   "arrays": {
+    "in": "c159__in",
+    "out": "c159__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [8, 13],
+    "size_out": [24, 39]
+   },
+   "arrays": {
+    "in": "c160__in",
+    "out": "c160__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [53, 50]
+   },
+   "arrays": {
+    "in": "c161__in",
+    "out": "c161__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [96, 96]
+   },
+   "arrays": {
+    "in": "c162__in",
+    "out": "c162__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [32, 48]
+   },
+   "arrays": {
+    "in": "c163__in",
+    "out": "c163__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [48, 47],
+    "size_out": [91, 71]
+   },
+   "arrays": {
+    "in": "c164__in",
+    "out": "c164__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [32, 48]
+   },
+   "arrays": {
+    "in": "c165__in",
+    "out": "c165__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [48, 48],
+    "size_out": [96, 96]
+   },
+   "arrays": {
+    "in": "c166__in",
+    "out": "c166__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [29, 27]
+   },
+   "arrays": {
+    "in": "c167__in",
+    "out": "c167__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [88, 96]
+   },
+   "arrays": {
+    "in": "c168__in",
+    "out": "c168__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [20, 73],
+    "size_out": [20, 1]
+   },
+   "arrays": {
+    "in": "c169__in",
+    "out": "c169__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [39, 53]
+   },
+   "arrays": {
+    "in": "c170__in",
+    "out": "c170__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [6, 20]
+   },
+   "arrays": {
+    "in": "c171__in",
+    "out": "c171__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [8, 8],
+    "size_out": [32, 32]
+   },
+   "arrays": {
+    "in": "c172__in",
+    "out": "c172__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [16, 24]
+   },
+   "arrays": {
+    "in": "c173__in",
+    "out": "c173__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [15, 26],
+    "size_out": [37, 33]
+   },
+   "arrays": {
+    "in": "c174__in",
+    "out": "c174__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [32, 16]
+   },
+   "arrays": {
+    "in": "c175__in",
+    "out": "c175__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [65, 71]
+   },
+   "arrays": {
+    "in": "c176__in",
+    "out": "c176__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [64, 48],
+    "size_out": [12, 24]
+   },
+   "arrays": {
+    "in": "c177__in",
+    "out": "c177__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [27, 10],
+    "size_out": [81, 30]
+   },
+   "arrays": {
+    "in": "c178__in",
+    "out": "c178__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [45, 30]
+   },
+   "arrays": {
+    "in": "c179__in",
+    "out": "c179__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [94, 26],
+    "size_out": [96, 50]
+   },
+   "arrays": {
+    "in": "c180__in",
+    "out": "c180__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [32, 1]
+   },
+   "arrays": {
+    "in": "c181__in",
+    "out": "c181__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [37, 53]
+   },
+   "arrays": {
+    "in": "c182__in",
+    "out": "c182__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [24, 48]
+   },
+   "arrays": {
+    "in": "c183__in",
+    "out": "c183__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [1, 11],
+    "size_out": [3, 33]
+   },
+   "arrays": {
+    "in": "c184__in",
+    "out": "c184__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [72, 78]
+   },
+   "arrays": {
+    "in": "c185__in",
+    "out": "c185__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [8, 40],
+    "size_out": [18, 88]
+   },
+   "arrays": {
+    "in": "c186__in",
+    "out": "c186__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [80, 72],
+    "size_out": [1, 72]
+   },
+   "arrays": {
+    "in": "c187__in",
+    "out": "c187__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [78, 59],
+    "size_out": [21, 10]
+   },
+   "arrays": {
+    "in": "c188__in",
+    "out": "c188__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "kind": "step",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [24, 40],
+    "size_out": [12, 20]
+   },
+   "arrays": {
+    "in": "c189__in",
+    "out": "c189__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [24, 24],
+    "size_out": [96, 96]
+   },
+   "arrays": {
+    "in": "c190__in",
+    "out": "c190__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [28, 18]
+   },
+   "arrays": {
+    "in": "c191__in",
+    "out": "c191__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [15, 6],
+    "size_out": [16, 10]
+   },
+   "arrays": {
+    "in": "c192__in",
+    "out": "c192__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "kind": "gradient",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [22, 9],
+    "size_out": [1, 1]
+   },
+   "arrays": {
+    "in": "c193__in",
+    "out": "c193__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "kind": "spots",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [60, 86],
+    "size_out": [78, 84]
+   },
+   "arrays": {
+    "in": "c194__in",
+    "out": "c194__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "kind": "checker",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [96, 96],
+    "size_out": [48, 32]
+   },
+   "arrays": {
+    "in": "c195__in",
+    "out": "c195__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "kind": "flat",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [23, 18],
+    "size_out": [46, 36]
+   },
+   "arrays": {
+    "in": "c196__in",
+    "out": "c196__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "kind": "impulse",
+    "mode": "L",
+    "resample": "BILINEAR",
+    "size_in": [32, 32],
+    "size_out": [9, 23]
+   },
+   "arrays": {
+    "in": "c197__in",
+    "out": "c197__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "kind": "mask",
+    "mode": "RGB",
+    "resample": "BILINEAR",
+    "size_in": [48, 64],
+    "size_out": [80, 72]
+   },
+   "arrays": {
+    "in": "c198__in",
+    "out": "c198__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "kind": "noise",
+    "mode": "RGBA",
+    "resample": "BILINEAR",
+    "size_in": [40, 40],
+    "size_out": [40, 1]
+   },
+   "arrays": {
+    "in": "c199__in",
+    "out": "c199__out"
+   },
+   "call": "Image.fromarray(a).resize(size_out, Image.BILINEAR)",
+   "id": "c199"
+  }
+ ],
+ "note": "args: mode, size_in and size_out (width, height). Arrays \"in\" and \"out\" are (height, width[, channels]). An RGBA image is resized with its colour premultiplied by alpha (Pillow converts to RGBa and back) for every filter but NEAREST.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

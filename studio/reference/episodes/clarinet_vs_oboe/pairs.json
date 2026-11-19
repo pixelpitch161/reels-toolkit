@@ -1,0 +1,142 @@
+{
+ "about": "examples/clarinet_vs_oboe: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 9.025001111111111,
+   "event": [12.41389, "stun", 0, 1, 0.5],
+   "index": 113,
+   "item": "stun",
+   "scenario": "swapped",
+   "seed": 3,
+   "t": 12.41389
+  },
+  {
+   "after_fight": 9.025001111111111,
+   "event": [12.41389, "hit", 1, 0, 1.1, 0.3690637847260514, 1.5684857478695116, "stun", 0],
+   "index": 112,
+   "item": "hit/stun",
+   "scenario": "swapped",
+   "seed": 3,
+   "t": 12.41389
+  },
+  {
+   "after_fight": 0.3250011111111113,
+   "event": [3.71389, "tune", 1, 1.1075317779693847, -0.6534564349018561, 2.439521097504923, 6.0, 0.12],
+   "index": 1,
+   "item": "tune",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.71389
+  },
+  {
+   "after_fight": 0.3250011111111113,
+   "event": [3.71389, "detune", 0, 1, 0.4, 3.388888888888889],
+   "index": 3,
+   "item": "detune",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.71389
+  },
+  {
+   "after_fight": 0.42500111111111094,
+   "event": [3.81389, "jump", 0, -1.5412506708967573, 1.3529635916338043, 0.32451721086531804, -0.44151773212613826, 0, 0],
+   "index": 4,
+   "item": "jump",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.81389
+  },
+  {
+   "after_fight": 8.050001111111111,
+   "event": [11.43889, "snip_open", 1, 11.650694444444445, 0.21420169195087535],
+   "index": 190,
+   "item": "snip_open",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 11.43889
+  },
+  {
+   "after_fight": 8.26667111111111,
+   "event": [11.65556, "snip", 1, 1, 0.17531601983892608, 1.2],
+   "index": 198,
+   "item": "snip",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 11.65556
+  },
+  {
+   "after_fight": 8.26667111111111,
+   "event": [11.65556, "hit", 1, 0, 3.3000000000000003, 1.232399367911913, 2.249982853831955, "snip", 0],
+   "index": 197,
+   "item": "hit/snip",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 11.65556
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/clarinet_vs_oboe/scenarios/plain_s1.bfrec", "episodes/clarinet_vs_oboe/scenarios/plain_s2.bfrec", "episodes/clarinet_vs_oboe/scenarios/plain_s3.bfrec"],
+   "fighters": ["CLARINET", "OBOE"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["e6644a4f7db5fbac", "96f9e1bb413f520a", "b9759f7ad97eb3e2"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4236111111111111,
+    "bpm": 141.63934426229508,
+    "dmg_scale": 0.55,
+    "t_fight": 3.388888888888889,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/clarinet_vs_oboe/scenarios/swapped_s1.bfrec", "episodes/clarinet_vs_oboe/scenarios/swapped_s2.bfrec", "episodes/clarinet_vs_oboe/scenarios/swapped_s3.bfrec"],
+   "fighters": ["OBOE", "CLARINET"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["b610c2e7636bb999", "cf3fc3e95e941bfd", "b876034d48848ef0"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4236111111111111,
+    "bpm": 141.63934426229508,
+    "dmg_scale": 0.55,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.388888888888889,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.388888888888889,
+ "tool": "tools.studio_export.episode_clarinet_vs_oboe",
+ "window": 20.0
+}

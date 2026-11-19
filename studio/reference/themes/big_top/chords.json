@@ -1,0 +1,326 @@
+{
+ "about": "every kit episode config whose two fighters are kit fighters: BPM, the bar count the kit derives (loop_bpm, then round(61 / BAR)), KEY, SCALE, CHORDS, and CHORDS as [intro 2] + LOOP * n + tail: `intro`, `loop` (the config's LOOP) and `tail` (the bars after the last whole loop); `lines`: its LINES as written, a rest as null",
+ "configs": [
+  {
+   "config": "examples/flute_vs_trombone",
+   "fighters": ["FLUTE", "TROMBONE"],
+   "mood": "big_top",
+   "bpm": 132,
+   "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+   "n_bars": 34,
+   "key": "E",
+   "scale": "harmonic minor",
+   "intro": ["Em", "B7"],
+   "loop": ["Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"],
+   "tail": [],
+   "chords": ["Em", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7", "Em", "Am", "B7", "Em", "C", "Am", "B7", "B7"],
+   "lines": {
+    "FLUTE": [76, 79, 83, 79, 76, 75, 76, 71, 81, 84, 83, 81, 79, 76, 77, 76, 75, 78, 81, 78, 83, 81, 78, 75, 76, 71, 76, 79, 83, 84, 83, 79, 84, 83, 79, 76, 72, 76, 79, 84, 81, 76, 72, 76, 81, 84, 88, 84, 83, 87, 86, 87, 90, 87, 83, 81, 78, 75, 71, 75, 78, 81, 83, 75]
+   }
+  },
+  {
+   "config": "examples/clarinet_vs_oboe",
+   "fighters": ["CLARINET", "OBOE"],
+   "mood": "baroque_storm",
+   "bpm": 140,
+   "loop_bpm": "0x1.1b47582192e2ap+7",
+   "n_bars": 36,
+   "key": "D",
+   "scale": "minor",
+   "intro": ["Dm", "A"],
+   "loop": ["Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A"],
+   "tail": ["Gm", "A"],
+   "chords": ["Dm", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Gm", "A"],
+   "lines": {
+    "CLARINET": [62, 57, 53, 57, 58, 55, 50, 55, 60, 55, 52, 55, 57, 53, 48, 53, 58, 53, 50, 53, 55, 58, 62, 58, 57, 61, 64, 61, 57, 52, 49, 52],
+    "OBOE": [74, 77, 81, 77, 74, 76, 77, 81, 79, 82, 86, 82, 79, 77, 74, 77, 76, 79, 84, 79, 76, 77, 79, 76, 77, 81, 84, 81, 77, 79, 81, 77, 77, 82, 86, 82, 77, 81, 82, 86, 79, 82, 86, 84, 82, 81, 79, 77, 76, 81, 85, 81, 76, 79, 81, 85, 81, 79, 77, 76, 73, 76, 79, 81]
+   }
+  },
+  {
+   "config": "examples/trombone_vs_horn",
+   "fighters": ["TROMBONE", "HORN"],
+   "mood": "brass_trailer",
+   "bpm": 122,
+   "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "n_bars": 31,
+   "key": "D",
+   "scale": "minor",
+   "intro": ["Dm", "A"],
+   "loop": ["Dm", "Bb", "Gm", "A"],
+   "tail": ["A"],
+   "chords": ["Dm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "A", "A"],
+   "lines": {
+    "TROMBONE": [50, 50, 57, 55, 46, 46, 53, 50, 55, 55, 58, 57, 57, 57, 61, 52],
+    "HORN": [62, 69, 65, 69, 62, 65, 70, 65, 62, 67, 70, 67, 61, 64, 69, 64],
+    "HORN THEME": [62, 69, 70, 65, 67, 70, 69, 73]
+   }
+  },
+  {
+   "config": "ballfight_horn_vs_trombone_rematch",
+   "fighters": ["HORN", "TROMBONE"],
+   "mood": "brass_trailer",
+   "bpm": 122,
+   "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "n_bars": 31,
+   "key": "D",
+   "scale": "minor",
+   "intro": ["Dm", "A"],
+   "loop": ["Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A"],
+   "tail": ["Dm", "Bb", "Gm", "A", "A"],
+   "chords": ["Dm", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "Dm", "Bb", "Eb", "A", "Dm", "Bb", "Gm", "A", "A"],
+   "lines": {
+    "HORN": [62, 69, 74, 72, 70, 65, 70, 74, 67, 70, 74, 72, 69, 73, 76, 73, 74, 72, 69, 65, 70, 74, 77, 74, 70, 67, 63, 67, 69, 64, 61, 64],
+    "HORN THEME": [62, 69, 70, 65, 67, 70, 69, 73, 74, 69, 70, 74, 67, 70, 69, 73],
+    "TROMBONE": [50, 50, 57, 55, 50, 62, 60, 57, 46, 46, 53, 51, 46, 58, 56, 53, 43, 43, 50, 48, 43, 55, 53, 50, 45, 45, 52, 50, 45, 57, 55, 49, 50, 50, 57, 55, 50, 62, 60, 57, 46, 46, 53, 51, 46, 58, 56, 53, 51, 51, 58, 56, 51, 63, 61, 58, 45, 45, 52, 50, 45, 57, 55, 49]
+   }
+  },
+  {
+   "config": "examples/trombone_vs_tuba",
+   "fighters": ["TROMBONE", "TUBA"],
+   "mood": "big_top",
+   "bpm": 126,
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "n_bars": 32,
+   "key": "F",
+   "scale": "minor",
+   "intro": ["Fm", "C"],
+   "loop": ["Fm", "Db", "Bbm", "C"],
+   "tail": ["Db", "C"],
+   "chords": ["Fm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Fm", "Db", "Bbm", "C", "Db", "C"],
+   "lines": {
+    "TROMBONE": [65, 63, 60, 63, 65, 61, 60, 56, 61, 60, 58, 61, 64, 67, 60, 64]
+   }
+  },
+  {
+   "config": "examples/bassclarinet_vs_euphonium",
+   "fighters": ["BASS CLARINET", "EUPHONIUM"],
+   "mood": "big_top",
+   "bpm": 126,
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "n_bars": 32,
+   "key": "C",
+   "scale": "minor",
+   "intro": ["Cm", "G"],
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "tail": ["Ab", "G"],
+   "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+   "lines": {
+    "BASS CLARINET": [36, 36, 43, 36, 46, 36, 43, 39, 44, 44, 51, 44, 39, 44, 48, 51, 41, 41, 48, 41, 44, 41, 48, 44, 43, 43, 50, 43, 47, 43, 50, 47],
+    "EUPHONIUM": [67, 68, 67, 63, 60, 63, 68, 72, 72, 68, 65, 68, 67, 62, 59, 62]
+   }
+  },
+  {
+   "config": "ballfight_altosax_vs_tenorsax",
+   "fighters": ["ALTO SAX", "TENOR SAX"],
+   "mood": "dark_disco",
+   "bpm": 118,
+   "loop_bpm": "0x1.d82192e29f79bp+6",
+   "n_bars": 30,
+   "key": "A",
+   "scale": "minor",
+   "intro": ["Am", "E7"],
+   "loop": ["Am", "F", "Dm", "E7", "Am", "F", "G", "E7"],
+   "tail": ["F", "G", "E7", "E7"],
+   "chords": ["Am", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "F", "G", "E7", "E7"],
+   "lines": {
+    "ALTO SAX": [76, 74, 72, 74, 76, 79, 76, 72, 77, 76, 72, 69, 72, 76, 77, 76, 74, 72, 69, 65, 69, 72, 74, 77, 76, 74, 71, 68, 71, 74, 76, 80, 81, 79, 76, 72, 76, 79, 81, 79, 77, 76, 72, 69, 72, 77, 76, 72, 79, 74, 71, 67, 71, 74, 79, 74, 80, 76, 74, 71, 68, 71, 74, 76],
+    "TENOR SAX": [45, 45, 48, 50, 52, 50, 48, 45, 57, 55, 52, 50, 48, 50, 52, 55, 53, 53, 57, 60, 57, 55, 53, 48, 53, 55, 57, 60, 57, 55, 53, 52, 50, 50, 53, 57, 55, 53, 50, 48, 50, 53, 57, 55, 53, 50, 48, 50, 52, 52, 56, 59, 62, 59, 56, 52, 50, 52, 56, 59, 56, 52, 50, 47, 57, 57, 55, 52, 48, 50, 52, 55, 57, 60, 57, 55, 52, 50, 48, 45, 53, 53, 52, 48, 45, 48, 52, 53, 57, 53, 52, 48, 45, 48, 52, 53, 55, 55, 59, 62, 59, 55, 50, 47, 55, 59, 62, 59, 55, 50, 47, 50, 52, 52, 50, 47, 44, 47, 50, 52, 56, 59, 56, 52, 50, 47, 44, 47]
+   }
+  },
+  {
+   "config": "ballfight_bassclarinet_vs_bassoon",
+   "fighters": ["BASS CLARINET", "BASSOON"],
+   "mood": "horror_trap",
+   "bpm": 140,
+   "loop_bpm": "0x1.1b47582192e2ap+7",
+   "n_bars": 36,
+   "key": "E",
+   "scale": "minor",
+   "intro": ["Em", "B"],
+   "loop": ["Em", "Em", "C", "B", "Em", "Em", "Am", "B"],
+   "tail": ["C", "B"],
+   "chords": ["Em", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "Em", "Em", "C", "B", "Em", "Em", "Am", "B", "C", "B"],
+   "lines": {
+    "BASS CLARINET": [40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 40, 43, 46, 47, 48, 36, 36, 48, 36, 40, 36, 43, 42, 35, 35, 47, 35, 39, 42, 45, 39, 40, 40, 52, 40, 43, 40, 47, 40, 40, 40, 52, 47, 46, 45, 44, 44, 45, 45, 57, 45, 48, 45, 52, 51, 35, 35, 47, 35, 39, 41, 42, 39],
+    "BASSOON": [64, 67, 71, 67, 64, 63, 64, 67, 64, 67, 72, 71, 70, 69, 68, 67, 64, 67, 72, 67, 64, 67, 71, 72, 63, 66, 71, 66, 63, 66, 69, 71, 64, 67, 71, 67, 64, 63, 64, 67, 76, 75, 74, 73, 72, 71, 70, 71, 69, 72, 76, 72, 69, 68, 69, 72, 71, 69, 66, 63, 66, 69, 71, 63]
+   }
+  },
+  {
+   "config": "ballfight_bassdrum_vs_tuba",
+   "fighters": ["BASS DRUM", "TUBA"],
+   "mood": "dark_drumline",
+   "bpm": 126,
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "n_bars": 32,
+   "key": "C",
+   "scale": "minor",
+   "intro": ["Cm", "G"],
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "tail": ["Ab", "G"],
+   "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+   "lines": {
+    "TUBA": [36, 43, 36, 43, 36, 43, 36, 43, 44, 39, 44, 39, 44, 39, 44, 39, 41, 48, 41, 48, 41, 48, 41, 48, 43, 50, 43, 50, 43, 50, 47, 50]
+   }
+  },
+  {
+   "config": "ballfight_cello_vs_contrabass",
+   "fighters": ["CELLO", "CONTRABASS"],
+   "mood": "dark_tango",
+   "bpm": 118,
+   "loop_bpm": "0x1.d82192e29f79bp+6",
+   "n_bars": 30,
+   "key": "D",
+   "scale": "harmonic minor",
+   "intro": ["Dm", "A7"],
+   "loop": ["Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7"],
+   "tail": ["Gm", "Dm", "E7", "A7"],
+   "chords": ["Dm", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7", "Gm", "Dm", "E7", "A7"],
+   "lines": {
+    "CONTRABASS": [38, 40, 41, 44, 33, 37, 40, 43, 45, 43, 40, 37, 38, 45, 41, 42, 43, 46, 50, 49, 50, 45, 41, 39, 40, 44, 47, 46, 45, 43, 40, 37],
+    "CELLO": [62, 62, 62, 64, 65, 65, 64, 61, 64, 64, 64, 57, 65, 64, 62, 62, 67, 67, 65, 64, 62, 62, 65, 69, 68, 68, 65, 62, 61, 61, 64, 64]
+   }
+  },
+  {
+   "config": "ballfight_electric_vs_acoustic",
+   "fighters": ["ELECTRIC", "ACOUSTIC"],
+   "mood": "stadium_rock",
+   "bpm": 126,
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "n_bars": 32,
+   "key": "E",
+   "scale": "minor",
+   "intro": ["Em", "B7"],
+   "loop": ["Em", "C", "G", "D", "Em", "C", "Am", "B7"],
+   "tail": ["Em", "C", "G", "D", "Am", "B7"],
+   "chords": ["Em", "B7", "Em", "C", "G", "D", "Em", "C", "Am", "B7", "Em", "C", "G", "D", "Em", "C", "Am", "B7", "Em", "C", "G", "D", "Em", "C", "Am", "B7", "Em", "C", "G", "D", "Am", "B7"],
+   "lines": {
+    "ELECTRIC": [64, 64, 67, 64, 69, 67, 64, 62, 64, 64, 67, 64, 72, 71, 67, 64, 67, 67, 71, 67, 74, 71, 67, 66, 66, 66, 69, 66, 74, 72, 69, 66, 64, 64, 67, 64, 71, 69, 67, 64, 67, 67, 72, 67, 76, 74, 72, 71, 69, 69, 72, 69, 76, 74, 72, 69, 71, 71, 75, 71, 74, 75, 66, 63]
+   }
+  },
+  {
+   "config": "ballfight_euphonium_vs_trombone",
+   "fighters": ["EUPHONIUM", "TROMBONE"],
+   "mood": "second_line",
+   "bpm": 122,
+   "loop_bpm": "0x1.e7de6d1d60865p+6",
+   "n_bars": 31,
+   "key": "E",
+   "scale": "harmonic minor",
+   "intro": ["Em", "B7"],
+   "loop": ["Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7"],
+   "tail": ["Em", "Am", "Em", "C7", "B7"],
+   "chords": ["Em", "B7", "Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7", "Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7", "Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7", "Em", "Am", "Em", "C7", "B7"],
+   "lines": {
+    "EUPHONIUM": [67, 66, 64, 59, 60, 64, 69, 67, 67, 71, 64, 67, 70, 69, 67, 64, 66, 63, 59, 63, 64, 67, 71, 69, 72, 71, 69, 64, 63, 66, 69, 66],
+    "TROMBONE": [52, 55, 55, 57, 58, 59, 55, 52, 57, 60, 60, 61, 64, 63, 60, 57, 59, 58, 55, 52, 55, 57, 58, 59, 60, 58, 55, 52, 58, 57, 55, 52, 59, 57, 54, 51, 57, 54, 51, 47, 52, 55, 59, 62, 64, 62, 59, 55, 57, 60, 64, 60, 57, 55, 52, 57, 59, 61, 63, 61, 59, 57, 54, 51]
+   }
+  },
+  {
+   "config": "ballfight_flute_vs_clarinet",
+   "fighters": ["FLUTE", "CLARINET"],
+   "mood": "bossa_noir",
+   "bpm": 132,
+   "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+   "n_bars": 34,
+   "key": "D",
+   "scale": "harmonic minor",
+   "intro": ["Dm7", "A7"],
+   "loop": ["Dm7", "Dm6", "Gm7", "C7", "Fmaj7", "Bbmaj7", "Em7b5", "A7"],
+   "tail": [],
+   "chords": ["Dm7", "A7", "Dm7", "Dm6", "Gm7", "C7", "Fmaj7", "Bbmaj7", "Em7b5", "A7", "Dm7", "Dm6", "Gm7", "C7", "Fmaj7", "Bbmaj7", "Em7b5", "A7", "Dm7", "Dm6", "Gm7", "C7", "Fmaj7", "Bbmaj7", "Em7b5", "A7", "Dm7", "Dm6", "Gm7", "C7", "Fmaj7", "Bbmaj7", "Em7b5", "A7"],
+   "lines": {
+    "FLUTE": [81, 77, 74, 76, 77, 81, 84, 81, 83, 81, 77, 74, 77, 81, 83, 86, 86, 82, 79, 77, 79, 82, 86, 84, 84, 82, 79, 76, 79, 82, 84, 88, 88, 84, 81, 77, 76, 77, 81, 84, 82, 81, 77, 74, 77, 81, 82, 86, 86, 82, 79, 76, 74, 76, 79, 82, 81, 85, 88, 85, 81, 79, 76, 73],
+    "CLARINET": [65, 67, 69, 72, 71, 69, 65, 62, 70, 69, 67, 65, 64, 67, 70, 72, 69, 72, 76, 72, 74, 72, 70, 69, 67, 70, 74, 70, 73, 72, 70, 69]
+   }
+  },
+  {
+   "config": "ballfight_flute_vs_sousaphone",
+   "fighters": ["FLUTE", "SOUSAPHONE"],
+   "mood": "dark_drumline",
+   "bpm": 126,
+   "loop_bpm": "0x1.f79b47582192ep+6",
+   "n_bars": 32,
+   "key": "C",
+   "scale": "minor",
+   "intro": ["Cm", "G"],
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "tail": ["Ab", "G"],
+   "chords": ["Cm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Cm", "Ab", "Fm", "G", "Ab", "G"],
+   "lines": {
+    "FLUTE": [79, 79, 84, 79, 75, 79, 84, 86, 87, 84, 80, 84, 87, 89, 87, 84, 77, 80, 84, 80, 89, 87, 84, 80, 79, 83, 86, 83, 91, 89, 87, 83],
+    "SOUSAPHONE": [36, 43, 36, 43, 36, 43, 39, 41, 44, 39, 44, 39, 44, 39, 48, 46, 41, 48, 41, 48, 41, 48, 44, 43, 43, 50, 43, 50, 43, 47, 50, 47]
+   }
+  },
+  {
+   "config": "ballfight_oboe_vs_bassoon",
+   "fighters": ["OBOE", "BASSOON"],
+   "mood": "heist",
+   "bpm": 118,
+   "loop_bpm": "0x1.d82192e29f79bp+6",
+   "n_bars": 30,
+   "key": "D",
+   "scale": "minor",
+   "intro": ["Dm", "A7"],
+   "loop": ["Dm", "Dm", "Bb", "A7", "Dm", "Gm", "Bb", "A7"],
+   "tail": ["Dm", "Dm", "Bb", "A7"],
+   "chords": ["Dm", "A7", "Dm", "Dm", "Bb", "A7", "Dm", "Gm", "Bb", "A7", "Dm", "Dm", "Bb", "A7", "Dm", "Gm", "Bb", "A7", "Dm", "Dm", "Bb", "A7", "Dm", "Gm", "Bb", "A7", "Dm", "Dm", "Bb", "A7"],
+   "lines": {
+    "OBOE": [74, 77, 81, 80, 81, 77, 74, 73, 74, 76, 77, 79, 81, 79, 77, 76, 77, 82, 86, 82, 77, 74, 77, 82, 81, 79, 77, 76, 73, 76, 79, 81, 86, 84, 81, 77, 74, 77, 81, 84, 82, 79, 74, 79, 82, 86, 82, 79, 77, 82, 86, 89, 86, 82, 77, 74, 73, 76, 79, 82, 81, 79, 76, 73],
+    "BASSOON": [50, 53, 57, 53, 50, 52, 53, 55, 50, 53, 57, 58, 57, 53, 50, 49, 46, 50, 53, 50, 46, 48, 50, 53, 45, 49, 52, 55, 57, 55, 52, 49, 50, 57, 53, 57, 50, 57, 53, 52, 43, 46, 50, 46, 55, 50, 46, 50, 46, 53, 50, 53, 58, 53, 50, 48, 45, 52, 49, 52, 57, 52, 55, 49]
+   }
+  },
+  {
+   "config": "ballfight_piano_vs_organ",
+   "fighters": ["PIANO", "ORGAN"],
+   "mood": "prog_duel",
+   "bpm": 132,
+   "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+   "n_bars": 34,
+   "key": "A",
+   "scale": "minor",
+   "intro": ["Am", "E7"],
+   "loop": ["Am", "F", "G", "E7", "Am", "F", "Dm", "E7"],
+   "tail": [],
+   "chords": ["Am", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7", "Am", "F", "G", "E7", "Am", "F", "Dm", "E7"],
+   "lines": {
+    "PIANO": [76, null, 72, 81, null, 76, 72, 74, 77, null, 72, 81, null, 77, 76, null, 79, null, 74, 83, null, 79, 77, 76, 80, null, 76, 83, null, 80, 81, 83, 84, null, 81, 76, null, 72, 76, 81, 84, null, 81, 77, null, 72, 77, 81, 81, null, 77, 74, null, 69, 74, 77, 83, null, 80, 76, null, 74, 71, null]
+   }
+  },
+  {
+   "config": "ballfight_trumpet_vs_clarinet",
+   "fighters": ["TRUMPET", "CLARINET"],
+   "mood": "hot_jazz",
+   "bpm": 140,
+   "loop_bpm": "0x1.1b47582192e2ap+7",
+   "n_bars": 36,
+   "key": "D",
+   "scale": "harmonic minor",
+   "intro": ["Dm", "A7"],
+   "loop": ["Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7"],
+   "tail": ["Bb7", "A7"],
+   "chords": ["Dm", "A7", "Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7", "Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7", "Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7", "Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7", "Bb7", "A7"],
+   "lines": {
+    "TRUMPET": [69, 74, 77, 76, 74, 72, 69, 67, 65, 69, 74, 72, 69, 65, 62, 64, 67, 70, 74, 72, 70, 67, 62, 65, 67, 70, 79, 77, 74, 70, 67, 69, 70, 74, 77, 80, 77, 74, 70, 68, 69, 73, 76, 79, 76, 73, 69, 67, 65, 69, 74, 77, 81, 77, 74, 73, 76, 73, 69, 64, 69, 73, 76, 73],
+    "CLARINET": [77, 76, 74, 76, 77, 79, 77, 74, 74, 72, 70, 72, 74, 77, 74, 70, 72, 74, 72, 68, 73, 72, 70, 69, 74, 72, 69, 70, 69, 73, 76, 79]
+   }
+  },
+  {
+   "config": "ballfight_trumpet_vs_trombone",
+   "fighters": ["TRUMPET", "TROMBONE"],
+   "mood": "mambo",
+   "bpm": 132,
+   "loop_bpm": "0x1.0b8a7de6d1d61p+7",
+   "n_bars": 34,
+   "key": "G",
+   "scale": "harmonic minor",
+   "intro": ["Gm", "D7"],
+   "loop": ["Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7"],
+   "tail": [],
+   "chords": ["Gm", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7", "Gm", "Cm", "D7", "Gm", "Gm", "Cm", "Eb7", "D7"],
+   "lines": {
+    "TRUMPET": [74, 77, 79, 77, 79, 77, 74, 70, 72, 75, 79, 77, 79, 75, 72, 74, 74, 78, 81, 78, 81, 78, 74, 72, 79, 82, 79, 77, 74, 70, 67, 70, 67, 70, 74, 77, 79, 74, 70, 74, 72, 75, 79, 82, 80, 79, 75, 72, 75, 79, 82, 79, 77, 73, 70, 73, 78, 81, 78, 74, 72, 69, 66, 67],
+    "TROMBONE": [55, 50, 58, 55, 53, 55, 50, 46, 48, 51, 55, 51, 58, 55, 51, 48, 50, 54, 57, 54, 60, 57, 54, 50, 55, 58, 62, 58, 55, 53, 50, 49, 46, 50, 55, 50, 58, 55, 50, 53, 48, 55, 51, 48, 60, 58, 55, 51, 51, 55, 58, 61, 58, 55, 51, 49, 50, 54, 57, 54, 60, 57, 54, 45]
+   }
+  }
+ ]
+}

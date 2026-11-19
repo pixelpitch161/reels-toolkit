@@ -1,0 +1,165 @@
+{
+ "about": "examples/trombone_vs_horn: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.9916661290322581,
+   "event": [4.92715, "ability", 1, "STOPPED HORN", "shield", 1],
+   "index": 16,
+   "item": "ability/STOPPED HORN",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 4.92715
+  },
+  {
+   "after_fight": 1.1916661290322583,
+   "event": [5.12715, "block", 1, 0, 1.257110240009061, 0.8243965428060547, "shockwave"],
+   "index": 17,
+   "item": "block",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 5.12715
+  },
+  {
+   "after_fight": 7.3833361290322586,
+   "event": [11.31882, "ability", 1, "FINAL FLICK", "flick", 1],
+   "index": 108,
+   "item": "ability/FINAL FLICK",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.31882
+  },
+  {
+   "after_fight": 7.3833361290322586,
+   "event": [11.31882, "flick_wind", 1, 11.810752688172043, -1.2172411947637118],
+   "index": 109,
+   "item": "flick_wind",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.31882
+  },
+  {
+   "after_fight": 7.8833361290322586,
+   "event": [11.81882, "flick", 1, 1, -0.7667394247593227, 1.5530983569159444, 1],
+   "index": 119,
+   "item": "flick",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.81882
+  },
+  {
+   "after_fight": 7.8833361290322586,
+   "event": [11.81882, "hit", 1, 0, 10.08, 0.6784665632693814, -1.1272958115150309, "flick", 0],
+   "index": 118,
+   "item": "hit/flick",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.81882
+  },
+  {
+   "after_fight": 8.041666129032258,
+   "event": [11.97715, "hit", 1, 0, 7.199999999999999, 2.0305595951504998, -2.370149287567402, "flick_rope", 0],
+   "index": 121,
+   "item": "hit/flick_rope",
+   "scenario": "early_low",
+   "seed": 3,
+   "t": 11.97715
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/trombone_vs_horn/scenarios/plain_s1.bfrec", "episodes/trombone_vs_horn/scenarios/plain_s2.bfrec", "episodes/trombone_vs_horn/scenarios/plain_s3.bfrec"],
+   "fighters": ["TROMBONE", "HORN"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["fe8fee7dbef3c771", "d4f91f75ecf8cc08", "a84431365daff71e"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 0.72,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/trombone_vs_horn/scenarios/swapped_s1.bfrec", "episodes/trombone_vs_horn/scenarios/swapped_s2.bfrec", "episodes/trombone_vs_horn/scenarios/swapped_s3.bfrec"],
+   "fighters": ["HORN", "TROMBONE"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["a994b467baa1b15e", "673408fab16e6c26", "a2d525be5fb9fc16"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 0.72,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/trombone_vs_horn/scenarios/early_low_s1.bfrec", "episodes/trombone_vs_horn/scenarios/early_low_s2.bfrec", "episodes/trombone_vs_horn/scenarios/early_low_s3.bfrec"],
+   "fighters": ["TROMBONE", "HORN"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["7bc9046f28f9b7f1", "b6a0f80598047fce", "a7498ba5f88522d3"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.49193548387096775,
+    "bpm": 121.9672131147541,
+    "dmg_scale": 0.72,
+    "t_fight": 3.935483870967742,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  }
+ ],
+ "t_fight": 3.935483870967742,
+ "tool": "tools.studio_export.episode_trombone_vs_horn",
+ "window": 20.0
+}

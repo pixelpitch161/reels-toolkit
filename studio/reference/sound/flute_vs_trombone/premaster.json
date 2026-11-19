@@ -1,0 +1,233 @@
+{
+ "about": "flute_vs_trombone: every bus as kit.music.score() leaves it (mix.buses, before the bus gains, the reverb, the fold and the master), in the same windows",
+ "buses": ["drums", "calliope", "fx", "flute", "trombone", "glock", "solo"],
+ "cases": [
+  {
+   "args": {
+    "i0": 0,
+    "n": 96000,
+    "t": "0x0.0p+0"
+   },
+   "arrays": {
+    "calliope": "c000__calliope",
+    "drums": "c000__drums",
+    "flute": "c000__flute",
+    "fx": "c000__fx",
+    "glock": "c000__glock",
+    "solo": "c000__solo",
+    "trombone": "c000__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c000",
+   "what": "2.0 s from 0.0 s",
+   "window": "0.0"
+  },
+  {
+   "args": {
+    "i0": 163200,
+    "n": 96000,
+    "t": "0x1.b333333333333p+1"
+   },
+   "arrays": {
+    "calliope": "c001__calliope",
+    "drums": "c001__drums",
+    "flute": "c001__flute",
+    "fx": "c001__fx",
+    "glock": "c001__glock",
+    "solo": "c001__solo",
+    "trombone": "c001__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c001",
+   "what": "2.0 s from 3.4 s",
+   "window": "3.4"
+  },
+  {
+   "args": {
+    "i0": 576000,
+    "n": 96000,
+    "t": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "calliope": "c002__calliope",
+    "drums": "c002__drums",
+    "flute": "c002__flute",
+    "fx": "c002__fx",
+    "glock": "c002__glock",
+    "solo": "c002__solo",
+    "trombone": "c002__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c002",
+   "what": "2.0 s from 12.0 s",
+   "window": "12.0"
+  },
+  {
+   "args": {
+    "i0": 1440000,
+    "n": 96000,
+    "t": "0x1.e000000000000p+4"
+   },
+   "arrays": {
+    "calliope": "c003__calliope",
+    "drums": "c003__drums",
+    "flute": "c003__flute",
+    "fx": "c003__fx",
+    "glock": "c003__glock",
+    "solo": "c003__solo",
+    "trombone": "c003__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c003",
+   "what": "2.0 s from 30.0 s",
+   "window": "30.0"
+  },
+  {
+   "args": {
+    "i0": 2064000,
+    "n": 96000,
+    "t": "0x1.5800000000000p+5"
+   },
+   "arrays": {
+    "calliope": "c004__calliope",
+    "drums": "c004__drums",
+    "flute": "c004__flute",
+    "fx": "c004__fx",
+    "glock": "c004__glock",
+    "solo": "c004__solo",
+    "trombone": "c004__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c004",
+   "what": "2.0 s from 43.0 s",
+   "window": "43.0"
+  },
+  {
+   "args": {
+    "i0": 2353035,
+    "n": 96000,
+    "t": "0x1.882c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "calliope": "c005__calliope",
+    "drums": "c005__drums",
+    "flute": "c005__flute",
+    "fx": "c005__fx",
+    "glock": "c005__glock",
+    "solo": "c005__solo",
+    "trombone": "c005__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c005",
+   "what": "2.0 s from T_KO - 1.0 s",
+   "window": "T_KO - 1.0"
+  },
+  {
+   "args": {
+    "i0": 2545035,
+    "n": 96000,
+    "t": "0x1.a82c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "calliope": "c006__calliope",
+    "drums": "c006__drums",
+    "flute": "c006__flute",
+    "fx": "c006__fx",
+    "glock": "c006__glock",
+    "solo": "c006__solo",
+    "trombone": "c006__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c006",
+   "what": "2.0 s from T_KO + 3.0 s",
+   "window": "T_KO + 3.0"
+  },
+  {
+   "args": {
+    "i0": 2832000,
+    "n": 96000,
+    "t": "0x1.d800000000000p+5"
+   },
+   "arrays": {
+    "calliope": "c007__calliope",
+    "drums": "c007__drums",
+    "flute": "c007__flute",
+    "fx": "c007__fx",
+    "glock": "c007__glock",
+    "solo": "c007__solo",
+    "trombone": "c007__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c007",
+   "what": "2.0 s from 59.0 s",
+   "window": "59.0"
+  },
+  {
+   "args": {
+    "i0": 2928640,
+    "n": 12000,
+    "t": "0x1.e81b4e81b4e82p+5"
+   },
+   "arrays": {
+    "calliope": "c008__calliope",
+    "drums": "c008__drums",
+    "flute": "c008__flute",
+    "fx": "c008__fx",
+    "glock": "c008__glock",
+    "solo": "c008__solo",
+    "trombone": "c008__trombone"
+   },
+   "call": "kit.music.score().buses[bus][i0:i0 + n]",
+   "id": "c008",
+   "what": "the 0.25 s past the loop point: what the master folds onto the start (after it the buses are silent)",
+   "window": "tail"
+  }
+ ],
+ "dtype": "float32, converted from the kit's float64 (the comparison bar is -120 dBFS; float32 keeps 24 bits); every window is (samples, 2): left, right",
+ "episode": "flute_vs_trombone",
+ "fold_at": 2928640,
+ "full_sha256": {
+  "calliope": "03ab3bf1471b2c3c15a61ecbb686e00f3022d3b011ac3a3958e1dbf6167fd1f8",
+  "drums": "04dbed388b4d7b9c72daea1272adee33be890f3307ee1761b6b1bfa5c994d11b",
+  "flute": "84479965797b09917e1425e3224dd41ce88fabfb2b498340ece03a30954cd9de",
+  "fx": "5b8e75c8208b77a19f16bd98e91a517a6f4643f493adcccdac71913e55fe82ec",
+  "glock": "f1ef3d5c02653a4ea8362111bb26290653bd7ea71840ca5a57b9044e626c59da",
+  "solo": "44af376b086f0816ab309eb4b530323f4f30e6650dbb8cfe7b106a47eb4511aa",
+  "trombone": "0dbee92b648e14d6655cd342f6da0a358651dc4004a32573ddbbbdc10ce8962d"
+ },
+ "last_sound": {
+  "calliope": 2931454,
+  "drums": 2935678,
+  "flute": 2838213,
+  "fx": 2928575,
+  "glock": 2277458,
+  "solo": 2841630,
+  "trombone": 2930180
+ },
+ "length": 3408000,
+ "sample_rate": 48000,
+ "silent": [
+  ["c000", "glock"],
+  ["c000", "solo"],
+  ["c001", "glock"],
+  ["c001", "solo"],
+  ["c002", "glock"],
+  ["c002", "solo"],
+  ["c003", "glock"],
+  ["c003", "solo"],
+  ["c004", "solo"],
+  ["c005", "glock"],
+  ["c005", "solo"],
+  ["c006", "flute"],
+  ["c006", "trombone"],
+  ["c006", "glock"],
+  ["c007", "glock"],
+  ["c008", "fx"],
+  ["c008", "flute"],
+  ["c008", "glock"],
+  ["c008", "solo"]
+ ],
+ "t_ko": "0x1.902c2c2c2c2c2p+5",
+ "tool": "stems",
+ "windows": "a case is one window: its `arrays` map each bus to the samples [i0, i0 + n) of that bus, with i0 = int(round(t * 48000)); `window` names the start time as the brief writes it. `silent` lists the [case, bus] pairs that are all zero"
+}

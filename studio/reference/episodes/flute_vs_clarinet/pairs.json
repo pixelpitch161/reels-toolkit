@@ -1,0 +1,134 @@
+{
+ "about": "ballfight_flute_vs_clarinet: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008334705882353077,
+   "event": [3.59657, "basket", 0, 0, -1.85, 1.85, -1],
+   "index": 0,
+   "item": "basket",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.59657
+  },
+  {
+   "after_fight": 0.9000047058823535,
+   "event": [4.48824, "strike", 0, 0, 0.04238787374587056, 0.9593205884059673, 0.12],
+   "index": 3,
+   "item": "strike",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 4.48824
+  },
+  {
+   "after_fight": 1.925004705882353,
+   "event": [5.51324, "hit", 0, 1, 5.724, -1.8425412858024135, 1.8324968927058025, "fang", 0],
+   "index": 22,
+   "item": "hit/fang",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 5.51324
+  },
+  {
+   "after_fight": 0.4500047058823533,
+   "event": [4.03824, "jump", 1, 1.4959817955156325, -0.7575987205531585, 0.20879664713563506, 0.8525338507978862, 0, 0],
+   "index": 1,
+   "item": "jump",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.03824
+  },
+  {
+   "after_fight": 1.3500047058823537,
+   "event": [4.93824, "hit", 1, 0, 1.296, -2.5175523962933837, -0.23555992723531197, "cut", 0],
+   "index": 7,
+   "item": "hit/cut",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.93824
+  },
+  {
+   "after_fight": 7.675004705882353,
+   "event": [11.26324, "stun", 0, 1, 0.5],
+   "index": 85,
+   "item": "stun",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 11.26324
+  },
+  {
+   "after_fight": 7.675004705882353,
+   "event": [11.26324, "hit", 1, 0, 0.72, 0.162559108762793, 1.6972042014467754, "stun", 0],
+   "index": 84,
+   "item": "hit/stun",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 11.26324
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/flute_vs_clarinet/scenarios/plain_s1.bfrec", "episodes/flute_vs_clarinet/scenarios/plain_s2.bfrec", "episodes/flute_vs_clarinet/scenarios/plain_s3.bfrec"],
+   "fighters": ["FLUTE", "CLARINET"],
+   "handicap": [5.3, 0.36],
+   "hashes": ["a9e6fcde6b48bbc8", "b927db79615d08af", "1e74d9ec272b8bc8"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [5.3, 0.36],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/flute_vs_clarinet/scenarios/swapped_s1.bfrec", "episodes/flute_vs_clarinet/scenarios/swapped_s2.bfrec", "episodes/flute_vs_clarinet/scenarios/swapped_s3.bfrec"],
+   "fighters": ["CLARINET", "FLUTE"],
+   "handicap": [0.36, 5.3],
+   "hashes": ["bb91661ba0a1deb4", "8f8a2a1ce4b3e67b", "906b29c31aa73798"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.44852941176470584,
+    "bpm": 133.7704918032787,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.36, 5.3],
+    "t_fight": 3.5882352941176467,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.5882352941176467,
+ "tool": "tools.studio_export.episode_flute_vs_clarinet",
+ "window": 20.0
+}

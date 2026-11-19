@@ -1,0 +1,10 @@
+# The SHA-256 of what `ballfight sound` and `ballfight frame` write for the example episode (FLUTE against TROMBONE,
+# studio/fights/flute_vs_trombone.toml, recording studio/reference/fights/flute_vs_trombone/ep392.bfrec): the 16-bit
+# master as a .wav, and frames 0, 500 and 1700 as 360 x 640 PNG files. Written by crates/bf-cli/tests/e2e.rs
+# (render_is_reproducible) with BF_BLESS=1 on the Windows reference PC; every PC and every build must give the
+# same lines. Do not edit by hand.
+# file sha256
+audio.wav cc463805a35a99a8f9583a42c3653a9a2ab671d33589b0407d17da75b98c39ef
+frame0.png e253bf28a0c384bd1a9fee6312ffe8dd3b642a240dd926c6cbf5ebcbebcdf7b1
+frame500.png 7eaad3a71811875a56752eb377b3f3b4c9a63309769e32ebf88c6af31cd67f33
+frame1700.png b033213aca794000f75bf183dbdd18f820329e4e2b09c14e664935f5a69c201b

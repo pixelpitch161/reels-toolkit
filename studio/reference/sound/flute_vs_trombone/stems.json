@@ -1,0 +1,279 @@
+{
+ "about": "flute_vs_trombone: every bus after the master (kit.music.master(kit.music.score())[1]), in windows",
+ "buses": ["drums", "calliope", "fx", "flute", "trombone", "glock", "solo"],
+ "cases": [
+  {
+   "args": {
+    "i0": 0,
+    "n": 96000,
+    "t": "0x0.0p+0"
+   },
+   "arrays": {
+    "calliope": "c000__calliope",
+    "drums": "c000__drums",
+    "flute": "c000__flute",
+    "fx": "c000__fx",
+    "glock": "c000__glock",
+    "solo": "c000__solo",
+    "trombone": "c000__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c000",
+   "what": "2.0 s from 0.0 s",
+   "window": "0.0"
+  },
+  {
+   "args": {
+    "i0": 163200,
+    "n": 96000,
+    "t": "0x1.b333333333333p+1"
+   },
+   "arrays": {
+    "calliope": "c001__calliope",
+    "drums": "c001__drums",
+    "flute": "c001__flute",
+    "fx": "c001__fx",
+    "glock": "c001__glock",
+    "solo": "c001__solo",
+    "trombone": "c001__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c001",
+   "what": "2.0 s from 3.4 s",
+   "window": "3.4"
+  },
+  {
+   "args": {
+    "i0": 576000,
+    "n": 96000,
+    "t": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "calliope": "c002__calliope",
+    "drums": "c002__drums",
+    "flute": "c002__flute",
+    "fx": "c002__fx",
+    "glock": "c002__glock",
+    "solo": "c002__solo",
+    "trombone": "c002__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c002",
+   "what": "2.0 s from 12.0 s",
+   "window": "12.0"
+  },
+  {
+   "args": {
+    "i0": 1440000,
+    "n": 96000,
+    "t": "0x1.e000000000000p+4"
+   },
+   "arrays": {
+    "calliope": "c003__calliope",
+    "drums": "c003__drums",
+    "flute": "c003__flute",
+    "fx": "c003__fx",
+    "glock": "c003__glock",
+    "solo": "c003__solo",
+    "trombone": "c003__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c003",
+   "what": "2.0 s from 30.0 s",
+   "window": "30.0"
+  },
+  {
+   "args": {
+    "i0": 2064000,
+    "n": 96000,
+    "t": "0x1.5800000000000p+5"
+   },
+   "arrays": {
+    "calliope": "c004__calliope",
+    "drums": "c004__drums",
+    "flute": "c004__flute",
+    "fx": "c004__fx",
+    "glock": "c004__glock",
+    "solo": "c004__solo",
+    "trombone": "c004__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c004",
+   "what": "2.0 s from 43.0 s",
+   "window": "43.0"
+  },
+  {
+   "args": {
+    "i0": 2353035,
+    "n": 96000,
+    "t": "0x1.882c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "calliope": "c005__calliope",
+    "drums": "c005__drums",
+    "flute": "c005__flute",
+    "fx": "c005__fx",
+    "glock": "c005__glock",
+    "solo": "c005__solo",
+    "trombone": "c005__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c005",
+   "what": "2.0 s from T_KO - 1.0 s",
+   "window": "T_KO - 1.0"
+  },
+  {
+   "args": {
+    "i0": 2545035,
+    "n": 96000,
+    "t": "0x1.a82c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "calliope": "c006__calliope",
+    "drums": "c006__drums",
+    "flute": "c006__flute",
+    "fx": "c006__fx",
+    "glock": "c006__glock",
+    "solo": "c006__solo",
+    "trombone": "c006__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c006",
+   "what": "2.0 s from T_KO + 3.0 s",
+   "window": "T_KO + 3.0"
+  },
+  {
+   "args": {
+    "i0": 2832000,
+    "n": 96000,
+    "t": "0x1.d800000000000p+5"
+   },
+   "arrays": {
+    "calliope": "c007__calliope",
+    "drums": "c007__drums",
+    "flute": "c007__flute",
+    "fx": "c007__fx",
+    "glock": "c007__glock",
+    "solo": "c007__solo",
+    "trombone": "c007__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c007",
+   "what": "2.0 s from 59.0 s",
+   "window": "59.0"
+  },
+  {
+   "args": {
+    "i0": 2916640,
+    "n": 12000,
+    "t": "0x1.e61b4e81b4e82p+5"
+   },
+   "arrays": {
+    "calliope": "c008__calliope",
+    "drums": "c008__drums",
+    "flute": "c008__flute",
+    "fx": "c008__fx",
+    "glock": "c008__glock",
+    "solo": "c008__solo",
+    "trombone": "c008__trombone"
+   },
+   "call": "kit.music.master(mix)[1][bus][i0:i0 + n]",
+   "id": "c008",
+   "what": "the last 0.25 s before the loop point: what runs into sample 0",
+   "window": "seam"
+  }
+ ],
+ "dtype": "float32, converted from the kit's float64 (the comparison bar is -120 dBFS; float32 keeps 24 bits); every window is (samples, 2): left, right",
+ "episode": "flute_vs_trombone",
+ "full_sha256": {
+  "calliope": "5d0956e1a3eb8b3c5aa5bf0e0cb377a98144ad28bbef81ea3a1a06e92551a4c9",
+  "drums": "38009b7371448bd7c14edc5b68e55fd67b465e79ebcfd7854471fd9cc88ea955",
+  "flute": "af3e21b49c1ca050fb5ca7cf70f6588722054dc714c40de394c3b610e972890c",
+  "fx": "4bd6ca7f8917e0907f224b2408af14755de69d1dc10bbf8382f439c6addf0830",
+  "glock": "d00b009500250d8c0aba0e9895a6f0b6a184db950727a6ccaf4aab43481e6a15",
+  "solo": "442e31ca093b33fde5f8719564b0609875276cf00e2601b5cbdfdb5f600ffeaa",
+  "trombone": "15c7d4c1f4172f6f6a68958d27b2941715e9c9d688939e8c71646013119cfbef"
+ },
+ "length": 2928640,
+ "master": {
+  "bus_order": ["drums", "calliope", "fx", "flute", "trombone", "glock", "solo"],
+  "ceiling": "0x1.c7ae147ae147bp-1",
+  "comp": {
+   "ex": "0x1.3d70a3d70a3d7p-1",
+   "thr": "0x1.3333333333333p-3"
+  },
+  "levels": {
+   "calliope": {
+    "gain": "0x1.3333333333333p+0",
+    "send": "0x1.ccccccccccccdp-2"
+   },
+   "drums": {
+    "gain": "0x1.0000000000000p+0",
+    "send": "0x1.3333333333333p-3"
+   },
+   "flute": {
+    "gain": "0x1.b333333333333p+0",
+    "send": "0x1.ccccccccccccdp-2"
+   },
+   "fx": {
+    "gain": "0x1.3333333333333p+0",
+    "send": "0x1.0000000000000p-2"
+   },
+   "glock": {
+    "gain": "0x1.0000000000000p+0",
+    "send": "0x1.0000000000000p-1"
+   },
+   "solo": {
+    "gain": "0x1.8000000000000p+0",
+    "send": "0x1.999999999999ap-2"
+   },
+   "trombone": {
+    "gain": "0x1.ccccccccccccdp+0",
+    "send": "0x1.999999999999ap-3"
+   }
+  },
+  "notes": {
+   "bus_order": "the order the buses are added up in (the order kit.music.score() first touched them)",
+   "levels": "bus: its gain and its reverb send (the fighters' Sound.bus_gain / send, kit.music.BUS, the bed's buses, then the episode's MIX overrides)",
+   "p9997": "np.percentile(|folded mix * compressor gain|, 99.97); s1 = ceiling / (p9997 + 1e-9)",
+   "peak": "max |tanh(mix * s1 * 1.1) / tanh(1.1)|; s2 = ceiling / (peak + 1e-9)",
+   "send_order": "the order the reverb send adds the buses in (the order of `levels`)",
+   "stems": "stem = fold(bus * gain) * compressor gain * s1 * s2 (no reverb: the wet part is only in the master)"
+  },
+  "p9997": "0x1.21d757d8a36e7p-1",
+  "peak": "0x1.176313fee0a26p+0",
+  "reverb": {
+   "decay": "0x1.199999999999ap-1",
+   "dur": "0x1.0000000000000p+1",
+   "seed": 3,
+   "wet": "0x1.c28f5c28f5c29p-3"
+  },
+  "s1": "0x1.9279d1f1e1b90p+0",
+  "s2": "0x1.a189291ab221bp-1",
+  "send_order": ["flute", "trombone", "solo", "fx", "drums", "calliope", "glock"]
+ },
+ "sample_rate": 48000,
+ "silent": [
+  ["c000", "glock"],
+  ["c000", "solo"],
+  ["c001", "glock"],
+  ["c001", "solo"],
+  ["c002", "glock"],
+  ["c002", "solo"],
+  ["c003", "glock"],
+  ["c003", "solo"],
+  ["c004", "solo"],
+  ["c005", "glock"],
+  ["c005", "solo"],
+  ["c006", "flute"],
+  ["c006", "trombone"],
+  ["c006", "glock"],
+  ["c007", "glock"],
+  ["c008", "flute"],
+  ["c008", "glock"],
+  ["c008", "solo"]
+ ],
+ "t_ko": "0x1.902c2c2c2c2c2p+5",
+ "tool": "stems",
+ "windows": "a case is one window: its `arrays` map each bus to the samples [i0, i0 + n) of that bus, with i0 = int(round(t * 48000)); `window` names the start time as the brief writes it. `silent` lists the [case, bus] pairs that are all zero"
+}

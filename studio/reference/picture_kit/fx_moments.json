@@ -1,0 +1,1299 @@
+{
+ "about": "reelkit.fx.Moments: apply_dim and speed_lines",
+ "cases": [
+  {
+   "args": {
+    "canvas": {
+     "bias": "0x1.634450f39d03cp-3",
+     "dtype": "float64",
+     "flat": [58, 132, 178],
+     "gain": "0x1.d7e1714123b71p-1",
+     "h": 640,
+     "w": 360
+    },
+    "frame": 338,
+    "keep": [
+     ["0x1.d7feb26797624p+7", "0x1.2023eaf854851p+8", "0x1.27e2d61089160p+5"],
+     ["0x1.534dc388d9b80p+6", "0x1.2cc414cb0573ep+8", "0x1.2a3a47f69077bp+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.6888888888889p+3"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.90470247ce1aap-4",
+    "returned": "new",
+    "step": 37
+   },
+   "id": "c000"
+  },
+  {
+   "args": {
+    "canvas": {
+     "bias": "0x1.07444fd822f58p+1",
+     "dtype": "float64",
+     "flat": [203, 135, 147],
+     "gain": "0x1.f9ff44d22296ep-1",
+     "h": 640,
+     "w": 360
+    },
+    "frame": 493,
+    "keep": [
+     ["0x1.b1fb66d024700p+5", "0x1.19651ff35a52ap+8", "0x1.284922f2fd169p+5"],
+     ["0x1.0e0766b9b7228p+7", "0x1.392c4f68c979ap+8", "0x1.2e53ad337cadap+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.06eeeeeeeeeefp+4"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 37
+   },
+   "id": "c001"
+  },
+  {
+   "args": {
+    "canvas": {
+     "bias": "0x1.32d231c5cac44p-2",
+     "dtype": "float64",
+     "flat": [204, 180, 95],
+     "gain": "0x1.ddb3283ccaf21p-1",
+     "h": 640,
+     "w": 360
+    },
+    "frame": 810,
+    "keep": [
+     ["0x1.076b4b2f2df0fp+8", "0x1.031042fe74744p+8", "0x1.23963d346c2a9p+5"],
+     ["0x1.28c951ca909aep+6", "0x1.2bd0d115fc73fp+8", "0x1.2b428ab92cabdp+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.b000000000000p+4"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.d2efe8494f1dbp-5",
+    "returned": "new",
+    "step": 37
+   },
+   "id": "c002"
+  },
+  {
+   "args": {
+    "canvas": {
+     "bias": "0x1.fcad728d6998ap-2",
+     "dtype": "float64",
+     "flat": [68, 174, 158],
+     "gain": "0x1.d31f9f54a7ee7p-1",
+     "h": 640,
+     "w": 360
+    },
+    "frame": 1280,
+    "keep": [
+     ["0x1.99efb7fcd509fp+7", "0x1.a124e477b946ep+7", "0x1.2012b50a32aeep+5"],
+     ["0x1.1c17faabb17cap+8", "0x1.0d09602a4b8f2p+8", "0x1.2bb56e71aa3dbp+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.5555555555555p+5"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.90470247ce1aap-4",
+    "returned": "new",
+    "step": 37
+   },
+   "id": "c003"
+  },
+  {
+   "args": {
+    "canvas": {
+     "bias": "0x1.6b51b4e323b63p+1",
+     "dtype": "float64",
+     "flat": [94, 47, 117],
+     "gain": "0x1.fb2f38e739e1dp-1",
+     "h": 640,
+     "w": 360
+    },
+    "frame": 1307,
+    "keep": [
+     ["0x1.908f5d9623434p+7", "0x1.9f5df60cf19d2p+7", "0x1.2000c0a2566cfp+5"],
+     ["0x1.19e9825543ed8p+8", "0x1.0dc744ad01f50p+8", "0x1.2bf4d33158465p+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.5c88888888889p+5"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.4bed9a2474439p-4",
+    "returned": "new",
+    "step": 37
+   },
+   "id": "c004"
+  },
+  {
+   "args": {
+    "canvas": {
+     "dtype": "float64",
+     "flat": [90, 80, 70],
+     "h": 640,
+     "w": 360
+    },
+    "frame": 135,
+    "keep": [
+     ["0x1.8ee6aab043d87p+7", "0x1.e7c1e78431e57p+7", "0x1.1fdb88e1e881fp+5"],
+     ["0x1.3c690df1a1d6ap+7", "0x1.036d2fa7c4296p+8", "0x1.22bfe9c59bfd0p+5"]
+    ],
+    "script": "moments kit.picture",
+    "source": "kit.picture",
+    "t": "0x1.2000000000000p+2"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x0.0p+0",
+    "returned": "img"
+   },
+   "id": "c005"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [182, 13, 1],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [147, 53, 11],
+     "w": 64
+    },
+    "keep": [],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x0.0p+0"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x0.0p+0",
+    "returned": "img"
+   },
+   "id": "c006"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [35, 75, 147],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [199, 135, 37],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.6f4e930f9c240p+5", "0x1.0220da36c8f39p+4", "0x1.baefc9f56574ep+0"]
+    ],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x1.0000000000000p-2"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x0.0p+0",
+    "returned": "img"
+   },
+   "id": "c007"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [126, 250, 43],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [169, 25, 111],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.5b8c2015888f7p+5", "0x1.285a43ef3b056p+5", "0x1.d8fb0be9e65c2p-2"],
+     ["0x1.ac274d1167f34p+3", "0x1.6ca93a2aa6408p+4", "0x1.399e4dd914f1bp+2"]
+    ],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c008"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [108, 157, 6],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [87, 231, 21],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.eb40b4c95585cp+5", "0x1.892a992a08932p+4", "0x1.57084ae0e3f0ep+1"],
+     ["0x1.2285862ebad8cp+3", "0x1.07b9c347b4eb8p+3", "0x1.f24db711e66c2p+1"],
+     ["0x1.22ecb9b84d658p+4", "0x1.b2e34d6031fc6p+4", "0x1.d43b8eca9f91ap+2"]
+    ],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x1.0a3d70a3d70a4p-1"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c009"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [102, 174, 24],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [99, 19, 115],
+     "w": 64
+    },
+    "keep": [],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c010"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [238, 44, 235],
+     "bias": "0x1.0000000000000p-2",
+     "dtype": "float64",
+     "gain": "0x1.fdf3b645a1cacp-1",
+     "h": 48,
+     "mul": [65, 227, 243],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.51f7ae2ab7f68p+2", "0x1.329a4d0eda5bdp+4", "0x1.8bba6eda18cdcp+1"]
+    ],
+    "script": "moments plan",
+    "source": "plan",
+    "t": "0x1.c000000000000p+0"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c011"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [143, 129, 142],
+     "dtype": "float64",
+     "h": 48,
+     "mul": [9, 153, 31],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.4000000000000p+4", "0x1.4000000000000p+4", "0x0.0p+0"],
+     ["0x1.4800000000000p+4", "0x1.e400000000000p+4", "0x1.0000000000000p+0"],
+     ["-0x1.4000000000000p+2", "0x1.e000000000000p+5", "0x1.c000000000000p+3"]
+    ],
+    "script": "moments plan",
+    "source": "seeded",
+    "t": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.3333333333333p-2",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c012"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [17, 251, 54],
+     "dtype": "float64",
+     "h": 48,
+     "mul": [33, 219, 87],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.4000000000000p+4", "0x1.4000000000000p+4", "0x1.8000000000000p+2"]
+    ],
+    "script": "moments one",
+    "source": "seeded",
+    "t": "0x1.026e978d4fdf4p+0"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.034dbd3d20dd6p-8",
+    "returned": "img"
+   },
+   "id": "c013"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [17, 55, 136],
+     "dtype": "float64",
+     "h": 48,
+     "mul": [239, 19, 5],
+     "w": 64
+    },
+    "keep": [
+     ["0x1.4000000000000p+4", "0x1.4000000000000p+4", "0x1.8000000000000p+2"]
+    ],
+    "script": "moments one",
+    "source": "seeded",
+    "t": "0x1.02f1a9fbe76c9p+0"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).apply_dim(img, t, keep)",
+   "expect": {
+    "dtype": "float64",
+    "k": "0x1.782fc1d88c0f6p-8",
+    "returned": "new",
+    "step": 1
+   },
+   "id": "c014"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [36, 132, 249],
+     "bias": "0x1.6e59d09982c7cp+1",
+     "dtype": "float64",
+     "gain": "0x1.d2d7764d66686p-1",
+     "h": 640,
+     "mul": [73, 103, 65],
+     "w": 360
+    },
+    "direction": ["-0x1.d15474d670800p-2", "-0x1.c2fbac43fcc00p+1"],
+    "frame": 338,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.5edb277c6dba0p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.6888888888889p+3",
+    "x": "0x1.534dc388d9b80p+6",
+    "y": "0x1.2cc414cb0573ep+8"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [57, 314, 119, 386],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c015"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [170, 43, 208],
+     "bias": "-0x1.80eb71ced67fap-1",
+     "dtype": "float64",
+     "gain": "0x1.d5c1bcfd4927bp-1",
+     "h": 640,
+     "mul": [169, 13, 81],
+     "w": 360
+    },
+    "direction": ["-0x1.53e87ddd62d00p-1", "0x1.51e0bc31ad780p+1"],
+    "frame": 485,
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.5ed017e3aaaa5p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.02aaaaaaaaaabp+4",
+    "x": "0x1.184ddde4e96fdp+7",
+    "y": "0x1.247938c382c62p+8"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [112, 211, 182, 283],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c016"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [196, 14, 193],
+     "bias": "0x1.7c49637e533bcp+1",
+     "dtype": "float64",
+     "gain": "0x1.dd79b29667daep-1",
+     "h": 640,
+     "mul": [141, 93, 135],
+     "w": 360
+    },
+    "direction": ["-0x1.57c5394b2ee00p-1", "0x1.552a2892f5280p+1"],
+    "frame": 488,
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.609f5c83f34c7p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.0444444444444p+4",
+    "x": "0x1.1573516500102p+7",
+    "y": "0x1.2c3bae86ddf5fp+8"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [111, 233, 178, 287],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c017"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [121, 100, 115],
+     "bias": "-0x1.faff210f854c0p-6",
+     "dtype": "float64",
+     "gain": "0x1.e9c4d71ad4450p-1",
+     "h": 640,
+     "mul": [245, 199, 175],
+     "w": 360
+    },
+    "direction": ["-0x1.63ca3bc243600p-1", "0x1.5f7cfe8d05180p+1"],
+    "frame": 497,
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.66291aa6cb626p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.0911111111111p+4",
+    "x": "0x1.08ddec0648d38p+7",
+    "y": "0x1.447a971e09e77p+8"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [105, 235, 175, 310],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c018"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [61, 238, 194],
+     "bias": "-0x1.e758afc230c9cp-1",
+     "dtype": "float64",
+     "gain": "0x1.029f1433f35ffp+0",
+     "h": 640,
+     "mul": [137, 115, 165],
+     "w": 360
+    },
+    "direction": ["0x1.564ff58752080p+1", "0x1.11332b5805480p+1"],
+    "frame": 783,
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.57a0e8b1a0184p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.a19999999999ap+4",
+    "x": "0x1.07ff6a18ffdd7p+8",
+    "y": "0x1.0508dae1156c0p+8"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [177, 196, 268, 274],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c019"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [120, 43, 96],
+     "bias": "0x1.b1a71dab2a970p+0",
+     "dtype": "float64",
+     "gain": "0x1.0179ea04956cap+0",
+     "h": 640,
+     "mul": [185, 235, 229],
+     "w": 360
+    },
+    "direction": ["0x1.ca347a2dee960p+1", "-0x1.19b98f9f68400p-2"],
+    "frame": 904,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.5a503a6a535b7p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.e222222222222p+4",
+    "x": "0x1.5449bf3117feep+6",
+    "y": "0x1.1375c06e0112dp+8"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [0, 244, 70, 307],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c020"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [46, 252, 57],
+     "bias": "-0x1.770736ab418e0p-5",
+     "dtype": "float64",
+     "gain": "0x1.da4223d9f31bep-1",
+     "h": 640,
+     "mul": [153, 17, 145],
+     "w": 360
+    },
+    "direction": ["-0x1.f4cecd12ac0e0p+1", "0x1.0c20776ef3800p-1"],
+    "frame": 931,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.5ba7d9158ae79p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.f088888888889p+4",
+    "x": "0x1.bc8aab4aee2a8p+5",
+    "y": "0x1.19f09c53063c6p+8"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [71, 248, 139, 310],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c021"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [40, 14, 137],
+     "bias": "0x1.421c922cb2fa2p+1",
+     "dtype": "float64",
+     "gain": "0x1.0215932c77c23p+0",
+     "h": 640,
+     "mul": [113, 131, 3],
+     "w": 360
+    },
+    "direction": ["0x1.22c40f1faf340p+2", "0x1.8379d31fcf700p+1"],
+    "frame": 1282,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.62019596cb1d0p+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.55ddddddddddep+5",
+    "x": "0x1.24cf14f777903p+8",
+    "y": "0x1.13568c9ad0af2p+8"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [220, 207, 296, 288],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c022"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [64, 205, 216],
+     "bias": "0x1.91d57a42e02e0p+0",
+     "dtype": "float64",
+     "gain": "0x1.d717685b14877p-1",
+     "h": 640,
+     "mul": [79, 35, 29],
+     "w": 360
+    },
+    "direction": ["-0x1.c6a9186393200p+1", "-0x1.3d9c52683ee00p+1"],
+    "frame": 1289,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.60552244619fdp+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.57bbbbbbbbbbcp+5",
+    "x": "0x1.1aaddfc9cec1ap+8",
+    "y": "0x1.0c544c7fa7498p+8"
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [288, 260, 360, 334],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c023"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [184, 77, 26],
+     "bias": "0x1.740ca5aaed1c2p+0",
+     "dtype": "float64",
+     "gain": "0x1.d9477c252cccdp-1",
+     "h": 640,
+     "mul": [249, 149, 251],
+     "w": 360
+    },
+    "direction": ["-0x1.921f34d659080p+1", "-0x1.2d23320218780p+1"],
+    "frame": 1307,
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.60e3cb491c8efp+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.5c88888888889p+5",
+    "x": "0x1.19e9825543ed8p+8",
+    "y": "0x1.0dc744ad01f50p+8"
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [285, 260, 352, 337],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c024"
+  },
+  {
+   "args": {
+    "canvas": {
+     "dtype": "float64",
+     "flat": [90, 80, 70],
+     "h": 640,
+     "w": 360
+    },
+    "direction": ["-0x1.dc4c65e209a00p-2", "-0x1.d23dc18a39e80p+0"],
+    "frame": 135,
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.52a7ec551189dp+4",
+    "script": "moments kit.picture",
+    "seed": 0,
+    "source": "kit.picture",
+    "t": "0x1.2000000000000p+2",
+    "x": "0x1.8ee6aab043d87p+7",
+    "y": "0x1.e7c1e78431e57p+7"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "canvas",
+    "box": null,
+    "dtype": "float64",
+    "returned": "img"
+   },
+   "id": "c025"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [20, 92, 102],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [235, 117, 109],
+     "w": 160
+    },
+    "direction": ["0x1.3333333333333p-1", "-0x1.999999999999ap-1"],
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.cb1da1e5a36abp+3",
+    "script": "moments plan",
+    "seed": 0,
+    "source": "plan",
+    "t": "0x0.0p+0",
+    "x": "0x1.dcf937346be08p+6",
+    "y": "0x1.2b128b757dd8ap+7"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "canvas",
+    "box": null,
+    "dtype": "float64",
+    "returned": "img"
+   },
+   "id": "c026"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [203, 117, 200],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [243, 73, 109],
+     "w": 160
+    },
+    "direction": ["0x0.0p+0", "0x0.0p+0"],
+    "key": 1,
+    "length": ["0x1.0000000000000p+2", "0x1.2000000000000p+3"],
+    "n": 5,
+    "r": "0x1.674050cd7bf2fp+3",
+    "script": "moments plan",
+    "seed": 3,
+    "source": "plan",
+    "t": "0x1.0000000000000p-2",
+    "x": "0x1.97b0c75a5424ep+6",
+    "y": "0x1.81cbef80e4c36p+6"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "canvas",
+    "box": null,
+    "dtype": "float64",
+    "returned": "img"
+   },
+   "id": "c027"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [150, 173, 114],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [197, 217, 7],
+     "w": 160
+    },
+    "direction": ["-0x1.8000000000000p+1", "0x1.0000000000000p+0"],
+    "key": 2,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.d9f5da932d40ap+2",
+    "script": "moments plan",
+    "seed": 6,
+    "source": "plan",
+    "t": "0x1.0000000000000p-1",
+    "x": "0x1.8e142e18c788fp+6",
+    "y": "0x1.8654d0b043871p+6"
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [103, 66, 160, 103],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c028"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [174, 116, 96],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [3, 223, 181],
+     "w": 160
+    },
+    "direction": ["0x1.ad7f29abcaf48p-24", "0x0.0p+0"],
+    "key": 0,
+    "length": ["0x1.e000000000000p+4", "0x1.e000000000000p+4"],
+    "n": 1,
+    "r": "0x1.f588776539719p+2",
+    "script": "moments plan",
+    "seed": 9,
+    "source": "plan",
+    "t": "0x1.0a3d70a3d70a4p-1",
+    "x": "0x1.72f4e8598c358p+5",
+    "y": "0x1.81cb06126426ap+6"
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [37, 53, 38, 84],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c029"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [225, 134, 136],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [217, 253, 53],
+     "w": 160
+    },
+    "direction": ["0x0.0p+0", "0x1.4000000000000p+2"],
+    "key": 1,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 30,
+    "r": "0x1.1572e8f309765p+4",
+    "script": "moments plan",
+    "seed": 12,
+    "source": "plan",
+    "t": "0x1.0000000000000p+0",
+    "x": "0x1.19a71c26488aep+6",
+    "y": "0x1.21e57df3d0ab6p+7"
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [46, 65, 96, 133],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c030"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [216, 183, 134],
+     "bias": "-0x1.0000000000000p+0",
+     "dtype": "float64",
+     "gain": "0x1.028f5c28f5c29p+0",
+     "h": 200,
+     "mul": [185, 133, 165],
+     "w": 160
+    },
+    "direction": ["0x1.0000000000000p+1", "0x1.0000000000000p+1"],
+    "key": 2,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.6e6887e9edd4dp+4",
+    "script": "moments plan",
+    "seed": 15,
+    "source": "plan",
+    "t": "0x1.c000000000000p+0",
+    "x": "0x1.7d094c370f6aap+6",
+    "y": "0x1.8ea17b14b25efp+6"
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [12, 26, 103, 107],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c031"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [194, 255, 8],
+     "dtype": "float64",
+     "h": 200,
+     "mul": [219, 225, 11],
+     "w": 160
+    },
+    "direction": ["0x1.0000000000000p+0", "0x0.0p+0"],
+    "key": 7,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.8000000000000p+3",
+    "script": "moments plan",
+    "seed": 0,
+    "source": "seeded",
+    "t": "0x1.0000000000000p-1",
+    "x": "0x1.4000000000000p+6",
+    "y": "0x1.9000000000000p+6"
+   },
+   "arrays": {},
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "canvas",
+    "box": null,
+    "dtype": "float64",
+    "returned": "img"
+   },
+   "id": "c032"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [209, 117, 143],
+     "dtype": "float32",
+     "h": 200,
+     "mul": [41, 143, 31],
+     "w": 160
+    },
+    "direction": ["0x1.0000000000000p+0", "0x1.0000000000000p+0"],
+    "key": 0,
+    "length": ["0x1.0000000000000p+4", "0x1.7000000000000p+5"],
+    "n": 16,
+    "r": "0x1.8000000000000p+3",
+    "script": "moments plan",
+    "seed": 0,
+    "source": "seeded",
+    "t": "0x1.0000000000000p-1",
+    "x": "0x1.3c00000000000p+7",
+    "y": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "Moments(max_dim, hold, t_in, t_out).speed_lines(img, t, key, x, y, r, direction, n, length, seed)",
+   "expect": {
+    "baseline": "bytes",
+    "box": [138, 0, 143, 5],
+    "dtype": "float32",
+    "returned": "new",
+    "stored": "uint8"
+   },
+   "id": "c033"
+  }
+ ],
+ "note": "args.canvas makes the picture, w x h x 3: bytes first (with only \"flat\", that colour everywhere; with \"mul\" and \"add\", pixel i, counted row by row from the top left, has the channels (mul[c] * i + add[c]) % 256), then, in float64, byte * gain + bias (when \"gain\" is there; both float.hex()), then the cast to \"dtype\" (float32 or float64). The result: expect.returned is \"img\" when Python returned the very array it was given (in place, or untouched) and \"new\" when it made one; expect.dtype is the dtype of what came back. The picture is stored as its difference from a baseline: expect.baseline is \"canvas\" (the picture as made) or \"bytes\" (np.clip(canvas, 0, 255).astype(np.uint8), which is what a drawing call that draws starts from; one that draws nothing returns the picture itself, and its baseline is \"canvas\"); expect.box [x0, y0, x1, y1] bounds the pixels that differ from the baseline (null: none do) and \"out\" is that part of the result, stored as uint8 when every value in it is a whole number from 0 to 255 (expect.stored says which dtype). Outside the box the result equals the baseline. apply_dim(img, t, keep): keep is a list of [x, y, r]; x and y are numpy float64 scalars, as kit.picture passes them (cam.wp), so the lit discs are computed in float64. The result is float64 and differs from the picture nearly everywhere, so it is stored thinned: expect.step n means \"out\" holds the pixels i = 0, n, 2 n, ... (counted row by row), (k, 3); expect.box is then absent. speed_lines(img, t, key, x, y, r, direction, n, length, seed): x, y and r as numpy float64.",
+ "scripts": {
+  "moments kit.picture": {
+   "calls": [
+    {
+     "key": 0,
+     "rgb": ["0x1.bc00000000000p+7", "0x1.d000000000000p+7", "0x1.ec00000000000p+7"],
+     "t0": "0x1.66d2dcb1465e9p+3"
+    },
+    {
+     "key": 1,
+     "rgb": ["0x1.e000000000000p+6", "0x1.e000000000000p+7", "0x1.7000000000000p+7"],
+     "t0": "0x1.027a786c22681p+4"
+    },
+    {
+     "key": 1,
+     "rgb": ["0x1.e000000000000p+6", "0x1.e000000000000p+7", "0x1.7000000000000p+7"],
+     "t0": "0x1.a05859c8c9321p+4"
+    },
+    {
+     "key": 0,
+     "rgb": ["0x1.bc00000000000p+7", "0x1.d000000000000p+7", "0x1.ec00000000000p+7"],
+     "t0": "0x1.e0e0ded288ce7p+4"
+    },
+    {
+     "key": 0,
+     "rgb": ["0x1.bc00000000000p+7", "0x1.d000000000000p+7", "0x1.ec00000000000p+7"],
+     "t0": "0x1.54e7ea5f84cadp+5"
+    }
+   ],
+   "hold": "0x1.199999999999ap-1",
+   "kind": "Moments",
+   "max_dim": "0x1.3333333333333p-2",
+   "t_in": "0x1.1eb851eb851ecp-3",
+   "t_out": "0x1.999999999999ap-2"
+  },
+  "moments one": {
+   "calls": [
+    {
+     "key": 0,
+     "rgb": ["0x1.bc00000000000p+7", "0x1.d000000000000p+7", "0x1.ec00000000000p+7"],
+     "t0": "0x1.0000000000000p+0"
+    }
+   ],
+   "hold": "0x1.199999999999ap-1",
+   "kind": "Moments",
+   "max_dim": "0x1.3333333333333p-2",
+   "t_in": "0x1.1eb851eb851ecp-3",
+   "t_out": "0x1.999999999999ap-2"
+  },
+  "moments plan": {
+   "calls": [
+    {
+     "k": "0x1.677caaf2693d1p+0",
+     "key": 0,
+     "rgb": ["0x1.9d289816ba2dbp+7", "0x1.07c82a8997f7ep+7", "0x1.0e16c69a59053p+7"],
+     "t0": "0x1.8000000000000p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 1,
+     "rgb": ["0x1.b403255b4a15ap+5", "0x1.65d05d4e7ffabp+7", "0x1.c971d3b74c6d3p+7"],
+     "t0": "0x1.0cd24fd3fde71p+0"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 2,
+     "rgb": ["0x1.bec3c6f9636a7p+5", "0x1.2df290382fa14p+3", "0x1.62c44cc268ccbp+6"],
+     "t0": "0x1.ce6eb43375285p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 0,
+     "rgb": ["0x1.2eaa0fb4fbe4cp+5", "0x1.a43b39eff63cep+7", "0x1.638396fd6a734p+6"],
+     "t0": "0x1.c5c5a39744b1dp-2"
+    },
+    {
+     "k": "0x1.b8fbe64db1c00p-2",
+     "key": 1,
+     "rgb": ["0x1.a5c98ed578f45p+7", "0x1.42badc592b15fp+7", "0x1.f6ad62e5417b9p+5"],
+     "t0": "0x1.4637e171ff6aap+0"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 2,
+     "rgb": ["0x1.d34f94092e359p+7", "0x1.d71f4536e8567p+7", "0x1.1d6fb20ad2a7cp+7"],
+     "t0": "0x1.92a651f92bf0bp+0"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 0,
+     "rgb": ["0x1.50f5dc1bbc59dp+7", "0x1.f23aba2b3c06fp+5", "0x1.508895b93a4d5p+6"],
+     "t0": "0x1.8000000000000p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 1,
+     "rgb": ["0x1.80c694321fe5fp+7", "0x1.4200c3c8b8a4bp+6", "0x1.141a8429ac0f6p+7"],
+     "t0": "0x1.db5079741fb1ap-1"
+    },
+    {
+     "k": "0x1.6acfd6cf90f05p+0",
+     "key": 2,
+     "rgb": ["0x1.d23b6f9ae58e8p+7", "0x1.f8a7a1d347adep+7", "0x1.4b55e03432ad3p+5"],
+     "t0": "0x1.108bf4b01390ap-2"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 0,
+     "rgb": ["0x1.cbb286c0ad7f1p+1", "0x1.44c55d4bb53e6p+7", "0x1.eacf3b6c7f3e2p+7"],
+     "t0": "0x1.7d39cdd016842p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 1,
+     "rgb": ["0x1.5e47d5da34f8cp+6", "0x1.178a8d1ac8faep+7", "0x1.e55c5a6310740p+6"],
+     "t0": "0x1.826ea4a2e9e4ap-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 2,
+     "rgb": ["0x1.8f2bb98c33609p+6", "0x1.4b1e6c6a529a7p+6", "0x1.8e32c309a8bf3p+7"],
+     "t0": "0x1.1abed070ccdd6p+0"
+    },
+    {
+     "k": "0x1.9ca3431a17d4cp-2",
+     "key": 0,
+     "rgb": ["0x1.f7bb3fefd0b7fp+7", "0x1.9b217dff5404ap+7", "0x1.ee2278a7cfbf1p+7"],
+     "t0": "0x1.8000000000000p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 1,
+     "rgb": ["0x1.20d0424c045fdp+7", "0x1.ae59affbc8c03p+7", "0x1.1c36d9fd3d7a2p+4"],
+     "t0": "0x1.8646d4de63d9fp-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 2,
+     "rgb": ["0x1.0b2ad23962170p+7", "0x1.6c2e29906d116p+7", "0x1.6ce47a2783d5bp+6"],
+     "t0": "0x1.c1809fd85c417p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 0,
+     "rgb": ["0x1.526c5afd910e4p+2", "0x1.2e33540823388p+6", "0x1.3cd8877e57128p+2"],
+     "t0": "0x1.5f5576374ae3ap-1"
+    },
+    {
+     "k": "0x1.1b62bc92e2b9bp+0",
+     "key": 1,
+     "rgb": ["0x1.0113e0aeef5b8p+7", "0x1.de1c56d1a7205p+7", "0x1.4d023fc0f1992p+4"],
+     "t0": "0x1.12e4240228cbfp+0"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 2,
+     "rgb": ["0x1.f7a73a71e6c40p+7", "0x1.48caf0d89ea46p+5", "0x1.877ec7f993b56p+7"],
+     "t0": "0x1.1d9f646741ce3p+0"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 0,
+     "rgb": ["0x1.ecb2fe3f682e2p+7", "0x1.9771fd574d9f6p+7", "0x1.da124feda5d77p+7"],
+     "t0": "0x1.8000000000000p-1"
+    },
+    {
+     "k": "0x1.0000000000000p+0",
+     "key": 1,
+     "rgb": ["0x1.6c8cd9d34ee15p+7", "0x1.1b630179e6436p+4", "0x1.c11c4165a055cp+5"],
+     "t0": "0x1.22838a3318ce9p+0"
+    }
+   ],
+   "hold": "0x1.199999999999ap-1",
+   "kind": "Moments",
+   "max_dim": "0x1.3333333333333p-2",
+   "t_in": "0x1.1eb851eb851ecp-3",
+   "t_out": "0x1.999999999999ap-2"
+  }
+ },
+ "tool": "kit_fx"
+}

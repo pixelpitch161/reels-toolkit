@@ -1,0 +1,53 @@
+{
+ "about": "examples/trombone_vs_horn: the kit's own checks on the first fits of the Studio's search (ruling M3-R47), for native_render when none of them passes every check: each seed's verdicts, and its whole checks document in the cache",
+ "fights": [
+  {
+   "checks": "episodes/trombone_vs_horn/native/s820_checks.json",
+   "rec_hash": "36518122f241abb9",
+   "seed": 820,
+   "t_ko": 51.685483870967744,
+   "verdicts": {
+    "band": true,
+    "flash": true,
+    "focus": true,
+    "levels": false,
+    "loop": true,
+    "safezone": true
+   },
+   "winner": 1
+  },
+  {
+   "checks": "episodes/trombone_vs_horn/native/s75_checks.json",
+   "rec_hash": "1b73053866c86f48",
+   "seed": 75,
+   "t_ko": 51.69381720430108,
+   "verdicts": {
+    "band": true,
+    "flash": true,
+    "focus": true,
+    "levels": false,
+    "loop": true,
+    "safezone": true
+   },
+   "winner": 0
+  },
+  {
+   "checks": "episodes/trombone_vs_horn/native/s983_checks.json",
+   "rec_hash": "897f0ce9213971a6",
+   "seed": 983,
+   "t_ko": 50.25215053763441,
+   "verdicts": {
+    "band": true,
+    "flash": true,
+    "focus": true,
+    "levels": false,
+    "loop": true,
+    "safezone": true
+   },
+   "winner": 1
+  }
+ ],
+ "format": 1,
+ "seeds": [820, 75, 983],
+ "tool": "tools.studio_export.episode_trombone_vs_horn"
+}

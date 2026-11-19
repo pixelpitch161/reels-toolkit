@@ -1,0 +1,7 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/episodes/crossovers/crossovers.json", "sha256": "cbda235bd53a7218773bc6c3b57dbd2ceac72622c1dc9725eb83f2044065e540", "bytes": 11959, "tool": "tools.studio_export.crossovers", "commit": "00e3a1c51dd04d6211b37246312442499ad861c0", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/episodes/crossovers/pins.json", "sha256": "ca7d94232a6ebe0daf0249ecc68a5e6abeb52f2dabb6881156192cd591f7706d", "bytes": 1529, "tool": "tools.studio_export.m3refs", "commit": "00e3a1c51dd04d6211b37246312442499ad861c0", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

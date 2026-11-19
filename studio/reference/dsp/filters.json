@@ -1,0 +1,382 @@
+{
+ "about": "scipy.signal.sosfilt and lfilter on fixed noise inputs, for designs the episode asks for and for the kit's other lfilter uses",
+ "cases": [
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.7000000000000p+5"],
+     "btype": "hp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c000__out",
+    "sos": "c000__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 46.0, 'hp', fs=48000, output='sos')",
+   "id": "c000",
+   "used_by": ["ballfight.kit.moods.big_top Bed.bass_drum"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.f400000000000p+11"],
+     "btype": "hp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c001__out",
+    "sos": "c001__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 4000.0, 'hp', fs=48000, output='sos')",
+   "id": "c001",
+   "used_by": ["reelkit.audio crash"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.0680000000000p+12"],
+     "btype": "hp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c002__out",
+    "sos": "c002__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 4200.0, 'hp', fs=48000, output='sos')",
+   "id": "c002",
+   "used_by": ["ballfight.kit.moods.big_top Bed.choke"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.4000000000000p+7"],
+     "btype": "lp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c003__out",
+    "sos": "c003__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 160.0, 'lp', fs=48000, output='sos')",
+   "id": "c003",
+   "used_by": ["ballfight.kit.moods.big_top Bed.vs"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.5e00000000000p+9"],
+     "btype": "lp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c004__out",
+    "sos": "c004__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 700.0, 'lp', fs=48000, output='sos')",
+   "id": "c004",
+   "used_by": ["reelkit.audio thud"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.3880000000000p+11"],
+     "btype": "lp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c005__out",
+    "sos": "c005__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 2500.0, 'lp', fs=48000, output='sos')",
+   "id": "c005",
+   "used_by": ["ballfight.kit.music riser"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.3880000000000p+12"],
+     "btype": "lp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c006__out",
+    "sos": "c006__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 5000.0, 'lp', fs=48000, output='sos')",
+   "id": "c006",
+   "used_by": ["reelkit.audio reverb"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.7700000000000p+10", "0x1.f400000000000p+12"],
+     "btype": "bp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c007__out",
+    "sos": "c007__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, [1500.0, 8000.0], 'bp', fs=48000, output='sos')",
+   "id": "c007",
+   "used_by": ["reelkit.audio snare"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.2c00000000000p+10", "0x1.3880000000000p+12"],
+     "btype": "bp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c008__out",
+    "sos": "c008__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, [1200.0, 5000.0], 'bp', fs=48000, output='sos')",
+   "id": "c008",
+   "used_by": ["ballfight.kit.moods.big_top Bed.calliope"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.9000000000000p+8", "0x1.3880000000000p+12"],
+     "btype": "bp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c009__out",
+    "sos": "c009__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, [400.0, 5000.0], 'bp', fs=48000, output='sos')",
+   "id": "c009",
+   "used_by": ["ballfight.kit.music score"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 4,
+     "Wn": ["0x1.2c00000000000p+9", "0x1.9000000000000p+11"],
+     "btype": "band",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c010__out",
+    "sos": "c010__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(4, [600.0, 3200.0], 'band', fs=48000, output='sos')",
+   "id": "c010",
+   "used_by": ["ballfight.kit.checks band"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 4,
+     "Wn": ["0x1.1800000000000p+6", "0x1.5e00000000000p+9"],
+     "btype": "band",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c011__out",
+    "sos": "c011__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(4, [70.0, 700.0], 'band', fs=48000, output='sos')",
+   "id": "c011",
+   "used_by": ["ballfight.kit.checks band"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.3100000000000p+9"],
+     "btype": "hp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c012__out",
+    "sos": "c012__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, 610.0, 'hp', fs=48000, output='sos')",
+   "id": "c012",
+   "used_by": ["ballfight.kit.music colour"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.f655c1fbf677ap+7", "0x1.9b0058e56c907p+9"],
+     "btype": "bp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c013__out",
+    "sos": "c013__sos",
+    "x": "noise"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise, axis=0)",
+   "design": "scipy.signal.butter(2, [251.16749560722002, 822.0027128963565], 'bp', fs=48000, output='sos')",
+   "id": "c013",
+   "used_by": ["ballfight.kit.music wah"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.3880000000000p+12"],
+     "btype": "lp",
+     "fs": "0x1.7700000000000p+15",
+     "output": "sos"
+    }
+   },
+   "arrays": {
+    "out": "c014__out",
+    "sos": "c014__sos",
+    "x": "noise2"
+   },
+   "call": "scipy.signal.sosfilt(sos, noise2, axis=0)",
+   "design": "scipy.signal.butter(2, 5000.0, 'lp', fs=48000, output='sos')",
+   "id": "c014",
+   "used_by": ["reelkit.audio reverb"]
+  },
+  {
+   "args": {
+    "design": {
+     "N": 2,
+     "Wn": ["0x1.d0662af4f8742p-4"],
+     "btype": "low",
+     "fs": null,
+     "output": "ba"
+    }
+   },
+   "arrays": {
+    "a": "c015__a",
+    "b": "c015__b",
+    "out": "c015__out",
+    "x": "noise"
+   },
+   "call": "scipy.signal.lfilter(b, a, noise)",
+   "design": "scipy.signal.butter(2, 0.11337868480725624, 'low', output='ba')",
+   "id": "c015",
+   "used_by": ["flute60_lowpoly flute_tone"]
+  },
+  {
+   "args": {
+    "a": ["0x1.0000000000000p+0", "-0x1.fef9db22d0e56p-1"],
+    "b": ["0x1.0624dd2f1a9fcp-9"]
+   },
+   "arrays": {
+    "a": "c016__a",
+    "b": "c016__b",
+    "out": "c016__out",
+    "x": "noise_squared"
+   },
+   "call": "scipy.signal.lfilter([0.002], [1, -0.998], noise ** 2)",
+   "id": "c016",
+   "note": "the compressor's envelope follower, on a mean square",
+   "used_by": ["ballfight.kit.music master"]
+  },
+  {
+   "args": {
+    "a": ["0x1.0000000000000p+0", "-0x1.b0cf0c24e59d0p+0", "0x1.7707b85469635p-1"],
+    "b": ["0x1.88fdf15b33df7p+0", "-0x1.5889803022552p+1", "0x1.32c9df0a5fdf9p+0"]
+   },
+   "arrays": {
+    "a": "c017__a",
+    "b": "c017__b",
+    "out": "c017__out",
+    "x": "noise2"
+   },
+   "call": "scipy.signal.lfilter(b1, a1, noise2, axis=0)",
+   "id": "c017",
+   "note": "BS.1770 K-weighting, the first stage (the shelf)",
+   "used_by": ["ballfight.kit.checks loudness"]
+  },
+  {
+   "args": {
+    "a1": ["0x1.0000000000000p+0", "-0x1.b0cf0c24e59d0p+0", "0x1.7707b85469635p-1"],
+    "a2": ["0x1.0000000000000p+0", "-0x1.fd73bffffffecp+0", "0x1.faeabfffffff8p-1"],
+    "b1": ["0x1.88fdf15b33df7p+0", "-0x1.5889803022552p+1", "0x1.32c9df0a5fdf9p+0"],
+    "b2": ["0x1.0000000000000p+0", "-0x1.0000000000000p+1", "0x1.0000000000000p+0"]
+   },
+   "arrays": {
+    "a": "c018__a",
+    "b": "c018__b",
+    "out": "c018__out",
+    "x": "noise2"
+   },
+   "call": "scipy.signal.lfilter(b2, a2, lfilter(b1, a1, noise2, axis=0), axis=0)",
+   "id": "c018",
+   "note": "BS.1770 K-weighting, both stages: `b`, `a` are the second stage, applied to the case before",
+   "used_by": ["ballfight.kit.checks loudness"]
+  }
+ ],
+ "notes": {
+  "design": "the butter call whose output the filter is (the same design is a case of butter.npz)",
+  "noise": "np.random.default_rng(4800).normal(0, 1, 4800): the fixed mono input",
+  "noise2": "np.random.default_rng(4801).normal(0, 1, (4800, 2)): the fixed stereo input (filtered along axis 0, each column on its own)"
+ },
+ "tool": "dsp"
+}

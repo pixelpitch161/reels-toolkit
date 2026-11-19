@@ -1,0 +1,83 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["ALTO SAX", "TENOR SAX"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 0.75
+tempo_bpm = 118.0
+seed = 621
+
+[pair_rules]
+
+[music]
+theme = "dark_disco"
+arrangement = "classic"
+key = "A"
+scale = "minor"
+chords_intro = ["Am", "E7"]
+chord_loop = ["Am", "F", "Dm", "E7", "Am", "F", "G", "E7"]
+chords_tail = ["F", "G", "E7", "E7"]
+music_seed = 1
+
+[music.roles]
+"ALTO SAX" = "melody"
+"TENOR SAX" = "bass"
+
+[music.lines]
+"ALTO SAX" = [
+    76, 74, 72, 74, 76, 79, 76, 72,
+    77, 76, 72, 69, 72, 76, 77, 76,
+    74, 72, 69, 65, 69, 72, 74, 77,
+    76, 74, 71, 68, 71, 74, 76, 80,
+    81, 79, 76, 72, 76, 79, 81, 79,
+    77, 76, 72, 69, 72, 77, 76, 72,
+    79, 74, 71, 67, 71, 74, 79, 74,
+    80, 76, 74, 71, 68, 71, 74, 76,
+]
+"TENOR SAX" = [
+    45, 45, 48, 50, 52, 50, 48, 45, 57, 55, 52, 50, 48, 50, 52, 55,
+    53, 53, 57, 60, 57, 55, 53, 48, 53, 55, 57, 60, 57, 55, 53, 52,
+    50, 50, 53, 57, 55, 53, 50, 48, 50, 53, 57, 55, 53, 50, 48, 50,
+    52, 52, 56, 59, 62, 59, 56, 52, 50, 52, 56, 59, 56, 52, 50, 47,
+    57, 57, 55, 52, 48, 50, 52, 55, 57, 60, 57, 55, 52, 50, 48, 45,
+    53, 53, 52, 48, 45, 48, 52, 53, 57, 53, 52, 48, 45, 48, 52, 53,
+    55, 55, 59, 62, 59, 55, 50, 47, 55, 59, 62, 59, 55, 50, 47, 50,
+    52, 52, 50, 47, 44, 47, 50, 52, 56, 59, 56, 52, 50, 47, 44, 47,
+]
+
+[music.solos]
+"ALTO SAX" = [
+    [0.0, 76, 0.5], [0.5, 79, 0.5], [1.0, 81, 1.0], [2.0, 79, 0.5],
+    [2.5, 76, 0.5], [3.0, 74, 0.5], [3.5, 72, 0.5], [4.0, 74, 0.5],
+    [4.5, 76, 0.5], [5.0, 79, 0.5], [5.5, 80, 0.5], [6.0, 81, 2.0],
+    [8.0, 79, 0.5], [8.5, 76, 0.5], [9.0, 81, 1.5],
+]
+"TENOR SAX" = [
+    [0.0, 45, 0.5], [0.5, 48, 0.5], [1.0, 52, 0.5], [1.5, 55, 0.5],
+    [2.0, 57, 1.0], [3.0, 55, 0.5], [3.5, 52, 0.5], [4.0, 50, 0.5],
+    [4.5, 48, 0.5], [5.0, 52, 0.5], [5.5, 50, 0.5], [6.0, 45, 2.0],
+    [8.0, 57, 0.5], [8.5, 55, 0.5], [9.0, 45, 1.5],
+]
+
+[music.title_hits]
+"ALTO SAX" = [76, 81]
+"TENOR SAX" = [45, 57]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "Alto or tenor? Sax players, settle it 🎷 Comment the next match-up 👇"
+instagram = "#ballfight #saxophone #altosax #tenorsax #sax #saxophonist #disco #darkdisco #musicmemes #pixelart #lowpoly #satisfying"
+tiktok = "#fyp #ballfight #saxophone #altosax #tenorsax #saxtok #musictok #disco #pixelart #satisfying"
+shorts = [
+    "Alto Sax vs Tenor Sax: who owns the stage?",
+    "The alto owns the spotlights, the tenor owns the crowd - every hit in key over a dark disco groove. Alto or tenor?",
+    "#shorts #ballfight #saxophone #altosax #tenorsax #music #pixelart",
+]

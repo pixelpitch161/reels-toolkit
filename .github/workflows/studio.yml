@@ -1,0 +1,336 @@
+name: studio
+
+on:
+  push:
+    paths:
+      - "studio/**"
+      - "tools/studio_export/**"
+      - ".github/workflows/studio.yml"
+  pull_request:
+    paths:
+      - "studio/**"
+      - "tools/studio_export/**"
+      - ".github/workflows/studio.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  windows:
+    name: build bf-cli, test bf-core and bf-sim, render a clip (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: studio
+        shell: bash
+    steps:
+      # The reference files are compared byte for byte: no line-ending conversion on checkout.
+      - name: Keep line endings as committed
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      # The channel comes from studio/rust-toolchain.toml, as in the Linux job; the default host makes rustup resolve
+      # it to the GNU toolchain of the reference PC rather than the runner's MSVC default.
+      - name: Install the pinned toolchain (GNU host, as on the reference PC)
+        run: |
+          channel="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
+          test -n "$channel"
+          rustup set default-host x86_64-pc-windows-gnu
+          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
+          rustc -vV
+          cargo -V
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            studio/target
+          key: studio-${{ runner.os }}-gnu-${{ hashFiles('studio/rust-toolchain.toml', 'studio/Cargo.lock') }}
+          restore-keys: |
+            studio-${{ runner.os }}-gnu-
+
+      - name: Build bf-cli
+        run: cargo build --release --locked -p bf-cli
+
+      # bf-pack's tests need no network (its one download test is ignored) and work in temp folders only. The output
+      # is kept in the runner's temp folder, so "Name what failed in the packaging steps" can annotate a failure.
+      - name: Test bf-core, bf-sim and bf-pack
+        id: core-tests
+        run: |
+          log="$(cygpath -u '${{ runner.temp }}')/core-tests.log"
+          cargo test --release --locked --no-fail-fast -p bf-core -p bf-sim -p bf-pack 2>&1 | tee "$log"
+
+      # The command line end to end, with the app's own ffmpeg: the build pinned in studio/packaging/ffmpeg.toml (the
+      # same exe the owner's PC renders with), not whatever a package manager has today. Only the archive is kept
+      # between runs (about 258 MB), keyed by the pin, so a warm run downloads nothing; the files are unpacked from it
+      # and every checksum is checked again on each run, and a wrong one fails the step. The archive is saved as soon
+      # as it has been checked (not at the end of the job), so it is kept even when a later step fails.
+      - name: Restore the ffmpeg download
+        id: ffmpeg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/ffmpeg-cache/*.zip
+          key: studio-ffmpeg-${{ runner.os }}-${{ hashFiles('studio/packaging/ffmpeg.toml') }}
+
+      - name: Fetch the app's own ffmpeg
+        id: ffmpeg
+        run: |
+          tmp="$(cygpath -u '${{ runner.temp }}')"
+          log="$tmp/ffmpeg.log"
+          {
+            if [ "${{ steps.ffmpeg-cache.outputs.cache-hit }}" = "true" ]; then
+              echo "::notice title=ffmpeg::the pinned ffmpeg archive came from the cache"
+            else
+              echo "::notice title=ffmpeg::the pinned ffmpeg archive is not in the cache: it is downloaded (258 MB)"
+            fi
+            cargo run --release --locked -p bf-pack --bin ballfight-pack -- fetch-ffmpeg \
+              --cache "$(cygpath -w "$tmp/ffmpeg-cache")" --out "$(cygpath -w "$tmp/ffmpeg")"
+            real="$tmp/ffmpeg/ffmpeg.exe"
+            if [ ! -f "$real" ]; then echo "::error::ffmpeg was not fetched"; exit 1; fi
+            encoders="$("$real" -hide_banner -encoders)"
+            for enc in libx264 aac; do
+              if ! grep -qE "^ *[VA][^ ]* +$enc( |$)" <<<"$encoders"; then
+                echo "::error::the fetched ffmpeg ($real) has no $enc encoder, so no video can be made"
+                exit 1
+              fi
+            done
+            "$real" -version | head -n 1
+            echo "BALLFIGHT_FFMPEG=$(cygpath -w "$real")" >> "$GITHUB_ENV"
+          } 2>&1 | tee "$log"
+
+      - name: Keep the ffmpeg download for the next runs
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/ffmpeg-cache/*.zip
+          key: studio-ffmpeg-${{ runner.os }}-${{ hashFiles('studio/packaging/ffmpeg.toml') }}
+
+      # The sound and three frames of the example episode against studio/replay/render_hashes.txt (blessed on the
+      # Windows reference PC): the proof that picture and sound are the same bytes on another PC; and a clip encoded
+      # with 1 and with 8 workers is the same file.
+      - name: Test that a render is reproducible
+        env:
+          BF_NEED_FFMPEG: "1"
+        run: cargo test --release --locked -p bf-cli --test e2e -- --exact render_is_reproducible --nocapture
+
+      # The 3 s clip of the example episode, encoded by the pinned ffmpeg with the default setting and with Faster, is
+      # byte for byte its line in studio/replay/encode_hashes.txt for the x264 thread count used here (1.5 times the
+      # runner's logical processors). BF_NEED_PINNED_FFMPEG=1 makes "this is not the pinned ffmpeg" and "no pinned
+      # line for this thread count" failures instead of notices, so the comparison is really made here. The step
+      # also fails when not exactly these two tests ran (a renamed test would otherwise pass by running nothing).
+      - name: Test that the encode is pinned
+        id: encode
+        env:
+          BF_NEED_PINNED_FFMPEG: "1"
+        run: |
+          log="$(cygpath -u '${{ runner.temp }}')/encode.log"
+          cargo test --release --locked -p bf-cli --test e2e -- --exact the_encode_is_pinned the_faster_clip_is_pinned \
+            --nocapture 2>&1 | tee "$log"
+          # (grep without -q reads to the end, so pipefail never sees sed cut short)
+          if ! sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" | grep -E '^test result: ok\. 2 passed' >/dev/null; then
+            echo "FAILED: not exactly the two pinned-encode tests ran" | tee -a "$log"
+            exit 1
+          fi
+
+      # The shipped binary, built on its own after the tests, so the clip below runs exactly what a person runs.
+      - name: Build the ballfight binary
+        run: cargo build --release --locked -p bf-cli --bin ballfight
+
+      - name: Render a clip of the example episode
+        run: |
+          out="$RUNNER_TEMP/ballfight out"
+          ./target/release/ballfight render fights/flute_vs_trombone.toml \
+            --rec reference/fights/flute_vs_trombone/ep392.bfrec --frames 0:90 --out "$out"
+          test -s "$out/flute_vs_trombone_frames0-90/flute_vs_trombone_frames0-90.mp4"
+
+      # The desktop app: its release build, and the tests that need no graphics adapter (the unit tests inside each
+      # file, among them the real engine's with the ffmpeg fetched above; the command line's; and the saved-file
+      # compatibility tests). The interface tests (`--test ui`) draw through DirectX 12 only (ruling M2-R27) and are
+      # not run here: a hosted runner is not known to offer a DirectX 12 adapter. They run on the owner's PC.
+      # The build's output is kept the same way as the tests' below, so a failed build names itself too (the step that
+      # reads the log runs on any failure). The step still fails with cargo's own exit code.
+      - name: Build the app
+        run: |
+          set -o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          df -h . | tail -n 1
+          cargo build --release --locked -p bf-app 2>&1 | tee "$log"
+
+      # The output is kept as well as shown, so a failure can be read without the log (the step after this one). The
+      # job's steps run in Git Bash (`defaults.run.shell: bash`) in `studio/`; the log is written by absolute path in
+      # the runner's temp folder, the same path the next step reads. stderr joins stdout before the pipe (cargo's
+      # compile errors and the harness's failures are on different streams), and pipefail (which GitHub's bash also
+      # sets) keeps cargo's own exit code, so the step fails exactly as the tests do. `--no-fail-fast` lets one run
+      # name every failing test.
+      - name: Test the app (no window)
+        run: |
+          set -o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          echo "the test output is kept in $log"
+          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log"
+
+      # The package the owner installs, made from the app built above and the ffmpeg fetched above (`package` never
+      # downloads), in the runner's temp folder. Then every file is checked against its MANIFEST.txt (size and
+      # SHA-256, nothing missing and nothing more), the exe against the build, and the ffmpeg files against the pin.
+      # Nothing is uploaded: the package is about 600 MB, and the owner's PC builds its own (update route A).
+      - name: Package the app and check the package
+        id: package
+        run: |
+          tmp="$(cygpath -u '${{ runner.temp }}')"
+          log="$tmp/package.log"
+          pkg="$tmp/package"
+          studio="$PWD"
+          exe="$studio/target/release/ballfight-studio.exe"
+          cargo run --release --locked -p bf-pack --bin ballfight-pack -- package --exe "$(cygpath -w "$exe")" \
+            --out "$(cygpath -w "$pkg")" --cache "$(cygpath -w "$tmp/ffmpeg-cache")" --from "$GITHUB_WORKSPACE" \
+            2>&1 | tee "$log"
+          check() {
+            fail() { echo "FAILED: $*"; exit 1; }
+            version="$(sed -n '/^\[workspace\.package\]/,/^\[/s/^version *= *"\(.*\)".*/\1/p' "$studio/Cargo.toml")"
+            [ -n "$version" ] || fail "no version was read from studio/Cargo.toml"
+            cd "$pkg"
+            [ -f MANIFEST.txt ] || fail "the package has no MANIFEST.txt"
+            manifest="$(tr -d '\r' < MANIFEST.txt)"
+            [ "$(sed -n 1p <<<"$manifest")" = "BALLFIGHT Studio package manifest 1" ] \
+              || fail "MANIFEST.txt does not start with the package header"
+            [ "$(sed -n 2p <<<"$manifest")" = "version $version" ] || fail "MANIFEST.txt does not name version $version"
+            listed="$(sed -n '3,$p' <<<"$manifest" | grep -v '^$' || true)"
+            [ -n "$listed" ] || fail "MANIFEST.txt lists no files"
+            while read -r sha bytes path; do
+              { [ -f "$path" ] && [ ! -L "$path" ]; } || fail "$path is in MANIFEST.txt but is not a file in it"
+              size="$(stat -c %s "$path")"
+              [ "$size" = "$bytes" ] || fail "$path is $size bytes, MANIFEST.txt says $bytes"
+              got="$(sha256sum "$path" | cut -d ' ' -f 1)"
+              [ "$got" = "$sha" ] || fail "$path has SHA-256 $got, MANIFEST.txt says $sha"
+            done <<<"$listed"
+            want="$({ cut -d ' ' -f 3- <<<"$listed"; echo MANIFEST.txt; } | LC_ALL=C sort)"
+            have="$(find . -mindepth 1 \( -type f -o -type l \) | sed 's|^\./||' | LC_ALL=C sort)"
+            [ "$have" = "$want" ] || fail "the package does not hold exactly the files MANIFEST.txt lists:" \
+              "$(diff <(echo "$want") <(echo "$have") | grep '^[<>]' | head -n 5 | tr '\n' ' ')"
+            for f in ballfight-studio.exe ballfight.ico ffmpeg/ffmpeg.exe ffmpeg/ffprobe.exe ffmpeg/LICENSE.txt \
+              ffmpeg/ABOUT.txt; do
+              grep -Fx "$f" <<<"$want" >/dev/null || fail "the package has no $f"
+            done
+            [ "$(sha256sum ballfight-studio.exe | cut -d ' ' -f 1)" = "$(sha256sum "$exe" | cut -d ' ' -f 1)" ] \
+              || fail "the package's ballfight-studio.exe is not the exe built in this run"
+            pins="$(tr -d '\r' < "$studio/packaging/ffmpeg.toml" \
+              | awk -F '"' '/^\[\[files\]\]/ {f = 1} f && /^name *=/ {n = $2} f && /^sha256 *=/ {print $2 " " n}')"
+            [ "$(wc -l <<<"$pins")" -ge 3 ] || fail "the pinned files were not read from studio/packaging/ffmpeg.toml"
+            while read -r sha name; do
+              got="$(sha256sum "ffmpeg/$name" | cut -d ' ' -f 1)"
+              [ "$got" = "$sha" ] || fail "ffmpeg/$name has SHA-256 $got, studio/packaging/ffmpeg.toml says $sha"
+            done <<<"$pins"
+            total="$(awk '{s += $2} END {print s}' <<<"$listed")"
+            echo "::notice title=package::the package of version $version holds $(wc -l <<<"$listed") files and" \
+              "MANIFEST.txt, $total bytes in all; every file matches MANIFEST.txt, the exe and the ffmpeg pin. It is" \
+              "not uploaded."
+          }
+          check 2>&1 | tee -a "$log"
+
+      # Only when something failed. GitHub shows at most 10 annotations of each kind per step, so the most useful
+      # come first and each kind holds its own: the panics (with the two lines after each) as errors; the failed
+      # tests' names and compile errors as warnings; the first and last lines of the output as notices. Each is cut
+      # to about 300 characters. When there is no log, what is known instead: the shell, the folder, and what the
+      # temp folder holds.
+      - name: Name what failed in the app's tests
+        if: failure()
+        run: |
+          # This step only reports: nothing in it may stop it early (a pattern that finds nothing, a pipe cut short).
+          set +e +o pipefail
+          log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
+          note() {
+            local line="${2:0:300}"
+            line="${line//'%'/'%25'}"
+            line="${line//$'\r'/}"
+            echo "::$1 title=app tests::${line}"
+          }
+          if [ ! -s "$log" ]; then
+            note error "no test output at $log"
+            note error "shell: $BASH ($BASH_VERSION), folder: $(pwd), RUNNER_TEMP: $RUNNER_TEMP"
+            { ls -la "$(dirname "$log")" 2>&1 || true; } | head -n 8 | while IFS= read -r line; do note error "temp: $line"; done
+            exit 0
+          fi
+          # colour codes out, so the patterns see plain text
+          plain="$(dirname "$log")/app-tests.plain.log"
+          sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" > "$plain"
+          { grep -E -A2 'panicked at' "$plain" || true; } | grep -v '^--$' | paste -d ' ' - - - | head -n 10 \
+            | while IFS= read -r line; do note error "panic: $line"; done
+          {
+            { grep -E 'test .* FAILED' "$plain" || true; } | sed 's/^/failed: /'
+            { grep -E '^error(\[E[0-9]+\])?:' "$plain" || true; } | sed 's/^/compile: /'
+          } | awk '!seen[$0]++' | head -n 10 | while IFS= read -r line; do note warning "$line"; done
+          {
+            head -n 30 "$plain" | grep -v '^\s*$' | head -n 5 | sed 's/^/head: /'
+            tail -n 30 "$plain" | grep -v '^\s*$' | tail -n 5 | sed 's/^/tail: /'
+          } | while IFS= read -r line; do note notice "$line"; done
+          # The whole of the failures, on the run's summary page as well.
+          { echo '### The app tests that failed'; echo '```'; grep -E -A4 'panicked at|test .* FAILED' "$plain" | head -n 200; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
+
+      # The same for the steps of the app's own ffmpeg and its package: only for the one of them that failed (a job
+      # stops at its first failed step), with that step's id as the title. Errors: the panics (with the two lines after
+      # each), the lines the step itself marked "FAILED:", and the last three lines of its output (where cargo and
+      # ballfight-pack say why they stopped); warnings: the failed tests' names and compile errors; notices: the first
+      # and last lines. At most 10 of each kind, each cut to about 300 characters.
+      - name: Name what failed in the packaging steps
+        if: >-
+          failure() && (steps.core-tests.outcome == 'failure' || steps.ffmpeg.outcome == 'failure' ||
+          steps.encode.outcome == 'failure' || steps.package.outcome == 'failure')
+        env:
+          OUTCOMES: >-
+            core-tests=${{ steps.core-tests.outcome }} ffmpeg=${{ steps.ffmpeg.outcome }}
+            encode=${{ steps.encode.outcome }} package=${{ steps.package.outcome }}
+        run: |
+          # This step only reports: nothing in it may stop it early (a pattern that finds nothing, a pipe cut short).
+          set +e +o pipefail
+          tmp="$(cygpath -u '${{ runner.temp }}')"
+          for pair in $OUTCOMES; do
+            step="${pair%%=*}"
+            [ "${pair#*=}" = "failure" ] || continue
+            log="$tmp/$step.log"
+            note() {
+              local line="${2:0:300}"
+              line="${line//'%'/'%25'}"
+              line="${line//$'\r'/}"
+              echo "::$1 title=$step::${line}"
+            }
+            if [ ! -s "$log" ]; then
+              note error "no output at $log"
+              note error "shell: $BASH ($BASH_VERSION), folder: $(pwd), RUNNER_TEMP: $RUNNER_TEMP"
+              continue
+            fi
+            plain="$tmp/$step.plain.log"
+            sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" > "$plain"
+            {
+              { grep -E -A2 'panicked at' "$plain" || true; } | grep -v '^--$' | paste -d ' ' - - - | sed 's/^/panic: /'
+              { grep -E '^FAILED: ' "$plain" || true; }
+              grep -v '^\s*$' "$plain" | tail -n 3 | grep -v '^FAILED: ' | sed 's/^/last: /'
+            } | awk '!seen[$0]++' | head -n 10 | while IFS= read -r line; do note error "$line"; done
+            {
+              { grep -E 'test .* FAILED' "$plain" || true; } | sed 's/^/failed: /'
+              { grep -E '^error(\[E[0-9]+\])?:' "$plain" || true; } | sed 's/^/compile: /'
+            } | awk '!seen[$0]++' | head -n 10 | while IFS= read -r line; do note warning "$line"; done
+            {
+              head -n 30 "$plain" | grep -v '^\s*$' | head -n 5 | sed 's/^/head: /'
+              tail -n 30 "$plain" | grep -v '^\s*$' | tail -n 5 | sed 's/^/tail: /'
+            } | while IFS= read -r line; do note notice "$line"; done
+            {
+              echo "### What failed in the step $step"
+              echo '```'
+              grep -E -A4 'panicked at|test .* FAILED|^FAILED: ' "$plain" | head -n 200
+              tail -n 20 "$plain"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY" || true
+          done

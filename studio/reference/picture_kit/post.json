@@ -1,0 +1,355 @@
+{
+ "about": "reelkit.post: bloom, grade, vignette and top_scrim",
+ "cases": [
+  {
+   "args": {
+    "H": 48,
+    "W": 32,
+    "k": "0x1.999999999999ap-2",
+    "thr": "0x1.9000000000000p+7"
+   },
+   "arrays": {
+    "img": "c000__img",
+    "out": "c000__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "H": 48,
+    "W": 32,
+    "k": "0x1.c28f5c28f5c29p-3",
+    "thr": "0x1.c200000000000p+7"
+   },
+   "arrays": {
+    "img": "c001__img",
+    "out": "c001__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "H": 48,
+    "W": 32,
+    "k": "0x1.c28f5c28f5c29p-3",
+    "thr": "0x1.c200000000000p+7"
+   },
+   "arrays": {
+    "exclude": "c002__exclude",
+    "img": "c002__img",
+    "out": "c002__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "H": 48,
+    "W": 32,
+    "k": "0x1.0000000000000p+0",
+    "thr": "0x1.2c00000000000p+7"
+   },
+   "arrays": {
+    "img": "c003__img",
+    "out": "c003__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "H": 48,
+    "W": 32,
+    "k": "0x1.0000000000000p-1",
+    "thr": "0x1.fc00000000000p+7"
+   },
+   "arrays": {
+    "exclude": "c004__exclude",
+    "img": "c004__img",
+    "out": "c004__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48,
+    "k": "0x1.c28f5c28f5c29p-3",
+    "thr": "0x1.c200000000000p+7"
+   },
+   "arrays": {
+    "img": "c005__img",
+    "out": "c005__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "k": "0x1.c28f5c28f5c29p-3",
+    "thr": "0x1.c200000000000p+7"
+   },
+   "arrays": {
+    "img": "c006__img",
+    "out": "c006__out"
+   },
+   "call": "reelkit.post.bloom(img, thr, k, exclude)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "0x1.70a3d70a3d70ap-3",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x1.199999999999ap+0"
+   },
+   "arrays": {
+    "img": "c007__img",
+    "out": "c007__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "0x1.70a3d70a3d70ap-3",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x1.2e147ae147ae1p+0"
+   },
+   "arrays": {
+    "img": "c008__img",
+    "out": "c008__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "black": "0x1.999999999999ap-5",
+    "contrast": "0x1.70a3d70a3d70ap-3",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x1.199999999999ap+0"
+   },
+   "arrays": {
+    "img": "c009__img",
+    "out": "c009__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "0x1.70a3d70a3d70ap-3",
+    "gamma": "0x1.ccccccccccccdp-1",
+    "sat": "0x1.199999999999ap+0"
+   },
+   "arrays": {
+    "img": "c010__img",
+    "out": "c010__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "black": "0x1.47ae147ae147bp-6",
+    "contrast": "0x1.3333333333333p-2",
+    "gamma": "0x1.3333333333333p+0",
+    "sat": "0x1.999999999999ap-1"
+   },
+   "arrays": {
+    "img": "c011__img",
+    "out": "c011__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "0x0.0p+0",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "img": "c012__img",
+    "out": "c012__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "0x1.70a3d70a3d70ap-3",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x0.0p+0"
+   },
+   "arrays": {
+    "img": "c013__img",
+    "out": "c013__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "black": "0x0.0p+0",
+    "contrast": "-0x1.999999999999ap-3",
+    "gamma": "0x1.0000000000000p+0",
+    "sat": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "img": "c014__img",
+    "out": "c014__out"
+   },
+   "call": "reelkit.post.grade(img, contrast, sat, black, gamma)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "cap": "0x1.0000000000000p-1",
+    "cy": "0x1.e147ae147ae14p-2",
+    "start": "0x1.199999999999ap-1",
+    "strength": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "cap": "0x1.0000000000000p-1",
+    "cy": "0x1.e147ae147ae14p-2",
+    "start": "0x1.199999999999ap-1",
+    "strength": "0x1.ccccccccccccdp-2"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "cap": "0x1.999999999999ap-1",
+    "cy": "0x1.0000000000000p-1",
+    "start": "0x1.3333333333333p-2",
+    "strength": "0x1.3333333333333p+0"
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "cap": "0x1.0000000000000p-2",
+    "cy": "0x1.999999999999ap-2",
+    "start": "0x0.0p+0",
+    "strength": "0x1.3333333333333p-1"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "cap": "0x1.0000000000000p+0",
+    "cy": "0x1.e147ae147ae14p-2",
+    "start": "0x1.6666666666666p-1",
+    "strength": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-2",
+    "cy": "0x1.3333333333333p-1",
+    "start": "0x1.b851eb851eb85p-2",
+    "strength": "0x1.8f5c28f5c28f6p-1"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.post.vignette(strength, start, cap, cy)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "amount": "0x1.28f5c28f5c28fp-1",
+    "span": 120,
+    "top": 110
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "amount": "0x1.ccccccccccccdp-2",
+    "span": 90,
+    "top": 100
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "amount": "0x1.3333333333333p-2",
+    "span": 640,
+    "top": 0
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "amount": "0x1.0000000000000p+0",
+    "span": 50,
+    "top": 200
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "amount": "0x1.28f5c28f5c28fp-1",
+    "span": "0x1.0a66666666666p+5",
+    "top": "0x1.ba00000000000p+6"
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.post.top_scrim(amount, top, span)",
+   "id": "c025"
+  }
+ ],
+ "note": "bloom: img is float64 (h, w, 3), exclude a bool (h, w) where the case has one (else None); the cases with args.W and args.H ran with reelkit.post.W and H set to that size (the picture decides the size in the port). grade: img float64. vignette and top_scrim: out is the float64 (640, 360, 1) table.",
+ "tool": "kit"
+}

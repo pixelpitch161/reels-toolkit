@@ -1,0 +1,976 @@
+{
+ "about": "numpy semantics the renderer leans on, element by element",
+ "cases": [
+  {
+   "args": {
+    "hi": "0x1.fe00000000000p+7",
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c000__out",
+    "x": "c000__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "hi": "0x1.0000000000000p+0",
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c001__out",
+    "x": "c001__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "hi": "0x1.0000000000000p+0",
+    "lo": "-0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c002__out",
+    "x": "c002__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "hi": "0x1.0624dd2f1a9fcp-10",
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c003__out",
+    "x": "c003__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "hi": "0x1.fe00000000000p+7",
+    "lo": "-0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c004__out",
+    "x": "c004__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "hi": "0x1.8000000000000p-1",
+    "lo": "0x1.0000000000000p-2"
+   },
+   "arrays": {
+    "out": "c005__out",
+    "x": "c005__x"
+   },
+   "call": "np.clip(x, lo, hi)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "hi": "0x1.fe00000000000p+7",
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c006__out",
+    "x32": "c006__x32"
+   },
+   "call": "np.clip(x32, lo, hi)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "hi": "0x1.0000000000000p+0",
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c007__out",
+    "x32": "c007__x32"
+   },
+   "call": "np.clip(x32, lo, hi)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "hi": "0x1.999999999999ap-4",
+    "lo": "-0x1.8000000000000p+0"
+   },
+   "arrays": {
+    "out": "c008__out",
+    "x32": "c008__x32"
+   },
+   "call": "np.clip(x32, lo, hi)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "lo": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c009__out",
+    "x": "c009__x"
+   },
+   "call": "np.clip(x, lo, None)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "lo": "0x1.0624dd2f1a9fcp-10"
+   },
+   "arrays": {
+    "out": "c010__out",
+    "x": "c010__x"
+   },
+   "call": "np.clip(x, lo, None)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "lo": "-0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c011__out",
+    "x": "c011__x"
+   },
+   "call": "np.clip(x, lo, None)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "lo": "0x1.fe00000000000p+7"
+   },
+   "arrays": {
+    "out": "c012__out",
+    "x": "c012__x"
+   },
+   "call": "np.clip(x, lo, None)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "hi": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "c013__out",
+    "x": "c013__x"
+   },
+   "call": "np.clip(x, None, hi)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "hi": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c014__out",
+    "x": "c014__x"
+   },
+   "call": "np.clip(x, None, hi)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "hi": "0x1.fe00000000000p+7"
+   },
+   "arrays": {
+    "out": "c015__out",
+    "x": "c015__x"
+   },
+   "call": "np.clip(x, None, hi)",
+   "id": "c015"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c016__a",
+    "b": "c016__b",
+    "out": "c016__out"
+   },
+   "call": "np.maximum(a, b)",
+   "id": "c016"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "a": "c017__a",
+    "b": "c017__b",
+    "out": "c017__out"
+   },
+   "call": "np.minimum(a, b)",
+   "id": "c017"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c018__out",
+    "x": "c018__x"
+   },
+   "call": "x.astype(np.uint8)",
+   "id": "c018"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c019__out",
+    "x32": "c019__x32"
+   },
+   "call": "x32.astype(np.uint8)",
+   "id": "c019"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c020__out",
+    "x": "c020__x"
+   },
+   "call": "x.astype(np.int32)",
+   "id": "c020"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c021__out",
+    "x": "c021__x"
+   },
+   "call": "x.astype(np.int64)",
+   "id": "c021"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c022__out",
+    "x": "c022__x"
+   },
+   "call": "np.clip(x, 0, 255).astype(np.uint8)",
+   "id": "c022"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "out": "c023__out",
+    "x32": "c023__x32"
+   },
+   "call": "np.clip(x32, 0, 255).astype(np.uint8)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "gain": "0x1.ff7ced916872bp-1",
+    "levels": 5
+   },
+   "arrays": {
+    "bayer": "c024__bayer",
+    "out": "c024__out",
+    "v": "c024__v"
+   },
+   "call": "np.floor(v * levels + bayer * gain) / levels",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "gain": "0x1.ff7ced916872bp-1",
+    "levels": 6
+   },
+   "arrays": {
+    "bayer": "c025__bayer",
+    "out": "c025__out",
+    "v": "c025__v"
+   },
+   "call": "np.floor(v * levels + bayer * gain) / levels",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "gain": "0x1.ccccccccccccdp-1",
+    "levels": 4
+   },
+   "arrays": {
+    "bayer": "c026__bayer",
+    "out": "c026__out",
+    "v": "c026__v"
+   },
+   "call": "np.floor(v * levels + bayer * gain) / levels",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "gain": "0x1.ccccccccccccdp-1",
+    "levels": 10
+   },
+   "arrays": {
+    "bayer": "c027__bayer",
+    "out": "c027__out",
+    "v": "c027__v"
+   },
+   "call": "np.floor(v * levels + bayer * gain) / levels",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "gain": "0x1.ccccccccccccdp-1",
+    "levels": 3
+   },
+   "arrays": {
+    "bayer": "c028__bayer",
+    "out": "c028__out",
+    "v": "c028__v"
+   },
+   "call": "np.floor(v * levels + bayer * gain) / levels",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "step": 6
+   },
+   "arrays": {
+    "bayer": "c029__bayer",
+    "out": "c029__out",
+    "x": "c029__x"
+   },
+   "call": "np.floor(x / step + bayer) * step",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "gain": "0x1.ff7ced916872bp-1",
+    "step": 6
+   },
+   "arrays": {
+    "bayer": "c030__bayer",
+    "out": "c030__out",
+    "x": "c030__x"
+   },
+   "call": "np.floor(x / step + bayer * gain) * step",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "step": 5
+   },
+   "arrays": {
+    "bayer": "c031__bayer",
+    "out": "c031__out",
+    "x": "c031__x"
+   },
+   "call": "np.floor(x / step + bayer) * step",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "gain": "0x1.ff7ced916872bp-1",
+    "step": 5
+   },
+   "arrays": {
+    "bayer": "c032__bayer",
+    "out": "c032__out",
+    "x": "c032__x"
+   },
+   "call": "np.floor(x / step + bayer * gain) * step",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "step": 7
+   },
+   "arrays": {
+    "bayer": "c033__bayer",
+    "out": "c033__out",
+    "x": "c033__x"
+   },
+   "call": "np.floor(x / step + bayer) * step",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "gain": "0x1.ff7ced916872bp-1",
+    "step": 7
+   },
+   "arrays": {
+    "bayer": "c034__bayer",
+    "out": "c034__out",
+    "x": "c034__x"
+   },
+   "call": "np.floor(x / step + bayer * gain) * step",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 0
+   },
+   "arrays": {
+    "a": "c035__a",
+    "out": "c035__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 0
+   },
+   "arrays": {
+    "a": "c036__a",
+    "out": "c036__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 0
+   },
+   "arrays": {
+    "a": "c037__a",
+    "out": "c037__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 0
+   },
+   "arrays": {
+    "a": "c038__a",
+    "out": "c038__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "shift": 0
+   },
+   "arrays": {
+    "a": "c039__a",
+    "out": "c039__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 1
+   },
+   "arrays": {
+    "a": "c040__a",
+    "out": "c040__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 1
+   },
+   "arrays": {
+    "a": "c041__a",
+    "out": "c041__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 1
+   },
+   "arrays": {
+    "a": "c042__a",
+    "out": "c042__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 1
+   },
+   "arrays": {
+    "a": "c043__a",
+    "out": "c043__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "shift": 1
+   },
+   "arrays": {
+    "a": "c044__a",
+    "out": "c044__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -1
+   },
+   "arrays": {
+    "a": "c045__a",
+    "out": "c045__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -1
+   },
+   "arrays": {
+    "a": "c046__a",
+    "out": "c046__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -1
+   },
+   "arrays": {
+    "a": "c047__a",
+    "out": "c047__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -1
+   },
+   "arrays": {
+    "a": "c048__a",
+    "out": "c048__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "shift": -1
+   },
+   "arrays": {
+    "a": "c049__a",
+    "out": "c049__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 3
+   },
+   "arrays": {
+    "a": "c050__a",
+    "out": "c050__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 3
+   },
+   "arrays": {
+    "a": "c051__a",
+    "out": "c051__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 3
+   },
+   "arrays": {
+    "a": "c052__a",
+    "out": "c052__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 3
+   },
+   "arrays": {
+    "a": "c053__a",
+    "out": "c053__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "shift": 3
+   },
+   "arrays": {
+    "a": "c054__a",
+    "out": "c054__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -4
+   },
+   "arrays": {
+    "a": "c055__a",
+    "out": "c055__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -4
+   },
+   "arrays": {
+    "a": "c056__a",
+    "out": "c056__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -4
+   },
+   "arrays": {
+    "a": "c057__a",
+    "out": "c057__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -4
+   },
+   "arrays": {
+    "a": "c058__a",
+    "out": "c058__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "shift": -4
+   },
+   "arrays": {
+    "a": "c059__a",
+    "out": "c059__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 7
+   },
+   "arrays": {
+    "a": "c060__a",
+    "out": "c060__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 7
+   },
+   "arrays": {
+    "a": "c061__a",
+    "out": "c061__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 7
+   },
+   "arrays": {
+    "a": "c062__a",
+    "out": "c062__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 7
+   },
+   "arrays": {
+    "a": "c063__a",
+    "out": "c063__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "shift": 7
+   },
+   "arrays": {
+    "a": "c064__a",
+    "out": "c064__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 12
+   },
+   "arrays": {
+    "a": "c065__a",
+    "out": "c065__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": 12
+   },
+   "arrays": {
+    "a": "c066__a",
+    "out": "c066__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 12
+   },
+   "arrays": {
+    "a": "c067__a",
+    "out": "c067__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": 12
+   },
+   "arrays": {
+    "a": "c068__a",
+    "out": "c068__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "shift": 12
+   },
+   "arrays": {
+    "a": "c069__a",
+    "out": "c069__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -13
+   },
+   "arrays": {
+    "a": "c070__a",
+    "out": "c070__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "axis": 0,
+    "shift": -13
+   },
+   "arrays": {
+    "a": "c071__a",
+    "out": "c071__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -13
+   },
+   "arrays": {
+    "a": "c072__a",
+    "out": "c072__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "axis": 1,
+    "shift": -13
+   },
+   "arrays": {
+    "a": "c073__a",
+    "out": "c073__out"
+   },
+   "call": "np.roll(a, shift, axis)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "shift": -13
+   },
+   "arrays": {
+    "a": "c074__a",
+    "out": "c074__out"
+   },
+   "call": "np.roll(a, shift)",
+   "id": "c074"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c075__m",
+    "xs": "c075__xs",
+    "ys": "c075__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c075"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c076__m",
+    "xs": "c076__xs",
+    "ys": "c076__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c076"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c077__m",
+    "xs": "c077__xs",
+    "ys": "c077__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c077"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c078__m",
+    "xs": "c078__xs",
+    "ys": "c078__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c078"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c079__m",
+    "xs": "c079__xs",
+    "ys": "c079__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c079"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c080__m",
+    "xs": "c080__xs",
+    "ys": "c080__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c080"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c081__m",
+    "xs": "c081__xs",
+    "ys": "c081__ys"
+   },
+   "call": "np.nonzero(m)",
+   "id": "c081"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c082__m",
+    "out": "c082__out"
+   },
+   "call": "np.nonzero(m)[0]",
+   "id": "c082"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c083__m",
+    "out": "c083__out"
+   },
+   "call": "np.nonzero(m)[0]",
+   "id": "c083"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "m": "c084__m",
+    "out": "c084__out"
+   },
+   "call": "np.nonzero(m)[0]",
+   "id": "c084"
+  }
+ ],
+ "note": "Every case is one numpy call on the arrays named in \"call\"; scalars are in args (floats as float.hex() strings). Casts of NaN, the infinities and values outside the target type are what numpy gives on the reference PC (it leaves them to the processor); the kit only relies on casts of values that fit. np.clip(x, lo, None) is np.maximum(x, lo): for -0.0 against 0.0 its result depends on where the element sits in the array, so those cases hold no zero of either sign next to a zero bound.",
+ "numpy": "2.5.3",
+ "tool": "kit"
+}

@@ -1,0 +1,3327 @@
+{
+ "ADV": 6,
+ "about": "reelkit.font: the 5 x 7 pixel font, text_mask, dilate and stamp",
+ "cases": [
+  {
+   "args": {
+    "chars": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?:/%&+#()=\u00b0\u00d7\u00f7><\"-' "
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "np.stack([reelkit.font.GLYPHS[ch] for ch in chars])",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "s": "ABCDEFGHI",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "s": "abcdefghi",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "s": "JKLMNOPQR",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "s": "jklmnopqr",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "s": "STUVWXYZ0",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "s": "stuvwxyz0",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "s": "123456789",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "s": "123456789",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "s": ".,!?:/%&+",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "s": ".,!?:/%&+",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "s": "#()=\u00b0\u00d7\u00f7><",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "s": "#()=\u00b0\u00d7\u00f7><",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "s": "\"-' ",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "s": "\"-' ",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "s": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?:/%&+#()=\u00b0\u00d7\u00f7><\"-' ",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "s": "FLUTE",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "s": "FLUTE",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "s": "TROMBONE",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "s": "TROMBONE",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "s": "K.O.",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "s": "K.O.",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "s": "FIGHT!",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "s": "FIGHT!",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "s": "ROUND 1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "s": "ROUND 1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "s": "100%",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "s": "100%",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "s": "DON'T BLINK",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "s": "DON'T BLINK",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "s": "LV",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "s": "LV",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "s": "LOST",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "s": "LOST",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "s": "3 2 1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "s": "3 2 1",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "s": "VS",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "s": "VS",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "s": "the quick brown fox jumps over the lazy dog",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "s": "the quick brown fox jumps over the lazy dog",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "s": "Who wins?",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "s": "Who wins?",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "s": "a",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "s": "a",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "s": "I",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "s": "I",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "s": " ",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "s": " ",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "s": "  ",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "s": "  ",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "s": "x2",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "s": "x2",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "s": "+15",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "s": "+15",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "s": "#1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "s": "#1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "s": "WAIT... WHAT?!",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "s": "WAIT... WHAT?!",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "s": "(50/50)",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "s": "(50/50)",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "s": "A=B",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "s": "A=B",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "s": "1:23",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "s": "1:23",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "s": "R&B",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "s": "R&B",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "s": "20\u00b0",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "s": "20\u00b0",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "s": "3\u00d74",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "s": "3\u00d74",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "s": "8\u00f72",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "s": "8\u00f72",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "s": "\"OK\"",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "s": "\"OK\"",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "s": "A<B>C",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "s": "A<B>C",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "s": "a-b,c",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "s": "a-b,c",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "s": "@_[]{}~^|\\$;`",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "s": "@_[]{}~^|\\$;`",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "s": "\u00e9\u00c9\u00f1",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "s": "\u00e9\u00c9\u00f1",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "s": "\u00df",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "s": "\u00df",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "s": "\u0131\u017f",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "s": "\u0131\u017f",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "s": "\u00b5\u01c6",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "s": "\u00b5\u01c6",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "s": "\ud83d\ude00!",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "s": "\ud83d\ude00!",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c091__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "s": "A\tB\nC",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c092__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "s": "A\tB\nC",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c093__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "s": "\u00b0\u00d7\u00f7",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c094__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "s": "\u00b0\u00d7\u00f7",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c095__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "s": "\ufb01",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c096__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "s": "\ufb01",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c097__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "s": "CLARINET",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c098__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "s": "CLARINET",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c099__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "s": "TUBA",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c100__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "s": "TUBA",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c101__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "s": "PIANO",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c102__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "s": "PIANO",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c103__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 0
+   },
+   "arrays": {
+    "out": "c104__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 0
+   },
+   "arrays": {
+    "out": "c105__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c106__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 1
+   },
+   "arrays": {
+    "out": "c107__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c108__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 2
+   },
+   "arrays": {
+    "out": "c109__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c110__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 3
+   },
+   "arrays": {
+    "out": "c111__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c112__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 4
+   },
+   "arrays": {
+    "out": "c113__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 5
+   },
+   "arrays": {
+    "out": "c114__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 5
+   },
+   "arrays": {
+    "out": "c115__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 6
+   },
+   "arrays": {
+    "out": "c116__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 6
+   },
+   "arrays": {
+    "out": "c117__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "s": "A",
+    "scale": 8
+   },
+   "arrays": {
+    "out": "c118__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "s": "",
+    "scale": 8
+   },
+   "arrays": {
+    "out": "c119__out"
+   },
+   "call": "reelkit.font.text_mask(s, scale)",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c120__m",
+    "out": "c120__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c121__m",
+    "out": "c121__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c122__m",
+    "out": "c122__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c123__m",
+    "out": "c123__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c124__m",
+    "out": "c124__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c125__m",
+    "out": "c125__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c126__m",
+    "out": "c126__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c127__m",
+    "out": "c127__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c128__m",
+    "out": "c128__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c129__m",
+    "out": "c129__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c130__m",
+    "out": "c130__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c131__m",
+    "out": "c131__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c132__m",
+    "out": "c132__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c133__m",
+    "out": "c133__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c134__m",
+    "out": "c134__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c135__m",
+    "out": "c135__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c136__m",
+    "out": "c136__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c137__m",
+    "out": "c137__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c138__m",
+    "out": "c138__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c139__m",
+    "out": "c139__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c140__m",
+    "out": "c140__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c141__m",
+    "out": "c141__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c142__m",
+    "out": "c142__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c143__m",
+    "out": "c143__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c144__m",
+    "out": "c144__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c145__m",
+    "out": "c145__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c146__m",
+    "out": "c146__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c147__m",
+    "out": "c147__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c148__m",
+    "out": "c148__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c149__m",
+    "out": "c149__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c150__m",
+    "out": "c150__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c151__m",
+    "out": "c151__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c152__m",
+    "out": "c152__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c153__m",
+    "out": "c153__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c154__m",
+    "out": "c154__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c155__m",
+    "out": "c155__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c156__m",
+    "out": "c156__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c157__m",
+    "out": "c157__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c158__m",
+    "out": "c158__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c159__m",
+    "out": "c159__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c160__m",
+    "out": "c160__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c161__m",
+    "out": "c161__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c162__m",
+    "out": "c162__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c163__m",
+    "out": "c163__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c164__m",
+    "out": "c164__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c165__m",
+    "out": "c165__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c166__m",
+    "out": "c166__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c167__m",
+    "out": "c167__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c168__m",
+    "out": "c168__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c169__m",
+    "out": "c169__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c170__m",
+    "out": "c170__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c171__m",
+    "out": "c171__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c172__m",
+    "out": "c172__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c173__m",
+    "out": "c173__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c174__m",
+    "out": "c174__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c175__m",
+    "out": "c175__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c176__m",
+    "out": "c176__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c177__m",
+    "out": "c177__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c178__m",
+    "out": "c178__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c179__m",
+    "out": "c179__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "r": 0
+   },
+   "arrays": {
+    "m": "c180__m",
+    "out": "c180__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "m": "c181__m",
+    "out": "c181__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "m": "c182__m",
+    "out": "c182__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "m": "c183__m",
+    "out": "c183__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "m": "c184__m",
+    "out": "c184__out"
+   },
+   "call": "reelkit.font.dilate(m, r)",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "color": [109, 192, 11],
+    "shadow": false,
+    "x": 5,
+    "y": 6
+   },
+   "arrays": {
+    "in": "c185__in",
+    "mask": "c185__mask",
+    "out": "c185__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow)",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [195, 79, 79],
+    "x": 5,
+    "y": 6
+   },
+   "arrays": {
+    "in": "c186__in",
+    "mask": "c186__mask",
+    "out": "c186__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [136, 222, 18],
+    "x": 5,
+    "y": 6
+   },
+   "arrays": {
+    "in": "c187__in",
+    "mask": "c187__mask",
+    "out": "c187__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [9, 18, 24],
+    "shadow": false,
+    "x": 5,
+    "y": 6
+   },
+   "arrays": {
+    "in": "c188__in",
+    "mask": "c188__mask",
+    "out": "c188__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow, alpha=alpha)",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [59, 223, 35],
+    "x": 5,
+    "y": 6
+   },
+   "arrays": {
+    "in": "c189__in",
+    "mask": "c189__mask",
+    "out": "c189__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [114, 219, 164],
+    "outline": null,
+    "x": 20,
+    "y": 14
+   },
+   "arrays": {
+    "in": "c190__in",
+    "mask": "c190__mask",
+    "out": "c190__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [15, 80, 201],
+    "outline": null,
+    "x": 20,
+    "y": 14
+   },
+   "arrays": {
+    "in": "c191__in",
+    "mask": "c191__mask",
+    "out": "c191__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [74, 237, 42],
+    "outline": null,
+    "shadow": true,
+    "x": 20,
+    "y": 14
+   },
+   "arrays": {
+    "in": "c192__in",
+    "mask": "c192__mask",
+    "out": "c192__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [246, 200, 170],
+    "outline": null,
+    "x": 20,
+    "y": 14
+   },
+   "arrays": {
+    "in": "c193__in",
+    "mask": "c193__mask",
+    "out": "c193__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [219, 68, 175],
+    "outline": null,
+    "x": 20,
+    "y": 14
+   },
+   "arrays": {
+    "in": "c194__in",
+    "mask": "c194__mask",
+    "out": "c194__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "color": [243, 91, 51],
+    "outline": [10, 20, 26],
+    "x": -3,
+    "y": 4
+   },
+   "arrays": {
+    "in": "c195__in",
+    "mask": "c195__mask",
+    "out": "c195__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline)",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [152, 237, 7],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -3,
+    "y": 4
+   },
+   "arrays": {
+    "in": "c196__in",
+    "mask": "c196__mask",
+    "out": "c196__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [106, 91, 47],
+    "outline": [10, 20, 26],
+    "x": -3,
+    "y": 4
+   },
+   "arrays": {
+    "in": "c197__in",
+    "mask": "c197__mask",
+    "out": "c197__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [82, 130, 49],
+    "outline": [10, 20, 26],
+    "x": -3,
+    "y": 4
+   },
+   "arrays": {
+    "in": "c198__in",
+    "mask": "c198__mask",
+    "out": "c198__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [25, 214, 157],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -3,
+    "y": 4
+   },
+   "arrays": {
+    "in": "c199__in",
+    "mask": "c199__mask",
+    "out": "c199__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c199"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [25, 56, 178],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 4,
+    "y": -3
+   },
+   "arrays": {
+    "in": "c200__in",
+    "mask": "c200__mask",
+    "out": "c200__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c200"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [103, 0, 113],
+    "outline": [255, 255, 255],
+    "x": 4,
+    "y": -3
+   },
+   "arrays": {
+    "in": "c201__in",
+    "mask": "c201__mask",
+    "out": "c201__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c201"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [65, 79, 135],
+    "outline": [255, 255, 255],
+    "x": 4,
+    "y": -3
+   },
+   "arrays": {
+    "in": "c202__in",
+    "mask": "c202__mask",
+    "out": "c202__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c202"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [41, 41, 21],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 4,
+    "y": -3
+   },
+   "arrays": {
+    "in": "c203__in",
+    "mask": "c203__mask",
+    "out": "c203__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c203"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [80, 54, 177],
+    "outline": [255, 255, 255],
+    "x": 4,
+    "y": -3
+   },
+   "arrays": {
+    "in": "c204__in",
+    "mask": "c204__mask",
+    "out": "c204__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c204"
+  },
+  {
+   "args": {
+    "color": [75, 131, 184],
+    "outline": [0, 0, 0],
+    "x": 55,
+    "y": 10
+   },
+   "arrays": {
+    "in": "c205__in",
+    "mask": "c205__mask",
+    "out": "c205__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline)",
+   "id": "c205"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [143, 19, 137],
+    "outline": [0, 0, 0],
+    "x": 55,
+    "y": 10
+   },
+   "arrays": {
+    "in": "c206__in",
+    "mask": "c206__mask",
+    "out": "c206__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c206"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [193, 155, 75],
+    "outline": [0, 0, 0],
+    "shadow": false,
+    "x": 55,
+    "y": 10
+   },
+   "arrays": {
+    "in": "c207__in",
+    "mask": "c207__mask",
+    "out": "c207__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c207"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [148, 11, 27],
+    "outline": [0, 0, 0],
+    "x": 55,
+    "y": 10
+   },
+   "arrays": {
+    "in": "c208__in",
+    "mask": "c208__mask",
+    "out": "c208__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c208"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [98, 131, 101],
+    "outline": [0, 0, 0],
+    "x": 55,
+    "y": 10
+   },
+   "arrays": {
+    "in": "c209__in",
+    "mask": "c209__mask",
+    "out": "c209__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c209"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [60, 88, 211],
+    "outline": [200, 30, 90],
+    "x": 10,
+    "y": 36
+   },
+   "arrays": {
+    "in": "c210__in",
+    "mask": "c210__mask",
+    "out": "c210__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c210"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [48, 149, 227],
+    "outline": [200, 30, 90],
+    "shadow": true,
+    "x": 10,
+    "y": 36
+   },
+   "arrays": {
+    "in": "c211__in",
+    "mask": "c211__mask",
+    "out": "c211__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c211"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [44, 151, 99],
+    "outline": [200, 30, 90],
+    "x": 10,
+    "y": 36
+   },
+   "arrays": {
+    "in": "c212__in",
+    "mask": "c212__mask",
+    "out": "c212__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c212"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [228, 175, 229],
+    "outline": [200, 30, 90],
+    "x": 10,
+    "y": 36
+   },
+   "arrays": {
+    "in": "c213__in",
+    "mask": "c213__mask",
+    "out": "c213__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c213"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [47, 18, 83],
+    "outline": [200, 30, 90],
+    "shadow": true,
+    "x": 10,
+    "y": 36
+   },
+   "arrays": {
+    "in": "c214__in",
+    "mask": "c214__mask",
+    "out": "c214__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c214"
+  },
+  {
+   "args": {
+    "color": [66, 172, 231],
+    "shadow": false,
+    "x": -2,
+    "y": -2
+   },
+   "arrays": {
+    "in": "c215__in",
+    "mask": "c215__mask",
+    "out": "c215__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow)",
+   "id": "c215"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [239, 244, 46],
+    "x": -2,
+    "y": -2
+   },
+   "arrays": {
+    "in": "c216__in",
+    "mask": "c216__mask",
+    "out": "c216__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c216"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [105, 135, 207],
+    "x": -2,
+    "y": -2
+   },
+   "arrays": {
+    "in": "c217__in",
+    "mask": "c217__mask",
+    "out": "c217__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c217"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [30, 91, 15],
+    "shadow": false,
+    "x": -2,
+    "y": -2
+   },
+   "arrays": {
+    "in": "c218__in",
+    "mask": "c218__mask",
+    "out": "c218__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow, alpha=alpha)",
+   "id": "c218"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [9, 4, 124],
+    "x": -2,
+    "y": -2
+   },
+   "arrays": {
+    "in": "c219__in",
+    "mask": "c219__mask",
+    "out": "c219__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c219"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [108, 199, 130],
+    "outline": null,
+    "x": 60,
+    "y": 37
+   },
+   "arrays": {
+    "in": "c220__in",
+    "mask": "c220__mask",
+    "out": "c220__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c220"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [180, 117, 175],
+    "outline": null,
+    "x": 60,
+    "y": 37
+   },
+   "arrays": {
+    "in": "c221__in",
+    "mask": "c221__mask",
+    "out": "c221__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c221"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [97, 251, 87],
+    "outline": null,
+    "shadow": true,
+    "x": 60,
+    "y": 37
+   },
+   "arrays": {
+    "in": "c222__in",
+    "mask": "c222__mask",
+    "out": "c222__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c222"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [131, 245, 173],
+    "outline": null,
+    "x": 60,
+    "y": 37
+   },
+   "arrays": {
+    "in": "c223__in",
+    "mask": "c223__mask",
+    "out": "c223__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c223"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [85, 178, 55],
+    "outline": null,
+    "x": 60,
+    "y": 37
+   },
+   "arrays": {
+    "in": "c224__in",
+    "mask": "c224__mask",
+    "out": "c224__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c224"
+  },
+  {
+   "args": {
+    "color": [45, 143, 149],
+    "outline": [10, 20, 26],
+    "x": -40,
+    "y": 5
+   },
+   "arrays": {
+    "in": "c225__in",
+    "mask": "c225__mask",
+    "out": "c225__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline)",
+   "id": "c225"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [194, 16, 80],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -40,
+    "y": 5
+   },
+   "arrays": {
+    "in": "c226__in",
+    "mask": "c226__mask",
+    "out": "c226__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c226"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [54, 180, 253],
+    "outline": [10, 20, 26],
+    "x": -40,
+    "y": 5
+   },
+   "arrays": {
+    "in": "c227__in",
+    "mask": "c227__mask",
+    "out": "c227__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c227"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [60, 243, 96],
+    "outline": [10, 20, 26],
+    "x": -40,
+    "y": 5
+   },
+   "arrays": {
+    "in": "c228__in",
+    "mask": "c228__mask",
+    "out": "c228__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c228"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [15, 222, 251],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -40,
+    "y": 5
+   },
+   "arrays": {
+    "in": "c229__in",
+    "mask": "c229__mask",
+    "out": "c229__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c229"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [188, 191, 246],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 5,
+    "y": -30
+   },
+   "arrays": {
+    "in": "c230__in",
+    "mask": "c230__mask",
+    "out": "c230__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c230"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [215, 51, 233],
+    "outline": [255, 255, 255],
+    "x": 5,
+    "y": -30
+   },
+   "arrays": {
+    "in": "c231__in",
+    "mask": "c231__mask",
+    "out": "c231__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c231"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [103, 11, 253],
+    "outline": [255, 255, 255],
+    "x": 5,
+    "y": -30
+   },
+   "arrays": {
+    "in": "c232__in",
+    "mask": "c232__mask",
+    "out": "c232__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c232"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [68, 179, 79],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 5,
+    "y": -30
+   },
+   "arrays": {
+    "in": "c233__in",
+    "mask": "c233__mask",
+    "out": "c233__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c233"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [250, 134, 40],
+    "outline": [255, 255, 255],
+    "x": 5,
+    "y": -30
+   },
+   "arrays": {
+    "in": "c234__in",
+    "mask": "c234__mask",
+    "out": "c234__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c234"
+  },
+  {
+   "args": {
+    "color": [31, 179, 241],
+    "outline": [0, 0, 0],
+    "x": 64,
+    "y": 3
+   },
+   "arrays": {
+    "in": "c235__in",
+    "mask": "c235__mask",
+    "out": "c235__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline)",
+   "id": "c235"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [130, 160, 249],
+    "outline": [0, 0, 0],
+    "x": 64,
+    "y": 3
+   },
+   "arrays": {
+    "in": "c236__in",
+    "mask": "c236__mask",
+    "out": "c236__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c236"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [27, 119, 174],
+    "outline": [0, 0, 0],
+    "shadow": false,
+    "x": 64,
+    "y": 3
+   },
+   "arrays": {
+    "in": "c237__in",
+    "mask": "c237__mask",
+    "out": "c237__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c237"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [123, 90, 86],
+    "outline": [0, 0, 0],
+    "x": 64,
+    "y": 3
+   },
+   "arrays": {
+    "in": "c238__in",
+    "mask": "c238__mask",
+    "out": "c238__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c238"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [92, 63, 69],
+    "outline": [0, 0, 0],
+    "x": 64,
+    "y": 3
+   },
+   "arrays": {
+    "in": "c239__in",
+    "mask": "c239__mask",
+    "out": "c239__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c239"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [9, 133, 21],
+    "outline": [200, 30, 90],
+    "x": 3,
+    "y": 40
+   },
+   "arrays": {
+    "in": "c240__in",
+    "mask": "c240__mask",
+    "out": "c240__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c240"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [155, 129, 83],
+    "outline": [200, 30, 90],
+    "shadow": true,
+    "x": 3,
+    "y": 40
+   },
+   "arrays": {
+    "in": "c241__in",
+    "mask": "c241__mask",
+    "out": "c241__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c241"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [176, 107, 64],
+    "outline": [200, 30, 90],
+    "x": 3,
+    "y": 40
+   },
+   "arrays": {
+    "in": "c242__in",
+    "mask": "c242__mask",
+    "out": "c242__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c242"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [112, 141, 175],
+    "outline": [200, 30, 90],
+    "x": 3,
+    "y": 40
+   },
+   "arrays": {
+    "in": "c243__in",
+    "mask": "c243__mask",
+    "out": "c243__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c243"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [83, 195, 110],
+    "outline": [200, 30, 90],
+    "shadow": true,
+    "x": 3,
+    "y": 40
+   },
+   "arrays": {
+    "in": "c244__in",
+    "mask": "c244__mask",
+    "out": "c244__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c244"
+  },
+  {
+   "args": {
+    "color": [227, 171, 239],
+    "shadow": false,
+    "x": 63,
+    "y": 39
+   },
+   "arrays": {
+    "in": "c245__in",
+    "mask": "c245__mask",
+    "out": "c245__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow)",
+   "id": "c245"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [123, 47, 103],
+    "x": 63,
+    "y": 39
+   },
+   "arrays": {
+    "in": "c246__in",
+    "mask": "c246__mask",
+    "out": "c246__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c246"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [20, 212, 188],
+    "x": 63,
+    "y": 39
+   },
+   "arrays": {
+    "in": "c247__in",
+    "mask": "c247__mask",
+    "out": "c247__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c247"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [111, 91, 211],
+    "shadow": false,
+    "x": 63,
+    "y": 39
+   },
+   "arrays": {
+    "in": "c248__in",
+    "mask": "c248__mask",
+    "out": "c248__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, shadow=shadow, alpha=alpha)",
+   "id": "c248"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [168, 176, 164],
+    "x": 63,
+    "y": 39
+   },
+   "arrays": {
+    "in": "c249__in",
+    "mask": "c249__mask",
+    "out": "c249__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, alpha=alpha)",
+   "id": "c249"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [33, 13, 247],
+    "outline": null,
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "in": "c250__in",
+    "mask": "c250__mask",
+    "out": "c250__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c250"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [98, 129, 117],
+    "outline": null,
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "in": "c251__in",
+    "mask": "c251__mask",
+    "out": "c251__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c251"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [55, 145, 130],
+    "outline": null,
+    "shadow": true,
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "in": "c252__in",
+    "mask": "c252__mask",
+    "out": "c252__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c252"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [246, 49, 55],
+    "outline": null,
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "in": "c253__in",
+    "mask": "c253__mask",
+    "out": "c253__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c253"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [151, 103, 145],
+    "outline": null,
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "in": "c254__in",
+    "mask": "c254__mask",
+    "out": "c254__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c254"
+  },
+  {
+   "args": {
+    "color": [254, 85, 95],
+    "outline": [10, 20, 26],
+    "x": -1,
+    "y": 1
+   },
+   "arrays": {
+    "in": "c255__in",
+    "mask": "c255__mask",
+    "out": "c255__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline)",
+   "id": "c255"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-1",
+    "color": [157, 88, 81],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -1,
+    "y": 1
+   },
+   "arrays": {
+    "in": "c256__in",
+    "mask": "c256__mask",
+    "out": "c256__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c256"
+  },
+  {
+   "args": {
+    "alpha": "0x1.999999999999ap-4",
+    "color": [207, 74, 102],
+    "outline": [10, 20, 26],
+    "x": -1,
+    "y": 1
+   },
+   "arrays": {
+    "in": "c257__in",
+    "mask": "c257__mask",
+    "out": "c257__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c257"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7ced916872bp-1",
+    "color": [208, 168, 208],
+    "outline": [10, 20, 26],
+    "x": -1,
+    "y": 1
+   },
+   "arrays": {
+    "in": "c258__in",
+    "mask": "c258__mask",
+    "out": "c258__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c258"
+  },
+  {
+   "args": {
+    "alpha": "0x0.0p+0",
+    "color": [202, 148, 109],
+    "outline": [10, 20, 26],
+    "shadow": false,
+    "x": -1,
+    "y": 1
+   },
+   "arrays": {
+    "in": "c259__in",
+    "mask": "c259__mask",
+    "out": "c259__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c259"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p-2",
+    "color": [231, 234, 10],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 1,
+    "y": -1
+   },
+   "arrays": {
+    "in": "c260__in",
+    "mask": "c260__mask",
+    "out": "c260__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c260"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ccccccccccccdp-1",
+    "color": [101, 90, 91],
+    "outline": [255, 255, 255],
+    "x": 1,
+    "y": -1
+   },
+   "arrays": {
+    "in": "c261__in",
+    "mask": "c261__mask",
+    "out": "c261__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c261"
+  },
+  {
+   "args": {
+    "alpha": "0x1.ff7cea366a1f6p-1",
+    "color": [66, 157, 144],
+    "outline": [255, 255, 255],
+    "x": 1,
+    "y": -1
+   },
+   "arrays": {
+    "in": "c262__in",
+    "mask": "c262__mask",
+    "out": "c262__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c262"
+  },
+  {
+   "args": {
+    "alpha": "0x1.8000000000000p-1",
+    "color": [94, 129, 174],
+    "outline": [255, 255, 255],
+    "shadow": true,
+    "x": 1,
+    "y": -1
+   },
+   "arrays": {
+    "in": "c263__in",
+    "mask": "c263__mask",
+    "out": "c263__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, shadow=shadow, alpha=alpha)",
+   "id": "c263"
+  },
+  {
+   "args": {
+    "alpha": "0x1.0000000000000p+0",
+    "color": [152, 49, 115],
+    "outline": [255, 255, 255],
+    "x": 1,
+    "y": -1
+   },
+   "arrays": {
+    "in": "c264__in",
+    "mask": "c264__mask",
+    "out": "c264__out"
+   },
+   "call": "reelkit.font.stamp(frame, mask, x, y, color, outline=outline, alpha=alpha)",
+   "id": "c264"
+  }
+ ],
+ "glyphs": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?:/%&+#()=\u00b0\u00d7\u00f7><\"-' ",
+ "note": "Masks are bool arrays (height, width). text_mask: args s (the string) and scale. dilate: args r, arrays m and out. stamp: arrays \"in\" (the uint8 RGB frame before), mask, out; args x, y, color and the keywords exactly as passed (a keyword that is absent was not passed; outline null is outline=None; alpha is a float.hex() string).",
+ "tool": "kit"
+}

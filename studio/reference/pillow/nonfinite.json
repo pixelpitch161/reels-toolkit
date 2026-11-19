@@ -1,0 +1,3722 @@
+{
+ "about": "ImageDraw calls with a NaN, infinite or absurdly large coordinate, as Pillow draws them",
+ "cases": [
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c001__in",
+    "out": "c001__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c003__in",
+    "out": "c003__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c005__in",
+    "out": "c005__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c007__in",
+    "out": "c007__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_y0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_y0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c009__in",
+    "out": "c009__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_y0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_y0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c011__in",
+    "out": "c011__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_y1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_y1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c013__in",
+    "out": "c013__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_y1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_y1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c015__in",
+    "out": "c015__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_all_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_all_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c017__in",
+    "out": "c017__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_all_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_all_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c019__in",
+    "out": "c019__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x1_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x1_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c021__in",
+    "out": "c021__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x1_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x1_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c023__in",
+    "out": "c023__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_y1_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "inf"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_y1_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "inf"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c025__in",
+    "out": "c025__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_y1_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "inf"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_y1_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, 9, "inf"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c027__in",
+    "out": "c027__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x0_minus_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x0_minus_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c029__in",
+    "out": "c029__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x0_minus_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x0_minus_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c031__in",
+    "out": "c031__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x0_y0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", "nan", 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x0_y0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", "nan", 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c033__in",
+    "out": "c033__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x0_y0_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", "nan", 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x0_y0_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", "nan", 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c035__in",
+    "out": "c035__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x1_y1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x1_y1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c037__in",
+    "out": "c037__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x1_y1_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x1_y1_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, 2, "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c039__in",
+    "out": "c039__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c041__in",
+    "out": "c041__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c043__in",
+    "out": "c043__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "rectangle_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, fill=fill)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "rectangle_y_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c045__in",
+    "out": "c045__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, fill=fill)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_y_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [5, "nan", 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c047__in",
+    "out": "c047__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_x0_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_x0_nan",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c049__in",
+    "out": "c049__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_x1_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_x1_nan",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": [5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c051__in",
+    "out": "c051__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_all_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_all_nan",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c053__in",
+    "out": "c053__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_x1_inf",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_x1_inf",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": [5, 2, "inf", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c055__in",
+    "out": "c055__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_x0_minus_inf",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_x0_minus_inf",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": ["-inf", 2, 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c057__in",
+    "out": "c057__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_x_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "rectangle_outline_x_nan",
+    "mode": "RGB",
+    "outline": [200, 90, 30, 128],
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c059__in",
+    "out": "c059__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').rectangle(xy, outline=outline)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_x0_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_x1_nan_left",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [-5, 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_y0_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_y1_nan_above",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, -2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_all_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", "nan", "nan", "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_x_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", 2, "nan", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_y_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "nan", 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_x0_minus_inf",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-inf", 2, 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_outline_x0_y0_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["nan", "nan", 5, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_y0_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "nan", 9, 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "rectangle_outline_y1_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, 2, 9, "nan"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "ImageDraw.Draw(im).rectangle(xy, outline=outline)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.3860000000000p+14", "-0x1.3868000000000p+14", "0x1.38a0000000000p+14", "0x1.3898000000000p+14"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.3886000000000p+15", "0x1.3884000000000p+15"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.3860000000000p+14", "-0x1.3868000000000p+14", "0x1.38a0000000000p+14", "0x1.3898000000000p+14"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.3886000000000p+15", "0x1.3884000000000p+15"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.d4b0000000000p+15", "-0x1.d4b4000000000p+15", "0x1.d4d0000000000p+15", "0x1.d4cc000000000p+15"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.d4c3000000000p+16", "0x1.d4c2000000000p+16"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.d4b0000000000p+15", "-0x1.d4b4000000000p+15", "0x1.d4d0000000000p+15", "0x1.d4cc000000000p+15"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.d4c3000000000p+16", "0x1.d4c2000000000p+16"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.24f6000000000p+18", "-0x1.24f6800000000p+18", "0x1.24fa000000000p+18", "0x1.24f9800000000p+18"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.24f8600000000p+19", "0x1.24f8400000000p+19"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_centred",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.24f6000000000p+18", "-0x1.24f6800000000p+18", "0x1.24fa000000000p+18", "0x1.24f9800000000p+18"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_corner",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [3, 2, "0x1.24f8600000000p+19", "0x1.24f8400000000p+19"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.3860000000000p+14", 3, "0x1.38a0000000000p+14", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.3860000000000p+14", 3, "0x1.38a0000000000p+14", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.e847000000000p+19", 3, "0x1.e849000000000p+19", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.e847000000000p+19", 3, "0x1.e849000000000p+19", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": ["-0x1.312cf00000000p+23", 3, "0x1.312d100000000p+23", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_flat",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": ["-0x1.312cf00000000p+23", 3, "0x1.312d100000000p+23", 9],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "-0x1.3868000000000p+14", 11, "0x1.3898000000000p+14"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "-0x1.3868000000000p+14", 11, "0x1.3898000000000p+14"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "-0x1.e847400000000p+19", 11, "0x1.e848c00000000p+19"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c091__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "-0x1.e847400000000p+19", 11, "0x1.e848c00000000p+19"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c092__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [5, "-0x1.6e35d00000000p+21", 11, "0x1.6e36300000000p+21"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c093__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, fill=fill)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "ellipse_giant_tall",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [5, "-0x1.6e35d00000000p+21", 11, "0x1.6e36300000000p+21"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "out": "c094__out"
+   },
+   "call": "ImageDraw.Draw(im).ellipse(xy, outline=outline)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "ellipse_giant_centred",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": ["-0x1.d4b0000000000p+15", "-0x1.d4b4000000000p+15", "0x1.d4d0000000000p+15", "0x1.d4cc000000000p+15"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c095__in",
+    "out": "c095__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_x_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c096__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c097__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c098__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c099__in",
+    "out": "c099__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_x_nan_level",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["nan", 5],
+     [9, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c100__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "background": [79, 11, 15],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_x_nan_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", 5],
+     [9, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c101__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "background": [206, 68, 0],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_x_nan_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["nan", 5],
+     [9, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c102__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_x_nan_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", 5],
+     [9, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c103__in",
+    "out": "c103__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "background": [197, 124, 116],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["nan", 5],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c104__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_start_x_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", 5],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c105__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_start_x_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["nan", 5],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c106__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", 5],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c107__in",
+    "out": "c107__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_start_y_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c108__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c109__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c110__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_y_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c111__in",
+    "out": "c111__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_nan_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["nan", "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c112__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "background": [139, 193, 232],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c113__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "background": [205, 61, 232],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["nan", "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c114__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", "nan"],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c115__in",
+    "out": "c115__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "background": [116, 198, 79],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c116__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_nan_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c117__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_nan_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c118__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c119__in",
+    "out": "c119__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_x_inf_level",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c120__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_x_inf_level",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c121__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_x_inf_level",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c122__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_x_inf_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c123__in",
+    "out": "c123__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_x_minus_inf_level",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["-inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c124__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "background": [252, 140, 110],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_x_minus_inf_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["-inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c125__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "background": [65, 247, 169],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_x_minus_inf_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["-inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c126__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_x_minus_inf_level",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["-inf", 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c127__in",
+    "out": "c127__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "background": [202, 38, 252],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_1e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["0x1.dcd6500000000p+29", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c128__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_1e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.dcd6500000000p+29", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c129__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_1e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["0x1.dcd6500000000p+29", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c130__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_1e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.dcd6500000000p+29", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c131__in",
+    "out": "c131__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_start_1e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["0x1.dcd6500000000p+29", 5],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c132__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_1e9",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["0x1.dcd6500000000p+29", 5],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c133__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_1e9",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["0x1.dcd6500000000p+29", 5],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c134__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_1e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["0x1.dcd6500000000p+29", 5],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c135__in",
+    "out": "c135__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_start_1e9_9e8",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["0x1.dcd6500000000p+29", "0x1.ad27480000000p+29"],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c136__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "background": [99, 36, 227],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_1e9_9e8",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["0x1.dcd6500000000p+29", "0x1.ad27480000000p+29"],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c137__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "background": [196, 33, 245],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_start_1e9_9e8",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["0x1.dcd6500000000p+29", "0x1.ad27480000000p+29"],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c138__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_start_1e9_9e8",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["0x1.dcd6500000000p+29", "0x1.ad27480000000p+29"],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c139__in",
+    "out": "c139__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "background": [237, 136, 163],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_1p5e9_1p2e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+30", "0x1.1e1a300000000p+30"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c140__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_1p5e9_1p2e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+30", "0x1.1e1a300000000p+30"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c141__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_1p5e9_1p2e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+30", "0x1.1e1a300000000p+30"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c142__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_1p5e9_1p2e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+30", "0x1.1e1a300000000p+30"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c143__in",
+    "out": "c143__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_y_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     [9, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c144__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     [9, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c145__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     [9, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c146__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_y_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     [9, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c147__in",
+    "out": "c147__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_y_nan_upright",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     [5, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c148__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "background": [150, 6, 3],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_y_nan_upright",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     [5, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c149__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "background": [37, 123, 247],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_end_y_nan_upright",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     [5, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c150__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_y_nan_upright",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     [5, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c151__in",
+    "out": "c151__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "background": [171, 226, 220],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_from_column_0",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [0, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c152__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_from_column_0",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [0, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c153__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_from_column_0",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [0, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c154__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_from_column_0",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [0, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c155__in",
+    "out": "c155__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_from_column_minus_3",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [-3, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c156__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_from_column_minus_3",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [-3, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c157__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_from_column_minus_3",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [-3, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c158__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_from_column_minus_3",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [-3, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c159__in",
+    "out": "c159__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_through_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c160__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "background": [139, 251, 172],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_through_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c161__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "background": [77, 8, 158],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_through_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c162__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_through_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c163__in",
+    "out": "c163__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "background": [42, 73, 176],
+    "fill": [200, 90, 30],
+    "kind": "wide_line_both_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     ["nan", "nan"],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c164__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_both_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", "nan"],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c165__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_both_nan",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     ["nan", "nan"],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c166__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_both_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     ["nan", "nan"],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c167__in",
+    "out": "c167__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "wide_line_end_3e9",
+    "mode": "F",
+    "size": [16, 12],
+    "width": 2,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+31", "-0x1.65a0bc0000000p+31"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c168__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_3e9",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+31", "-0x1.65a0bc0000000p+31"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c169__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "wide_line_end_3e9",
+    "mode": "L",
+    "size": [16, 12],
+    "width": 6,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+31", "-0x1.65a0bc0000000p+31"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c170__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill, width=width)",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "wide_line_end_3e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 3,
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+31", "-0x1.65a0bc0000000p+31"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c171__in",
+    "out": "c171__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_end_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [5, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c172__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_start_x_nan_level",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 5],
+     [9, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c173__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_start_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 5],
+     [9, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c174__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_end_nan_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c175__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_start_1e9_9e8",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     ["0x1.dcd6500000000p+29", "0x1.ad27480000000p+29"],
+     [5, 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c176__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_end_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [5, 5],
+     [9, "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c177__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_from_column_0",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [0, 5],
+     ["nan", 7]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c178__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_both_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     ["nan", "nan"],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c179__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "thin_line_end_1p5e9_1p2e9",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [5, 5],
+     ["0x1.65a0bc0000000p+30", "0x1.1e1a300000000p+30"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c180__out"
+   },
+   "call": "ImageDraw.Draw(im).line(xy, fill=fill)",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "thin_line_end_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "width": 1,
+    "xy": [
+     [5, 5],
+     ["nan", "nan"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c181__in",
+    "out": "c181__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').line(xy, fill=fill, width=width)",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "polygon_x_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["nan", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c182__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_x_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["nan", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c183__in",
+    "out": "c183__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "background": [21, 127, 224],
+    "fill": [200, 90, 30],
+    "kind": "polygon_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c184__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_nan_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["nan", "nan"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c185__in",
+    "out": "c185__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "polygon_x_inf",
+    "mode": "F",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["inf", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c186__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_x_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["inf", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c187__in",
+    "out": "c187__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "polygon_y_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     [12, "nan"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c188__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_y_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     [12, "nan"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c189__in",
+    "out": "c189__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "background": [149, 181, 98],
+    "fill": [200, 90, 30],
+    "kind": "polygon_x_1e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["0x1.dcd6500000000p+29", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c190__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_x_1e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["0x1.dcd6500000000p+29", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c191__in",
+    "out": "c191__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.d000000000000p+2",
+    "kind": "polygon_x_minus_3e9",
+    "mode": "F",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["-0x1.65a0bc0000000p+31", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c192__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_x_minus_3e9",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["-0x1.65a0bc0000000p+31", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c193__in",
+    "out": "c193__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "polygon_y_minus_inf",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     [12, "-inf"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c194__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_y_minus_inf",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     [12, "-inf"],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c195__in",
+    "out": "c195__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "background": [52, 42, 252],
+    "fill": [200, 90, 30],
+    "kind": "polygon_two_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 2],
+     [12, 3],
+     [9, "nan"],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c196__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "polygon_two_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 2],
+     [12, 3],
+     [9, "nan"],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c197__in",
+    "out": "c197__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "background": 0,
+    "kind": "polygon_outline_x_nan",
+    "mode": "L",
+    "outline": 255,
+    "size": [16, 12],
+    "xy": [
+     [2, 2],
+     ["nan", 5],
+     [9, 9],
+     [3, 10]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c198__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, outline=outline)",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "point_nan",
+    "mode": "L",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 3],
+     [3, "nan"],
+     ["nan", "nan"],
+     [4, 4],
+     ["inf", 4],
+     [4, "-inf"],
+     ["0x1.2a05f20000000p+33", 1],
+     [5, 5]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c199__out"
+   },
+   "call": "ImageDraw.Draw(im).point(xy, fill=fill)",
+   "id": "c199"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 90, 30, 128],
+    "kind": "point_nan",
+    "mode": "RGB",
+    "size": [16, 12],
+    "xy": [
+     ["nan", 3],
+     [4, 4],
+     [4, 4],
+     ["-0x1.7e43c8800759cp+996", 2]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c200__in",
+    "out": "c200__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').point(xy, fill=fill)",
+   "id": "c200"
+  }
+ ],
+ "note": "args: mode and size (width, height) of the image, background (its one colour before the call) or the array \"in\", xy as passed (xy_form \"pairs\": a list of (x, y) tuples; \"flat\": one list x0, y0, x1, y1, ...), then the keyword arguments of the call exactly as passed (a keyword that is absent was not passed). Floats are float.hex() strings. Arrays are (height, width) for L and F, (height, width, 3) for RGB, (height, width, 4) for RGBA; F is float32. Pillow truncates every coordinate toward zero to a C int before drawing, and an F ink to float32. Here some coordinates are NaN, infinite or beyond a C int: \"nan\", \"inf\" and \"-inf\" are float.hex() of those values. Pillow does not refuse them (its check x1 < x0 is false for a NaN); (int) of such a value is the lowest int on the reference PC, and the arithmetic that follows wraps. The C standard leaves both undefined, so these are the reference build's answers. Only calls that Pillow finishes are here: a thin line with such an end takes it 1.5 to 2.7 s (it walks every pixel on the way), an ellipse outline may never return.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

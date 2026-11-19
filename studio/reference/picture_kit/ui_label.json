@@ -1,0 +1,2092 @@
+{
+ "about": "reelkit.ui.label and reelkit.ui.panel on small pictures, and the HP numbers of the example episode as kit.picture stamps them",
+ "cases": [
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [167, 176, 158],
+    "text": "FLUTE",
+    "x": 8,
+    "y": 10
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col)",
+   "expect": {
+    "noted": [
+     [8, 10, 66, 24, "label", "FLUTE"]
+    ],
+    "returns": 58
+   },
+   "id": "c000"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [186, 196, 210],
+     "h": 48,
+     "mul": [115, 213, 61],
+     "w": 128
+    },
+    "col": [76, 97, 20],
+    "outline": [255, 255, 255],
+    "scale": 2,
+    "text": "TROMBONE",
+    "x": 8,
+    "y": 10
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [8, 10, 102, 24, "label", "TROMBONE"]
+    ],
+    "returns": 94
+   },
+   "id": "c001"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [172, 209, 93],
+     "h": 48,
+     "mul": [33, 17, 11],
+     "w": 128
+    },
+    "col": [152, 90, 21],
+    "outline": null,
+    "text": "K.O.",
+    "x": 8,
+    "y": 10
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [8, 10, 54, 24, "label", "K.O."]
+    ],
+    "returns": 46
+   },
+   "id": "c002"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [142, 168, 159],
+     "h": 48,
+     "mul": [187, 87, 187],
+     "w": 128
+    },
+    "col": [197, 118, 82],
+    "outline": [60, 8, 120],
+    "scale": 2,
+    "text": "100",
+    "x": 8,
+    "y": 10
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [8, 10, 42, 24, "label", "100"]
+    ],
+    "returns": 34
+   },
+   "id": "c003"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [243, 247, 242],
+     "h": 48,
+     "mul": [203, 223, 247],
+     "w": 128
+    },
+    "col": [219, 91, 127],
+    "outline": [255, 255, 255],
+    "text": "7",
+    "x": 30,
+    "y": 20
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [30, 20, 40, 34, "label", "7"]
+    ],
+    "returns": 10
+   },
+   "id": "c004"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [166, 184, 28],
+    "outline": null,
+    "scale": 2,
+    "text": "LV",
+    "x": 30,
+    "y": 20
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [30, 20, 52, 34, "label", "LV"]
+    ],
+    "returns": 22
+   },
+   "id": "c005"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [240, 40, 0],
+     "h": 48,
+     "mul": [183, 39, 101],
+     "w": 128
+    },
+    "col": [31, 79, 135],
+    "outline": [60, 8, 120],
+    "text": "VS",
+    "x": 30,
+    "y": 20
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [30, 20, 52, 34, "label", "VS"]
+    ],
+    "returns": 22
+   },
+   "id": "c006"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [163, 84, 198],
+     "h": 48,
+     "mul": [81, 91, 5],
+     "w": 128
+    },
+    "col": [255, 172, 169],
+    "outline": [10, 20, 26],
+    "scale": 2,
+    "text": "",
+    "x": 30,
+    "y": 20
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [30, 20, 32, 34, "label", ""]
+    ],
+    "returns": 2
+   },
+   "id": "c007"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [79, 196, 116],
+     "h": 48,
+     "mul": [225, 223, 167],
+     "w": 128
+    },
+    "col": [0, 200, 107],
+    "outline": null,
+    "text": "low hp",
+    "x": -3,
+    "y": 6
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [-3, 6, 67, 20, "label", "low hp"]
+    ],
+    "returns": 70
+   },
+   "id": "c008"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [83, 75, 139],
+     "h": 48,
+     "mul": [43, 105, 157],
+     "w": 128
+    },
+    "col": [25, 221, 91],
+    "outline": [60, 8, 120],
+    "scale": 2,
+    "text": "A",
+    "x": -3,
+    "y": 6
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [-3, 6, 7, 20, "label", "A"]
+    ],
+    "returns": 10
+   },
+   "id": "c009"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [105, 221, 84],
+    "outline": [10, 20, 26],
+    "text": "WINS!",
+    "x": -3,
+    "y": 6
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [-3, 6, 55, 20, "label", "WINS!"]
+    ],
+    "returns": 58
+   },
+   "id": "c010"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [164, 155, 17],
+     "h": 48,
+     "mul": [155, 201, 91],
+     "w": 128
+    },
+    "col": [19, 155, 247],
+    "scale": 2,
+    "text": "3\u00d74=12",
+    "x": -3,
+    "y": 6
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [-3, 6, 67, 20, "label", "3\u00d74=12"]
+    ],
+    "returns": 70
+   },
+   "id": "c011"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [101, 139, 15],
+     "h": 48,
+     "mul": [73, 91, 69],
+     "w": 128
+    },
+    "col": [206, 195, 9],
+    "outline": [60, 8, 120],
+    "text": "FLUTE",
+    "x": 5,
+    "y": -4
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [5, -4, 63, 10, "label", "FLUTE"]
+    ],
+    "returns": 58
+   },
+   "id": "c012"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [42, 209, 193],
+     "h": 48,
+     "mul": [185, 67, 35],
+     "w": 128
+    },
+    "col": [85, 113, 107],
+    "outline": [10, 20, 26],
+    "scale": 2,
+    "text": "TROMBONE",
+    "x": 5,
+    "y": -4
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [5, -4, 99, 10, "label", "TROMBONE"]
+    ],
+    "returns": 94
+   },
+   "id": "c013"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [183, 159, 177],
+     "h": 48,
+     "mul": [77, 39, 107],
+     "w": 128
+    },
+    "col": [88, 125, 122],
+    "text": "K.O.",
+    "x": 5,
+    "y": -4
+   },
+   "arrays": {
+    "out": "c014__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col)",
+   "expect": {
+    "noted": [
+     [5, -4, 51, 10, "label", "K.O."]
+    ],
+    "returns": 46
+   },
+   "id": "c014"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [63, 183, 203],
+    "outline": [255, 255, 255],
+    "scale": 2,
+    "text": "100",
+    "x": 5,
+    "y": -4
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [5, -4, 39, 10, "label", "100"]
+    ],
+    "returns": 34
+   },
+   "id": "c015"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [119, 248, 214],
+     "h": 48,
+     "mul": [255, 9, 157],
+     "w": 128
+    },
+    "col": [14, 92, 237],
+    "outline": [10, 20, 26],
+    "text": "7",
+    "x": 100,
+    "y": 12
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [100, 12, 110, 26, "label", "7"]
+    ],
+    "returns": 10
+   },
+   "id": "c016"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [31, 12, 1],
+     "h": 48,
+     "mul": [185, 77, 109],
+     "w": 128
+    },
+    "col": [225, 247, 252],
+    "scale": 2,
+    "text": "LV",
+    "x": 100,
+    "y": 12
+   },
+   "arrays": {
+    "out": "c017__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [100, 12, 122, 26, "label", "LV"]
+    ],
+    "returns": 22
+   },
+   "id": "c017"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [70, 74, 85],
+     "h": 48,
+     "mul": [63, 215, 97],
+     "w": 128
+    },
+    "col": [147, 53, 37],
+    "outline": [255, 255, 255],
+    "text": "VS",
+    "x": 100,
+    "y": 12
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [100, 12, 122, 26, "label", "VS"]
+    ],
+    "returns": 22
+   },
+   "id": "c018"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [200, 162, 65],
+     "h": 48,
+     "mul": [103, 145, 125],
+     "w": 128
+    },
+    "col": [187, 2, 70],
+    "outline": null,
+    "scale": 2,
+    "text": "",
+    "x": 100,
+    "y": 12
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [100, 12, 102, 26, "label", ""]
+    ],
+    "returns": 2
+   },
+   "id": "c019"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [61, 226, 16],
+    "text": "low hp",
+    "x": 12,
+    "y": 40
+   },
+   "arrays": {
+    "out": "c020__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col)",
+   "expect": {
+    "noted": [
+     [12, 40, 82, 54, "label", "low hp"]
+    ],
+    "returns": 70
+   },
+   "id": "c020"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [174, 138, 102],
+     "h": 48,
+     "mul": [195, 49, 69],
+     "w": 128
+    },
+    "col": [25, 106, 125],
+    "outline": [255, 255, 255],
+    "scale": 2,
+    "text": "A",
+    "x": 12,
+    "y": 40
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [12, 40, 22, 54, "label", "A"]
+    ],
+    "returns": 10
+   },
+   "id": "c021"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [103, 254, 150],
+     "h": 48,
+     "mul": [199, 149, 35],
+     "w": 128
+    },
+    "col": [225, 33, 63],
+    "outline": null,
+    "text": "WINS!",
+    "x": 12,
+    "y": 40
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [12, 40, 70, 54, "label", "WINS!"]
+    ],
+    "returns": 58
+   },
+   "id": "c022"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [167, 102, 134],
+     "h": 48,
+     "mul": [179, 117, 15],
+     "w": 128
+    },
+    "col": [158, 110, 173],
+    "outline": [60, 8, 120],
+    "scale": 2,
+    "text": "3\u00d74=12",
+    "x": 12,
+    "y": 40
+   },
+   "arrays": {
+    "out": "c023__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [12, 40, 82, 54, "label", "3\u00d74=12"]
+    ],
+    "returns": 70
+   },
+   "id": "c023"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [84, 103, 161],
+     "h": 48,
+     "mul": [211, 69, 125],
+     "w": 128
+    },
+    "col": [132, 165, 202],
+    "outline": [255, 255, 255],
+    "text": "FLUTE",
+    "x": -60,
+    "y": 5
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [-60, 5, -2, 19, "label", "FLUTE"]
+    ],
+    "returns": 58
+   },
+   "id": "c024"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [64, 167, 126],
+    "outline": null,
+    "scale": 2,
+    "text": "TROMBONE",
+    "x": -60,
+    "y": 5
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [-60, 5, 34, 19, "label", "TROMBONE"]
+    ],
+    "returns": 94
+   },
+   "id": "c025"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [103, 116, 37],
+     "h": 48,
+     "mul": [5, 63, 71],
+     "w": 128
+    },
+    "col": [208, 211, 147],
+    "outline": [60, 8, 120],
+    "text": "K.O.",
+    "x": -60,
+    "y": 5
+   },
+   "arrays": {
+    "out": "c026__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [-60, 5, -14, 19, "label", "K.O."]
+    ],
+    "returns": 46
+   },
+   "id": "c026"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [164, 65, 114],
+     "h": 48,
+     "mul": [221, 203, 125],
+     "w": 128
+    },
+    "col": [45, 153, 145],
+    "outline": [10, 20, 26],
+    "scale": 2,
+    "text": "100",
+    "x": -60,
+    "y": 5
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [-60, 5, -26, 19, "label", "100"]
+    ],
+    "returns": 34
+   },
+   "id": "c027"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [10, 87, 25],
+     "h": 48,
+     "mul": [13, 179, 121],
+     "w": 128
+    },
+    "col": [181, 93, 183],
+    "outline": null,
+    "text": "7",
+    "x": 6,
+    "y": -40
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [6, -40, 16, -26, "label", "7"]
+    ],
+    "returns": 10
+   },
+   "id": "c028"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [68, 177, 26],
+     "h": 48,
+     "mul": [9, 195, 191],
+     "w": 128
+    },
+    "col": [235, 140, 157],
+    "outline": [60, 8, 120],
+    "scale": 2,
+    "text": "LV",
+    "x": 6,
+    "y": -40
+   },
+   "arrays": {
+    "out": "c029__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [6, -40, 28, -26, "label", "LV"]
+    ],
+    "returns": 22
+   },
+   "id": "c029"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [196, 206, 120],
+    "outline": [10, 20, 26],
+    "text": "VS",
+    "x": 6,
+    "y": -40
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [6, -40, 28, -26, "label", "VS"]
+    ],
+    "returns": 22
+   },
+   "id": "c030"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [210, 30, 158],
+     "h": 48,
+     "mul": [175, 211, 163],
+     "w": 128
+    },
+    "col": [152, 4, 226],
+    "scale": 2,
+    "text": "",
+    "x": 6,
+    "y": -40
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [6, -40, 8, -26, "label", ""]
+    ],
+    "returns": 2
+   },
+   "id": "c031"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [125, 57, 134],
+     "h": 48,
+     "mul": [67, 209, 19],
+     "w": 128
+    },
+    "col": [75, 149, 17],
+    "outline": [60, 8, 120],
+    "text": "low hp",
+    "x": 119,
+    "y": 47
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [119, 47, 189, 61, "label", "low hp"]
+    ],
+    "returns": 70
+   },
+   "id": "c032"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [187, 145, 243],
+     "h": 48,
+     "mul": [235, 243, 47],
+     "w": 128
+    },
+    "col": [61, 150, 157],
+    "outline": [10, 20, 26],
+    "scale": 2,
+    "text": "A",
+    "x": 119,
+    "y": 47
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [119, 47, 129, 61, "label", "A"]
+    ],
+    "returns": 10
+   },
+   "id": "c033"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [127, 127, 238],
+     "h": 48,
+     "mul": [17, 237, 155],
+     "w": 128
+    },
+    "col": [201, 226, 139],
+    "text": "WINS!",
+    "x": 119,
+    "y": 47
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col)",
+   "expect": {
+    "noted": [
+     [119, 47, 177, 61, "label", "WINS!"]
+    ],
+    "returns": 58
+   },
+   "id": "c034"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [2, 109, 162],
+    "outline": [255, 255, 255],
+    "scale": 2,
+    "text": "3\u00d74=12",
+    "x": 119,
+    "y": 47
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [119, 47, 189, 61, "label", "3\u00d74=12"]
+    ],
+    "returns": 70
+   },
+   "id": "c035"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [13, 179, 72],
+     "h": 48,
+     "mul": [121, 61, 157],
+     "w": 128
+    },
+    "col": [223, 162, 149],
+    "outline": [10, 20, 26],
+    "text": "FLUTE",
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [0, 0, 58, 14, "label", "FLUTE"]
+    ],
+    "returns": 58
+   },
+   "id": "c036"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [177, 56, 217],
+     "h": 48,
+     "mul": [111, 235, 91],
+     "w": 128
+    },
+    "col": [155, 154, 200],
+    "scale": 2,
+    "text": "TROMBONE",
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [0, 0, 94, 14, "label", "TROMBONE"]
+    ],
+    "returns": 94
+   },
+   "id": "c037"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [25, 56, 16],
+     "h": 48,
+     "mul": [213, 239, 25],
+     "w": 128
+    },
+    "col": [166, 70, 142],
+    "outline": [255, 255, 255],
+    "text": "K.O.",
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [0, 0, 46, 14, "label", "K.O."]
+    ],
+    "returns": 46
+   },
+   "id": "c038"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [113, 92, 71],
+     "h": 48,
+     "mul": [9, 105, 207],
+     "w": 128
+    },
+    "col": [252, 89, 236],
+    "outline": null,
+    "scale": 2,
+    "text": "100",
+    "x": 0,
+    "y": 0
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [0, 0, 34, 14, "label", "100"]
+    ],
+    "returns": 34
+   },
+   "id": "c039"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [86, 9, 141],
+    "text": "7",
+    "x": 125,
+    "y": 3
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col)",
+   "expect": {
+    "noted": [
+     [125, 3, 135, 17, "label", "7"]
+    ],
+    "returns": 10
+   },
+   "id": "c040"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [4, 13, 121],
+     "h": 48,
+     "mul": [67, 177, 217],
+     "w": 128
+    },
+    "col": [75, 42, 5],
+    "outline": [255, 255, 255],
+    "scale": 2,
+    "text": "LV",
+    "x": 125,
+    "y": 3
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [125, 3, 147, 17, "label", "LV"]
+    ],
+    "returns": 22
+   },
+   "id": "c041"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [164, 168, 9],
+     "h": 48,
+     "mul": [161, 97, 39],
+     "w": 128
+    },
+    "col": [231, 151, 68],
+    "outline": null,
+    "text": "VS",
+    "x": 125,
+    "y": 3
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [125, 3, 147, 17, "label", "VS"]
+    ],
+    "returns": 22
+   },
+   "id": "c042"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [129, 134, 219],
+     "h": 48,
+     "mul": [131, 237, 27],
+     "w": 128
+    },
+    "col": [58, 171, 159],
+    "outline": [60, 8, 120],
+    "scale": 2,
+    "text": "",
+    "x": 125,
+    "y": 3
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [125, 3, 127, 17, "label", ""]
+    ],
+    "returns": 2
+   },
+   "id": "c043"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [166, 18, 110],
+     "h": 48,
+     "mul": [77, 65, 171],
+     "w": 128
+    },
+    "col": [65, 189, 66],
+    "outline": [255, 255, 255],
+    "text": "low hp",
+    "x": 4,
+    "y": 50
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [4, 50, 74, 64, "label", "low hp"]
+    ],
+    "returns": 70
+   },
+   "id": "c044"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "col": [191, 151, 164],
+    "outline": null,
+    "scale": 2,
+    "text": "A",
+    "x": 4,
+    "y": 50
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [4, 50, 14, 64, "label", "A"]
+    ],
+    "returns": 10
+   },
+   "id": "c045"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [152, 68, 226],
+     "h": 48,
+     "mul": [133, 175, 53],
+     "w": 128
+    },
+    "col": [75, 228, 231],
+    "outline": [60, 8, 120],
+    "text": "WINS!",
+    "x": 4,
+    "y": 50
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, outline=outline)",
+   "expect": {
+    "noted": [
+     [4, 50, 62, 64, "label", "WINS!"]
+    ],
+    "returns": 58
+   },
+   "id": "c046"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [238, 149, 93],
+     "h": 48,
+     "mul": [209, 103, 123],
+     "w": 128
+    },
+    "col": [163, 34, 192],
+    "outline": [10, 20, 26],
+    "scale": 2,
+    "text": "3\u00d74=12",
+    "x": 4,
+    "y": 50
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale, outline=outline)",
+   "expect": {
+    "noted": [
+     [4, 50, 74, 64, "label", "3\u00d74=12"]
+    ],
+    "returns": 70
+   },
+   "id": "c047"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [126, 30, 153],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [87, 113, 177],
+     "rows": [283, 311],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 44,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "100",
+    "x": 74,
+    "y": 293
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [74, 293, 91, 300, "label", "100"]
+    ],
+    "returns": 17
+   },
+   "id": "c048"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [50, 91, 200],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [139, 143, 65],
+     "rows": [316, 344],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 330,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "85",
+    "x": 219,
+    "y": 326
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [219, 326, 230, 333, "label", "85"]
+    ],
+    "returns": 11
+   },
+   "id": "c049"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [103, 56, 19],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [103, 131, 209],
+     "rows": [284, 312],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 481,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "81",
+    "x": 138,
+    "y": 294
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [138, 294, 149, 301, "label", "81"]
+    ],
+    "returns": 11
+   },
+   "id": "c050"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [173, 48, 26],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [61, 229, 131],
+     "rows": [255, 283],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 783,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "63",
+    "x": 138,
+    "y": 265
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [138, 265, 149, 272, "label", "63"]
+    ],
+    "returns": 11
+   },
+   "id": "c051"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [143, 65, 189],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [3, 217, 59],
+     "rows": [238, 266],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 963,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "55",
+    "x": 217,
+    "y": 248
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [217, 248, 228, 255, "label", "55"]
+    ],
+    "returns": 11
+   },
+   "id": "c052"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [156, 198, 132],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [201, 49, 67],
+     "rows": [199, 227],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 1269,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "29",
+    "x": 165,
+    "y": 209
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [165, 209, 176, 216, "label", "29"]
+    ],
+    "returns": 11
+   },
+   "id": "c053"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [212, 188, 166],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [175, 7, 99],
+     "rows": [217, 245],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 1288,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "9",
+    "x": 209,
+    "y": 227
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [209, 227, 214, 234, "label", "9"]
+    ],
+    "returns": 5
+   },
+   "id": "c054"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [172, 231, 63],
+     "flat": [128, 128, 128],
+     "h": 640,
+     "mul": [223, 15, 217],
+     "rows": [309, 337],
+     "w": 360
+    },
+    "col": [255, 244, 224],
+    "frame": 1475,
+    "scale": 1,
+    "source": "kit.picture",
+    "text": "5",
+    "x": 95,
+    "y": 319
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.ui.label(img, text, x, y, col, scale)",
+   "expect": {
+    "noted": [
+     [95, 319, 100, 326, "label", "5"]
+    ],
+    "returns": 5
+   },
+   "id": "c055"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "x0": 10,
+    "x1": 90,
+    "y0": 8,
+    "y1": 30
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [10, 8, 93, 33, "panel", ""]
+    ]
+   },
+   "id": "c056"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [60, 125, 163],
+     "h": 48,
+     "mul": [239, 241, 161],
+     "w": 128
+    },
+    "edge": [79, 245, 215],
+    "fill": [116, 105, 90],
+    "x0": 10,
+    "x1": 90,
+    "y0": 8,
+    "y1": 30
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [10, 8, 93, 33, "panel", ""]
+    ]
+   },
+   "id": "c057"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [21, 122, 174],
+     "h": 48,
+     "mul": [201, 245, 173],
+     "w": 128
+    },
+    "fill": [217, 37, 242],
+    "x0": 4,
+    "x1": 4,
+    "y0": 4,
+    "y1": 4
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [4, 4, 7, 7, "panel", ""]
+    ]
+   },
+   "id": "c058"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [44, 133, 209],
+     "h": 48,
+     "mul": [167, 119, 217],
+     "w": 128
+    },
+    "edge": [28, 243, 86],
+    "x0": 4,
+    "x1": 4,
+    "y0": 4,
+    "y1": 4
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [4, 4, 7, 7, "panel", ""]
+    ]
+   },
+   "id": "c059"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [227, 49, 178],
+     "h": 48,
+     "mul": [141, 53, 15],
+     "w": 128
+    },
+    "edge": [162, 113, 40],
+    "x0": 20,
+    "x1": 21,
+    "y0": 10,
+    "y1": 11
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [20, 10, 24, 14, "panel", ""]
+    ]
+   },
+   "id": "c060"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "fill": [110, 62, 20],
+    "x0": 20,
+    "x1": 21,
+    "y0": 10,
+    "y1": 11
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [20, 10, 24, 14, "panel", ""]
+    ]
+   },
+   "id": "c061"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "edge": [40, 236, 187],
+    "fill": [40, 236, 187],
+    "x0": -6,
+    "x1": 40,
+    "y0": -5,
+    "y1": 20
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [-6, -5, 43, 23, "panel", ""]
+    ]
+   },
+   "id": "c062"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [17, 142, 199],
+     "h": 48,
+     "mul": [215, 245, 173],
+     "w": 128
+    },
+    "x0": -6,
+    "x1": 40,
+    "y0": -5,
+    "y1": 20
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [-6, -5, 43, 23, "panel", ""]
+    ]
+   },
+   "id": "c063"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [93, 74, 19],
+     "h": 48,
+     "mul": [125, 147, 119],
+     "w": 128
+    },
+    "x0": 60,
+    "x1": 140,
+    "y0": 20,
+    "y1": 60
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [60, 20, 143, 63, "panel", ""]
+    ]
+   },
+   "id": "c064"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [24, 18, 215],
+     "h": 48,
+     "mul": [69, 81, 63],
+     "w": 128
+    },
+    "edge": [59, 2, 72],
+    "fill": [113, 219, 25],
+    "x0": 60,
+    "x1": 140,
+    "y0": 20,
+    "y1": 60
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [60, 20, 143, 63, "panel", ""]
+    ]
+   },
+   "id": "c065"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [49, 73, 70],
+     "h": 48,
+     "mul": [149, 255, 185],
+     "w": 128
+    },
+    "fill": [203, 55, 197],
+    "x0": 0,
+    "x1": 127,
+    "y0": 0,
+    "y1": 47
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [0, 0, 130, 50, "panel", ""]
+    ]
+   },
+   "id": "c066"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "edge": [9, 182, 55],
+    "x0": 0,
+    "x1": 127,
+    "y0": 0,
+    "y1": 47
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [0, 0, 130, 50, "panel", ""]
+    ]
+   },
+   "id": "c067"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "edge": [63, 93, 202],
+    "x0": 30,
+    "x1": 70,
+    "y0": 40,
+    "y1": 44
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [30, 40, 73, 47, "panel", ""]
+    ]
+   },
+   "id": "c068"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [0, 74, 189],
+     "h": 48,
+     "mul": [175, 29, 157],
+     "w": 128
+    },
+    "fill": [37, 130, 29],
+    "x0": 30,
+    "x1": 70,
+    "y0": 40,
+    "y1": 44
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [30, 40, 73, 47, "panel", ""]
+    ]
+   },
+   "id": "c069"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [140, 35, 184],
+     "h": 48,
+     "mul": [105, 93, 245],
+     "w": 128
+    },
+    "edge": [22, 147, 7],
+    "fill": [22, 147, 7],
+    "x0": 200,
+    "x1": 240,
+    "y0": 10,
+    "y1": 30
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [200, 10, 243, 33, "panel", ""]
+    ]
+   },
+   "id": "c070"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [80, 136, 7],
+     "h": 48,
+     "mul": [37, 5, 71],
+     "w": 128
+    },
+    "x0": 200,
+    "x1": 240,
+    "y0": 10,
+    "y1": 30
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [200, 10, 243, 33, "panel", ""]
+    ]
+   },
+   "id": "c071"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [104, 112, 198],
+     "h": 48,
+     "mul": [1, 197, 37],
+     "w": 128
+    },
+    "x0": 5,
+    "x1": 6,
+    "y0": 30,
+    "y1": 46
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [5, 30, 9, 49, "panel", ""]
+    ]
+   },
+   "id": "c072"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "edge": [84, 3, 200],
+    "fill": [160, 244, 4],
+    "x0": 5,
+    "x1": 6,
+    "y0": 30,
+    "y1": 46
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [5, 30, 9, 49, "panel", ""]
+    ]
+   },
+   "id": "c073"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "fill": [77, 98, 250],
+    "x0": 50,
+    "x1": 52,
+    "y0": 12,
+    "y1": 13
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [50, 12, 55, 16, "panel", ""]
+    ]
+   },
+   "id": "c074"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [58, 170, 153],
+     "h": 48,
+     "mul": [161, 27, 17],
+     "w": 128
+    },
+    "edge": [110, 207, 21],
+    "x0": 50,
+    "x1": 52,
+    "y0": 12,
+    "y1": 13
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [50, 12, 55, 16, "panel", ""]
+    ]
+   },
+   "id": "c075"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [205, 2, 205],
+     "h": 48,
+     "mul": [25, 127, 213],
+     "w": 128
+    },
+    "edge": [213, 92, 75],
+    "x0": -30,
+    "x1": -10,
+    "y0": -30,
+    "y1": -8
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, edge=edge)",
+   "expect": {
+    "noted": [
+     [-30, -30, -7, -5, "panel", ""]
+    ]
+   },
+   "id": "c076"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [64, 83, 155],
+     "h": 48,
+     "mul": [241, 59, 195],
+     "w": 128
+    },
+    "fill": [66, 90, 114],
+    "x0": -30,
+    "x1": -10,
+    "y0": -30,
+    "y1": -8
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill)",
+   "expect": {
+    "noted": [
+     [-30, -30, -7, -5, "panel", ""]
+    ]
+   },
+   "id": "c077"
+  },
+  {
+   "args": {
+    "canvas": {
+     "add": [248, 189, 82],
+     "h": 48,
+     "mul": [29, 235, 253],
+     "w": 128
+    },
+    "edge": [138, 192, 98],
+    "fill": [138, 192, 98],
+    "x0": 40,
+    "x1": 100,
+    "y0": 5,
+    "y1": 6
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1, fill=fill, edge=edge)",
+   "expect": {
+    "noted": [
+     [40, 5, 103, 9, "panel", ""]
+    ]
+   },
+   "id": "c078"
+  },
+  {
+   "args": {
+    "canvas": {
+     "flat": [128, 128, 128],
+     "h": 48,
+     "w": 128
+    },
+    "x0": 40,
+    "x1": 100,
+    "y0": 5,
+    "y1": 6
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "reelkit.ui.panel(draw, x0, y0, x1, y1)",
+   "expect": {
+    "noted": [
+     [40, 5, 103, 9, "panel", ""]
+    ]
+   },
+   "id": "c079"
+  }
+ ],
+ "note": "args.canvas makes the picture the call draws on, w x h, uint8 RGB: with only \"flat\", that colour everywhere; with \"mul\" and \"add\", pixel i (counted row by row from the top left) has the channels (mul[c] * i + add[c]) % 256, and if \"rows\" [ya, yb] is there too only rows ya to yb - 1 are woven like that and the rest is \"flat\". \"out\" is the picture after the call. label: a keyword that is absent was not passed (scale defaults to 2, outline to (10, 20, 26); outline null is outline=None); expect.returns is the width it returned. panel: draw is ImageDraw.Draw of the picture; fill and edge default to (16, 20, 38) and (62, 74, 112). expect.noted is what the call appended to reelkit.ui.DRAWN: [x0, y0, x1, y1, kind, info].",
+ "tool": "kit_ui"
+}

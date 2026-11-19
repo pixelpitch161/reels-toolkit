@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of VIOLA (studio/reference/fighters/viola/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+VIOLA FLUTE 1 1 42.65490196078431 440 3dcc87fee54e6089
+VIOLA FLUTE 2 0 37.67990196078431 396 36afd69232a722e9
+VIOLA FLUTE 3 0 43.32156862745098 427 8de3ac1e4c6b0b18
+VIOLA FLUTE 500 0 42.88823529411764 430 8f0f3aaf66d6f7a6
+VIOLA FLUTE 1099511627776 0 39.26323529411764 404 c8ec1efdbf9e6f4b
+FLUTE VIOLA 1 1 37.22990196078431 401 d5e78eb83aa8d276
+FLUTE VIOLA 2 1 43.07990196078431 434 d0005be3680395b3
+FLUTE VIOLA 3 1 40.021568627450975 442 2b8ae1a84a11ba36
+FLUTE VIOLA 500 1 39.47990196078431 383 5c87767cbf2ee170
+FLUTE VIOLA 1099511627776 1 42.16323529411765 408 e52371d55513b9e6
