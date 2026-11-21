@@ -201,6 +201,33 @@ pub fn snare_drum(base: &mut RgbF) {
     });
 }
 
+/// OCTOBASS: tall wood grain (long wavy vertical streaks of the body's spruce and maple), crossed every 150 px by a
+/// row of brass lever bars, each a short horizontal bar with a lit top edge and a dark pivot dot at its end.
+pub fn octobass(base: &mut RgbF) {
+    shade(base, |x, y, _| {
+        let band = y % 150.0;
+        if (40.0..58.0).contains(&band) {
+            // the levers: one bar every 46 px across, a gap between
+            let fx = x % 46.0;
+            if fx < 34.0 {
+                let lit = if band < 43.0 { 0.16 } else { 0.06 };
+                let pivot = dmath::hypot(fx - 30.0, band - 49.0) < 4.0;
+                return if pivot { (0.55, 0.0) } else { (1.0, lit) };
+            }
+        }
+        // the grain: wavy streaks that run down the panel
+        let wave = x + 9.0 * dmath::sin(y / 70.0 + x / 40.0);
+        let g = (wave / 11.0).fract();
+        if g < 0.12 {
+            (0.86, 0.0)
+        } else if g < 0.2 {
+            (1.0, 0.035)
+        } else {
+            (0.97, 0.0)
+        }
+    });
+}
+
 /// TARGET DUMMY (a developer fighter): rows of small bullseyes, each ring alternately lit and shaded.
 pub fn target_dummy(base: &mut RgbF) {
     shade(base, |x, y, _| {

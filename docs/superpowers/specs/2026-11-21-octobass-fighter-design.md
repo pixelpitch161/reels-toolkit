@@ -59,7 +59,7 @@ contact, so the look and the part read the same thing.
 Numbers after the lenient check (40 quick fights: OCTOBASS won 14, 26 K.O.s): `every16` 8, `gap16` 2, `n0` 1, `grow` 0.25, `n_max` 3,
 `spread` 12, `out16` 1, `reach` 2.6 ball radii, `hold16` 1, `back16` 2, `dmg` 2.0, `knock` 0.5; FOOT PEDAL `tele` 1, `radius`
 0.9, `dmg` 2.5, `stun_beats` 1, `every_bars` 5; SEVEN LEVERS `gap` 0.09, `fan` 60, `reach` 3.0, `dmg` 0.9,
-`knock_last` 1.6, `every_bars` 6; BELOW HEARING `speed` 2.0, `max_s` 3.0, `dmg` 13, `knock` 2.0, `stun_beats` 1.
+`knock_last` 1.6, `every_bars` 6; BELOW HEARING `speed` 1.5, `min_s` 1.6 (it always grows at least this long, so the silence shows even when the balls touch), `max_s` 3.5, `dmg` 13, `knock` 2.0, `stun_beats` 1.
 
 ## Look and sound
 

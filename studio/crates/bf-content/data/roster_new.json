@@ -458,8 +458,9 @@
     "low": {
      "name": "BELOW HEARING",
      "kind": "below_hearing",
-     "speed": 2.0,
-     "max_s": 3.0,
+     "speed": 1.5,
+     "min_s": 1.6,
+     "max_s": 3.5,
      "dmg": 13.0,
      "knock": 2.0,
      "stun_beats": 1

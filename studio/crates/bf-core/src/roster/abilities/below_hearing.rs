@@ -16,6 +16,7 @@ pub const ALLOWED: &[&str] = &[
     "kind",
     "every_bars",
     "speed",
+    "min_s",
     "max_s",
     "dmg",
     "knock",

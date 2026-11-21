@@ -16,7 +16,7 @@
 //!   enemy, each aimed at the enemy, reaching `reach` ball radii and stopping on it for `dmg` (kind `seven`); the
 //!   seventh adds a knock of `knock_last`. The volleys pause until the seventh has pulled back.
 //! - BELOW HEARING: one ring grows from the ball at `speed` ring units a second (the music drops out meanwhile); when
-//!   its edge reaches the enemy (or after `max_s` seconds) it hits for `dmg` (kind `below`), knocks `knock` and
+//!   its edge reaches the enemy, but not before `min_s` seconds (1.2 when left out), or after `max_s` seconds, it hits for `dmg` (kind `below`), knocks `knock` and
 //!   stuns for `stun_beats` beats. The volleys pause while it grows.
 //!
 //! The abilities run for whichever ball fires them (a copied one too).
@@ -96,6 +96,7 @@ pub struct Pedal {
 pub struct Below {
     pub t0: f64,
     pub speed: f64,
+    pub min_s: f64,
     pub max_s: f64,
     pub dmg: f64,
     pub knock: f64,
@@ -294,6 +295,7 @@ pub fn start_below_hearing(f: &mut Fight, k: usize, ab: &AbilityCfg) {
     f.levers.below[k] = Some(Below {
         t0: f.t,
         speed: param(ab, "speed"),
+        min_s: ab.get("min_s").unwrap_or(1.2),
         max_s: param(ab, "max_s"),
         dmg: param(ab, "dmg"),
         knock: param(ab, "knock"),
@@ -391,7 +393,8 @@ fn below_step(f: &mut Fight, k: usize) {
     let r = below_r(f, &b);
     let d = geom::sub(f.balls[o].p, f.balls[k].p);
     let reached = r + radius(f, o) >= geom::hypot(d);
-    if !reached && f.t - b.t0 < b.max_s {
+    let age = f.t - b.t0;
+    if (!reached || age < b.min_s) && age < b.max_s {
         return;
     }
     f.levers.below[k] = None;

@@ -96,6 +96,7 @@ fighters! {
     "TIMPANI" => timpani,
     "FLUGELHORN" => flugelhorn,
     "SNARE DRUM" => snare_drum,
+    "OCTOBASS" => octobass,
     "TARGET DUMMY" => target_dummy,
 }
 
