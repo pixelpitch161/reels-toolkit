@@ -411,6 +411,63 @@
    "pp": "SNARE DRUM",
    "register": [60, 84],
    "idiom": "rudiment"
+  },
+  {
+   "name": "OCTOBASS",
+   "color": [100, 64, 36],
+   "dark": [52, 32, 16],
+   "corner": "blue",
+   "view": [0, 18, 0],
+   "weapon": {
+    "kind": "levers",
+    "style": "levers",
+    "name": "LEVER PUNCH",
+    "every16": 8,
+    "gap16": 2,
+    "n0": 1,
+    "grow": 0.25,
+    "n_max": 3,
+    "spread": 12.0,
+    "out16": 1,
+    "reach": 2.6,
+    "hold16": 1,
+    "back16": 2,
+    "dmg": 2.0,
+    "knock": 0.5
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "FOOT PEDAL",
+     "kind": "foot_pedal",
+     "tele": 1,
+     "radius": 0.9,
+     "dmg": 2.5,
+     "stun_beats": 1,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "SEVEN LEVERS",
+     "kind": "seven_levers",
+     "gap": 0.09,
+     "fan": 60.0,
+     "reach": 3.0,
+     "dmg": 0.9,
+     "knock_last": 1.6,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "BELOW HEARING",
+     "kind": "below_hearing",
+     "speed": 2.0,
+     "max_s": 3.0,
+     "dmg": 13.0,
+     "knock": 2.0,
+     "stun_beats": 1
+    }
+   },
+   "pp": "OCTOBASS",
+   "register": [22, 46],
+   "idiom": "sub"
   }
  ]
 }

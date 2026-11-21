@@ -12,6 +12,7 @@ pub mod altissimo;
 pub mod arc;
 pub mod barrage;
 pub mod beam;
+pub mod below_hearing;
 pub mod buzz;
 pub mod buzz_roll;
 pub mod cannons;
@@ -30,6 +31,7 @@ pub mod flam;
 pub mod flank;
 pub mod flash_spin;
 pub mod flick;
+pub mod foot_pedal;
 pub mod fork;
 pub mod full_set;
 pub mod heartbeat;
@@ -55,6 +57,7 @@ pub mod rhapsody;
 pub mod rimshot;
 pub mod runoff;
 pub mod runway;
+pub mod seven_levers;
 pub mod shatter;
 pub mod slap;
 pub mod smash;
@@ -267,6 +270,12 @@ pub enum AbilityKind {
     Rimshot,
     /// `buzz_roll`: SNARE DRUM's BUZZ ROLL (a Studio kind).
     BuzzRoll,
+    /// `foot_pedal`: OCTOBASS's FOOT PEDAL (a Studio kind).
+    FootPedal,
+    /// `seven_levers`: OCTOBASS's SEVEN LEVERS (a Studio kind).
+    SevenLevers,
+    /// `below_hearing`: OCTOBASS's BELOW HEARING (a Studio kind).
+    BelowHearing,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -413,6 +422,12 @@ pub enum AbilitySettings {
     Rimshot(rimshot::RimshotCfg),
     /// Kind `buzz_roll`.
     BuzzRoll(buzz_roll::BuzzRollCfg),
+    /// Kind `foot_pedal`.
+    FootPedal(foot_pedal::FootPedalCfg),
+    /// Kind `seven_levers`.
+    SevenLevers(seven_levers::SevenLeversCfg),
+    /// Kind `below_hearing`.
+    BelowHearing(below_hearing::BelowHearingCfg),
 }
 
 impl AbilityKind {
@@ -494,6 +509,9 @@ impl AbilityKind {
             AbilityKind::Flam => "flam",
             AbilityKind::Rimshot => "rimshot",
             AbilityKind::BuzzRoll => "buzz_roll",
+            AbilityKind::FootPedal => "foot_pedal",
+            AbilityKind::SevenLevers => "seven_levers",
+            AbilityKind::BelowHearing => "below_hearing",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -575,6 +593,9 @@ impl AbilityKind {
             "flam" if flam::PORTED => AbilityKind::Flam,
             "rimshot" if rimshot::PORTED => AbilityKind::Rimshot,
             "buzz_roll" if buzz_roll::PORTED => AbilityKind::BuzzRoll,
+            "foot_pedal" if foot_pedal::PORTED => AbilityKind::FootPedal,
+            "seven_levers" if seven_levers::PORTED => AbilityKind::SevenLevers,
+            "below_hearing" if below_hearing::PORTED => AbilityKind::BelowHearing,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -655,6 +676,9 @@ impl AbilityKind {
             AbilityKind::Flam => flam::REQUIRED,
             AbilityKind::Rimshot => rimshot::REQUIRED,
             AbilityKind::BuzzRoll => buzz_roll::REQUIRED,
+            AbilityKind::FootPedal => foot_pedal::REQUIRED,
+            AbilityKind::SevenLevers => seven_levers::REQUIRED,
+            AbilityKind::BelowHearing => below_hearing::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -737,6 +761,9 @@ impl AbilityKind {
             AbilityKind::Flam => flam::ALLOWED,
             AbilityKind::Rimshot => rimshot::ALLOWED,
             AbilityKind::BuzzRoll => buzz_roll::ALLOWED,
+            AbilityKind::FootPedal => foot_pedal::ALLOWED,
+            AbilityKind::SevenLevers => seven_levers::ALLOWED,
+            AbilityKind::BelowHearing => below_hearing::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -825,6 +852,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Flam => AbilitySettings::Flam(flam::parse(e, prefix, ab)?),
         AbilityKind::Rimshot => AbilitySettings::Rimshot(rimshot::parse(e, prefix, ab)?),
         AbilityKind::BuzzRoll => AbilitySettings::BuzzRoll(buzz_roll::parse(e, prefix, ab)?),
+        AbilityKind::FootPedal => AbilitySettings::FootPedal(foot_pedal::parse(e, prefix, ab)?),
+        AbilityKind::SevenLevers => AbilitySettings::SevenLevers(seven_levers::parse(e, prefix, ab)?),
+        AbilityKind::BelowHearing => AbilitySettings::BelowHearing(below_hearing::parse(e, prefix, ab)?),
     })
 }
 
@@ -906,6 +936,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Flam => flam::check(e, prefix, ab),
         AbilityKind::Rimshot => rimshot::check(e, prefix, ab),
         AbilityKind::BuzzRoll => buzz_roll::check(e, prefix, ab),
+        AbilityKind::FootPedal => foot_pedal::check(e, prefix, ab),
+        AbilityKind::SevenLevers => seven_levers::check(e, prefix, ab),
+        AbilityKind::BelowHearing => below_hearing::check(e, prefix, ab),
     }
 }
 

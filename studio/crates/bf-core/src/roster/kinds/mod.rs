@@ -14,6 +14,7 @@ pub mod grapple;
 pub mod inflate;
 pub mod jump;
 pub mod kettles;
+pub mod levers;
 pub mod lightning;
 pub mod line;
 pub mod mallets;
