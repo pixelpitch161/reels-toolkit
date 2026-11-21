@@ -55,6 +55,7 @@ pub mod viola;
 pub mod violin;
 
 // the fighters made from scratch in the Studio
+pub mod bass_guitar;
 pub mod contrabass_clarinet;
 pub mod contrabassoon;
 pub mod cornet;
@@ -85,7 +86,7 @@ pub const OLDER: [&str; 10] = [
 
 /// The fighters made from scratch in the Studio (no Python kit reference; `data/roster_new.json`), each with its
 /// folder here.
-pub const NEW: [&str; 10] = [
+pub const NEW: [&str; 11] = [
     "CORNET",
     "CONTRABASS CLARINET",
     "MARIMBA",
@@ -96,6 +97,7 @@ pub const NEW: [&str; 10] = [
     "CONTRABASSOON",
     "FLUGELHORN",
     "SNARE DRUM",
+    "BASS GUITAR",
 ];
 
 /// The developer fighters (`data/roster_dev.json`), each with its folder here: in the roster so a fight file can name
@@ -190,6 +192,7 @@ pub fn entry(fighter: &str) -> Option<Entry> {
         "CONTRABASSOON" => entry!(contrabassoon),
         "FLUGELHORN" => entry!(flugelhorn),
         "SNARE DRUM" => entry!(snare_drum),
+        "BASS GUITAR" => entry!(bass_guitar),
         "TARGET DUMMY" => entry!(target_dummy),
         _ => return None,
     })

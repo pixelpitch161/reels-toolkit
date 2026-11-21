@@ -54,8 +54,8 @@ use bf_core::event::Value;
 use crate::ball::Slot;
 use crate::fight::Fight;
 use crate::kinds::{
-    crowd, drill, jump, kettles, lightning, mallets, mortar, needle, plumbing, plunger, rests, roll_charge, slapback,
-    spotlight, sticks, swarm, tiptoe, tune, wingbeat, wrecking,
+    crowd, drill, jump, kettles, lightning, mallets, mortar, needle, pick, plumbing, plunger, rests, roll_charge,
+    slapback, spotlight, sticks, swarm, tiptoe, tune, wingbeat, wrecking,
 };
 use crate::roster::{AbilityCfg, AbilityKind};
 
@@ -259,6 +259,10 @@ pub fn fire<'a>(fight: &mut Fight<'a>, k: usize, ab: &'a AbilityCfg) {
         AbilityKind::Flam => sticks::start_flam(fight, k, ab),
         AbilityKind::Rimshot => sticks::start_rimshot(fight, k, ab),
         AbilityKind::BuzzRoll => sticks::start_buzz_roll(fight, k, ab),
+        // BASS GUITAR's (Studio kinds, in its weapon's module)
+        AbilityKind::FretSlide => pick::start_fret_slide(fight, k, ab),
+        AbilityKind::Headstock => pick::start_headstock(fight, k, ab),
+        AbilityKind::Slingshot => pick::start_slingshot(fight, k, ab),
         // no branch: Python announces it and does nothing else
         AbilityKind::Unsupported(_) => {}
     }
