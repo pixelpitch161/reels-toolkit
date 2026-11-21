@@ -69,7 +69,7 @@ impl Sound for BassGuitarSound {
     }
 
     fn bus_gain(&self) -> f64 {
-        1.25
+        2.4
     }
 
     fn send(&self) -> f64 {

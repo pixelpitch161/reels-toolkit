@@ -417,7 +417,7 @@
    "color": [150, 0, 255],
    "dark": [82, 0, 140],
    "corner": "blue",
-   "view": [0, 18, 0],
+   "view": [30, 20, 0],
    "weapon": {
     "kind": "pick",
     "style": "pick",

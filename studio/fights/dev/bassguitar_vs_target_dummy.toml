@@ -1,0 +1,38 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["BASS GUITAR", "TARGET DUMMY"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 1.0
+tempo_bpm = 126.0
+seed = 21
+
+[pair_rules]
+
+[music]
+theme = "stadium_rock"
+arrangement = "composed"
+key = "E"
+scale = "minor"
+chords_intro = ["Em", "B7"]
+chord_loop = ["Em", "C", "G", "D", "Em", "C", "Am", "B7"]
+chords_tail = ["Em", "C", "G", "D", "Am", "B7"]
+music_seed = 1
+
+[music.roles]
+
+[music.lines]
+
+[music.solos]
+
+[music.title_hits]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+
+[picture.title_lines]
+
+[captions]
