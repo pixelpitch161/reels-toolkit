@@ -31,7 +31,9 @@ pub mod flank;
 pub mod flash_spin;
 pub mod flick;
 pub mod fork;
+pub mod fret_slide;
 pub mod full_set;
+pub mod headstock;
 pub mod heartbeat;
 pub mod hive;
 pub mod hook;
@@ -57,6 +59,7 @@ pub mod runoff;
 pub mod runway;
 pub mod shatter;
 pub mod slap;
+pub mod slingshot;
 pub mod smash;
 pub mod snap;
 pub mod snip;
@@ -267,6 +270,12 @@ pub enum AbilityKind {
     Rimshot,
     /// `buzz_roll`: SNARE DRUM's BUZZ ROLL (a Studio kind).
     BuzzRoll,
+    /// `fret_slide`: BASS GUITAR's FRET SLIDE (a Studio kind).
+    FretSlide,
+    /// `headstock`: BASS GUITAR's HEADSTOCK SWING (a Studio kind).
+    Headstock,
+    /// `slingshot`: BASS GUITAR's SLINGSHOT (a Studio kind).
+    Slingshot,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -413,6 +422,12 @@ pub enum AbilitySettings {
     Rimshot(rimshot::RimshotCfg),
     /// Kind `buzz_roll`.
     BuzzRoll(buzz_roll::BuzzRollCfg),
+    /// Kind `fret_slide`.
+    FretSlide(fret_slide::FretSlideCfg),
+    /// Kind `headstock`.
+    Headstock(headstock::HeadstockCfg),
+    /// Kind `slingshot`.
+    Slingshot(slingshot::SlingshotCfg),
 }
 
 impl AbilityKind {
@@ -494,6 +509,9 @@ impl AbilityKind {
             AbilityKind::Flam => "flam",
             AbilityKind::Rimshot => "rimshot",
             AbilityKind::BuzzRoll => "buzz_roll",
+            AbilityKind::FretSlide => "fret_slide",
+            AbilityKind::Headstock => "headstock",
+            AbilityKind::Slingshot => "slingshot",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -575,6 +593,9 @@ impl AbilityKind {
             "flam" if flam::PORTED => AbilityKind::Flam,
             "rimshot" if rimshot::PORTED => AbilityKind::Rimshot,
             "buzz_roll" if buzz_roll::PORTED => AbilityKind::BuzzRoll,
+            "fret_slide" if fret_slide::PORTED => AbilityKind::FretSlide,
+            "headstock" if headstock::PORTED => AbilityKind::Headstock,
+            "slingshot" if slingshot::PORTED => AbilityKind::Slingshot,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -655,6 +676,9 @@ impl AbilityKind {
             AbilityKind::Flam => flam::REQUIRED,
             AbilityKind::Rimshot => rimshot::REQUIRED,
             AbilityKind::BuzzRoll => buzz_roll::REQUIRED,
+            AbilityKind::FretSlide => fret_slide::REQUIRED,
+            AbilityKind::Headstock => headstock::REQUIRED,
+            AbilityKind::Slingshot => slingshot::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -737,6 +761,9 @@ impl AbilityKind {
             AbilityKind::Flam => flam::ALLOWED,
             AbilityKind::Rimshot => rimshot::ALLOWED,
             AbilityKind::BuzzRoll => buzz_roll::ALLOWED,
+            AbilityKind::FretSlide => fret_slide::ALLOWED,
+            AbilityKind::Headstock => headstock::ALLOWED,
+            AbilityKind::Slingshot => slingshot::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -825,6 +852,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::Flam => AbilitySettings::Flam(flam::parse(e, prefix, ab)?),
         AbilityKind::Rimshot => AbilitySettings::Rimshot(rimshot::parse(e, prefix, ab)?),
         AbilityKind::BuzzRoll => AbilitySettings::BuzzRoll(buzz_roll::parse(e, prefix, ab)?),
+        AbilityKind::FretSlide => AbilitySettings::FretSlide(fret_slide::parse(e, prefix, ab)?),
+        AbilityKind::Headstock => AbilitySettings::Headstock(headstock::parse(e, prefix, ab)?),
+        AbilityKind::Slingshot => AbilitySettings::Slingshot(slingshot::parse(e, prefix, ab)?),
     })
 }
 
@@ -906,6 +936,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::Flam => flam::check(e, prefix, ab),
         AbilityKind::Rimshot => rimshot::check(e, prefix, ab),
         AbilityKind::BuzzRoll => buzz_roll::check(e, prefix, ab),
+        AbilityKind::FretSlide => fret_slide::check(e, prefix, ab),
+        AbilityKind::Headstock => headstock::check(e, prefix, ab),
+        AbilityKind::Slingshot => slingshot::check(e, prefix, ab),
     }
 }
 

@@ -411,6 +411,66 @@
    "pp": "SNARE DRUM",
    "register": [60, 84],
    "idiom": "rudiment"
+  },
+  {
+   "name": "BASS GUITAR",
+   "color": [150, 0, 255],
+   "dark": [82, 0, 140],
+   "corner": "blue",
+   "view": [0, 18, 0],
+   "weapon": {
+    "kind": "pick",
+    "style": "pick",
+    "name": "PICK TOSS",
+    "every": 2,
+    "flight_beats": 1.5,
+    "lead": 0.5,
+    "bend": 0.55,
+    "fan": 0.45,
+    "n0": 1,
+    "grow": 0.25,
+    "n_max": 3,
+    "dmg": 1.3,
+    "knock": 0.5,
+    "hit_r": 0.22
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "FRET SLIDE",
+     "kind": "fret_slide",
+     "wind_beats": 0.5,
+     "speed": 3.0,
+     "span": 6,
+     "dmg": 4.5,
+     "knock": 1.2,
+     "settle_beats": 0.25,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "HEADSTOCK SWING",
+     "kind": "headstock",
+     "len": 2.2,
+     "sweep": 150,
+     "wind_beats": 0.75,
+     "swing_beats": 0.25,
+     "dmg": 6.5,
+     "knock": 1.8,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "SLINGSHOT",
+     "kind": "slingshot",
+     "pull_beats": 2,
+     "back": 1.5,
+     "speed": 4.0,
+     "span": 9,
+     "dmg": 9.0,
+     "knock": 2.0
+    }
+   },
+   "pp": "BASS GUITAR",
+   "register": [28, 55],
+   "idiom": "rock_bass"
   }
  ]
 }

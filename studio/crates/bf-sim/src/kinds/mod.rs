@@ -24,6 +24,7 @@ pub mod line;
 pub mod mallets;
 pub mod mortar;
 pub mod needle;
+pub mod pick;
 pub mod plumbing;
 pub mod plunger;
 pub mod pulse;
