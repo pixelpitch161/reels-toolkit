@@ -471,7 +471,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "bf-app"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-content",
  "bf-core",
@@ -498,7 +498,7 @@ dependencies = [
 
 [[package]]
 name = "bf-cli"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-content",
  "bf-core",
@@ -517,7 +517,7 @@ dependencies = [
 
 [[package]]
 name = "bf-content"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-core",
  "bf-picture",
@@ -530,7 +530,7 @@ dependencies = [
 
 [[package]]
 name = "bf-core"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "libm",
  "serde_json",
@@ -541,7 +541,7 @@ dependencies = [
 
 [[package]]
 name = "bf-export"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-content",
  "bf-core",
@@ -557,7 +557,7 @@ dependencies = [
 
 [[package]]
 name = "bf-harness"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-content",
  "bf-core",
@@ -574,7 +574,7 @@ dependencies = [
 
 [[package]]
 name = "bf-pack"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "clap",
  "directories",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "bf-picture"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-core",
  "bf-testdata",
@@ -598,7 +598,7 @@ dependencies = [
 
 [[package]]
 name = "bf-sim"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-core",
  "bf-sim",
@@ -607,7 +607,7 @@ dependencies = [
 
 [[package]]
 name = "bf-sound"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-content",
  "bf-core",
@@ -618,7 +618,7 @@ dependencies = [
 
 [[package]]
 name = "bf-story"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-core",
  "bf-sim",
@@ -629,7 +629,7 @@ dependencies = [
 
 [[package]]
 name = "bf-testdata"
-version = "1.7.0"
+version = "1.8.0"
 dependencies = [
  "bf-core",
  "png",
