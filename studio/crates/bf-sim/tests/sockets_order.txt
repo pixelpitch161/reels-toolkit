@@ -28,7 +28,8 @@
 # setup, tick, later and `snap.NEEDLES`.
 # SOPRANO SAX's swarm likewise (`snap.HRN`).
 # setup, tick, later and `snap.NEEDLES`; MELLOPHONE's slapback after them: setup, tick, later and `snap.SLAP`.
-# SNARE DRUM's sticks only `snap.STICKS` (no setup, tick or later socket); OCTOBASS's levers likewise only `snap.LEVERS`.
+# SNARE DRUM's sticks only `snap.STICKS` (no setup, tick or later socket); OCTOBASS's levers only `snap.LEVERS`;
+# BASS GUITAR's picks only `snap.PICK`.
 #
 # Sockets that live inside a kind's own step are not traced and not listed here: the bite's and the inflate's branches
 # of `grid16_fire` (1487 to 1507) are behind `tick.grid16`, `hazard_beat`'s trap branch (1324 to 1332) behind
@@ -97,6 +98,7 @@ snap.SLAP                  5732          frame
 snap.KETTLES               5732          frame
 snap.STICKS                5732          frame
 snap.LEVERS                5732          frame
+snap.PICK                  5732          frame
 
 # ---- a step: run() 5919 to 6204
 clock                      5919          step

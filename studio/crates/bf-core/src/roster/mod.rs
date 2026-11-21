@@ -23,6 +23,7 @@ pub mod striker;
 pub use abilities::{AbilityCfg, AbilityKind, AbilitySettings, SlowCfg};
 pub use blade::{BladeCfg, BladeMode, MAX_FRETS0};
 pub use kinds::levers::LeversCfg;
+pub use kinds::pick::PickCfg;
 pub use kinds::plunger::PlungerCfg;
 pub use kinds::sticks::SticksCfg;
 pub use kinds::swarm::SwarmCfg;
@@ -139,7 +140,7 @@ pub const OLDER_ABILITY_KINDS: [(&str, bool); 9] = [
 
 /// The weapon kinds of the fighters made from scratch in the Studio (no Python kit reference), each with its module's
 /// `PORTED`, as [`OLDER_WEAPON_KINDS`].
-pub const NEW_WEAPON_KINDS: [(&str, bool); 10] = [
+pub const NEW_WEAPON_KINDS: [(&str, bool); 11] = [
     ("plunger", kinds::plunger::PORTED),
     ("mallets", kinds::mallets::PORTED),
     ("swarm", kinds::swarm::PORTED),
@@ -150,10 +151,11 @@ pub const NEW_WEAPON_KINDS: [(&str, bool); 10] = [
     ("kettles", kinds::kettles::PORTED),
     ("wingbeat", kinds::wingbeat::PORTED),
     ("levers", kinds::levers::PORTED),
+    ("pick", kinds::pick::PORTED),
 ];
 
 /// The ability kinds of the fighters made from scratch in the Studio, each with its module's `PORTED`.
-pub const NEW_ABILITY_KINDS: [(&str, bool); 23] = [
+pub const NEW_ABILITY_KINDS: [(&str, bool); 26] = [
     ("derby", abilities::derby::PORTED),
     ("stoptime", abilities::stoptime::PORTED),
     ("tremolo", abilities::tremolo::PORTED),
@@ -177,6 +179,9 @@ pub const NEW_ABILITY_KINDS: [(&str, bool); 23] = [
     ("foot_pedal", abilities::foot_pedal::PORTED),
     ("seven_levers", abilities::seven_levers::PORTED),
     ("below_hearing", abilities::below_hearing::PORTED),
+    ("fret_slide", abilities::fret_slide::PORTED),
+    ("headstock", abilities::headstock::PORTED),
+    ("slingshot", abilities::slingshot::PORTED),
 ];
 
 /// One fighter's roster entry.
@@ -290,6 +295,8 @@ pub enum WeaponCfg {
     Sticks(kinds::sticks::SticksCfg),
     /// Kind `levers` (OCTOBASS's LEVER PUNCH, a Studio kind), typed by `roster::kinds::levers`.
     Levers(kinds::levers::LeversCfg),
+    /// Kind `pick` (BASS GUITAR's PICK TOSS, a Studio kind), typed by `roster::kinds::pick`.
+    Pick(kinds::pick::PickCfg),
     /// A kind the engine has not ported yet (a spinning blade, with no `mode`, is `"blade"` until
     /// [`blade::SPIN_PORTED`]).
     Unsupported(String),
@@ -524,6 +531,7 @@ impl Entry<'_> {
             "wingbeat" if kinds::wingbeat::PORTED => Ok(WeaponCfg::Wingbeat(kinds::wingbeat::parse(self, w)?)),
             "sticks" if kinds::sticks::PORTED => Ok(WeaponCfg::Sticks(kinds::sticks::parse(self, w)?)),
             "levers" if kinds::levers::PORTED => Ok(WeaponCfg::Levers(kinds::levers::parse(self, w)?)),
+            "pick" if kinds::pick::PORTED => Ok(WeaponCfg::Pick(kinds::pick::parse(self, w)?)),
             _ => Ok(WeaponCfg::Unsupported(kind)),
         }
     }
@@ -630,6 +638,7 @@ impl FighterCfg {
             WeaponCfg::Wingbeat(w) => kinds::wingbeat::check(&e, w)?,
             WeaponCfg::Sticks(w) => kinds::sticks::check(&e, w)?,
             WeaponCfg::Levers(w) => kinds::levers::check(&e, w)?,
+            WeaponCfg::Pick(w) => kinds::pick::check(&e, w)?,
             WeaponCfg::Unsupported(_) => {}
         }
         let slots = [
@@ -713,6 +722,7 @@ impl WeaponCfg {
             WeaponCfg::Wingbeat(w) => return kinds::wingbeat::main16(w),
             WeaponCfg::Sticks(w) => return kinds::sticks::main16(w),
             WeaponCfg::Levers(w) => return kinds::levers::main16(w),
+            WeaponCfg::Pick(w) => return kinds::pick::main16(w),
             WeaponCfg::Unsupported(_) => return None,
         };
         Some(crate::py::round_half_even(4.0 * every))
@@ -769,6 +779,7 @@ impl WeaponCfg {
             WeaponCfg::Wingbeat(w) => kinds::wingbeat::ball_start(w),
             WeaponCfg::Sticks(w) => kinds::sticks::ball_start(w),
             WeaponCfg::Levers(w) => kinds::levers::ball_start(w),
+            WeaponCfg::Pick(w) => kinds::pick::ball_start(w),
             WeaponCfg::Unsupported(_) => BallStart::default(),
         }
     }
@@ -816,6 +827,7 @@ impl WeaponCfg {
             WeaponCfg::Wingbeat(_) => "wingbeat",
             WeaponCfg::Sticks(_) => "sticks",
             WeaponCfg::Levers(_) => "levers",
+            WeaponCfg::Pick(_) => "pick",
             WeaponCfg::Unsupported(kind) => kind,
         }
     }

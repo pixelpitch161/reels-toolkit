@@ -24,7 +24,7 @@ const ROSTER_DEV_JSON: &str = include_str!("../data/roster_dev.json");
 
 /// The fighters whose weapon and abilities the engine has ported, in no particular order (grows as fighters are
 /// ported).
-pub const PORTED: [&str; 41] = [
+pub const PORTED: [&str; 42] = [
     "FLUTE",
     "TROMBONE",
     "PIANO",
@@ -66,6 +66,7 @@ pub const PORTED: [&str; 41] = [
     "FLUGELHORN",
     "SNARE DRUM",
     "OCTOBASS",
+    "BASS GUITAR",
 ];
 
 /// Every roster entry (the kit's 20 and the older ten, offered or not), in `fighters.py`'s order, every number as
@@ -219,6 +220,7 @@ mod tests {
                 "FLUGELHORN",
                 "SNARE DRUM",
                 "OCTOBASS",
+                "BASS GUITAR",
             ]
         );
         assert_eq!(available().len(), PORTED.len());

@@ -228,6 +228,33 @@ pub fn octobass(base: &mut RgbF) {
     });
 }
 
+/// BASS GUITAR: four heavy strings running across the panel on the diagonal, over fret bars that close up toward the
+/// top, with a dot inlay between some of them.
+pub fn bass_guitar(base: &mut RgbF) {
+    shade(base, |x, y, s| {
+        // four strings, thick and lit along their top edge
+        let string = (s.abs() / 22.0).floor();
+        let across = (s.abs() / 22.0).fract();
+        if s.abs() < 88.0 && across < 0.14 {
+            let lit = if across < 0.05 { 0.14 } else { 0.06 };
+            return (1.0, lit + 0.01 * string);
+        }
+        // fret bars across the strings' run, closer together further up
+        let along = x * 0.77 + y * 0.64;
+        let gap = 90.0 - 0.04 * y.max(0.0);
+        let f = (along / gap.max(36.0)).fract();
+        if f < 0.06 {
+            return (0.88, 0.04);
+        }
+        // a dot inlay in the middle of every third space
+        let space = (along / gap.max(36.0)).floor() as i64;
+        if space % 3 == 0 && s.abs() < 110.0 && s.abs() > 92.0 && (f - 0.5).abs() < 0.08 {
+            return (1.0, 0.1);
+        }
+        (0.96, 0.0)
+    });
+}
+
 /// TARGET DUMMY (a developer fighter): rows of small bullseyes, each ring alternately lit and shaded.
 pub fn target_dummy(base: &mut RgbF) {
     shade(base, |x, y, _| {

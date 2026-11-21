@@ -33,7 +33,9 @@ pub mod flash_spin;
 pub mod flick;
 pub mod foot_pedal;
 pub mod fork;
+pub mod fret_slide;
 pub mod full_set;
+pub mod headstock;
 pub mod heartbeat;
 pub mod hive;
 pub mod hook;
@@ -60,6 +62,7 @@ pub mod runway;
 pub mod seven_levers;
 pub mod shatter;
 pub mod slap;
+pub mod slingshot;
 pub mod smash;
 pub mod snap;
 pub mod snip;
@@ -276,6 +279,12 @@ pub enum AbilityKind {
     SevenLevers,
     /// `below_hearing`: OCTOBASS's BELOW HEARING (a Studio kind).
     BelowHearing,
+    /// `fret_slide`: BASS GUITAR's FRET SLIDE (a Studio kind).
+    FretSlide,
+    /// `headstock`: BASS GUITAR's HEADSTOCK SWING (a Studio kind).
+    Headstock,
+    /// `slingshot`: BASS GUITAR's SLINGSHOT (a Studio kind).
+    Slingshot,
     /// A kind the engine has not ported yet, or a ported kind with an option it has not ported, written
     /// `kind+option` (OBOE's `"wave+detune"`).
     Unsupported(String),
@@ -428,6 +437,12 @@ pub enum AbilitySettings {
     SevenLevers(seven_levers::SevenLeversCfg),
     /// Kind `below_hearing`.
     BelowHearing(below_hearing::BelowHearingCfg),
+    /// Kind `fret_slide`.
+    FretSlide(fret_slide::FretSlideCfg),
+    /// Kind `headstock`.
+    Headstock(headstock::HeadstockCfg),
+    /// Kind `slingshot`.
+    Slingshot(slingshot::SlingshotCfg),
 }
 
 impl AbilityKind {
@@ -512,6 +527,9 @@ impl AbilityKind {
             AbilityKind::FootPedal => "foot_pedal",
             AbilityKind::SevenLevers => "seven_levers",
             AbilityKind::BelowHearing => "below_hearing",
+            AbilityKind::FretSlide => "fret_slide",
+            AbilityKind::Headstock => "headstock",
+            AbilityKind::Slingshot => "slingshot",
             AbilityKind::Unsupported(kind) => kind.split('+').next().unwrap_or(kind),
         }
     }
@@ -596,6 +614,9 @@ impl AbilityKind {
             "foot_pedal" if foot_pedal::PORTED => AbilityKind::FootPedal,
             "seven_levers" if seven_levers::PORTED => AbilityKind::SevenLevers,
             "below_hearing" if below_hearing::PORTED => AbilityKind::BelowHearing,
+            "fret_slide" if fret_slide::PORTED => AbilityKind::FretSlide,
+            "headstock" if headstock::PORTED => AbilityKind::Headstock,
+            "slingshot" if slingshot::PORTED => AbilityKind::Slingshot,
             other => AbilityKind::Unsupported(other.to_string()),
         }
     }
@@ -679,6 +700,9 @@ impl AbilityKind {
             AbilityKind::FootPedal => foot_pedal::REQUIRED,
             AbilityKind::SevenLevers => seven_levers::REQUIRED,
             AbilityKind::BelowHearing => below_hearing::REQUIRED,
+            AbilityKind::FretSlide => fret_slide::REQUIRED,
+            AbilityKind::Headstock => headstock::REQUIRED,
+            AbilityKind::Slingshot => slingshot::REQUIRED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -764,6 +788,9 @@ impl AbilityKind {
             AbilityKind::FootPedal => foot_pedal::ALLOWED,
             AbilityKind::SevenLevers => seven_levers::ALLOWED,
             AbilityKind::BelowHearing => below_hearing::ALLOWED,
+            AbilityKind::FretSlide => fret_slide::ALLOWED,
+            AbilityKind::Headstock => headstock::ALLOWED,
+            AbilityKind::Slingshot => slingshot::ALLOWED,
             AbilityKind::Unsupported(_) => &[],
         }
     }
@@ -855,6 +882,9 @@ fn settings(e: &Entry, prefix: &str, kind: &AbilityKind, ab: &Json) -> Result<Ab
         AbilityKind::FootPedal => AbilitySettings::FootPedal(foot_pedal::parse(e, prefix, ab)?),
         AbilityKind::SevenLevers => AbilitySettings::SevenLevers(seven_levers::parse(e, prefix, ab)?),
         AbilityKind::BelowHearing => AbilitySettings::BelowHearing(below_hearing::parse(e, prefix, ab)?),
+        AbilityKind::FretSlide => AbilitySettings::FretSlide(fret_slide::parse(e, prefix, ab)?),
+        AbilityKind::Headstock => AbilitySettings::Headstock(headstock::parse(e, prefix, ab)?),
+        AbilityKind::Slingshot => AbilitySettings::Slingshot(slingshot::parse(e, prefix, ab)?),
     })
 }
 
@@ -939,6 +969,9 @@ pub(crate) fn kind_check(e: &Entry, prefix: &str, ab: &AbilityCfg) -> Result<(),
         AbilityKind::FootPedal => foot_pedal::check(e, prefix, ab),
         AbilityKind::SevenLevers => seven_levers::check(e, prefix, ab),
         AbilityKind::BelowHearing => below_hearing::check(e, prefix, ab),
+        AbilityKind::FretSlide => fret_slide::check(e, prefix, ab),
+        AbilityKind::Headstock => headstock::check(e, prefix, ab),
+        AbilityKind::Slingshot => slingshot::check(e, prefix, ab),
     }
 }
 
