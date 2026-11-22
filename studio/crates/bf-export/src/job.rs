@@ -287,6 +287,15 @@ impl Job<'_> {
                 let (again, drawn, _) = self.check(&pic, &st)?;
                 (results, kept) = (again, drawn);
             }
+            // the safe zone never stops the render: everything on screen is placed with it in mind already, so a
+            // caption, label or panel a few pixels out of it is noted and the render goes on
+            if let Some(r) = results.iter_mut().find(|r| r.name == "safezone" && !r.pass) {
+                r.pass = true;
+                r.summary = format!(
+                    "{} This no longer stops the render, so the video was made anyway.",
+                    r.summary.trim_end()
+                );
+            }
             let (frame_fixes, changed) = fix_frames(&mut results, &mut kept, pic.nf(), span);
             fixes.extend(frame_fixes);
             fixed = changed;

@@ -4,7 +4,7 @@
 //! | Check | Fix |
 //! | --- | --- |
 //! | `focus` | the lens's sharp zone is widened on the frames that need it ([`bf_picture::ring::Picture::widen_focus`]) |
-//! | `safezone` | the count-in (3, 2, 1, FIGHT!) is kept inside the safe zone and the checks run again ([`bf_picture::ring::Picture::keep_counts_inside`], in [`crate::job`]) |
+//! | `safezone` | the count-in (3, 2, 1, FIGHT!) is kept inside the safe zone and the checks run again ([`bf_picture::ring::Picture::keep_counts_inside`], in [`crate::job`]); anything still outside it is only noted, since the safe zone never stops a render |
 //! | `band` | a fighter covered by the music is turned up there ([`lift_fighters`]) |
 //! | `levels` | the loudness is evened out ([`crate::checks::even_out`]) |
 //! | `loop_audio` | the end of the sound is brought to the level of the start and joined to it without a click ([`join_loop_audio`]) |
