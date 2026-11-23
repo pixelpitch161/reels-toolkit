@@ -104,8 +104,16 @@ pub fn lift_fighters(st: &mut Soundtrack, show: &Show, plan: &BandPlan) -> Optio
     if r.pass {
         return None;
     }
+    // a check that could not measure (a fighter with no sound bus: it never placed a sound) has nothing to lift
+    // and says why itself
+    if r.numbers.is_empty() {
+        return None;
+    }
     let spans = band_spans(show);
-    let original: Vec<Vec<[f64; 2]>> = sounds.iter().map(|(bus, _)| st.stems[*bus].clone()).collect();
+    let original: Vec<Vec<[f64; 2]>> = sounds
+        .iter()
+        .map(|(bus, _)| st.stems.get(*bus).cloned())
+        .collect::<Option<_>>()?;
     let master = st.master.clone();
     let mut lift = [[0.0f64; 5]; 2];
     for _ in 0..4 {
@@ -664,6 +672,38 @@ mod tests {
         assert!(st.master.iter().any(|f| f[0] != 0.0));
         // a passing soundtrack is left alone
         assert!(lift_fighters(&mut st, &show, &plan).is_none());
+    }
+
+    /// Code review of 2026-11-23, F7: a fighter with no sound bus (it never placed a sound) once made the lift
+    /// panic; the band check's own sentence says why it fails instead.
+    #[test]
+    fn a_fighter_with_no_sound_bus_is_not_lifted() {
+        let rec = bf_core::recording::Recording::read(&bf_testdata::reference("fights/flute_vs_trombone/ep392.bfrec"))
+            .unwrap();
+        let path = bf_testdata::repo_root().join("studio/fights/flute_vs_trombone.toml");
+        let ff = bf_core::fightfile::FightFile::parse(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let show = Show::new(&rec, &ff).unwrap();
+        let n = 12 * 48_000;
+        let mut stems = std::collections::BTreeMap::new();
+        stems.insert("flute".to_string(), tone(n, 1000.0, 0.2));
+        stems.insert("drums".to_string(), tone(n, 220.0, 0.1));
+        let mut st = Soundtrack {
+            master: vec![[0.0, 0.0]; n],
+            stems,
+        };
+        let plan = BandPlan {
+            sounds: [
+                ("flute".to_string(), (600.0, 3200.0)),
+                ("trombone".to_string(), (70.0, 700.0)),
+            ],
+            bed_buses: vec!["drums".to_string()],
+        };
+        let sounds = [("flute", (600.0, 3200.0)), ("trombone", (70.0, 700.0))];
+        assert!(!band(&st, &show, sounds, &["drums"]).pass);
+        let before = st.clone();
+        assert!(lift_fighters(&mut st, &show, &plan).is_none());
+        assert_eq!(st.stems, before.stems);
+        assert_eq!(st.master, before.master);
     }
 
     #[test]

@@ -34,7 +34,7 @@ use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
 use crate::checks::flash::LIMIT;
-use crate::checks::{BandPlan, CheckResult, Kept, flash_span, panic_text, pre_render_keeping};
+use crate::checks::{BandPlan, CheckResult, Checked, Kept, flash_span, panic_text, pre_render_keeping};
 use crate::encode::{ENCODING_NOTE, EncodeSpeed, Encoder, Ffmpeg, find_ffmpeg};
 use crate::fix::{Fixed, FlashGuard, fix_frames, fix_sound, with_notes};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
@@ -273,23 +273,30 @@ impl Job<'_> {
         let mut fixed = BTreeMap::new();
         if self.whole {
             on(JobEvent::Stage(stage::CHECKS));
-            let (mut results, drawn, span) = self.check(&pic, &st)?;
-            kept = drawn;
-            if results.iter().any(|r| r.name == "safezone" && !r.pass) {
+            let (checked, span) = self.check(&pic, &st)?;
+            let mut results = checked.results;
+            kept = checked.kept;
+            if checked.count_in_outside && results.iter().any(|r| r.name == "safezone" && !r.pass) {
                 // a count of the count-in reaching out of the safe zone is kept inside; the checks are run again
-                // on the frames as they are now drawn
+                // on the frames as they are now drawn (only when a count was outside: for anything else it
+                // would change nothing)
                 pic.keep_counts_inside();
                 fixes.push(Fixed {
                     name: "safezone",
                     note: "The count-in was kept inside the safe zone automatically before the render.".into(),
                 });
                 drop(kept);
-                let (again, drawn, _) = self.check(&pic, &st)?;
-                (results, kept) = (again, drawn);
+                let (again, _) = self.check(&pic, &st)?;
+                (results, kept) = (again.results, again.kept);
             }
             // the safe zone never stops the render: everything on screen is placed with it in mind already, so a
-            // caption, label or panel a few pixels out of it is noted and the render goes on
-            if let Some(r) = results.iter_mut().find(|r| r.name == "safezone" && !r.pass) {
+            // caption, label or panel a few pixels out of it is noted and the render goes on. Only a check that
+            // measured an overshoot (it has `worst_px`) is let through: one that could not look at all (no
+            // frames, nothing drawn: a fault in the app) still stops it
+            if let Some(r) = results
+                .iter_mut()
+                .find(|r| r.name == "safezone" && !r.pass && r.numbers.contains_key("worst_px"))
+            {
                 r.pass = true;
                 r.summary = format!(
                     "{} This no longer stops the render, so the video was made anyway.",
@@ -313,33 +320,45 @@ impl Job<'_> {
             let last = attempt == 1;
             // the second time the flashes are held one under the rule, in case the encode tipped one over
             let limit = if last { LIMIT - 1 } else { LIMIT };
+            // the note on the second try's results when the first try failed a check of the finished file
+            let again = |results: Vec<CheckResult>| match &first_try {
+                Some(failed) => with_notes(
+                    results,
+                    &[Fixed {
+                        name: failed.name,
+                        note: format!(
+                            "The first encode did not pass this check ({}), so the video was made again \
+                             automatically.",
+                            failed.summary.trim_end_matches('.')
+                        ),
+                    }],
+                ),
+                None => results,
+            };
             match self.encode_and_verify(&pic, &kept, &fixed, &wav, &part_path, limit, stop) {
                 Ok(results) => {
-                    let results = match &first_try {
-                        Some(failed) => with_notes(
-                            results,
-                            &[Fixed {
-                                name: failed.name,
-                                note: format!(
-                                    "The first encode did not pass this check ({}), so the video was made again \
-                                     automatically.",
-                                    failed.summary.trim_end_matches('.')
-                                ),
-                            }],
-                        ),
-                        None => results,
-                    };
-                    report(results, on)?;
+                    report(again(results), on)?;
                     break;
                 }
-                Err(Retry::Check(failed)) if !last => {
+                Err(Retry::Check(failed, _)) if !last => {
                     first_try = Some(failed);
                     stop()?;
                 }
                 Err(Retry::Encode(_)) if !last => stop()?,
-                Err(Retry::Check(failed)) => return Err(ExportError::Check(failed)),
+                // every result of the second try is sent (the failed one marks its line), then the job fails
+                Err(Retry::Check(failed, results)) => {
+                    report(again(results), on)?;
+                    return Err(ExportError::Check(failed));
+                }
                 Err(Retry::Encode(e)) => {
-                    return Err(e.with_clause("it stopped the same way when the video was made a second time"));
+                    return Err(match &first_try {
+                        None => e.with_clause("it stopped the same way when the video was made a second time"),
+                        Some(failed) => e.with_clause(&format!(
+                            "this was the second try: the first encode did not pass the check of the finished \
+                             video ({})",
+                            failed.summary.trim_end_matches('.')
+                        )),
+                    });
                 }
                 Err(Retry::Stop(e)) => return Err(e),
             }
@@ -369,16 +388,16 @@ impl Job<'_> {
         &self,
         pic: &Picture,
         st: &bf_sound::master::Soundtrack,
-    ) -> Result<(Vec<CheckResult>, Kept, (usize, usize)), ExportError> {
+    ) -> Result<(Checked, (usize, usize)), ExportError> {
         let cfg = &pic.ctx().cfg;
         let show = &pic.ctx().show;
         let sheet = BeatSheet::series([&cfg[0], &cfg[1]]);
         let lows = [cfg[0].low.name.as_str(), cfg[1].low.name.as_str()];
         let story = story(self.rec, &show.grid, &sheet, lows);
         let plan = BandPlan::of(self.ff)?;
-        let (results, drawn) = pre_render_keeping(pic, st, show, &story, &plan, self.workers, self.cancel)
+        let checked = pre_render_keeping(pic, st, show, &story, &plan, self.workers, self.cancel)
             .ok_or_else(ExportError::cancelled)?;
-        Ok((results, drawn, flash_span(show, &story, lows)))
+        Ok((checked, flash_span(show, &story, lows)))
     }
 
     /// Draws (or takes) every frame, gives it through a [`FlashGuard`] of `limit` to ffmpeg, finishes the file and
@@ -404,7 +423,9 @@ impl Job<'_> {
         let take_or_draw = |f: usize| {
             let held = kept.lock().unwrap_or_else(|e| e.into_inner()).remove(&f);
             match (fixed.get(&f), held) {
-                (Some(img), _) => Ok(img.clone()),
+                // a frame a fix changed still gets the drawing-fault check of the frame it was made from
+                (Some(img), Some((_, report))) => accept(img.clone(), report),
+                (Some(img), None) => Ok(img.clone()),
                 (None, Some((img, report))) => accept(img, report),
                 (None, None) => draw(pic, f),
             }
@@ -434,7 +455,7 @@ impl Job<'_> {
         }
         stop().map_err(Retry::Stop)?;
         on(JobEvent::Stage(stage::ENCODE));
-        match enc.finish() {
+        match enc.finish(self.cancel) {
             Ok(()) => {}
             Err(e @ ExportError::Encode(_)) => return Err(Retry::Encode(e)),
             Err(e) => return Err(Retry::Stop(e)),
@@ -445,7 +466,7 @@ impl Job<'_> {
         let results = verify_until(self.ffmpeg, part_path, total, self.whole, self.cancel)
             .ok_or_else(|| Retry::Stop(ExportError::cancelled()))?;
         match results.iter().find(|r| !r.pass) {
-            Some(failed) => Err(Retry::Check(failed.clone())),
+            Some(failed) => Err(Retry::Check(failed.clone(), results)),
             None => Ok(results),
         }
     }
@@ -455,8 +476,8 @@ impl Job<'_> {
 enum Retry {
     /// Stop: cancelled, or a fault that another try would not change.
     Stop(ExportError),
-    /// Make it again: a check of the finished file failed.
-    Check(CheckResult),
+    /// Make it again: a check of the finished file failed (the first that did, and every result of the stage).
+    Check(CheckResult, Vec<CheckResult>),
     /// Make it again: ffmpeg stopped (its words).
     Encode(ExportError),
 }
