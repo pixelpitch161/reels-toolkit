@@ -417,6 +417,21 @@ pub fn failure(error: &ExportError, failed: Option<&CheckResult>) -> JobUpdate {
     }
     let text = plain(error);
     match error {
+        // The app's own copy that is damaged, the BALLFIGHT_FFMPEG setting that names something wrong, or an
+        // ffmpeg that would not start: the export's sentence says which, and what to do. Anything else is ffmpeg
+        // not being there at all.
+        ExportError::Ffmpeg(said) if bf_export::is_about_the_apps_own(said) => JobUpdate::Failed {
+            headline: "The app's own ffmpeg cannot be used".to_string(),
+            detail: format!("{text} Nothing was saved."),
+            hint: FailHint::None,
+        },
+        ExportError::Ffmpeg(said) if said.contains(bf_export::encode::ENV) || said.contains("could not be started") => {
+            JobUpdate::Failed {
+                headline: "ffmpeg cannot be used".to_string(),
+                detail: format!("{text} Nothing was saved."),
+                hint: FailHint::InstallFfmpeg,
+            }
+        }
         ExportError::Ffmpeg(_) => JobUpdate::Failed {
             headline: "ffmpeg was not found".to_string(),
             detail: "Videos cannot be saved without it. Install ffmpeg, start the app again, then queue it again."
@@ -805,6 +820,30 @@ mod tests {
                 FailHint::InstallFfmpeg
             )
         );
+        // Code review of 2026-11-23, F11: a damaged copy of the app's own ffmpeg, or a setting that names the
+        // wrong program, is said as the export says it, not as "ffmpeg was not found".
+        let own = "The app's own ffmpeg is missing from C:\\BALLFIGHT Studio\\ffmpeg, so no video can be made; install the \
+                   app again.";
+        let JobUpdate::Failed { headline, detail, hint } = failure(&ExportError::Ffmpeg(own.into()), None) else {
+            panic!("not a failure")
+        };
+        assert_eq!(headline, "The app's own ffmpeg cannot be used");
+        assert!(
+            detail.contains("install the app again") && detail.ends_with("Nothing was saved."),
+            "{detail}"
+        );
+        assert_eq!(hint, FailHint::None);
+        let setting = format!(
+            "The {} setting names C:\\tools\\ff.bat, which is not a program file (.exe), so it cannot be used as \
+             ffmpeg; name ffmpeg.exe itself.",
+            bf_export::encode::ENV
+        );
+        let JobUpdate::Failed { headline, detail, hint } = failure(&ExportError::Ffmpeg(setting), None) else {
+            panic!("not a failure")
+        };
+        assert_eq!(headline, "ffmpeg cannot be used");
+        assert!(detail.contains("name ffmpeg.exe itself"), "{detail}");
+        assert_eq!(hint, FailHint::InstallFfmpeg);
         // The export's own sentence is the whole detail where it already says what was saved: once, and true.
         let said = |e: ExportError| match failure(&e, None) {
             JobUpdate::Failed { headline, detail, hint } => (headline, detail, hint),

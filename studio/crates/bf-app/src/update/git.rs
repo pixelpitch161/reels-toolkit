@@ -281,14 +281,31 @@ impl GitSource {
             o(&self.config.remote),
             src.as_os_str(),
         ];
-        self.run_git(parent, &args, CLONE_LIMIT, cancel).map_err(|e| {
-            format!(
-                "The copy of the source had changes in it, so it was set aside as {} (nothing in it was deleted), but \
-                 a fresh copy could not be made. {}",
-                aside.display(),
-                sentence(&e)
-            )
-        })?;
+        if let Err(e) = self.run_git(parent, &args, CLONE_LIMIT, cancel) {
+            // The copy goes back where it was, so the next look or build finds it (without it every update would
+            // fail until a reinstall). A folder the stopped clone left there was made by that clone alone: the name
+            // was free a moment ago, as the copy had just been moved away from it.
+            if std::fs::symlink_metadata(src).is_ok() {
+                let _ = std::fs::remove_dir_all(src);
+            }
+            let back = std::fs::rename(&aside, src);
+            if cancel.load(Ordering::Relaxed) && back.is_ok() {
+                return Err("The build was stopped.".to_string());
+            }
+            return Err(match back {
+                Ok(()) => format!(
+                    "The copy of the source has changes in it, and a fresh copy could not be made, so the copy was \
+                     left as it was. {}",
+                    sentence(&e)
+                ),
+                Err(why) => format!(
+                    "The copy of the source had changes in it, so it was set aside as {} (nothing in it was \
+                     deleted), but a fresh copy could not be made ({}) and the copy could not be put back: {why}.",
+                    aside.display(),
+                    sentence(&e).trim_end_matches('.')
+                ),
+            });
+        }
         self.own_copy()?;
         Ok(format!(
             "The app's copy of the source had changes in it that BALLFIGHT Studio did not make, so it was set aside as \
@@ -358,7 +375,19 @@ impl Source for GitSource {
             o("--ignored"),
         ];
         let mut notes = Vec::new();
-        let clean = self.git(&status_args, GIT_LIMIT, cancel).as_deref() == Ok("");
+        // Only a status that ran says whether the copy has changes: a stop or a git that failed (a lock held by
+        // another git, an antivirus) is never taken as "changed", which would set a healthy copy aside.
+        let clean = match self.git(&status_args, GIT_LIMIT, cancel) {
+            Ok(text) => text.is_empty(),
+            Err(_) if cancel.load(Ordering::Relaxed) => return Err(stopped()),
+            Err(e) => {
+                return Err(format!(
+                    "Git could not look at the copy of the source, so nothing was changed in it. {} Try the \
+                     update again.",
+                    sentence(&e)
+                ));
+            }
+        };
         let mut pristine = !clean && self.pristine();
         if !clean && !pristine {
             notes.push(self.set_aside_and_copy_again(cancel)?);
@@ -857,6 +886,48 @@ mod tests {
         assert_eq!(git_in(&g, &config.source, &["rev-parse", "HEAD"]), commits[0]);
         assert!(!config.source.join("studio/my notes.txt").exists());
         assert!(!ran_hook.exists());
+    }
+
+    /// Code review of 2026-11-23, F4: a copy with changes whose fresh copy cannot be made (no network, a stop) is
+    /// put back where it was, and a status that fails never sets a healthy copy aside. Before, both left the app
+    /// with no copy of the source, so Update never worked again until a reinstall.
+    #[test]
+    fn a_failed_fresh_copy_or_status_leaves_the_copy_where_it_was() {
+        let Some((g, cargo)) = tools() else { return };
+        let dir = TempDir::new("git-keep");
+        let repo = dir.path().join("upstream");
+        let commits = upstream(&g, &cargo, &repo, &[("0.6.1", Kind::default(), false)]);
+        let config = config_for(dir.path(), &repo);
+        source_copy(&g, &repo, &config.source);
+        let s = GitSource::for_tests(config.clone(), g.clone(), cargo);
+        let never = AtomicBool::new(false);
+        let r = s.newest(&parse_version("0.6.0").unwrap()).unwrap().unwrap();
+        drop(s.build(&r, &|_| {}, &never).unwrap());
+        let aside = config.source.with_file_name("source.set-aside-1");
+        // A change of someone's, and the repository out of reach: the fresh copy cannot be made.
+        let notes = config.source.join("studio/my notes.txt");
+        std::fs::write(&notes, b"my notes").unwrap();
+        let gone = dir.path().join("upstream.gone");
+        std::fs::rename(&repo, &gone).unwrap();
+        let err = s.build(&r, &|_| {}, &never).unwrap_err();
+        assert!(err.contains("left as it was"), "{err}");
+        assert!(!aside.exists(), "nothing was left set aside");
+        assert_eq!(std::fs::read(&notes).unwrap(), b"my notes");
+        assert_eq!(git_in(&g, &config.source, &["rev-parse", "HEAD"]), commits[0]);
+        // A status that fails (here a damaged index) is an error, and the copy is not touched.
+        std::fs::rename(&gone, &repo).unwrap();
+        let index = config.source.join(".git").join("index");
+        let kept = std::fs::read(&index).unwrap();
+        std::fs::write(&index, b"not an index").unwrap();
+        let err = s.build(&r, &|_| {}, &never).unwrap_err();
+        assert!(err.contains("could not look at the copy"), "{err}");
+        assert!(!aside.exists(), "a healthy copy is never set aside");
+        assert_eq!(std::fs::read(&notes).unwrap(), b"my notes");
+        // Once git can read it again, the copy with changes is set aside as before and the build goes on.
+        std::fs::write(&index, &kept).unwrap();
+        let built = s.build(&r, &|_| {}, &never).unwrap();
+        assert_eq!(built.notes.len(), 1, "{:?}", built.notes);
+        assert_eq!(std::fs::read(aside.join("studio/my notes.txt")).unwrap(), b"my notes");
     }
 
     #[test]

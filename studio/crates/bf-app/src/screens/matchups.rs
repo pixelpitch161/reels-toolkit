@@ -83,6 +83,15 @@ pub fn fight_words(row: &FightRecord) -> String {
     }
 }
 
+/// A tempo for the seed column: "120", or "132.5" for one between whole beats a minute.
+fn tempo(bpm: f64) -> String {
+    if bpm.fract() == 0.0 {
+        format!("{bpm:.0}")
+    } else {
+        format!("{bpm:.1}")
+    }
+}
+
 /// A fighter's colour: the roster's, else the compiled-in roster's, else grey.
 fn colour_of(vm: &ViewModel, name: &str) -> [u8; 3] {
     vm.roster
@@ -262,7 +271,12 @@ fn fight_row(ui: &mut Ui, vm: &ViewModel, row: &FightRecord, out: &mut Vec<Actio
                     plain(ui, RichText::new(text).font(body()));
                 });
                 cell(ui, seed, |ui| {
-                    let text = row.seed.map_or_else(|| "—".to_string(), |s| s.to_string());
+                    // with its tempo when known: the same seed at another tempo is another fight
+                    let text = match (row.seed, &row.details) {
+                        (Some(s), Some(d)) => format!("{s} · {}", tempo(d.tempo_bpm)),
+                        (Some(s), None) => s.to_string(),
+                        (None, _) => "—".to_string(),
+                    };
                     plain(ui, RichText::new(text).font(body()));
                 });
                 if buttons::tick_box(ui, &tick_name, row.uploaded).clicked() {

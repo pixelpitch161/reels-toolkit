@@ -352,10 +352,19 @@ impl AppState {
             JobUpdate::Done {
                 winner, finished_at, ..
             } => self.vm.queue.job(id).and_then(|job| {
+                // the tempo, theme and handicap from the job's own fight file (a file that does not read gives
+                // none: the row is then known by its fighters and seed only)
+                let details = bf_core::fightfile::FightFile::parse(&job.spec.fight_toml)
+                    .ok()
+                    .map(|ff| crate::model::history::FightDetails {
+                        tempo_bpm: ff.tempo_bpm,
+                        theme: ff.music.theme.clone(),
+                        handicap: ff.handicap.clone(),
+                    });
                 job.spec
                     .fighters
                     .clone()
-                    .map(|f| (f, job.spec.seed, *winner, *finished_at))
+                    .map(|f| (f, job.spec.seed, details, *winner, *finished_at))
             }),
             _ => None,
         };
@@ -371,9 +380,9 @@ impl AppState {
             }
             // Review Focus 4: whatever the end, the queue goes on.
             self.save_and_run_next(fx);
-            if let Some((fighters, seed, winner, made)) = finished {
+            if let Some((fighters, seed, details, winner, made)) = finished {
                 let winner = winner.and_then(|side| fighters.get(side).cloned());
-                self.vm.history.record(fighters, seed, winner, made);
+                self.vm.history.record_with(fighters, seed, details, winner, made);
                 fx.push(Effect::SaveHistory(self.vm.history.clone()));
             }
             if is_done {
