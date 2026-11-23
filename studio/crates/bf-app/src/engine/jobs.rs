@@ -425,7 +425,10 @@ pub fn failure(error: &ExportError, failed: Option<&CheckResult>) -> JobUpdate {
             detail: format!("{text} Nothing was saved."),
             hint: FailHint::None,
         },
-        ExportError::Ffmpeg(said) if said.contains(bf_export::encode::ENV) || said.contains("could not be started") => {
+        ExportError::Ffmpeg(said)
+            if !said.starts_with("ffmpeg was not found on this PC")
+                && (said.contains(bf_export::encode::ENV) || said.contains("could not be started")) =>
+        {
             JobUpdate::Failed {
                 headline: "ffmpeg cannot be used".to_string(),
                 detail: format!("{text} Nothing was saved."),
