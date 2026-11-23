@@ -181,7 +181,7 @@ impl Sound for SopranoSaxSound {
                         let ms = self.tones(ctx, ch, 70, 84)?;
                         let m = ms[0];
                         for j in 0..16 {
-                            let x = self.reed(ctx, m + (j % 2) as i32 * 2, s16 * 0.45, 0.6, 0.7)?;
+                            let x = self.reed(ctx, m + (j % 2) * 2, s16 * 0.45, 0.6, 0.7)?;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * beat / 8.0, 0.18, 0.0);
                         }
                     } else if is(&cfg.low.name)? {
@@ -227,7 +227,7 @@ impl Sound for SopranoSaxSound {
         let ch = self.first_chord(ctx)?;
         let m = self.tones(ctx, ch, 74, 86)?[0];
         for j in 0..3 {
-            let x = self.reed(ctx, m + (j % 2) as i32, 0.06, 0.8, 0.9)?;
+            let x = self.reed(ctx, m + (j % 2), 0.06, 0.8, 0.9)?;
             mix.place("solo", &Sig::Mono(x), tw + 0.05 * j as f64, 0.26, 0.0);
         }
         let x = self.reed(ctx, m, 0.9, 1.0, 1.3)?;

@@ -201,7 +201,7 @@ impl Look for SopranoSaxLook {
         let Some(row) = Self::hrn(p, c.i, k) else {
             return;
         };
-        if !(row[2] > 0.0) || c.fs[k].shattered {
+        if row[2].is_nan() || row[2] <= 0.0 || c.fs[k].shattered {
             return;
         }
         let b = c.fs[k].p;
