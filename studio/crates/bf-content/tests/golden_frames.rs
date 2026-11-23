@@ -5,7 +5,7 @@
 //! between Python on the reference PC and `bf_core::dmath`) is listed in `studio/reference/frames/exceptions.toml`
 //! with its reason and must stay within the bar: at most 2 levels on at most 0.5 % of its pixels. A listed frame
 //! that matches exactly is a stale entry and fails too. (The VS title card's own frames, drawn over noise, are
-//! held by `bf-picture/tests/title_frames.rs`; the card as the episode shows it is in the first frames here.)
+//! held by `bf-picture/tests/picture/title_frames.rs`; the card as the episode shows it is in the first frames here.)
 //!
 //! Set `GOLDEN_OUT` to a folder to have every frame that differs written there as `f<frame>_rust.png`.
 //! `timings` (ignored: `cargo test --release -p bf-content --test golden_frames -- --ignored --nocapture`)

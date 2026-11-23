@@ -1039,7 +1039,7 @@ fn every_card_frame_is_pythons_with_the_real_look() {
 
 // ---------------------------------------------------------------- the episode's own early stages
 /// The TROMBONE's look as far as the camera and the lights go: its `shake` and the `P.FL.add` calls of its
-/// `fx_event` and `fx_after`, as `bf-picture/tests/ring_stages.rs` has them (`TromboneLights`). It stands in for
+/// `fx_event` and `fx_after`, as `bf-picture/tests/picture/ring_stages.rs` has them (`TromboneLights`). It stands in for
 /// the TROMBONE's own look, which is another task's.
 #[derive(Default)]
 struct TromboneLights {

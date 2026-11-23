@@ -22,7 +22,7 @@ The base-class numbers come from a second Python process (`python -m tools.studi
 kit.picture builds everything at import for the looks it finds, and the other exports of this process must keep
 the episode's own. In that process `ballfight.kit.fighters.look` is replaced before the renderer is imported;
 nothing in the kit is edited. The Studio's tests: studio/crates/bf-picture/src/ring/tests.rs (unit.json) and
-studio/crates/bf-picture/tests/ring_stages.rs (stage_hashes.json)."""
+studio/crates/bf-picture/tests/picture/ring_stages.rs (stage_hashes.json)."""
 import hashlib
 import json
 import os
