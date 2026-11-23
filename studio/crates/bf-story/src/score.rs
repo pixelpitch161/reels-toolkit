@@ -79,6 +79,7 @@ pub struct Verdict {
     pub score: f64,
     /// One plain-words reason per failed window, in the order K.O., lead changes, winner HP, captions, longest gap
     /// (empty exactly when `fits`). A fight with no K.O. gives only "no K.O.": the other windows mean nothing then.
+    /// The seed search adds one more after them for a fighter that left the ring (`search::fight`).
     pub misses: Vec<String>,
 }
 

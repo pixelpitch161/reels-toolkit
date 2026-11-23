@@ -36,7 +36,7 @@ use bf_core::py;
 use crate::abilities::{
     self, beam, clamp, flick, hook, lash, lights_out, prelude, rewind, smash, snap, snip, stampede, swan, x33,
 };
-use crate::fight::{Fight, stunned};
+use crate::fight::{Fight, OUTSIDE, Watch, stunned};
 use crate::geom;
 use crate::kinds::{
     anchor, bite, blade, combo, crowd, drill, echo, foghorn, grapple, inflate, jump, kettles, levers, lightning, line,
@@ -979,20 +979,54 @@ impl Schedule {
     }
 }
 
+/// What [`run`] gives back: the recorded frames (when the fight records) and what the engine watched for.
+pub(crate) struct Ran {
+    /// The recorded frames, when the fight records.
+    pub(crate) frames: Option<Frames>,
+    /// How long a fighter stayed far outside the ring.
+    pub(crate) watch: Watch,
+    /// The time of the step after which a fighter's position, speed or hit points was not a finite number: the
+    /// fight was broken off there (a fault in the engine; no fight of the series does it).
+    pub(crate) broke: Option<f64>,
+}
+
 /// `Fight.run()`: the whole fight. Returns the recorded frames when the fight records.
 ///
 /// The loop (`fight.py` 5912 to 6215): frame `f0` is recorded before the first step; then steps until `t_max`, with
 /// the K.O. test after each one. A K.O. is recorded as a last frame of its own, whenever it falls; otherwise a frame
 /// is recorded every `steps_per_frame` steps.
-pub(crate) fn run(fight: &mut Fight) -> Option<Frames> {
+///
+/// After every step it also looks (without changing anything): a number of a fighter that is not finite breaks the
+/// fight off there ([`Ran::broke`]), and the longest stretch a fighter's centre spends further than [`OUTSIDE`] from
+/// the middle of the ring on an axis is kept ([`Watch::outside`]).
+pub(crate) fn run(fight: &mut Fight) -> Ran {
     let mut sched = Schedule::new(fight);
     let mut rec = fight.record.then(|| Frames::new(fight));
+    let mut watch = Watch::default();
+    let mut broke = None;
+    let mut out_steps = [0u32; 2];
     fight.t = fight.rules.t_fight;
     if let Some(rec) = &mut rec {
         rec.snap(fight); // frame f0
     }
     while fight.t < fight.rules.t_max {
         sched.step(fight);
+        let finite = fight
+            .balls
+            .iter()
+            .all(|b| b.p.iter().chain(&b.v).all(|x| x.is_finite()) && b.hp.is_finite());
+        if !finite {
+            broke = Some(fight.t);
+            break;
+        }
+        for (k, b) in fight.balls.iter().enumerate() {
+            if b.p[0].abs() > OUTSIDE || b.p[1].abs() > OUTSIDE {
+                out_steps[k] += 1;
+                watch.outside = watch.outside.max(f64::from(out_steps[k]) * fight.rules.dt);
+            } else {
+                out_steps[k] = 0;
+            }
+        }
         // The K.O. test (6205 to 6213): whoever is at 0 HP or below; of two, the lower (the left one if equal).
         let dead: Vec<usize> = (0..2).filter(|&k| fight.balls[k].hp <= 0.0).collect();
         if let Some(&first) = dead.first() {
@@ -1016,7 +1050,11 @@ pub(crate) fn run(fight: &mut Fight) -> Option<Frames> {
             rec.snap(fight);
         }
     }
-    rec
+    Ran {
+        frames: rec,
+        watch,
+        broke,
+    }
 }
 
 #[cfg(test)]
@@ -1117,7 +1155,7 @@ mod tests {
         let setup = testing::bare_setup(&bare, 1);
         let mut fight = testing::fight(&setup, true);
         fight.balls[1].hp = 0.0;
-        let frames = run(&mut fight).expect("the fight records");
+        let frames = run(&mut fight).frames.expect("the fight records");
         let t1 = setup.rules.t_fight + setup.rules.dt;
         assert_eq!((fight.winner, fight.t_ko), (Some(0), Some(t1)));
         // The fight's first step is a beat, and a fighter below LOW_HP has its low turn there: the bare fighter's
@@ -1148,7 +1186,7 @@ mod tests {
         let mut fight = testing::fight(&setup, false);
         fight.balls[0].hp = -3.0;
         fight.balls[1].hp = -1.0;
-        assert!(run(&mut fight).is_none(), "nothing is recorded");
+        assert!(run(&mut fight).frames.is_none(), "nothing is recorded");
         assert_eq!(fight.winner, Some(1));
         let ko = fight.events.last().expect("the K.O.");
         assert_eq!(
@@ -1178,7 +1216,7 @@ mod tests {
         let mut fight = testing::fight(&setup, true);
         assert_eq!(Schedule::new(&mut fight).steps_per_frame, 1);
         fight.balls[0].hp = 0.0;
-        let frames = run(&mut fight).expect("the fight records");
+        let frames = run(&mut fight).frames.expect("the fight records");
         assert_eq!(frames.len(), 2);
         assert_eq!(fight.winner, Some(1));
         // and without the K.O. every step is a frame

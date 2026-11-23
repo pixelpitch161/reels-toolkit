@@ -499,7 +499,9 @@ fn dash_step(f: &mut Fight, k: usize, dt: f64) {
                 d.t0 = f.t;
                 d.until = f.t + d.settle;
                 d.p1 = q;
-            } else if step < 1e-9 || geom::norm(left) < 1e-6 {
+            } else if step < 1e-9 || geom::norm(left) < 1e-6 || geom::dot(left, d.u) <= 0.0 {
+                // the end is reached, or (when the rope cut the end short, so it is not on the line of the dash) it
+                // is no longer ahead: without this a dash that missed near a rope never ended
                 end_dash(f, k, Some(d.u));
                 return;
             }

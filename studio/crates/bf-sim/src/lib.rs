@@ -29,7 +29,9 @@ pub mod roster;
 pub mod rules;
 pub mod schedule;
 
-pub use fight::{Fight, Setup, lead_changes, mass, radius, rewinding, run, setup_from, stunned};
+pub use fight::{
+    Fight, OUTSIDE, Setup, Watch, lead_changes, mass, radius, rewinding, run, run_watched, setup_from, stunned,
+};
 #[cfg(any(test, feature = "testing"))]
 pub use fight::{run_traced, run_traced_with_unported, run_with_unported};
 pub use rules::{Rules, SimError};

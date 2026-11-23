@@ -67,3 +67,29 @@ fn the_bow_spins_up_to_its_cap() {
     assert!(om > 2.4, "the bow never sped up ({om})");
     assert!(om <= 14.0 + 1e-9, "the bow passed spin_max ({om})");
 }
+
+/// Code review of 2026-11-23, F1: a TUBA on the left that gulps the VIOLIN puts it exactly on its own centre before
+/// the bow's step, so the bow once divided 0 by 0 and every TUBA (left) v VIOLIN (right) fight went NaN with no
+/// K.O. Each fight must now stay finite and end in a K.O.
+#[test]
+fn a_gulped_violin_keeps_the_fight_finite() {
+    let all = roster();
+    let violin = all.iter().find(|f| f.name == "VIOLIN").expect("VIOLIN");
+    let tuba = all.iter().find(|f| f.name == "TUBA").expect("TUBA");
+    for (seed, bpm) in [(1, 174.0), (2, 120.0), (3, 84.0)] {
+        let setup = Setup {
+            fighters: [tuba, violin],
+            rules: Rules::new(bpm, 3.5),
+            seed,
+        };
+        let rec = run(&setup, true).unwrap_or_else(|e| panic!("TUBA v VIOLIN seed {seed} at {bpm} bpm: {e}"));
+        let Some(bf_core::recording::Array::F64 { data, .. }) = rec.arrays.get("P") else {
+            panic!("no positions")
+        };
+        assert!(
+            data.iter().all(|x| x.is_finite()),
+            "seed {seed}: a position is not finite"
+        );
+        assert!(rec.winner.is_some(), "seed {seed} at {bpm} bpm: no K.O.");
+    }
+}
