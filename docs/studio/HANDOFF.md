@@ -1,6 +1,6 @@
-# BALLFIGHT Studio: handoff brief (updated Nov 15)
+# BALLFIGHT Studio: handoff brief (updated Nov 23)
 
-## Status (Nov 15): the packaged Studio, 30 fighters, 26 themes, the music system
+## Status (Nov 23, version 1.8.2): the packaged Studio, 42 fighters, 62 themes, the music system
 
 **Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is
 kept so old episodes replay, and no new work goes there.** Its README is not edited by this build (nothing under
@@ -17,12 +17,12 @@ guide (`guide\index.html` in the program folder, written with the app's own pict
 Update button in the toolbar, then "Build version X", then "Restart now", and "Go back" to the version before.
 Removal is a button in Settings; it keeps settings, the queue, logs and every video.
 
-**What it can make.** Any of the 870 pairings (30 fighters, each against each of the other 29, either side), on any
+**What it can make.** Any of the 1,722 pairings (42 fighters, each against each of the other 41, either side), on any
 theme the pair is offered: pick the two fighters, balance, pick a seed from the shortlist with its picture and
 sound, choose the music, and render a checked 61 s video with its cover and caption into `Videos\BALLFIGHT`.
 
-**The roster** (counted from the registry: `bf_content::registry::PORTED` holds 30 names,
-`bf_content::themes::PORTED_THEMES` 26).
+**The roster** (counted from the registry: `bf_content::registry::PORTED` holds 42 names,
+`bf_content::themes::PORTED_THEMES` 62).
 
 - **The 20 kit fighters are exact** against the Python kit: ACOUSTIC, ALTO SAX, BASS CLARINET, BASS DRUM, BASSOON,
   CELLO, CLARINET, CONTRABASS, ELECTRIC, EUPHONIUM, FLUTE, HORN, OBOE, ORGAN, PIANO, SOUSAPHONE, TENOR SAX, TROMBONE,
@@ -30,11 +30,15 @@ sound, choose the music, and render a checked 61 s video with its cover and capt
 - **The 10 older fighters were ported "close enough for the eye test"**, as the owner decided on Nov 14: ACCORDION,
   BAGPIPES, BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN. They fight, look and sound like
   themselves, but are not checked bit for bit against their old episodes. Each starts on its own home theme.
+- **The 12 Studio fighters** were designed in the Studio itself (Nov 16 to 21), each with its own move set and VS
+  card: CORNET, CONTRABASS CLARINET, MARIMBA, PICCOLO, SOPRANO SAX, MELLOPHONE, TIMPANI, CONTRABASSOON, FLUGELHORN,
+  SNARE DRUM, OCTOBASS, BASS GUITAR.
 - **The 14 kit themes are exact**: baroque storm, big top, bossa noir, brass trailer, dark disco, dark drumline, dark
   tango, heist, horror trap, hot jazz, mambo, prog duel, second line, stadium rock.
 - **The 12 older themes were ported the same way, by eye and ear**: Balkan fire, brass house, dark breakbeat, drift
   phonk, gothic horror, industrial, noir jazz, orchestral drill, sea shanty, ska-punk, spaghetti western, villain
   march.
+- **36 more themes were made in the Studio** (Nov 16 to 18), sorted into the theme picker's categories.
 - A pair is offered only the themes whose music has every hit its fighters play. When a pairing is uneven,
   Auto-balance sets the handicap so the fight is fair. GUITAR and SAX stay retired: their roster entries are kept so
   old episodes replay, and they are never offered.
@@ -98,7 +102,14 @@ version on this PC; no download, no token in the app).
 1. Bump `[workspace.package] version` in `studio/Cargo.toml` (and let cargo update `Cargo.lock`).
 2. Add the version's frozen saved files (the rule for `tests/compat/<version>/`, below).
 3. Run the **quick install check** (below), commit and push. Don't wait for CI (`.github/workflows/studio.yml`):
-   it runs the full suite in the background, and anything it catches is fixed in the next version.
+   it runs in the background, and anything it catches is fixed in the next version. Before tagging, open the last
+   GitHub run of the previous tag (Actions, workflow `studio`) and fix what it caught: nobody else looks (lesson of
+   1.8.0 and 1.8.1, whose checks were red for two releases). GitHub runs two jobs on Windows: the first builds the
+   command line and the app, tests bf-core, bf-sim and bf-pack, renders and encodes the example episode, tests the
+   app without a window and checks the package (each step runs even when an earlier one failed, unless it needs
+   that step's output); the second runs `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
+   warnings` and the tests of bf-story, bf-sound, bf-picture, bf-content and bf-export. bf-harness (which needs
+   git-ignored reference files) and the interface tests (which need a DirectX 12 adapter) run only on this PC.
 4. Push the tag `studio-v<version>` on that commit (`studio-v<version>-rc.1` for a candidate).
 5. The owner clicks Update in the app. The app fetches the newest `studio-v*` tag into `data\source`, runs
    `cargo build --release --locked -p bf-app` there at below-normal priority, checks that the new exe names the
@@ -141,7 +152,8 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
 - Git, signed in to GitHub (the credential manager is already set up), and rustup. The toolchain is pinned in
   `studio/rust-toolchain.toml` (1.99.1); rustup fetches it by itself.
 - Work in `studio/`. The gates before any commit: `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
-  warnings`, `cargo test --workspace` (GitHub CI runs these). An install runs only the quick install check above.
+  warnings`, and the tests of what changed (below). GitHub CI runs fmt, clippy and the tests of every crate but
+  bf-harness (see the release steps above). An install runs only the quick install check above.
 - **Feature and fighter work tests only what is needed** (the owner, Nov 16, 2026: "For adding features, make the
   tests only test what is necessary."). While building, and before merging, run only the tests of the crates and
   fighters you changed (`cargo test -p <crate>`, `--test fighter_<name>`), plus `cargo check --workspace
@@ -200,13 +212,17 @@ new fighter's fights need not match anything bit for bit. A theme is added the s
 4. **Proof, small:** a short test file like `studio/crates/bf-sim/tests/violin_quick.rs` (its fights against 3 or 4
    different fighters run to the end and a K.O. happens in a normal share of seeds), run with
    `cargo test -p bf-sim --test <slug>_quick`; `cargo test -p bf-content` (the registry and personality tests take
-   the new name). Then from `studio/`, with a fight file for the new pairing:
+   the new name); and `cargo test --release -p bf-sim --test all_pairings` (about 10 to 20 seconds): every
+   pairing, from both corners, fights 3 seeds to the end with no panic, no NaN and nobody leaving the ring. It
+   reads the rosters, so a new fighter is in it as soon as its roster entry is; after a new weapon kind, run it
+   once with `ALL_PAIRINGS_SEEDS=40` too (about 2.5 minutes). It caught TUBA v VIOLIN and BASS GUITAR's runaway
+   dash in 1.8.1. Then from `studio/`, with a fight file for the new pairing:
    `ballfight search <fight file> --stop 10`, then `ballfight render <fight file> --out <folder> --seed N` with one
    of its fits. Look at a few frames (the card, mid-fight with an ability, the K.O.; `ballfight frame <fight file>
    --frame N --out <file.png>`) next to the old episode's look; the render's own checks pass, or the report says
    which one fails and why that is acceptable.
-5. `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`, then the release
-   steps above.
+5. `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo check --workspace --all-targets`
+   and the tests above (not the whole suite: GitHub runs that), then the release steps above.
 
 **The exact route (optional)**, used by the 20 kit fighters in milestone 3, only when a fighter must match a Python
 reference bit for bit: export its references from the frozen kit (`python -m tools.studio_export fighter_<slug>`,
@@ -219,9 +235,8 @@ fighter_<slug>` (and with `-- --include-ignored`), `cargo test --release -p bf-s
 
 ## What is left
 
-1. **Milestone 6's last steps:** the user guide and its pictures (Task 17, being written now) and the release
-   itself with its checklist (Task 19, version 1.0.0), both in
-   `docs/studio/2026-11-11-ballfight-studio-plan-m6-packaging.md`.
+1. **Milestone 6 is finished:** the user guide and version 1.0.0 shipped, and every version since has its
+   `studio-v*` tag. New fighters and themes follow the steps in this file.
 2. **Milestone 3's last two tasks** (62 and 63): the long measurement runs and the tidy list. The measurements file
    says which sections are still empty and why.
 

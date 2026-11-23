@@ -124,10 +124,11 @@ ballfight bench   fights/flute_vs_trombone.toml [--out <folder>] [--only fights,
 `bf-app` is BALLFIGHT Studio itself. `cargo build --release -p bf-app` makes `target/release/ballfight-studio.exe`;
 double-click it (or start it with no option) for the real app on the real engine: pick the match-up, balance it,
 search seeds, choose one with its picture and sound, then queue the video. Videos go to `Videos\BALLFIGHT` unless
-Settings says otherwise. Today it offers 30 fighters and 26 themes, and every one of the 870 pairings starts: the
-20 kit fighters and 14 kit themes are exact against the Python kit, and the 10 older fighters (ACCORDION, BAGPIPES,
-BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN) and 12 older themes are ported close enough for
-the eye and the ear (the owner's decision of Nov 14), each older fighter starting on its own home theme. A pair is
+Settings says otherwise. Today (1.8.2) it offers 42 fighters and 62 themes, and every one of the 1,722 pairings
+starts: the 20 kit fighters and 14 kit themes are exact against the Python kit, the 10 older fighters (ACCORDION,
+BAGPIPES, BARI SAX, DRUMS, HARP, SYNTH, TURNTABLES, UKULELE, VIOLA, VIOLIN) and 12 older themes are ported close
+enough for the eye and the ear (the owner's decision of Nov 14), each older fighter starting on its own home theme,
+and 12 fighters and 36 themes were made in the Studio itself (Nov 16 to 21). A pair is
 offered only the themes whose music has every hit its fighters' parts play (no Dark disco or Heist for a pair with
 the TROMBONE, ORGAN, TUBA, EUPHONIUM or HORN, which play a big drum hit those two lack). The seed finder balances an
 uneven pairing (Auto-balance). New pairings start on the Composed music (the story-driven arrangement with the
