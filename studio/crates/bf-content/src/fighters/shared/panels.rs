@@ -70,7 +70,7 @@ pub fn marimba(base: &mut RgbF) {
         } else {
             let r = dmath::hypot(
                 (fx - 0.57) * 30.0,
-                (fy - if fy < top { top / 2.0 } else { 300.0 - top / 2.0 }),
+                fy - if fy < top { top / 2.0 } else { 300.0 - top / 2.0 },
             );
             if r < 9.0 {
                 (0.66, 0.0)

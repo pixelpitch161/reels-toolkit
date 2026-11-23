@@ -6,6 +6,7 @@
 //! cuts the whole band to near silence (every bus but its own) while a sub rumble swells, then one huge boom and
 //! the band is back.
 
+use bf_core::dmath;
 use bf_core::harmony::HarmonyError;
 use bf_core::py::{self, py_max, round_nd};
 use bf_sound::mix::{Mix, Sig};
@@ -38,7 +39,7 @@ fn rumble(dur: f64, seed: u64) -> Vec<f64> {
     synth::tt(n)
         .iter()
         .zip(&x)
-        .map(|(&t, v)| v * (t / dur.max(1e-6)).clamp(0.0, 1.0).powf(1.5))
+        .map(|(&t, v)| v * dmath::pow((t / dur.max(1e-6)).clamp(0.0, 1.0), 1.5))
         .collect()
 }
 
