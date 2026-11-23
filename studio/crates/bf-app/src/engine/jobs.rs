@@ -1220,12 +1220,18 @@ mod tests {
             speed: crate::model::EncodeChoice::Best,
         });
         let updates = job_until_end(&engine, 1, 60.0);
-        let Some(JobUpdate::Failed { headline, hint, .. }) = updates.last().cloned() else {
+        let Some(JobUpdate::Failed { headline, detail, hint }) = updates.last().cloned() else {
             panic!("{updates:?}");
         };
+        // BALLFIGHT_FFMPEG names a program that is not there: the export's own sentence (F11) says so and that the
+        // setting is to be corrected.
         assert_eq!(
             (headline.as_str(), hint),
-            ("ffmpeg was not found", FailHint::InstallFfmpeg)
+            ("ffmpeg cannot be used", FailHint::InstallFfmpeg)
+        );
+        assert!(
+            detail.contains("was not found at /nonexistent") && detail.contains("correct the setting"),
+            "{detail}"
         );
         assert!(!out.exists(), "nothing was made");
         engine.send(Command::Shutdown);
