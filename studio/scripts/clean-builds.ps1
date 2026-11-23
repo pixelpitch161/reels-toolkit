@@ -8,8 +8,10 @@
   state, and with -Apply it frees space:
 
     * A checkout is FINISHED when its work tree is clean, its branch is pushed and the branch is merged into the
-      build branch. A finished worktree or clone is removed (git worktree remove / folder delete) with its build
-      folder. Its branch stays on GitHub.
+      build branch. A separate clone (a folder with a .git folder of its own) must also hold no other local branch
+      with commits that are not on GitHub and no stash, since those live only in that folder. A finished worktree
+      or clone is removed (git worktree remove / folder delete) with its build folder. Its branch stays on GitHub.
+      Git-ignored files of a clone go with it; the report names the first few that are not build output.
     * A build folder is IN USE when a program runs from inside it or from its checkout (cargo/rustc/tests/an app).
       In-use folders are never touched.
     * Extra build folders nobody uses (`studio\target-*`, `.wt\<name>-target` with no worktree) are deleted.
@@ -100,6 +102,21 @@ foreach ($co in $checkouts) {
     if (-not $isMain -and (Test-Path -LiteralPath "$co\.git" -PathType Container)) { git -C $co fetch -q origin 2>$null }
     $branch = (git -C $co branch --show-current 2>$null)
     $dirty = [bool](git -C $co status --porcelain 2>$null)
+    # A separate clone keeps its own branches and stashes: work there that is on no other branch and not on
+    # GitHub would go with the folder. (A worktree's branches and stashes live in the main folder's repo.)
+    $ownRepo = (-not $isMain) -and (Test-Path -LiteralPath "$co\.git" -PathType Container)
+    $onlyHere = @()
+    $ignored = @()
+    if ($ownRepo) {
+        $unpushed = @(git -C $co log --branches --not --remotes --format='%h %s' 2>$null)
+        if ($LASTEXITCODE -ne 0) { $onlyHere += 'its branches could not be read' }
+        elseif ($unpushed.Count -gt 0) { $onlyHere += "$($unpushed.Count) commit(s) on local branches that are not on GitHub" }
+        $stashes = @(git -C $co stash list 2>$null)
+        if ($LASTEXITCODE -ne 0) { $onlyHere += 'its stashes could not be read' }
+        elseif ($stashes.Count -gt 0) { $onlyHere += "$($stashes.Count) stash(es)" }
+        $ignored = @(git -C $co status --porcelain --ignored 2>$null | Where-Object { $_ -like '!! *' } |
+            ForEach-Object { $_.Substring(3) } | Where-Object { $_ -notmatch '^studio/target(-[^/]*)?/' })
+    }
     $pushed = $false; $merged = $false
     if ($branch) {
         $ahead = git -C $co rev-list --count "origin/$branch..HEAD" 2>$null
@@ -117,7 +134,7 @@ foreach ($co in $checkouts) {
     $inUse = (Test-InUse $co) -or [bool]($targets | Where-Object { Test-InUse $_ })
     $rows += [pscustomobject]@{
         Path = $co; Main = $isMain; Branch = $branch; Clean = -not $dirty; Pushed = $pushed; Merged = $merged
-        InUse = $inUse; Targets = $targets; SizeGB = $size
+        InUse = $inUse; Targets = $targets; SizeGB = $size; OnlyHere = $onlyHere; Ignored = $ignored
     }
 }
 
@@ -157,6 +174,14 @@ foreach ($r in $rows) {
     if (-not ($r.Clean -and $r.Pushed -and $r.Merged)) {
         Write-Host "Not finished (uncommitted, unpushed or unmerged), kept: $($r.Path)"
         continue
+    }
+    if ($r.OnlyHere.Count -gt 0) {
+        Write-Host "Holds work found nowhere else ($($r.OnlyHere -join ', ')), kept: $($r.Path)"
+        continue
+    }
+    if ($r.Ignored.Count -gt 0) {
+        $few = ($r.Ignored | Select-Object -First 5) -join ', '
+        Write-Host "Git-ignored files in $($r.Path) go with it ($($r.Ignored.Count), for example $few)."
     }
     foreach ($t in $r.Targets) { Write-Host "Deleting $t"; Remove-Folder $t }
     $isWorktree = (git -C $Main worktree list --porcelain) -contains ('worktree ' + ($r.Path -replace '\\', '/'))
