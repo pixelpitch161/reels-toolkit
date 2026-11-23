@@ -117,6 +117,7 @@ styles, ready for crossovers and a tournament bracket.
 | CONTRABASSOON (Studio, Nov 16) | oxblood | (150, 34, 44) | | | | |
 | FLUGELHORN (Studio, Nov 16) | sage | (150, 176, 140) | | | | |
 | OCTOBASS (Studio, Nov 21) | deep umber | (100, 64, 36) | | | | |
+| MARIMBA (Studio, Nov 16) | rosewood plum | (160, 80, 160) | | BASS GUITAR (Studio, Nov 21) | ultraviolet | (150, 0, 255) |
 
   Spares (Cello, later fighters): pick a colour clearly apart from all of these and add it here.
 - **Fighters:** first named = left corner (screen left), second = right. Weapon scaling: every landed hit grows the

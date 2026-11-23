@@ -236,7 +236,11 @@ pub fn spin_step(fight: &mut Fight, k: usize, dt: f64) {
     if !geom::swept(th0, dth, phi, half) {
         return;
     }
-    let h = [bp[0] + rel[0] / dist * (dist - r), bp[1] + rel[1] / dist * (dist - r)];
+    // The enemy can sit exactly on the bow's ball (a TUBA that gulped the VIOLIN puts it there in the same step):
+    // the direction is then 0 / 0, so it is taken as zero, as the thrust blade does (`max(dist, 1e-6)`). A distance of
+    // 1e-6 or more gives the same bits as before.
+    let m = geom::py_max(dist, 1e-6);
+    let h = [bp[0] + rel[0] / m * (dist - r), bp[1] + rel[1] / m * (dist - r)];
     if fight.balls[1 - k].shield > 0.0 {
         let data = vec![
             Value::Int(k as i64),
@@ -256,8 +260,8 @@ pub fn spin_step(fight: &mut Fight, k: usize, dt: f64) {
     fight.balls[k].cool = w.cooldown;
     let (th, sd) = (fight.balls[k].th, fight.balls[k].spin_dir);
     let away = [
-        rel[0] / dist + 0.6 * (-dmath::sin(th) * sd),
-        rel[1] / dist + 0.6 * (dmath::cos(th) * sd),
+        rel[0] / m + 0.6 * (-dmath::sin(th) * sd),
+        rel[1] / m + 0.6 * (dmath::cos(th) * sd),
     ];
     fight.knock(1 - k, away, w.knock);
     if landed {

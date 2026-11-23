@@ -128,17 +128,30 @@ impl std::error::Error for Halt {}
 
 /// One fight, read and judged: `kit/search.py` `one(seed)` (`story.run_seed(seed, record=False)`, `story.story`,
 /// `story.score`). The kit rounds the times of the story for its files there; a candidate keeps them whole.
+///
+/// One rule the kit does not have: a fight in which a fighter's centre stays further than [`bf_sim::OUTSIDE`] from
+/// the middle of the ring for more than [`OUTSIDE_FOR`] does not fit, whatever its story (no fight of the series
+/// does that; it would be a fault in a weapon kind, and the video would show the fighter leaving the screen).
 pub fn fight(setup: &Setup, sheet: &BeatSheet) -> Result<Candidate, SimError> {
-    let rec = bf_sim::run(setup, false)?;
+    let (rec, watch) = bf_sim::run_watched(setup, false)?;
     let lows = [setup.fighters[0].low.name.as_str(), setup.fighters[1].low.name.as_str()];
     let story = story_at(&rec, setup.rules.t_fight, sheet, lows);
-    let verdict = score(&story, sheet);
+    let mut verdict = score(&story, sheet);
+    if watch.outside > OUTSIDE_FOR {
+        verdict.fits = false;
+        verdict
+            .misses
+            .push(format!("a fighter left the ring for {:.1} s", watch.outside));
+    }
     Ok(Candidate {
         seed: setup.seed,
         story,
         verdict,
     })
 }
+
+/// The longest a fighter may be gone from the ring (see [`fight`]), in seconds.
+pub const OUTSIDE_FOR: f64 = 0.1;
 
 /// How many fights that do not fit a shortlist keeps: the best of them by [`rank`]'s order. (Every fit is kept.)
 pub const KEEP_MISFITS: usize = 200;

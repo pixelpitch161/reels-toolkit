@@ -587,7 +587,9 @@ impl<'a> Fight<'a> {
         let v_shared = self.rules.v;
         let b = &mut self.balls[vic];
         let n = geom::norm(away);
-        if n < 1e-9 {
+        // a direction that is not a finite number is turned away too: it would make the victim's speed, and then
+        // both positions, NaN for the rest of the fight
+        if !n.is_finite() || n < 1e-9 {
             return;
         }
         let away = geom::div(away, n);
@@ -953,10 +955,46 @@ pub fn rewinding(f: &Fight, k: usize) -> bool {
 ///
 /// A setup the engine cannot run is an error in words, before anything is run ([`Setup::check`]): no rules and no
 /// roster entry can make this panic.
+///
+/// A fight whose numbers stop being finite numbers is broken off and is an error too (a fault in the engine, never
+/// a fight of the series): no recording with NaN in it is ever handed out.
 pub fn run(setup: &Setup, record: bool) -> Result<Recording, SimError> {
+    run_watched(setup, record).map(|(rec, _)| rec)
+}
+
+/// The furthest a fighter's centre may be from the middle of the ring, on either axis, before [`Watch::outside`]
+/// counts it as gone from the ring. The ropes are at 3.0; TENOR SAX's stage dive and BARI SAX's stage moves reach
+/// 3.9 for under a second by design.
+pub const OUTSIDE: f64 = 4.5;
+
+/// What the engine watched for in a fight, beyond its recording.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Watch {
+    /// The longest time, in seconds, that one fighter's centre stayed further than [`OUTSIDE`] from the middle of
+    /// the ring on an axis: 0 in a fight where nobody left the ring.
+    pub outside: f64,
+}
+
+/// [`run`], and what the engine watched for in the fight ([`Watch`]): the seed search counts a fight in which a
+/// fighter left the ring as a fight that does not fit.
+pub fn run_watched(setup: &Setup, record: bool) -> Result<(Recording, Watch), SimError> {
     let mut fight = Fight::new(setup, record)?;
-    let frames = schedule::run(&mut fight);
-    Ok(record::recording(fight, frames))
+    let ran = schedule::run(&mut fight);
+    finish(fight, ran)
+}
+
+/// The recording of a fight that was run, or the error of one that broke off.
+fn finish(fight: Fight, ran: schedule::Ran) -> Result<(Recording, Watch), SimError> {
+    if let Some(t) = ran.broke {
+        return Err(SimError::new(
+            "fight",
+            format!(
+                "at {t:.2} s a fighter's position, speed or hit points stopped being a number, so the fight was \
+                 broken off; this is a fault in the app, not in the fight"
+            ),
+        ));
+    }
+    Ok((record::recording(fight, ran.frames), ran.watch))
 }
 
 /// [`run`] through the test entry `Fight::with_unported`: a fighter of a kind not ported is let in (and that kind
@@ -965,8 +1003,8 @@ pub fn run(setup: &Setup, record: bool) -> Result<Recording, SimError> {
 #[doc(hidden)]
 pub fn run_with_unported(setup: &Setup, record: bool) -> Result<Recording, SimError> {
     let mut fight = Fight::with_unported(setup, record)?;
-    let frames = schedule::run(&mut fight);
-    Ok(record::recording(fight, frames))
+    let ran = schedule::run(&mut fight);
+    finish(fight, ran).map(|(rec, _)| rec)
 }
 
 /// [`run`] with `Fight::trace_sockets` on: the recording, and the name of every socket the fight reached, in order
@@ -977,13 +1015,13 @@ pub fn run_with_unported(setup: &Setup, record: bool) -> Result<Recording, SimEr
 pub fn run_traced(setup: &Setup, record: bool) -> Result<(Recording, Vec<&'static str>), SimError> {
     let mut fight = Fight::new(setup, record)?;
     fight.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
-    let frames = schedule::run(&mut fight);
+    let ran = schedule::run(&mut fight);
     let trace = fight
         .trace_sockets
         .take()
         .map(std::cell::RefCell::into_inner)
         .unwrap_or_default();
-    Ok((record::recording(fight, frames), trace))
+    finish(fight, ran).map(|(rec, _)| (rec, trace))
 }
 
 /// [`run_traced`] through the test entry `Fight::with_unported`: a fighter of a kind not ported is let in (and that
@@ -994,13 +1032,13 @@ pub fn run_traced(setup: &Setup, record: bool) -> Result<(Recording, Vec<&'stati
 pub fn run_traced_with_unported(setup: &Setup, record: bool) -> Result<(Recording, Vec<&'static str>), SimError> {
     let mut fight = Fight::with_unported(setup, record)?;
     fight.trace_sockets = Some(std::cell::RefCell::new(Vec::new()));
-    let frames = schedule::run(&mut fight);
+    let ran = schedule::run(&mut fight);
     let trace = fight
         .trace_sockets
         .take()
         .map(std::cell::RefCell::into_inner)
         .unwrap_or_default();
-    Ok((record::recording(fight, frames), trace))
+    finish(fight, ran).map(|(rec, _)| (rec, trace))
 }
 
 impl Setup<'_> {
@@ -1924,5 +1962,34 @@ mod error_tests {
             err.to_string(),
             "fighters[1]: RIGHT: abilities.unlock2.every_bars: missing (the bars between two uses of NOTHING)"
         );
+    }
+
+    /// Code review of 2026-11-23, F5: a knock whose direction is not a number leaves the victim as it was (it once
+    /// made its speed NaN, and then both positions, for the rest of the fight).
+    #[test]
+    fn a_knock_that_is_not_a_number_does_nothing() {
+        let bare = testing::bare_pair();
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), false);
+        let (v, boost) = (fight.balls[1].v, fight.balls[1].boost);
+        for away in [[f64::NAN, 0.0], [0.0, f64::NAN], [f64::INFINITY, 1.0], [0.0, 0.0]] {
+            fight.knock(1, away, 9.0);
+            assert_eq!(fight.balls[1].v.map(f64::to_bits), v.map(f64::to_bits), "{away:?}");
+            assert_eq!(fight.balls[1].boost.to_bits(), boost.to_bits(), "{away:?}");
+        }
+    }
+
+    /// Code review of 2026-11-23, F5: a fight whose numbers stop being numbers is broken off at that step and is an
+    /// error in words, never a recording with NaN in it.
+    #[test]
+    fn a_fight_that_goes_nan_is_broken_off() {
+        let bare = testing::bare_pair();
+        let mut fight = testing::fight(&testing::bare_setup(&bare, 1), true);
+        fight.balls[0].v = [f64::NAN, 0.0];
+        let ran = schedule::run(&mut fight);
+        let t = ran.broke.expect("the fight was broken off");
+        assert!(t < fight.rules.t_fight + 0.1, "at once, not at {t}");
+        let err = finish(fight, ran).unwrap_err();
+        assert_eq!(err.field, "fight");
+        assert!(err.message.contains("fault in the app"), "{err}");
     }
 }

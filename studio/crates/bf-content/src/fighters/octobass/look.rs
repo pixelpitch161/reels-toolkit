@@ -380,7 +380,7 @@ impl Look for OctobassLook {
                     if r.a <= 0.02 {
                         continue;
                     }
-                    let flip = if (r.x0 * 7.0 + r.z0 * 3.0).sin() > 0.0 {
+                    let flip = if dmath::sin(r.x0 * 7.0 + r.z0 * 3.0) > 0.0 {
                         1.0
                     } else {
                         -1.0

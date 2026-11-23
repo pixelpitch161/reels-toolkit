@@ -1,9 +1,12 @@
 //! The matchup history: every distinct fight the app has made (and the episodes made before it existed), kept
 //! between runs in `config/history.toml` (`store::history`).
 //!
-//! One row is one fight: the same fighters on the same sides with the same seed is the same fight, so rendering it
-//! again moves its date on instead of adding a row. A pairing ignores sides: Flute vs Trombone and Trombone vs Flute
-//! are one pairing. The roster chips count uploaded fights only.
+//! One row is one fight: the same fighters on the same sides with the same seed, tempo, theme and handicap is the
+//! same fight, so rendering it again moves its date on instead of adding a row. The same seed at another tempo,
+//! theme or handicap is another video, so it gets a row (and an uploaded tick) of its own (the owner, Nov 23, 2026).
+//! A row made before 1.8.2 knows only the fighters and the seed; a fight with those is taken as that row, as before,
+//! and the row then learns the rest. A pairing ignores sides: Flute vs Trombone and Trombone vs Flute are one
+//! pairing. The roster chips count uploaded fights only.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -27,6 +30,20 @@ pub struct FightRecord {
     /// The owner ticked it as uploaded.
     #[serde(default)]
     pub uploaded: bool,
+    /// The tempo, theme and handicap it was made with; missing in a row made before 1.8.2.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<FightDetails>,
+}
+
+/// What else makes a fight with the same fighters and seed another video.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FightDetails {
+    /// The fight file's `tempo_bpm`.
+    pub tempo_bpm: f64,
+    /// The theme's id (the fight file's `music.theme`).
+    pub theme: String,
+    /// The fight file's handicap, left then right.
+    pub handicap: Vec<f64>,
 }
 
 /// Every fight made, in the order they were first made.
@@ -40,17 +57,38 @@ pub struct History {
 }
 
 impl History {
-    /// Notes that the fight `fighters` (left, right) with `seed` was made at `made`, won by `winner`. A row with the
-    /// same fighters and seed has its date and winner moved on and keeps its uploaded tick; otherwise a new row is
-    /// added, not uploaded. Returns the row's id.
+    /// Notes that the fight `fighters` (left, right) with `seed` was made at `made`, won by `winner`, with no
+    /// details known: [`History::record_with`] with none.
     pub fn record(&mut self, fighters: [String; 2], seed: u64, winner: Option<String>, made: u64) -> u64 {
-        if let Some(row) = self
-            .fights
-            .iter_mut()
-            .find(|row| row.fighters == fighters && row.seed == Some(seed))
-        {
+        self.record_with(fighters, seed, None, winner, made)
+    }
+
+    /// Notes that the fight `fighters` (left, right) with `seed` and `details` was made at `made`, won by `winner`.
+    /// A row of the same fight (the same fighters and seed, and the same details where both know them) has its
+    /// date and winner moved on, learns the details it lacked and keeps its uploaded tick; otherwise a new row is
+    /// added, not uploaded. Returns the row's id.
+    pub fn record_with(
+        &mut self,
+        fighters: [String; 2],
+        seed: u64,
+        details: Option<FightDetails>,
+        winner: Option<String>,
+        made: u64,
+    ) -> u64 {
+        let same = |row: &FightRecord| {
+            row.fighters == fighters
+                && row.seed == Some(seed)
+                && match (&row.details, &details) {
+                    (Some(a), Some(b)) => a == b,
+                    _ => true,
+                }
+        };
+        if let Some(row) = self.fights.iter_mut().find(|row| same(row)) {
             row.made = made;
             row.winner = winner;
+            if row.details.is_none() {
+                row.details = details;
+            }
             return row.id;
         }
         // Never reuse an id still in the list, even if a hand-edited file has `next_id` too low.
@@ -68,6 +106,7 @@ impl History {
             winner,
             made,
             uploaded: false,
+            details,
         });
         self.next_id = id.saturating_add(1);
         id
@@ -176,6 +215,80 @@ mod tests {
         h.record(pair("TROMBONE", "FLUTE"), 2210, None, 100);
         assert_eq!(h.fights.len(), 3);
         assert_eq!(h.next_id, 3);
+    }
+
+    fn details(bpm: f64, theme: &str, handicap: [f64; 2]) -> Option<FightDetails> {
+        Some(FightDetails {
+            tempo_bpm: bpm,
+            theme: theme.to_string(),
+            handicap: handicap.to_vec(),
+        })
+    }
+
+    /// The owner, Nov 23, 2026: the same seed at another tempo, theme or handicap is another video, with its own
+    /// row and tick; a row made before the details were kept is still the same fight, and learns them.
+    #[test]
+    fn another_tempo_theme_or_handicap_is_a_new_row() {
+        let mut h = History::default();
+        let first = h.record_with(
+            pair("FLUTE", "TROMBONE"),
+            1,
+            details(120.0, "hot_jazz", [1.0, 1.0]),
+            None,
+            100,
+        );
+        h.set_uploaded(first, true);
+        let tempo = h.record_with(
+            pair("FLUTE", "TROMBONE"),
+            1,
+            details(132.0, "hot_jazz", [1.0, 1.0]),
+            None,
+            200,
+        );
+        let theme = h.record_with(
+            pair("FLUTE", "TROMBONE"),
+            1,
+            details(120.0, "mambo", [1.0, 1.0]),
+            None,
+            300,
+        );
+        let handicap = h.record_with(
+            pair("FLUTE", "TROMBONE"),
+            1,
+            details(120.0, "hot_jazz", [1.1, 1.0]),
+            None,
+            400,
+        );
+        assert_eq!(h.fights.len(), 4);
+        assert!(first != tempo && tempo != theme && theme != handicap);
+        assert!(
+            h.fights[0].uploaded && !h.fights[1].uploaded,
+            "each video has its own tick"
+        );
+        // the same details again: the same row
+        let again = h.record_with(
+            pair("FLUTE", "TROMBONE"),
+            1,
+            details(132.0, "hot_jazz", [1.0, 1.0]),
+            None,
+            500,
+        );
+        assert_eq!(again, tempo);
+        assert_eq!(h.fights.len(), 4);
+        // a row from before 1.8.2 (no details) is the same fight, and learns them
+        let mut old = History::default();
+        let id = old.record(pair("FLUTE", "TROMBONE"), 7, None, 100);
+        old.set_uploaded(id, true);
+        let found = old.record_with(
+            pair("FLUTE", "TROMBONE"),
+            7,
+            details(120.0, "hot_jazz", [1.0, 1.0]),
+            None,
+            200,
+        );
+        assert_eq!(found, id);
+        assert_eq!(old.fights[0].details, details(120.0, "hot_jazz", [1.0, 1.0]));
+        assert!(old.fights[0].uploaded);
     }
 
     #[test]

@@ -296,6 +296,14 @@ pub fn pre_render(
 /// `pic.frame_reported(f)` gives it.
 pub type Kept = BTreeMap<usize, (Rgb8, FrameReport)>;
 
+/// What [`pre_render_keeping`] gives back: the results, the frames it drew, and whether a count of the count-in
+/// (3, 2, 1, FIGHT!) stuck out of the safe zone in any of them (only then can keeping the count-in inside help).
+pub struct Checked {
+    pub results: Vec<CheckResult>,
+    pub kept: Kept,
+    pub count_in_outside: bool,
+}
+
 /// [`pre_render`] that also gives back every frame it drew (673 of the example episode's 1,830, about 465 MB), so
 /// the render can use them instead of drawing them again. A frame is a pure function of its number, so the video
 /// made from them is the same file. The results are [`pre_render`]'s; a frame that could not be drawn is not
@@ -308,10 +316,19 @@ pub fn pre_render_keeping(
     plan: &BandPlan,
     workers: usize,
     cancel: &AtomicBool,
-) -> Option<(Vec<CheckResult>, Kept)> {
+) -> Option<Checked> {
     let kept: Mutex<Kept> = Mutex::new(BTreeMap::new());
+    let count_in_outside = AtomicBool::new(false);
+    let counts: Vec<&str> = show.grid.count.iter().map(|c| c.1).collect();
     let draw = |f: usize| {
         let (img, log, report) = pic.frame_reported(f);
+        if log.boxes.iter().any(|b| {
+            b.kind == bf_picture::ui::Kind::Caption
+                && counts.contains(&b.info.as_str())
+                && bf_picture::config::safe_overshoot(b.x0, b.y0, b.x1, b.y1) > 0
+        }) {
+            count_in_outside.store(true, Ordering::Relaxed);
+        }
         // as `frame_logged` does
         debug_assert_eq!(
             report.hull_errors, 0,
@@ -323,7 +340,11 @@ pub fn pre_render_keeping(
         (img, log)
     };
     let results = pre_render_with(&draw, pic, st, show, story, plan, workers, cancel)?;
-    Some((results, kept.into_inner().unwrap_or_else(|e| e.into_inner())))
+    Some(Checked {
+        results,
+        kept: kept.into_inner().unwrap_or_else(|e| e.into_inner()),
+        count_in_outside: count_in_outside.into_inner(),
+    })
 }
 
 /// [`pre_render`] with the drawing of a frame given: `draw_frame(f)` is `pic.frame_logged(f)` there, and a

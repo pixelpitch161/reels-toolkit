@@ -89,6 +89,7 @@ fn wp(cam: &Cam, pts: &[V3]) -> Vec<(f64, f64)> {
 }
 
 /// A line in the ring at height `y`, `w` pixels wide.
+#[allow(clippy::too_many_arguments)]
 fn line(img: &mut Img<f32>, cam: &Cam, a: (f64, f64), b: (f64, f64), y: f64, w: u32, col: V3, alpha: f64) {
     let sp = wp(cam, &[[a.0, a.1, y], [b.0, b.1, y]]);
     let mk = reeds::mask(&[], std::slice::from_ref(&sp), w);

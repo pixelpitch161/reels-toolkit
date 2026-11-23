@@ -16,7 +16,7 @@ cargo build --release -p bf-app
 ```
 
 The program is `target/release/ballfight-studio.exe`. Started with no option it is the real app on the real engine
-(`engine::spawn`), with all 30 fighters and 26 themes (it opens on FLUTE against TROMBONE). The owner runs the
+(`engine::spawn`), with all 42 fighters and 62 themes (it opens on FLUTE against TROMBONE). The owner runs the
 installed copy (`studio/README.md`, Packaging); a build in `target\` is a build session's own copy, and it never
 looks at updates:
 

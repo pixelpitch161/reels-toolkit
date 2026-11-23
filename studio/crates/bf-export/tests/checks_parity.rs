@@ -725,7 +725,7 @@ fn pre_render_stops_when_cancelled() {
 fn pre_render_runs_every_check() {
     let ep = &*EPISODE;
     // the render job calls the keeping variant: its results are pre_render's
-    let (rs, kept) = timed("pre_render_keeping", || {
+    let checked = timed("pre_render_keeping", || {
         pre_render_keeping(
             &ep.pic,
             &BUILT,
@@ -737,6 +737,9 @@ fn pre_render_runs_every_check() {
         )
         .expect("not cancelled")
     });
+    // the example episode's count-in is inside the safe zone
+    assert!(!checked.count_in_outside);
+    let (rs, kept) = (checked.results, checked.kept);
     let names: Vec<&str> = rs.iter().map(|r| r.name).collect();
     assert_eq!(
         names,

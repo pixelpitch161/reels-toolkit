@@ -56,6 +56,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::assertions_on_constants)] // the two TONE tables checked against each other
     fn a_note_is_finite_and_brighter_than_the_altos() {
         let mut noise = PpNoise::start();
         let x = SopranoSaxVoice.note(&mut noise, 74.0, 0.8, 0.2);

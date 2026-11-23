@@ -97,7 +97,7 @@ pub(crate) fn parse(e: &Entry, w: &Json) -> Result<PlumbingCfg, RosterError> {
 /// The kind's checks: a grid `every`, at least one pipe, a positive size.
 pub(crate) fn check(e: &Entry, w: &PlumbingCfg) -> Result<(), RosterError> {
     e.grid_value("weapon", "every", w.every)?;
-    if !(w.max_pipes >= 1.0) {
+    if w.max_pipes.is_nan() || w.max_pipes < 1.0 {
         return Err(e.err("weapon.max_pipes", "must be at least 1"));
     }
     for (name, v) in [("leg", w.leg), ("gap", w.gap), ("thick", w.thick)] {

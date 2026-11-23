@@ -702,12 +702,13 @@ impl Encoder {
         ))
     }
 
-    /// Closes the input and waits for ffmpeg to write the rest of the file.
+    /// Closes the input and waits for ffmpeg to write the rest of the file, looking at `cancel` every 10 ms while
+    /// it does: a cancel ends ffmpeg at once.
     ///
     /// # Errors
     /// [`ExportError::Encode`]: fewer than `nf` frames were given, ffmpeg failed (exit and last words in the
-    /// sentence), or it left no file.
-    pub fn finish(mut self) -> Result<(), ExportError> {
+    /// sentence), or it left no file. [`ExportError::Cancelled`]: `cancel` was set while ffmpeg finished.
+    pub fn finish(mut self, cancel: &AtomicBool) -> Result<(), ExportError> {
         if self.pushed != self.nf {
             let (pushed, nf) = (self.pushed, self.nf);
             self.abort();
@@ -718,7 +719,20 @@ impl Encoder {
         }
         self.stdin = None; // closes the pipe: ffmpeg finishes the file
         self.done = true;
-        let status = self.child.wait();
+        let status = loop {
+            match self.child.try_wait() {
+                Ok(Some(status)) => break Ok(status),
+                Ok(None) if !cancel.load(Ordering::SeqCst) => std::thread::sleep(Duration::from_millis(10)),
+                Ok(None) => {
+                    end(&mut self.child);
+                    if let Some(t) = self.tail.take() {
+                        t.finish();
+                    }
+                    return Err(ExportError::cancelled());
+                }
+                Err(e) => break Err(e),
+            }
+        };
         let tail = self.tail.take().map(Tail::finish).unwrap_or_default();
         match status {
             Ok(status) if status.success() => {}
