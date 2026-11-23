@@ -37,7 +37,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: git config --global core.autocrlf false
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The channel comes from studio/rust-toolchain.toml, as in the Linux job; the default host makes rustup resolve
       # it to the GNU toolchain of the reference PC rather than the runner's MSVC default.
@@ -51,7 +51,7 @@ jobs:
           cargo -V
 
       - name: Cache cargo registry and build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry/index
@@ -78,15 +78,20 @@ jobs:
       # between runs (about 258 MB), keyed by the pin, so a warm run downloads nothing; the files are unpacked from it
       # and every checksum is checked again on each run, and a wrong one fails the step. The archive is saved as soon
       # as it has been checked (not at the end of the job), so it is kept even when a later step fails.
+      # From here on each step runs even when an earlier one failed (`!cancelled()`), unless it needs what a failed
+      # step makes, so one failure never hides the rest (code review of 2026-11-23: a failing first test step hid
+      # every later step for two releases).
       - name: Restore the ffmpeg download
         id: ffmpeg-cache
-        uses: actions/cache/restore@v4
+        if: ${{ !cancelled() }}
+        uses: actions/cache/restore@v5
         with:
           path: ${{ runner.temp }}/ffmpeg-cache/*.zip
           key: studio-ffmpeg-${{ runner.os }}-${{ hashFiles('studio/packaging/ffmpeg.toml') }}
 
       - name: Fetch the app's own ffmpeg
         id: ffmpeg
+        if: ${{ !cancelled() }}
         run: |
           tmp="$(cygpath -u '${{ runner.temp }}')"
           log="$tmp/ffmpeg.log"
@@ -112,8 +117,8 @@ jobs:
           } 2>&1 | tee "$log"
 
       - name: Keep the ffmpeg download for the next runs
-        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        if: ${{ !cancelled() && steps.ffmpeg.outcome == 'success' && steps.ffmpeg-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
         with:
           path: ${{ runner.temp }}/ffmpeg-cache/*.zip
           key: studio-ffmpeg-${{ runner.os }}-${{ hashFiles('studio/packaging/ffmpeg.toml') }}
@@ -122,6 +127,7 @@ jobs:
       # Windows reference PC): the proof that picture and sound are the same bytes on another PC; and a clip encoded
       # with 1 and with 8 workers is the same file.
       - name: Test that a render is reproducible
+        if: ${{ !cancelled() && steps.ffmpeg.outcome == 'success' }}
         env:
           BF_NEED_FFMPEG: "1"
         run: cargo test --release --locked -p bf-cli --test e2e -- --exact render_is_reproducible --nocapture
@@ -133,6 +139,7 @@ jobs:
       # also fails when not exactly these two tests ran (a renamed test would otherwise pass by running nothing).
       - name: Test that the encode is pinned
         id: encode
+        if: ${{ !cancelled() && steps.ffmpeg.outcome == 'success' }}
         env:
           BF_NEED_PINNED_FFMPEG: "1"
         run: |
@@ -147,9 +154,12 @@ jobs:
 
       # The shipped binary, built on its own after the tests, so the clip below runs exactly what a person runs.
       - name: Build the ballfight binary
+        id: ballfight
+        if: ${{ !cancelled() }}
         run: cargo build --release --locked -p bf-cli --bin ballfight
 
       - name: Render a clip of the example episode
+        if: ${{ !cancelled() && steps.ballfight.outcome == 'success' && steps.ffmpeg.outcome == 'success' }}
         run: |
           out="$RUNNER_TEMP/ballfight out"
           ./target/release/ballfight render fights/flute_vs_trombone.toml \
@@ -163,6 +173,8 @@ jobs:
       # The build's output is kept the same way as the tests' below, so a failed build names itself too (the step that
       # reads the log runs on any failure). The step still fails with cargo's own exit code.
       - name: Build the app
+        id: app-build
+        if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
@@ -176,6 +188,7 @@ jobs:
       # sets) keeps cargo's own exit code, so the step fails exactly as the tests do. `--no-fail-fast` lets one run
       # name every failing test.
       - name: Test the app (no window)
+        if: ${{ !cancelled() && steps.app-build.outcome == 'success' }}
         run: |
           set -o pipefail
           log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
@@ -188,6 +201,7 @@ jobs:
       # Nothing is uploaded: the package is about 600 MB, and the owner's PC builds its own (update route A).
       - name: Package the app and check the package
         id: package
+        if: ${{ !cancelled() && steps.app-build.outcome == 'success' && steps.ffmpeg.outcome == 'success' }}
         run: |
           tmp="$(cygpath -u '${{ runner.temp }}')"
           log="$tmp/package.log"
@@ -279,8 +293,8 @@ jobs:
           # The whole of the failures, on the run's summary page as well.
           { echo '### The app tests that failed'; echo '```'; grep -E -A4 'panicked at|test .* FAILED' "$plain" | head -n 200; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
 
-      # The same for the steps of the app's own ffmpeg and its package: only for the one of them that failed (a job
-      # stops at its first failed step), with that step's id as the title. Errors: the panics (with the two lines after
+      # The same for the steps of the app's own ffmpeg and its package: for each of them that failed, with that
+      # step's id as the title. Errors: the panics (with the two lines after
       # each), the lines the step itself marked "FAILED:", and the last three lines of its output (where cargo and
       # ballfight-pack say why they stopped); warnings: the failed tests' names and compile errors; notices: the first
       # and last lines. At most 10 of each kind, each cut to about 300 characters.
@@ -334,3 +348,56 @@ jobs:
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY" || true
           done
+
+  # The checks the handoff names that the first job does not run, in a job of their own so they neither slow nor
+  # block it: formatting, clippy with warnings as errors, and the tests of the crates that need no git-ignored
+  # reference cache and no graphics adapter (bf-harness and bf-app's interface tests run on the owner's PC). Each
+  # step runs even when an earlier one failed, so one run names every problem.
+  checks:
+    name: fmt, clippy, and the tests of the other crates (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: studio
+        shell: bash
+    steps:
+      - name: Keep line endings as committed
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned toolchain (GNU host, as on the reference PC)
+        run: |
+          channel="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
+          test -n "$channel"
+          rustup set default-host x86_64-pc-windows-gnu
+          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
+          rustc -vV
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            studio/target
+          key: studio-checks-${{ runner.os }}-gnu-${{ hashFiles('studio/rust-toolchain.toml', 'studio/Cargo.lock') }}
+          restore-keys: |
+            studio-checks-${{ runner.os }}-gnu-
+
+      - name: Formatting
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        if: ${{ !cancelled() }}
+        run: cargo clippy --release --locked --workspace --all-targets -- -D warnings
+
+      # One test reads the git-ignored reference cache (`studio/reference/.cache`, made on the owner's PC by the
+      # Python export) and is left out here; it runs on the PC.
+      - name: Test bf-story, bf-sound, bf-picture, bf-content and bf-export
+        if: ${{ !cancelled() }}
+        run: |
+          cargo test --release --locked --no-fail-fast -p bf-story -p bf-sound -p bf-picture -p bf-content -p bf-export \
+            -- --skip the_crossovers_soundtracks_and_frames_are_the_kits
