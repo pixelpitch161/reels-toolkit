@@ -107,6 +107,8 @@ pub struct LiveMark<'a> {
 pub struct Marks {
     tl: Timeline<Mark>,
     max_live: usize,
+    /// The longest any mark lives, whatever its own life (the bold effects' "less floor mess"); infinite: its own.
+    life_cap: f64,
 }
 
 impl Marks {
@@ -115,7 +117,15 @@ impl Marks {
         Marks {
             tl: Timeline::new(span),
             max_live,
+            life_cap: f64::INFINITY,
         }
+    }
+
+    /// The bold effects' "less floor mess" (S8): from now on no mark lives longer than `life` seconds and only
+    /// the newest `max_live` are drawn.
+    pub fn cap_lives(&mut self, life: f64, max_live: usize) {
+        self.life_cap = life;
+        self.max_live = max_live;
     }
 
     /// `add(t0, kind, u, v, ...)`.
@@ -138,10 +148,11 @@ impl Marks {
         let mut out = Vec::new();
         for (t0, which, m) in self.tl.alive(t) {
             let age = t - t0;
-            if age < 0.0 || age >= m.life {
+            let life = if m.life < self.life_cap { m.life } else { self.life_cap };
+            if age < 0.0 || age >= life {
                 continue;
             }
-            let fade = smooth(age / 0.06) * (1.0 - smooth((age - 0.6 * m.life) / (0.4 * m.life)));
+            let fade = smooth(age / 0.06) * (1.0 - smooth((age - 0.6 * life) / (0.4 * life)));
             if fade > 0.01 {
                 out.push(LiveMark {
                     mark: m,

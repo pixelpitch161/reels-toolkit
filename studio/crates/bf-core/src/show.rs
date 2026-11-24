@@ -118,6 +118,12 @@ impl std::error::Error for ShowError {}
 
 /// `kit/story.py` `captions(events, gap)`, reporting a malformed event instead of panicking.
 fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>, ShowError> {
+    try_captions_by(events, gap, false)
+}
+
+/// [`try_captions`], and with `each` the bold effects' rule: the gap is counted for each fighter alone, so two
+/// fighters who use a special close together both get their name shown (each on its own side banner).
+fn try_captions_by(events: &[Event], gap: f64, each: bool) -> Result<Vec<(f64, usize, String)>, ShowError> {
     let mut out: Vec<(f64, usize, String)> = Vec::new();
     for (index, e) in events.iter().enumerate() {
         if e.kind != "ability" {
@@ -132,7 +138,13 @@ fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>,
         if !first.truthy() {
             continue;
         }
-        let keep = match out.last() {
+        let last = if each {
+            let me = e.who();
+            out.iter().rev().find(|c| Some(c.1) == me)
+        } else {
+            out.last()
+        };
+        let keep = match last {
             None => true,
             Some(last) => e.t - last.0 >= gap,
         };
@@ -296,7 +308,7 @@ impl Show {
         let t_solo = grid.next_bar(t_ko + 1.6);
 
         let mut caps_ability: [Vec<Cap>; 2] = [Vec::new(), Vec::new()];
-        for (t, who, name) in try_captions(&rec.events, CAP_GAP)? {
+        for (t, who, name) in try_captions_by(&rec.events, CAP_GAP, ff.bold())? {
             caps_ability[who].push(Cap::new(t, t + ABILITY_HOLD, &[&name]));
         }
         let cap_ko = vec![Cap::new(t_ko, t_ko + 1.25, &["*K.O.*"])];

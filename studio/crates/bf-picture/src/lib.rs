@@ -20,6 +20,7 @@
 //! draws its own layers through a [`Look`] ([`look`]: the hooks of `kit/fighters/base.py`); the looks themselves
 //! live in `bf-content`.
 
+pub mod bold;
 pub mod camera;
 pub mod config;
 pub mod fft;

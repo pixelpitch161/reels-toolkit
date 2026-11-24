@@ -461,13 +461,18 @@ impl PictureCtx {
             ..CaptionStyle::default()
         };
         ui::draw_captions(img, log, t, &[], &style);
-        for k in 0..2 {
-            let style = CaptionStyle {
-                base: tint(self.col[k]),
-                puff: Some(ink(self.col[k])),
-                ..CaptionStyle::default()
-            };
-            ui::draw_captions(img, log, t, &self.show.caps_ability[k], &style);
+        if self.bold {
+            // (bold effects, N4) each fighter's special on a ribbon from its own side, so two can show at once
+            self.bold_banners(img, log, t);
+        } else {
+            for k in 0..2 {
+                let style = CaptionStyle {
+                    base: tint(self.col[k]),
+                    puff: Some(ink(self.col[k])),
+                    ..CaptionStyle::default()
+                };
+                ui::draw_captions(img, log, t, &self.show.caps_ability[k], &style);
+            }
         }
         let hi_gold = CaptionStyle {
             hi: gold,

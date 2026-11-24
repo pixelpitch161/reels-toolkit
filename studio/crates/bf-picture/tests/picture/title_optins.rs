@@ -120,6 +120,7 @@ fn seeds(case: &Value) -> PictureSeeds {
         title_lines,
         title_balls,
         middle,
+        effects: "classic".into(),
     }
 }
 
@@ -397,6 +398,7 @@ fn a_middle_word_that_cannot_fit_is_the_kits_error() {
         title_lines: BTreeMap::new(),
         title_balls: None,
         middle: Some((word.to_string(), Middle::Divider)),
+        effects: "classic".into(),
     };
     let got = Layout::new(&names[0], &names[1], &seeds).expect_err("it does not fit");
     assert_eq!(got, TitleError::MiddleDoesNotFit(word.to_string()));
@@ -420,6 +422,7 @@ fn without_opt_ins_the_layout_is_the_plain_cards() {
         title_lines: BTreeMap::new(),
         title_balls: None,
         middle: None,
+        effects: "classic".into(),
     };
     for (a, b) in [
         ("FLUTE", "TROMBONE"),

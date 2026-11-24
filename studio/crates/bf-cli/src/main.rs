@@ -30,6 +30,7 @@ mod cmd {
     pub mod check;
     pub mod frame;
     pub mod hash;
+    pub mod moves;
     pub mod render;
     pub mod search;
     pub mod sim;
@@ -79,6 +80,8 @@ enum Command {
     Render(cmd::render::Args),
     /// Print the replay line of each seed: winner, K.O. time, events and the recording's hash.
     Hash(cmd::hash::Args),
+    /// Draw contact sheets of a fight's moves, to look at how they read (a dev tool).
+    Moves(cmd::moves::Args),
     /// Measure how fast this PC fights, draws and sounds a video (milestone 1's measurements).
     Bench(cmd::bench::Args),
 }
@@ -186,6 +189,7 @@ fn run() -> Done {
         Command::Check(a) => cmd::check::run(&a, &ctx),
         Command::Render(a) => cmd::render::run(&a, &ctx),
         Command::Hash(a) => cmd::hash::run(&a, &ctx),
+        Command::Moves(a) => cmd::moves::run(&a, &ctx),
         Command::Bench(a) => cmd::bench::run(&a, &ctx),
     }
 }

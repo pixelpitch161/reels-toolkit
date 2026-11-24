@@ -21,6 +21,10 @@ use bf_picture::scene::{self, R_BALL as R};
 
 use crate::fighters::trumpet::TrumpetLook;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The cup's rubber.
 const RUBBER: V3 = [178.0, 34.0, 40.0];
 /// The cup's rim, lighter.
@@ -182,6 +186,9 @@ impl Look for CornetLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -226,6 +233,9 @@ impl Look for CornetLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         // STOP-TIME's break: the band comes back in, a bold ring in the cornet's colour
         let fade = 1.0 - w.r / w.rmax;
         let tint = p.col[w.owner].map(|v| v / 255.0 * 1.4 + 0.35);
@@ -241,6 +251,9 @@ impl Look for CornetLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !f.in_fight {
             return Vec::new();
         }
@@ -269,7 +282,35 @@ impl Look for CornetLook {
         out
     }
 
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         match payload.downcast_ref::<Item>() {
             Some(&Item::Cup(cx, cz, phase, bx, bz)) => {
                 let sag = if phase == 2.0 { 0.02 } else { 0.18 };
