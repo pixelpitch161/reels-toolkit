@@ -20,6 +20,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 
 use super::state::{Clap, Flank, Take, claps, flanks, takes};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The brass of the body.
 const BRASS: V3 = [228.0, 186.0, 84.0];
 /// Feather white, warm.
@@ -239,7 +243,42 @@ impl Look for FlugelLook {
         self.takes = takes(&p.rec.events, k);
     }
 
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, bf_picture::look::Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &bf_picture::look::Payload) {
+        if p.bold {
+            self.bold_draw_item(p, f, fr, payload);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the bold wings and feathers are painter items and crisp overlays (`bold.rs`)
+            return;
+        }
         let (cam, t, k) = (f.cam, f.t, self.k);
         if f.in_fight {
             self.draw_feathers(p, f, arr);
