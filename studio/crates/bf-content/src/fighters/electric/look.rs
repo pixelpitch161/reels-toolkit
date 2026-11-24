@@ -36,6 +36,10 @@ use bf_picture::title::layout;
 
 use crate::fighters::shared::reeds::{self, INK, Num, Px};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `CORE`: the bolts' white-hot core.
 const CORE: V3 = [246.0, 255.0, 238.0];
 /// `SPARK_COLS`.
@@ -558,6 +562,9 @@ impl Look for ElectricLook {
 
     // ------------------------------------------------------------ state
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold && kk == self.k && phase == Phase::Fight {
+            self.bold_state(p, st, t);
+        }
         if kk != self.k || phase == Phase::Rev {
             return;
         }
@@ -584,6 +591,13 @@ impl Look for ElectricLook {
                 raise_glow(st, 0.4 * dmath::exp(-(tc - self.bolt_t[j as usize]) / 0.08));
             }
         }
+    }
+
+    fn ball(&self, p: &PictureCtx, kk: usize, _st: &BallState, t: f64, glass: [f64; 3], roll: f64) -> ([f64; 3], f64) {
+        if p.bold && kk == self.k {
+            return (glass, self.bold_roll(p, t, roll));
+        }
+        (glass, roll)
     }
 
     fn hides_hp(&self, p: &PictureCtx, kk: usize, t: f64) -> bool {
@@ -780,6 +794,9 @@ impl Look for ElectricLook {
 
     // ------------------------------------------------------------ the canvas
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         // P.COL[self.k] / 255.0 * 0.9 + 0.15
         let col = p.col[self.k].map(|v| v / 255.0 * 0.9 + 0.15);
         for (b, k_) in self.live_bolts(p, c.t) {
@@ -802,6 +819,9 @@ impl Look for ElectricLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind != "smash" {
             return;
         }
@@ -825,6 +845,10 @@ impl Look for ElectricLook {
 
     // ------------------------------------------------------------ the painter pass: its pieces while smashed
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            // the four shards are drawn after the grade
+            return Vec::new();
+        }
         let Some((sm, u)) = self.smash_at(p, f.t) else {
             return Vec::new();
         };
@@ -894,6 +918,9 @@ impl Look for ElectricLook {
 
     // ------------------------------------------------------------ effects over the ring
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let (cam, k, t, fno) = (f.cam, self.k, f.t, f.f as u64);
         let col = p.col[k];
         // posts about to strike: the ropes buzz first
@@ -1030,6 +1057,12 @@ impl Look for ElectricLook {
             let s0 = f.cam.wp(&[scene::to_world(p0[0], p0[1], p0[2])])[0];
             let (r, a) = if b.src >= 0 { (11.0, 0.6) } else { (8.0, 0.4) };
             fr.glow(s0.0, s0.1, r, col, a * k_);
+        }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
         }
     }
 
