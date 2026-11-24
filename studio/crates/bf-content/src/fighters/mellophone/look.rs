@@ -25,6 +25,10 @@ use bf_picture::scene::{self, A, R_BALL as R};
 
 use crate::fighters::trumpet::TrumpetLook;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The hot white-gold a wave warms to with its generations.
 const HOT: V3 = [255.0, 226.0, 160.0];
 /// The silver of the horn (rope-flash sparks).
@@ -357,7 +361,57 @@ impl Look for MellophoneLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn ball(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        _st: &bf_picture::ring::state::BallState,
+        t: f64,
+        glass: [f64; 3],
+        roll: f64,
+    ) -> ([f64; 3], f64) {
+        if p.bold {
+            return self.bold_ball(p, kk, t, glass, roll);
+        }
+        (glass, roll)
+    }
+
+    fn rope_events(&self, p: &PictureCtx) -> Vec<bf_picture::ring::ropes::RopeEv> {
+        if p.bold {
+            return self.bold_rope_events(p);
+        }
+        Vec::new()
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(p, e, by_damage)
+    }
+
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -403,6 +457,9 @@ impl Look for MellophoneLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !f.in_fight {
             return Vec::new();
         }
@@ -419,6 +476,9 @@ impl Look for MellophoneLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let col = p.col[self.k];
         match payload.downcast_ref::<Item>() {
             Some(Item::Wave(w)) => {

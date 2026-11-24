@@ -1,0 +1,40 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["OCTOBASS", "TARGET DUMMY"]
+arena = "ring"
+handicap = [1.0, 1.0]
+dmg_scale = 1.0
+tempo_bpm = 140.0
+seed = 576
+
+[pair_rules]
+
+[music]
+theme = "hot_jazz"
+arrangement = "composed"
+key = "D"
+scale = "harmonic minor"
+chords_intro = ["Dm", "A7"]
+chord_loop = ["Dm", "Dm", "Gm", "Gm", "Bb7", "A7", "Dm", "A7"]
+chords_tail = ["Bb7", "A7"]
+music_seed = 1
+
+[music.roles]
+
+[music.lines]
+
+[music.solos]
+
+[music.title_hits]
+"TARGET DUMMY" = [62, 69, 74]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+effects = "bold"
+
+[picture.title_lines]
+
+[captions]

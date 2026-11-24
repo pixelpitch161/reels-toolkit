@@ -21,6 +21,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 
 use super::state::{Horn, horns};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The silver of the body.
 const SILVER: V3 = [214.0, 216.0, 226.0];
 /// The gold of the key pads.
@@ -244,7 +248,37 @@ impl Look for ContraLook {
             .collect();
     }
 
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let (cam, t, k) = (f.cam, f.t, self.k);
         let st = &f.fs[k];
         if !st.vis || st.shattered {

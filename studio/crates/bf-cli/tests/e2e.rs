@@ -336,6 +336,143 @@ fn native_fight_renders() {
     assert!(saved.contains(&format!("\nseed = {seed}\n")), "{saved}");
 }
 
+/// The example with the bold effects (the attack upgrades and the side banners) makes a passing video: every
+/// check of the render passes, as it does for the classic look.
+#[test]
+#[ignore = "a whole 61 s render, about a minute and a half in release: run it by name"]
+fn a_bold_fight_renders() {
+    if !have_ffmpeg("a_bold_fight_renders") {
+        return;
+    }
+    let root = TempRoot::new("bold");
+    let ff = fight_file(&root, "flute_vs_trombone.toml", |text| {
+        assert!(text.contains("\n[picture]\n") && !text.contains("effects = "), "{text}");
+        text.replace("\n[picture]\n", "\n[picture]\neffects = \"bold\"\n")
+    });
+    let ran = ballfight(
+        &root.0,
+        &[
+            &"render",
+            &ff,
+            &"--rec",
+            &ep392(),
+            &"--out",
+            &root.join("out"),
+            &"--json",
+        ],
+    )
+    .ok("render");
+    assert_finished(&ran, "flute_vs_trombone", &root);
+    let saved = std::fs::read_to_string(root.join("out/flute_vs_trombone/flute_vs_trombone.toml")).unwrap();
+    assert!(saved.contains("effects = \"bold\""), "{saved}");
+}
+
+/// `ballfight moves --list` names every kind of event of a fight with its times, and `moves` draws a sheet of
+/// one of them with the bold effects.
+#[test]
+fn moves_lists_and_draws() {
+    let root = TempRoot::new("moves");
+    let fight = repo_root().join("studio/fights/dev/bold_cornet.toml");
+    let listed = ballfight(&root.0, &[&"moves", &fight, &"--list", &"--json"]).ok("moves --list");
+    let v = listed.json();
+    let kinds = v["kinds"].as_array().expect("the kinds");
+    assert!(
+        kinds
+            .iter()
+            .any(|k| k["label"].as_str().is_some_and(|l| l.starts_with("ability:")) && k["count"].as_u64() >= Some(1)),
+        "{v}"
+    );
+    let out = root.join("sheets");
+    let ran = ballfight(
+        &root.0,
+        &[
+            &"moves",
+            &fight,
+            &"--out",
+            &out,
+            &"--only-at",
+            &"--at",
+            &"12",
+            &"--json",
+        ],
+    )
+    .ok("moves");
+    let v = ran.json();
+    assert_eq!(v["effects"], "bold", "{v}");
+    assert_eq!(v["sheets"], 1, "{v}");
+    assert_eq!(entries(&out), ["moments.json".to_string(), "sheet_01.png".to_string()]);
+    // one tile of a 4 x 2 sheet of whole frames
+    assert_eq!(png_size(&out.join("sheet_01.png")), (360 * 4, 640 * 2));
+    let again = ballfight(
+        &root.0,
+        &[&"moves", &fight, &"--out", &out, &"--only-at", &"--at", &"12"],
+    )
+    .refused("moves");
+    assert!(again.contains("already exists"), "{again}");
+}
+
+/// Every fighter draws its bold moves without stopping the program: for each dev fight of `studio/fights/dev`
+/// (each fighter against the target dummy and, pressed to low HP, against the TROMBONE), 40 frames spread over
+/// the whole fight are drawn with the bold effects. A look that panics in some situation fails here, not in a
+/// person's render.
+#[test]
+#[ignore = "3360 frames of 84 fights, some minutes in release: run it by name"]
+fn every_fighter_draws_its_bold_moves() {
+    let dir = repo_root().join("studio/fights/dev");
+    let mut fights: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| {
+            let name = p.file_name().unwrap().to_string_lossy().into_owned();
+            name.starts_with("bold_") && name.ends_with(".toml")
+        })
+        .collect();
+    fights.sort();
+    assert!(
+        fights.len() >= 84,
+        "two dev fights for each of the 42 fighters: {}",
+        fights.len()
+    );
+    let times: Vec<String> = (0..40).map(|i| format!("{:.2}", 1.3 + 1.47 * f64::from(i))).collect();
+    let at = times.join(",");
+    let root = TempRoot::new("bold sweep");
+    let workers = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(fights.len());
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let failed = std::sync::Mutex::new(Vec::new());
+    std::thread::scope(|s| {
+        for _ in 0..workers {
+            s.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    let Some(fight) = fights.get(i) else { break };
+                    let name = fight.file_stem().unwrap().to_string_lossy().into_owned();
+                    let ran = ballfight(
+                        &root.0,
+                        &[&"moves", fight, &"--out", &root.join(&name), &"--only-at", &"--at", &at],
+                    );
+                    if ran.code != 0 || ran.stderr.contains("panicked") {
+                        let last = ran.stderr.lines().rev().take(6).collect::<Vec<_>>().join(" | ");
+                        failed
+                            .lock()
+                            .unwrap()
+                            .push(format!("{name}: exit code {}: {last}", ran.code));
+                    }
+                }
+            });
+        }
+    });
+    let failed = failed.into_inner().unwrap();
+    assert!(
+        failed.is_empty(),
+        "{} of {} fights failed:\n{}",
+        failed.len(),
+        fights.len(),
+        failed.join("\n")
+    );
+}
+
 /// `studio/replay/render_hashes.txt`.
 fn render_hashes_file() -> PathBuf {
     repo_root().join("studio/replay/render_hashes.txt")

@@ -118,6 +118,14 @@ impl std::error::Error for ShowError {}
 
 /// `kit/story.py` `captions(events, gap)`, reporting a malformed event instead of panicking.
 fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>, ShowError> {
+    try_captions_by(events, gap, false)
+}
+
+/// [`try_captions`], and with `each` the bold effects' rule: every first use is kept, whatever the gap. Each
+/// fighter's names show on its own side banner, so two fighters' specials close together no longer hide one
+/// another, and a fighter whose low-HP move comes right after another of its moves still gets that move named
+/// (its earlier banner makes way: see [`Show::new`]).
+fn try_captions_by(events: &[Event], gap: f64, each: bool) -> Result<Vec<(f64, usize, String)>, ShowError> {
     let mut out: Vec<(f64, usize, String)> = Vec::new();
     for (index, e) in events.iter().enumerate() {
         if e.kind != "ability" {
@@ -132,10 +140,11 @@ fn try_captions(events: &[Event], gap: f64) -> Result<Vec<(f64, usize, String)>,
         if !first.truthy() {
             continue;
         }
-        let keep = match out.last() {
-            None => true,
-            Some(last) => e.t - last.0 >= gap,
-        };
+        let keep = each
+            || match out.last() {
+                None => true,
+                Some(last) => e.t - last.0 >= gap,
+            };
         if keep {
             // (e[0], e[2], e[3]); e[2] indexes CAP_ABIL, so it must be fighter 0 or 1
             let who = e
@@ -296,7 +305,14 @@ impl Show {
         let t_solo = grid.next_bar(t_ko + 1.6);
 
         let mut caps_ability: [Vec<Cap>; 2] = [Vec::new(), Vec::new()];
-        for (t, who, name) in try_captions(&rec.events, CAP_GAP)? {
+        for (t, who, name) in try_captions_by(&rec.events, CAP_GAP, ff.bold())? {
+            // bold keeps every name, so one may come while the same fighter's last is still up: that one ends
+            // as the new one starts (classic's gap is longer than the hold, so this never changes a classic show)
+            if let Some(before) = caps_ability[who].last_mut()
+                && before.t1 > t
+            {
+                before.t1 = t;
+            }
             caps_ability[who].push(Cap::new(t, t + ABILITY_HOLD, &[&name]));
         }
         let cap_ko = vec![Cap::new(t_ko, t_ko + 1.25, &["*K.O.*"])];
@@ -407,6 +423,35 @@ mod tests {
         let rec = Recording::read(&studio().join("reference/fights/flute_vs_trombone/ep392.bfrec")).unwrap();
         let real = Show::new(&rec, &ff).unwrap();
         assert_eq!((&show.grid, &show.names), (&real.grid, &real.names));
+    }
+
+    /// A first-use `ability` event of `who` at `t`.
+    fn ability(t: f64, who: i64, name: &str) -> Event {
+        Event {
+            t,
+            kind: "ability".into(),
+            fields: vec![
+                Value::Int(who),
+                Value::Str(name.into()),
+                Value::Str("kind".into()),
+                Value::Int(1),
+            ],
+        }
+    }
+
+    #[test]
+    fn bold_names_every_first_use_and_classic_keeps_its_gap() {
+        // the left fighter's level 3 move and its low-HP move 0.85 s apart, the right fighter's in between
+        let events = [
+            ability(17.37, 0, "SLAP TONGUE"),
+            ability(17.9, 1, "POWER SLIDE"),
+            ability(18.22, 0, "LIGHTS OUT"),
+        ];
+        let classic = try_captions(&events, CAP_GAP).unwrap();
+        assert_eq!(classic, [(17.37, 0, "SLAP TONGUE".to_string())]);
+        let bold = try_captions_by(&events, CAP_GAP, true).unwrap();
+        let names: Vec<&str> = bold.iter().map(|c| c.2.as_str()).collect();
+        assert_eq!(names, ["SLAP TONGUE", "POWER SLIDE", "LIGHTS OUT"]);
     }
 
     #[test]

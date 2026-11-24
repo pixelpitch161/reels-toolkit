@@ -112,6 +112,11 @@ pub(crate) fn set_music(m: &mut Music, theme: &str, chord_loop: usize) {
 pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
     let [left, right] = [draft.fighters[0].as_str(), draft.fighters[1].as_str()];
     let mut ff = base_of(draft)?;
+    // Every fight made in the Studio is drawn with the bold effects (the upgraded attack visuals, 2026-11-24). A
+    // series episode opened from its own file (it carries its "BALLFIGHT #N" tag) keeps the look it was posted with.
+    if ff.series_tag.is_none() {
+        ff.picture.effects = bf_core::fightfile::EFFECTS[1].to_string();
+    }
     let written = written_parts(&ff, &draft.fighters);
     ff.fighters = vec![left.to_string(), right.to_string()];
     ff.handicap = draft.handicap.to_vec();

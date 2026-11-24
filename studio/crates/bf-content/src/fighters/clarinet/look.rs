@@ -32,6 +32,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 
 use crate::fighters::shared::reeds::{self, INK, KO_CHIPS, LAV_SPARK, Num, Px, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `np.linspace(a, b, n)`: `i * step + a`, the last value `b` itself.
 fn linspace(a: f64, b: f64, n: usize) -> Vec<f64> {
     let step = (b - a) / (n - 1) as f64;
@@ -446,6 +450,9 @@ impl Look for ClarinetLook {
         } else if phase == Phase::Tail && kk == self.k {
             reeds::tail_theta(p, kk, st, gl);
         }
+        if p.bold && phase == Phase::Fight && kk == self.k {
+            self.bold_state(p, st, t);
+        }
     }
 
     // ---------------------------------------------------------------- events
@@ -568,6 +575,9 @@ impl Look for ClarinetLook {
 
     // ---------------------------------------------------------------- canvas, effects over the ring
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         // the zip lines' lit paths
         let tint = p.col[self.k].map(|v| v / 255.0 + 0.2);
         for z in self.live_zips(p, c.t) {
@@ -586,7 +596,10 @@ impl Look for ClarinetLook {
         }
     }
 
-    fn canvas_wave(&self, _p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+    fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(ic, c, w);
+        }
         if w.kind != "stun" {
             return;
         }
@@ -605,6 +618,9 @@ impl Look for ClarinetLook {
     }
 
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let col = p.col[self.k];
         for z in self.live_zips(p, f.t) {
             draw_zip(arr, f.cam, &z, col, R);
@@ -655,6 +671,9 @@ impl Look for ClarinetLook {
     }
 
     fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_after_grade(p, img, f, drawn);
+        }
         if !f.in_fight {
             return;
         }
@@ -667,6 +686,10 @@ impl Look for ClarinetLook {
                 Pic::F64(a) => stun_stars(a, d, f.t, k, col),
             }
         }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
     }
 }
 

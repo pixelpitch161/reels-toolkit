@@ -314,6 +314,9 @@ impl Picture {
             look.over_ring(p, &fc, &mut fr, &mut arr, &mut depth);
         }
         p.draw_shards(&mut arr, &cam, t);
+        if p.bold {
+            p.bold_rope_sparks(&mut arr, &cam, t);
+        }
         stage!(Stage::OverRing, StagePic::F32(arr), None);
         p.sparks(&mut arr, &cam, t);
         stage!(Stage::Sparks, StagePic::F32(arr), None);
@@ -469,11 +472,18 @@ impl Picture {
         }
         stage!(Stage::Scrim, StagePic::F64(img64), None);
         let mut img = Pic::F64(img64);
+        // (bold effects, S7) the ring dims round a low-HP move's fighter, under every crisp mark
+        if p.bold {
+            p.bold_spotlight(&mut img, t, &drawn);
+        }
         // crisp status overlays (after the grade)
         for look in &p.looks {
             look.after_grade(p, &mut img, &fc, &drawn);
         }
         p.post_fx(&mut img, &cam, t, &fs, &drawn);
+        if p.bold {
+            p.bold_marks(&mut img, &cam, t, &fs, &drawn);
+        }
         stage!(Stage::PostFx, StagePic::from(&img), None);
         let mut out = img.to_bytes();
         drop(img);

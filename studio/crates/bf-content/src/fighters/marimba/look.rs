@@ -23,6 +23,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state::{self, Bounce, End, Throw};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The birch of a mallet's shaft.
 const BIRCH: V3 = [232.0, 214.0, 178.0];
 /// A hot head (many bounces): gold.
@@ -348,7 +352,62 @@ impl Look for MarimbaLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn rope_events(&self, p: &PictureCtx) -> Vec<bf_picture::ring::ropes::RopeEv> {
+        if p.bold {
+            return self.bold_rope_events(p);
+        }
+        Vec::new()
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, bf_picture::look::Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &bf_picture::look::Payload) {
+        if p.bold {
+            self.bold_draw_item(f, fr, payload);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, _p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(p, e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _d: &mut Img<f32>) {
+        if p.bold {
+            // the bold mallets are painter items (`bold_items_free`)
+            return;
+        }
         if !f.in_fight {
             return;
         }

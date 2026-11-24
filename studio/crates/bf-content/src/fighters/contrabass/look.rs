@@ -35,6 +35,10 @@ use super::state::{self, Land, Step};
 use crate::fighters::shared::padded::{PAD, padded_sprite};
 use crate::fighters::shared::reeds::{self, INK, Num, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `DUST`.
 const DUST: [V3; 3] = [[206.0, 196.0, 180.0], [170.0, 160.0, 148.0], [232.0, 224.0, 210.0]];
 /// `EAR`: elephant grey.
@@ -315,6 +319,9 @@ impl Look for ContrabassLook {
 
     // ------------------------------------------------------------ state
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t, phase);
+        }
         if kk != self.k || phase != Phase::Fight {
             return;
         }
@@ -511,6 +518,9 @@ impl Look for ContrabassLook {
 
     // ------------------------------------------------------------ the canvas: quake rings
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.owner != self.k {
             return;
         }
@@ -549,6 +559,9 @@ impl Look for ContrabassLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(&what) = payload.downcast_ref::<Item>() else {
             return;
         };
@@ -644,6 +657,9 @@ impl Look for ContrabassLook {
 
     // ------------------------------------------------------------ effects over the ring
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let (cam, k) = (f.cam, self.k);
         let t = f.t;
         let col = p.col[k];
@@ -697,6 +713,39 @@ impl Look for ContrabassLook {
                 reeds::blend(arr, &reeds::mask(&[], &[sp], 1), WHITE, Num::Py(kk));
             }
         }
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_overlay(&self, p: &PictureCtx, f: &FrameCtx<'_>, arr: &mut Img<f32>) {
+        if p.bold {
+            self.bold_canvas_overlay(p, f, arr);
+        }
+    }
+
+    fn ball_under(&self, p: &PictureCtx, kk: usize, _st: &BallState, t: f64, arr: &mut Img<f32>, cam: &Cam) {
+        if p.bold && kk == self.k {
+            self.bold_ball_under(p, t, arr, cam);
+        }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     fn shimmer(&self, _p: &PictureCtx, img: &mut Pic, cam: &Cam, t: f64, w: &Wave) {

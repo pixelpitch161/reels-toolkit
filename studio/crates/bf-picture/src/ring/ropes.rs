@@ -124,7 +124,10 @@ impl PictureCtx {
                 0.0,
                 1.0,
             );
-            let amp = 0.16 * py_min(1.6, r.spd / 2.6) * dmath::exp(-dt / 0.22) * dmath::cos(2.0 * dmath::PI * 5.0 * dt);
+            // (bold effects, S10) the rope bows further where it was hit and twangs back for longer
+            let (deep, ring_s) = if self.bold { (0.30, 0.3) } else { (0.16, 0.22) };
+            let amp =
+                deep * py_min(1.6, r.spd / 2.6) * dmath::exp(-dt / ring_s) * dmath::cos(2.0 * dmath::PI * 5.0 * dt);
             let lift = 1.0 - (y - 0.4) * 0.5;
             for (dv, &uv) in disp.iter_mut().zip(&u) {
                 // disp += amp * np.exp(-((u - uc) / 0.16) ** 2) * (1 - (y - 0.4) * 0.5)

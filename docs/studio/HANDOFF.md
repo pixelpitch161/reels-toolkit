@@ -205,6 +205,27 @@ name it, but never offered in the app. Its weapon and abilities are kind `dummy`
 engine lets in and skips. Example: `ballfight render fights/dev/trumpet_vs_target_dummy.toml --out <folder>`. Its
 fights never "fit the series" (no lead changes); that is expected, and the render's own checks pass.
 
+## The bold effects (attack upgrades, Nov 24)
+
+The owner picked upgraded attack visuals from a review page of all 42 fighters: twelve shared upgrades (hits in
+three sizes, weapons that stop on contact, wind-up warnings, a speed-up look, a low-HP spotlight, shields that show
+the block, livelier ropes, a level-up pop, status marks, less floor mess), a new look for all four moves of every
+fighter, and the special-move names on **side banners** (each fighter's own ribbon from its own side, so two names
+can show at once; the 4 s gap between names counts per fighter).
+
+- **Opt-in, look-only.** A fight file asks for them with `picture.effects = "bold"` (a format 2 key; the default
+  `classic` is every frame exactly as before, which is what the series' videos and the reference pictures use). The
+  app sets `bold` for every fight it builds (`bf-app/src/engine/convert.rs`), except an imported series episode.
+  Nothing of the fight, its timing or its sound changes.
+- **Where:** the toolkit and the ring's own upgrades in `bf-picture/src/bold/`; each fighter's moves in
+  `bf-content/src/fighters/<slug>/bold.rs`, behind `if p.bold` in its look.
+- **How to build or change a fighter's bold moves:** `docs/studio/bold-effects.md`. A new fighter needs a `bold.rs`
+  too (without one its moves are drawn classic inside a bold fight, which works but looks plainer).
+- **Looking at moves without rendering:** `ballfight moves <fight file> --out <new folder> [--zoom] [--kinds ...]`
+  draws contact sheets of the frames round each kind of event. `fights/dev/bold_<slug>.toml` (against the target
+  dummy) and `bold_<slug>_low.toml` (against a real fighter with the odds against it, for the low-HP move) exist
+  for every fighter.
+
 ## How to add a fighter
 
 The default is the **quick route** the 10 older fighters used (the owner's Nov 14 decision, ruling M4-R16): a

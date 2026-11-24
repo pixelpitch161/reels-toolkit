@@ -19,7 +19,8 @@ What runs there once it is switched on:
   PC-Tests: -p bf-app --test ui matchup::
   ```
 
-  Each line is what follows `cargo test --release --locked` in `studio/`. Or start it by hand: Actions, `pc-tests`,
+  Each line is what follows `cargo test --release --locked` in `studio/`. The app's own ffmpeg is unpacked first (from
+  the archive the PC keeps), so a named test that makes a video really makes it. Or start it by hand: Actions, `pc-tests`,
   Run workflow, with the lines in `tests` separated by `;`. The result is on the run's page.
 
 ## The switch

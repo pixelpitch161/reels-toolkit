@@ -32,6 +32,10 @@ use bf_picture::title::layout;
 use super::state;
 use crate::fighters::shared::reeds::{self, INK, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `AMBER`: the lacquer.
 const AMBER: V3 = [218.0, 156.0, 52.0];
 /// `KEYG`: the bright keys.
@@ -365,6 +369,10 @@ impl Look for TenorSaxLook {
 
     // ------------------------------------------------------------ state: the pose hop, the dive's flight path
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            // the strut's bounce and the pose's stretch first; the rest is the same
+            self.bold_state(p, kk, st, t, phase);
+        }
         if kk != self.k || phase != Phase::Fight {
             return;
         }
@@ -599,6 +607,9 @@ impl Look for TenorSaxLook {
 
     // ------------------------------------------------------------ the canvas: the catwalk, the throws' shadows
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -647,6 +658,9 @@ impl Look for TenorSaxLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -668,6 +682,9 @@ impl Look for TenorSaxLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         let honk = w.kind == "honk";
         if w.owner != self.k || !(honk || w.kind == "dive") {
             return;
@@ -692,6 +709,9 @@ impl Look for TenorSaxLook {
     // ------------------------------------------------------------ over the ring: the throws in flight, honk
     // lines, the hype pips, the crowd's hands under a stage diver
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         if !f.in_fight {
             return;
         }
@@ -834,6 +854,25 @@ impl Look for TenorSaxLook {
                 reeds::blend(arr, &seg, [60.0, 40.0, 52.0], Num::Py(0.9));
             }
         }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn crowd_laugh(&self, p: &PictureCtx, t: f64) -> Option<f64> {
+        if p.bold { self.bold_crowd(p, t) } else { None }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     fn shimmer(&self, _p: &PictureCtx, img: &mut Pic, cam: &Cam, t: f64, w: &Wave) {

@@ -22,6 +22,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state::{self, Stroke};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The hickory of a stick.
 const HICKORY: V3 = [226.0, 196.0, 140.0];
 /// A stick's tip bead.
@@ -296,7 +300,41 @@ impl Look for SnareDrumLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, _p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(p, e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _d: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         if !f.in_fight {
             return;
         }

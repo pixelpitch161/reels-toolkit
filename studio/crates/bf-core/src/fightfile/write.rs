@@ -101,6 +101,10 @@ impl FightFile {
         if let Some(fx) = p.fx_seed {
             let _ = writeln!(o, "fx_seed = {fx}");
         }
+        // written only when it is not the default, so every earlier file keeps its bytes
+        if p.effects != EFFECTS[0] {
+            let _ = writeln!(o, "effects = {}", w_str(&p.effects));
+        }
         if let Some(balls) = &p.title_balls {
             let balls: Vec<String> = balls.iter().map(|b| format!("[{}]", b.map(w_f64).join(", "))).collect();
             let _ = writeln!(o, "title_balls = [{}]", balls.join(", "));

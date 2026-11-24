@@ -22,6 +22,10 @@ use bf_picture::scene::{A, R_BALL as R, to_world};
 use super::state::{self, Bounce, Pierce};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// A needle's white-hot head and core.
 const WHITE: V3 = [255.0, 255.0, 246.0];
 /// The grenadilla body.
@@ -143,6 +147,8 @@ pub struct PiccoloLook {
     cuts: Vec<(f64, f64, f64)>,
     trills: Vec<f64>,
     shatter: Option<f64>,
+    /// What the bold look works out from the recording (empty without the bold effects).
+    bold: bold::Bold,
 }
 
 impl std::fmt::Debug for PiccoloLook {
@@ -246,6 +252,9 @@ impl Look for PiccoloLook {
         self.cuts = state::shield_cuts(ev, k);
         self.trills = state::trills(ev, k);
         self.shatter = state::shatter(ev, k);
+        if p.bold {
+            self.bold = Self::bold_setup(ev, k);
+        }
     }
 
     fn shake(&self, _p: &PictureCtx, e: &Event) -> Option<f64> {
@@ -356,7 +365,39 @@ impl Look for PiccoloLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn rope_events(&self, p: &PictureCtx) -> Vec<bf_picture::ring::ropes::RopeEv> {
+        if p.bold {
+            return self.bold_rope_events();
+        }
+        Vec::new()
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _d: &mut Img<f32>) {
+        if p.bold {
+            // the needles are drawn crisp after the grade (`bold_after_grade`)
+            return;
+        }
         if !f.in_fight {
             return;
         }

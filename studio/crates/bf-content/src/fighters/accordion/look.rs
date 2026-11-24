@@ -25,6 +25,10 @@ use bf_picture::scene::{self, A, R_BALL as R};
 use crate::fighters::shared::older::{Poly, annulus_polys, blend_into, mask_of_all, mask_of_lines};
 use crate::fighters::shared::reeds::Num;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `PLEAT_DK`.
 pub const PLEAT_DK: V3 = [46.0, 16.0, 44.0];
 /// `PLEAT_EDGE`.
@@ -704,6 +708,9 @@ impl Look for AccordionLook {
 
     // ------------------------------------------------------------ the open mouth lights the canvas under it
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !(p.show.grid.t_fight <= c.t && c.t < p.t_hs + 0.25) {
             return;
         }
@@ -742,6 +749,9 @@ impl Look for AccordionLook {
 
     // ------------------------------------------------------------ the painter: jaws, the clamp, the collar
     fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(p, f, st);
+        }
         if st.shield > 0.0 && st.vis && !st.shattered && self.shield_dur.is_some() && f.t < p.t_hs + 0.3 {
             let dz = f.cam.depth(&[scene::to_world(st.p[0], st.p[1], R)])[0];
             let back: Payload = Box::new(Item::Collar(false));
@@ -752,6 +762,9 @@ impl Look for AccordionLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let t = f.t;
         let tc = py_min(t, p.t_ko);
         let mut items: Vec<(f64, Payload)> = Vec::new();
@@ -774,7 +787,31 @@ impl Look for AccordionLook {
         items
     }
 
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(item) = payload.downcast_ref::<Item>() else {
             return;
         };

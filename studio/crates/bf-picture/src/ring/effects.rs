@@ -31,6 +31,10 @@ pub(super) fn shake(p: &PictureCtx, looks: &[Box<dyn Look>]) -> Shake {
             }
         }
     }
+    // (bold effects, S4) a short jolt on every heavy hit; the list is empty without them
+    for (t, a) in p.bold_fx.jolts() {
+        shk.add(t, a);
+    }
     shk.add(p.t_ko, 2.5);
     shk
 }

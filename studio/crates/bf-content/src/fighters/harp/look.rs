@@ -24,6 +24,10 @@ use crate::fighters::shared::older::{
 };
 use crate::fighters::shared::reeds::Num;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `STR_Y`: a string's height (just under the balls' centres).
 const STR_Y: f64 = 0.50;
 /// `DRAW_IN`: seconds to stretch a new string across.
@@ -321,7 +325,49 @@ impl Look for HarpLook {
         }
     }
 
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_wave(
+        &self,
+        p: &PictureCtx,
+        ic: &mut [V3],
+        c: &bf_picture::look::CanvasCtx<'_>,
+        w: &bf_picture::ring::state::Wave,
+    ) {
+        if p.bold {
+            self.bold_canvas_wave(p, ic, c, w);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(f, st);
+        }
         let sk = self.shield_k(st);
         if sk <= 0.0 {
             return Vec::new();
@@ -333,6 +379,9 @@ impl Look for HarpLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let mut out: Vec<(f64, Payload)> = Vec::new();
         for (pts, a, tw) in self.strings_at(p, f.t) {
             let mut m = [0.0; 3];
@@ -358,6 +407,9 @@ impl Look for HarpLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let col = p.col[self.k];
         let at = f.fs[self.k].p;
         match payload.downcast_ref::<Item>() {

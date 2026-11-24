@@ -524,6 +524,26 @@ pub trait Look: Send + Sync {
     // hook only on a look that has it, `hasattr`; the defaults here make calling every look the same thing).
     // Every look's opt-in is called (both sides, in `LOOKS` order) unless the method says otherwise.
 
+    // ------------------------------------------------------------ the bold effects (2026-11-24)
+    // Read only when the fight file asks for the bold effects (`PictureCtx::bold`); see [`crate::bold`].
+
+    /// The statuses this look's fighter has put on a ball (or on itself) at `t`, for the shared status marks
+    /// (S12): stunned, pinned, slowed, silenced, out of tune. The engine's own slow is marked without this.
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<crate::bold::Status> {
+        Vec::new()
+    }
+
+    /// How big one of its hits pops (S4): `by_damage` is the size its damage gives; `None` for a hit that
+    /// should not pop at all (a tick of something that burns or drains).
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: crate::bold::HitSize,
+    ) -> Option<crate::bold::HitSize> {
+        Some(by_damage)
+    }
+
     /// Opt-in `canvas_albedo(alb, C)`: the canvas albedo of every canvas pixel (`float64`), after `S.canvas_albedo`
     /// and before the fading marks. TURNTABLES: the record that turns under the ring.
     fn canvas_albedo(&self, p: &PictureCtx, alb: &mut [V3], c: &CanvasCtx<'_>) {}

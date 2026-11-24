@@ -36,6 +36,10 @@ use super::state::{self, Seg};
 use crate::fighters::shared::padded::padded_sprite;
 use crate::fighters::shared::reeds::{self, INK, Num, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `DUST`: the dust puffs' colours.
 const DUST: [V3; 3] = [[176.0, 156.0, 126.0], [140.0, 122.0, 98.0], [214.0, 200.0, 172.0]];
 /// `DUSTC`: the chalked line and the tread's edge.
@@ -631,6 +635,9 @@ impl Look for BassDrumLook {
 
     // ------------------------------------------------------------ the canvas: the dust line, tread, rings, targets
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let t = c.t;
         if !(self.t_fight <= t && t < p.t_ko + 0.6) {
             return;
@@ -683,6 +690,9 @@ impl Look for BassDrumLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind != "shockwave" {
             return;
         }
@@ -701,6 +711,9 @@ impl Look for BassDrumLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -777,6 +790,56 @@ impl Look for BassDrumLook {
                 reeds::blend(arr, &reeds::mask(&[], &[sp], 1), WHITE, Num::Py(0.85 * kk));
             }
         }
+    }
+
+    // ------------------------------------------------------------ the bold effects (nothing without `p.bold`)
+    fn ball_after_sprite(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        st: &BallState,
+        t: f64,
+        arr: &mut Img<f32>,
+        s: (f64, f64),
+        rp: f64,
+    ) {
+        if p.bold {
+            self.bold_wheel(p, kk, st, t, arr, s, rp);
+        }
+    }
+
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, bf_picture::look::Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &bf_picture::look::Payload) {
+        if p.bold {
+            self.bold_draw_item(f, fr, payload);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(p, e, by_damage)
     }
 
     // ------------------------------------------------------------ its parts (K.O. shatter)

@@ -59,6 +59,11 @@ pub const ARENAS: [&str; 1] = ["ring"];
 /// file gives none) and `composed` (milestone 5: the theme's layered bed with composed lines and solos).
 pub const ARRANGEMENTS: [&str; 2] = ["classic", "composed"];
 
+/// The fight effects this app has: `classic` (the series' look, the default when a file gives none, so every
+/// earlier video draws as it did) and `bold` (the upgraded attack visuals of 2026-11-24: readable weapons, hit
+/// sizes, wind-up warnings, status marks and a side banner for each fighter's special move).
+pub const EFFECTS: [&str; 2] = ["classic", "bold"];
+
 /// How many fighters a fight has.
 pub const FIGHTERS: usize = 2;
 
@@ -281,6 +286,8 @@ pub struct PictureSeeds {
     pub title_balls: Option<[[f64; 3]; 2]>,
     /// The kit's `MIDDLE` (format 2): another word instead of VS, and how it is turned. `None` is VS.
     pub middle: Option<(String, Middle)>,
+    /// The fight effects (format 2): one of [`EFFECTS`]; `classic` when a file gives none.
+    pub effects: String,
 }
 
 /// How the title card's middle word is turned (the second value of the kit's `MIDDLE`).
@@ -354,6 +361,11 @@ impl FightFile {
     pub fn chords(&self, n_bars: usize) -> Vec<String> {
         let m = &self.music;
         harmony::chords_for(&m.chords_intro, &m.chord_loop, &m.chords_tail, n_bars)
+    }
+
+    /// Whether the fight is drawn with the `bold` effects ([`EFFECTS`]).
+    pub fn bold(&self) -> bool {
+        self.picture.effects == EFFECTS[1]
     }
 
     /// The particle seed: `picture.fx_seed`, or the kit's default, the sum of the fighter names' character codes
@@ -648,6 +660,12 @@ pub fn is_extra_line(line: &str, fighter: &str) -> bool {
 
 impl PictureSeeds {
     fn check(&self, fighters: &[String]) -> Result<(), FightFileError> {
+        if !EFFECTS.contains(&self.effects.as_str()) {
+            return Err(err(
+                "picture.effects",
+                format!("must be one of {}, found {:?}", EFFECTS.join(", "), self.effects),
+            ));
+        }
         for (name, (a, b)) in &self.title_lines {
             let field = path("picture.title_lines", name);
             if !fighters.iter().any(|f| f == name) {

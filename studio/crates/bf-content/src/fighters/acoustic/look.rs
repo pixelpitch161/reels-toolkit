@@ -31,6 +31,10 @@ use bf_picture::{np, pil};
 use super::state::{self, Rake, Sweep, Whip};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `CLAW_COL`: the claw marks where a stroke ends.
 const CLAW_COL: V3 = [70.0, 44.0, 30.0];
 /// `STRINGS6`: wound bronze E A D, plain G B E.
@@ -551,6 +555,10 @@ impl Look for AcousticLook {
             let col = p.fl_col[k].map(|c| c * 0.9);
             fx.fl
                 .add(r.t0 + r.dur * 0.5, world(mid, 0.7), col, 1.3, peak, 0.03, 0.14, 0.0);
+            if p.bold {
+                // the bold look pops notes off the strings instead of marking the floor
+                continue;
+            }
             if r.t0 + r.dur < p.t_ko {
                 fx.mk.add(
                     r.t0 + r.dur,
@@ -654,6 +662,9 @@ impl Look for AcousticLook {
 
     // ------------------------------------------------------------ the canvas
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let (rakes_now, _, sweeps_now, ta) = self.now(p, c.t);
         for s in &rakes_now {
             // light under each stroke's six strings
@@ -694,7 +705,11 @@ impl Look for AcousticLook {
 
     // ------------------------------------------------------------ the painter pass
     /// CAPO: clamped across the ball while it lasts (drawn right after the ball: the same depth).
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            // the bold capo is drawn after the grade
+            return Vec::new();
+        }
         if self.capo_dur > 0.0 && st.haste > 0.0 && f.in_fight {
             let pw = world(st.p, R);
             let capo: Payload = Box::new(Item::Capo);
@@ -704,6 +719,9 @@ impl Look for AcousticLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let (rakes_now, whips_now, sweeps_now, _) = self.now(p, f.t);
         let cam = f.cam;
         let mut out: Vec<(f64, Payload)> = Vec::new();
@@ -723,7 +741,25 @@ impl Look for AcousticLook {
         out
     }
 
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(e, by_damage)
+    }
+
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(item) = payload.downcast_ref::<Item>() else {
             return;
         };
@@ -872,6 +908,10 @@ impl Look for AcousticLook {
     // ------------------------------------------------------------ lens
     /// BIG STRUM's front ripples the air.
     fn shimmer_after(&self, p: &PictureCtx, img: &mut Pic, cam: &Cam, t: f64) {
+        if p.bold {
+            // the bold BIG STRUM is a turning hand, not a front
+            return;
+        }
         if !self.show(p, t) {
             return;
         }

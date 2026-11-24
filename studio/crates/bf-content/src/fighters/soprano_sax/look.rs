@@ -19,6 +19,10 @@ use bf_picture::scene::{self, R_BALL as R};
 
 use crate::fighters::alto_sax::AltoSaxLook;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// A hornet's yellow.
 const YELLOW: V3 = [250.0, 204.0, 40.0];
 /// A hornet's black stripes and head.
@@ -193,6 +197,9 @@ impl Look for SopranoSaxLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -219,6 +226,9 @@ impl Look for SopranoSaxLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !f.in_fight {
             return Vec::new();
         }
@@ -287,7 +297,10 @@ impl Look for SopranoSaxLook {
             .collect()
     }
 
-    fn draw_item(&self, _p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(f, fr, payload);
+        }
         if let Some(b) = payload.downcast_ref::<Bee>() {
             if let Some((px, pz)) = b.trail {
                 // a faint dotted buzz trail
@@ -300,6 +313,42 @@ impl Look for SopranoSaxLook {
             }
             draw_bee(fr, f.cam, b, f.t);
         }
+    }
+
+    // ------------------------------------------------------------ the bold effects
+    fn state(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        st: &mut bf_picture::ring::state::BallState,
+        t: f64,
+        phase: bf_picture::look::Phase,
+        _gl: f64,
+    ) {
+        if p.bold {
+            self.bold_state(p, kk, st, t, phase);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &bf_core::event::Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 }
 

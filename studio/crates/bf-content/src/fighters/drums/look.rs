@@ -25,6 +25,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use crate::fighters::shared::older::{Poly, annulus_polys, blend_into, mask_of_all, mask_of_lines};
 use crate::fighters::shared::reeds::Num;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `SKIN`: the drumhead's cream.
 const SKIN: V3 = [246.0, 238.0, 216.0];
 /// `CHROME`: the lugs.
@@ -391,6 +395,9 @@ impl Look for DrumsLook {
 
     /// The drum's reach (a faint dashed ring), then each pulse lighting the canvas under its ring.
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let col = p.col[self.k];
         let st = &c.fs[self.k];
         if c.in_fight && st.vis {
@@ -435,6 +442,9 @@ impl Look for DrumsLook {
 
     /// The drumhead rings, on the lit canvas.
     fn canvas_overlay(&self, p: &PictureCtx, f: &FrameCtx<'_>, arr: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_canvas_overlay(p, f, arr);
+        }
         let col = p.col[self.k];
         for q in self.pulse_list(p, f.t) {
             let tt = if q.t0 < p.t_ko { py_min(f.t, p.t_ko) } else { f.t };
@@ -444,7 +454,10 @@ impl Look for DrumsLook {
         }
     }
 
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(p, f);
+        }
         let sk = self.shield_k(st);
         if sk <= 0.0 {
             return Vec::new();
@@ -455,7 +468,10 @@ impl Look for DrumsLook {
         vec![(dz + 0.05, back), (dz - 0.05, front)]
     }
 
-    fn draw_item(&self, _p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(f, fr, payload);
+        }
         let at = f.fs[self.k].p;
         if let Some(Item::Cymbal(half, k)) = payload.downcast_ref::<Item>() {
             let (mut arr, depth) = (fr.array(), fr.depth());
@@ -466,6 +482,10 @@ impl Look for DrumsLook {
 
     /// DOUBLE KICK: the beater, a tap an 8th early, then the stomp.
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the bold beater is drawn after the grade
+            return;
+        }
         if !f.in_fight {
             return;
         }
@@ -485,6 +505,27 @@ impl Look for DrumsLook {
                 draw_beater(arr, f.cam, cx, cz, rad, h, a);
             }
         }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &bf_core::event::Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 }
 

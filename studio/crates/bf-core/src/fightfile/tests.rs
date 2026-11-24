@@ -1130,3 +1130,33 @@ fn a_format_1_file_cannot_hold_a_chord_in_a_solo() {
          file with it says format = 2)"
     );
 }
+
+#[test]
+fn the_effects_default_to_classic_and_bold_is_opt_in() {
+    // a file that says nothing draws as it always did, and is written back without the setting
+    let ff = episode();
+    assert_eq!(ff.picture.effects, "classic");
+    assert!(!ff.bold());
+    assert!(!ff.to_toml().contains("effects"));
+    // the bold effects: read, written and read back
+    let mut bold = ff.clone();
+    bold.picture.effects = "bold".into();
+    assert!(bold.bold());
+    let text = bold.to_toml();
+    assert!(text.contains("effects = \"bold\""));
+    let back = FightFile::parse(&text).expect("the bold file reads back");
+    assert_eq!(back, bold);
+    // they never feed the fight
+    for feeds in [[false, false], [true, true]] {
+        assert_eq!(bold.search_key(&feeds), ff.search_key(&feeds));
+    }
+    // another word is refused by name
+    let mut odd = ff.clone();
+    odd.picture.effects = "sparkly".into();
+    let e = validate_err(&odd);
+    assert!(e.starts_with("picture.effects: must be one of classic, bold"), "{e}");
+    // and a format 1 file cannot hold it
+    assert!(FORMAT1.contains("[picture]"));
+    let e = parse_err(&FORMAT1.replace("[picture]", "[picture]\neffects = \"bold\""));
+    assert!(e.contains("effects"), "{e}");
+}

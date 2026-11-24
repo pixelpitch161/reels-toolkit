@@ -193,6 +193,11 @@ pub struct PictureCtx {
     /// The VS title card's `WORDS` and `BALLS` (`title.py`, imported before the looks are made): the fight
     /// file's opt-ins applied. A look that reads `TT.BALLS` in its `setup` (TUBA's panel rings) reads it here.
     pub title: Layout,
+    /// Whether the fight file asks for the bold effects (`picture.effects = "bold"`, [`crate::bold`]). A look
+    /// draws its upgraded moves only when this is set; without it every frame is the one it always was.
+    pub bold: bool,
+    /// The shared bold effects, worked out once from the recording (empty without [`PictureCtx::bold`]).
+    pub bold_fx: crate::bold::Shared,
 }
 
 /// One fight's video: the frames of `kit.picture.render`.
@@ -538,6 +543,8 @@ impl Picture {
             static_casters: canvas::static_casters(),
             canvas_grid: canvas::canvas_grid(),
             title,
+            bold: ff.bold(),
+            bold_fx: crate::bold::Shared::default(),
             cfg,
             show,
             rec,
@@ -557,6 +564,9 @@ impl Picture {
         }
         // FL_COL = COL[k] * LOOKS[k].flare_scale: near-white fighters scaled down
         p.fl_col = [0, 1].map(|k| p.col[k].map(|c| c * looks[k].flare_scale()));
+        if p.bold {
+            p.bold_fx = crate::bold::Shared::new(&p, &looks);
+        }
         p.shk = effects::shake(&p, &looks);
         p.wave_ev = ropes::wave_events(&p, &looks);
         (p.parts, p.traj) = shards::shards(p.shard_seed, p.p_ko[p.lose], &looks[p.lose].shards());
@@ -564,6 +574,10 @@ impl Picture {
         p.looks = looks;
         // every effect, once, in time order
         let mut fx = std::mem::replace(&mut p.fx, Fx::new(fx_seed));
+        if p.bold {
+            // S8, less floor mess: marks fade within two beats and only the newest few are kept
+            fx.mk.cap_lives(2.0 * p.show.grid.beat, 6);
+        }
         effects::fx_build(&p, &mut fx);
         p.fx = fx;
         // the looks' rope events (opt-in `rope_events`), sorted with the recording's as Python sorts the tuples

@@ -412,6 +412,15 @@ impl PictureCtx {
             for l in &self.looks {
                 l.state(self, k, &mut st, t, Phase::Fight, 0.0);
             }
+            // (bold effects, S4) a heavy hit squashes its victim for a moment, unless its look shapes it already
+            if self.bold
+                && st.sx.is_none()
+                && st.sy.is_none()
+                && let Some((sx, sy)) = self.bold_fx.squash(k, t)
+            {
+                st.sx = Some(sx);
+                st.sy = Some(sy);
+            }
             if t >= self.t_ko && k == self.lose {
                 st.glow = 1.0;
                 st.glow_np = false;
