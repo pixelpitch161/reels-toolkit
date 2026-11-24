@@ -32,23 +32,42 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// The frozen files of each version: (version, [(file, SHA-256)]). A folder under `tests/compat` that is not listed
 /// here, or a file that does not match, fails `the_frozen_files_are_unchanged`.
-const FROZEN: &[(&str, &[(&str, &str)])] = &[(
-    "0.1.0",
-    &[
-        (
-            "settings.toml",
-            "77e34f78e6869735c75c11c83b3dc231dbec92dc5cc44d7596b8d5c171ec6c55",
-        ),
-        (
-            "queue.json",
-            "3ac384f3072a5a848d33b730e515c203808d0d3d37283f63ac6b8e7e4e46793b",
-        ),
-        (
-            "fight.toml",
-            "62e8d3080e2b91150374049254c1f549c4097af8b4c35564e66e5b008673e6ef",
-        ),
-    ],
-)];
+const FROZEN: &[(&str, &[(&str, &str)])] = &[
+    (
+        "0.1.0",
+        &[
+            (
+                "settings.toml",
+                "77e34f78e6869735c75c11c83b3dc231dbec92dc5cc44d7596b8d5c171ec6c55",
+            ),
+            (
+                "queue.json",
+                "3ac384f3072a5a848d33b730e515c203808d0d3d37283f63ac6b8e7e4e46793b",
+            ),
+            (
+                "fight.toml",
+                "62e8d3080e2b91150374049254c1f549c4097af8b4c35564e66e5b008673e6ef",
+            ),
+        ],
+    ),
+    (
+        "1.9.0",
+        &[
+            (
+                "settings.toml",
+                "89bfd7fe9988f751eb734ae3bf5fa7ea8ab7f4205102110134ae9153f82b43b3",
+            ),
+            (
+                "queue.json",
+                "3e0a3da44d51dbb6571493fbbe524f7a833c2a4220e12e7edc8c3e0cbcafbebd",
+            ),
+            (
+                "fight.toml",
+                "f3e190b0193e8e3d029e4abc4374898e1ab1a8daa825afc367d9280a746e792c",
+            ),
+        ],
+    ),
+];
 
 /// The three files of a version's folder.
 const FILES: [&str; 3] = ["settings.toml", "queue.json", "fight.toml"];

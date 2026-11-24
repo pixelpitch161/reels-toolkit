@@ -1,6 +1,6 @@
-# BALLFIGHT Studio: handoff brief (updated Nov 23)
+# BALLFIGHT Studio: handoff brief (updated Nov 24)
 
-## Status (Nov 23, version 1.8.2): the packaged Studio, 42 fighters, 62 themes, the music system
+## Status (Nov 24, version 1.9.0): the packaged Studio, 42 fighters, 62 themes, the music system, the bold effects
 
 **Rust is now the source of truth for BALLFIGHT. The Python kit in `projects/ballfight/` is a frozen archive: it is
 kept so old episodes replay, and no new work goes there.** Its README is not edited by this build (nothing under
