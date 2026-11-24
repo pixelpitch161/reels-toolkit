@@ -1185,12 +1185,7 @@ fn refuse_running_old(target: &Path, old: &Manifest, new: &Manifest) -> Result<(
             let replaced = new
                 .find(p)
                 .is_some_and(|(_, _, sha)| sha256_file(&f).is_ok_and(|now| &now == sha));
-            let used = in_use(&f);
-            if used {
-                let e = fs::OpenOptions::new().write(true).open(&f).err();
-                eprintln!("DIAG in use: {} replaced={replaced} err={e:?}", f.display());
-            }
-            used && !replaced
+            in_use(&f) && !replaced
         });
     if running {
         Err(PackError::Refused(CLOSE_FIRST.to_string()))
