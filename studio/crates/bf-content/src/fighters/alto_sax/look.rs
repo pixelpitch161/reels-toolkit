@@ -33,6 +33,10 @@ use bf_picture::scene::{self, R_BALL as R};
 
 use crate::fighters::shared::reeds::{self, Num, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `WARM`: the pool's light (a tungsten follow-spot).
 const WARM: V3 = [1.0, 0.93, 0.80];
 /// `HOT`: ALTISSIMO, white-hot.
@@ -408,6 +412,9 @@ impl Look for AltoSaxLook {
 
     // ------------------------------------------------------------ the canvas: the pools of light, the dimmed ring
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let bayer = config::bayer_full();
         let own = p.col[self.k].map(|v| v / 255.0);
         for s in self.lights_at(p, c.in_fight, c.i) {
@@ -460,6 +467,9 @@ impl Look for AltoSaxLook {
 
     /// The arena dims only in a ring around each pool (the follow-spot's contrast), never the whole canvas.
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         let bayer = config::bayer_full();
         for s in self.lights_at(p, c.in_fight, c.i) {
             if s.kind == 3 {
@@ -481,6 +491,9 @@ impl Look for AltoSaxLook {
 
     // ------------------------------------------------------------ the cones from the rafters, the phones' rays
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, fr, arr);
+        }
         let cam = f.cam;
         let bayer = config::bayer_full();
         for s in self.lights_at(p, f.in_fight, f.i) {
@@ -529,6 +542,21 @@ impl Look for AltoSaxLook {
                 fr.glow(g.0, g.1, 9.0, [255.0, 244.0, 220.0], 0.7 * fade);
             }
         }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut bf_picture::look::Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(p, e, by_damage)
     }
 
     fn glows(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _drawn: &[DrawnBall]) {
