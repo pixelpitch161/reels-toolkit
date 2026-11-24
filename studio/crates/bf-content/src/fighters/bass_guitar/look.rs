@@ -22,6 +22,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state::{self, Throw};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The neck's maple.
 const MAPLE: V3 = [232.0, 196.0, 132.0];
 /// The frets and the headstock's dark face.
@@ -417,7 +421,71 @@ impl Look for BassGuitarLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn state(
+        &self,
+        p: &PictureCtx,
+        kk: usize,
+        st: &mut bf_picture::ring::state::BallState,
+        t: f64,
+        _phase: bf_picture::look::Phase,
+        _gl: f64,
+    ) {
+        if p.bold {
+            self.bold_state(p, kk, st, t);
+        }
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_overlay(&self, p: &PictureCtx, f: &FrameCtx<'_>, arr: &mut Img<f32>) {
+        if p.bold {
+            self.bold_canvas_overlay(p, f, arr);
+        }
+    }
+
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, bf_picture::look::Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &bf_picture::look::Payload) {
+        if p.bold {
+            self.bold_draw_item(p, f, fr, payload);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _d: &mut Img<f32>) {
+        if p.bold {
+            // the bold look draws its moves in the painter pass and on the canvas (`bold.rs`)
+            return;
+        }
         if !f.in_fight {
             return;
         }

@@ -37,6 +37,10 @@ use bf_picture::shadows::proj_point;
 use bf_picture::title::layout;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 const SILVER: V3 = [206.0, 214.0, 228.0];
 const SILVER_HI: V3 = [250.0, 252.0, 255.0];
 const SILVER_DK: V3 = [120.0, 128.0, 150.0];
@@ -1146,6 +1150,9 @@ impl Look for FluteLook {
 
     /// PICCOLO: a thin ring with a fine, fast shiver.
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind != "wave" {
             return;
         }
@@ -1166,7 +1173,43 @@ impl Look for FluteLook {
     }
 
     // ------------------------------------------------------------ baskets + cobras in the painter pass
+    fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, _phase: bf_picture::look::Phase, _gl: f64) {
+        if p.bold {
+            self.bold_state(p, kk, st, t);
+        }
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_overlay(&self, p: &PictureCtx, f: &FrameCtx<'_>, arr: &mut Img<f32>) {
+        if p.bold {
+            self.bold_canvas_overlay(p, f, arr);
+        }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let mut out: Vec<(f64, Payload)> = Vec::new();
         for c in self.cobs(p, f) {
             let dzb = f.cam.depth(&[to_world(c.home[0], c.home[1], 0.12)])[0];
@@ -1180,6 +1223,9 @@ impl Look for FluteLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let c = match payload.downcast_ref::<Item>() {
             Some(Item::Basket(c)) => {
                 draw_basket(fr, f.cam, f.l, c.home[0], c.home[1], c.bk);
