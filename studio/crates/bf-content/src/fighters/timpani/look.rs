@@ -21,6 +21,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 
 use super::state::{self, Boom, Hop};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The kettle's copper.
 const COPPER: V3 = [184.0, 100.0, 46.0];
 /// Copper in shadow.
@@ -233,6 +237,9 @@ impl Look for TimpaniLook {
     }
 
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t, phase);
+        }
         if kk != self.k || !matches!(phase, Phase::Fight) || t >= p.t_ko {
             return;
         }
@@ -366,6 +373,9 @@ impl Look for TimpaniLook {
 
     /// The kettles and their rings, on the floor under the balls.
     fn canvas_overlay(&self, p: &PictureCtx, f: &FrameCtx<'_>, arr: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_canvas_overlay(p, f, arr);
+        }
         if !f.in_fight || f.t >= p.t_hs {
             return;
         }
@@ -383,6 +393,33 @@ impl Look for TimpaniLook {
             let flash = if age < 0.25 { 1.0 - age / 0.25 } else { 0.0 };
             draw_kettle(arr, f.cam, x, z, kr, flash);
         }
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     #[allow(clippy::too_many_arguments)]
