@@ -24,6 +24,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state;
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The arms' dark wood.
 const WOOD: V3 = [70.0, 44.0, 24.0];
 /// The brass edge of an arm and the pedal plate.
@@ -160,6 +164,8 @@ pub struct OctobassLook {
     pedals: Vec<(f64, f64, f64)>,
     /// When its rings landed.
     booms: Vec<f64>,
+    /// What the bold look works out from the recording (empty without the bold effects).
+    bold: bold::Bold,
 }
 
 impl std::fmt::Debug for OctobassLook {
@@ -231,10 +237,16 @@ impl Look for OctobassLook {
             .filter(|e| e.kind == "below_hit" && e.who() == Some(k) && e.i(3) == 1)
             .map(|e| e.t)
             .collect();
+        if p.bold {
+            self.bold = Self::bold_setup(p, k);
+        }
     }
 
     /// A pedal-popped enemy flies up and drops back.
-    fn state(&self, _p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, _phase: Phase, _gl: f64) {
+    fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, _phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t);
+        }
         if kk == self.k {
             return;
         }
@@ -328,7 +340,61 @@ impl Look for OctobassLook {
         fx.pa.emit(p.t_ko, pos, "sparks", &sparks);
     }
 
+    fn ball(&self, p: &PictureCtx, kk: usize, _st: &BallState, t: f64, glass: [f64; 3], roll: f64) -> ([f64; 3], f64) {
+        if p.bold {
+            return (glass, self.bold_roll(kk, t, roll));
+        }
+        (glass, roll)
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, bf_picture::look::Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &bf_picture::look::Payload) {
+        if p.bold {
+            self.bold_draw_item(f, fr, payload);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, _p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(e, by_damage)
+    }
+
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _d: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(f, arr);
+        }
         if !f.in_fight {
             return;
         }
