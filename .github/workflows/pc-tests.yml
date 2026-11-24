@@ -108,6 +108,22 @@ jobs:
           rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
           rustc -vV
 
+      # The tests that make a video (the command line's whole renders) need the app's own ffmpeg: the build pinned in
+      # studio/packaging/ffmpeg.toml, unpacked from the archive the PC keeps in BF_PC_FFMPEG_CACHE (as the studio
+      # checks do). With it, BF_NEED_FFMPEG=1 makes "ffmpeg is not usable here" a failure instead of a test that
+      # passes without rendering. Without it (no archive, no network) the tests run as before and say they skipped.
+      - name: Fetch the app's own ffmpeg
+        run: |
+          tmp="$(cygpath -u '${{ runner.temp }}')"
+          if cargo run --release --locked -p bf-pack --bin ballfight-pack -- fetch-ffmpeg \
+              --cache "$BF_PC_FFMPEG_CACHE" --out "$(cygpath -w "$tmp/ffmpeg")" && [ -f "$tmp/ffmpeg/ffmpeg.exe" ]; then
+            "$tmp/ffmpeg/ffmpeg.exe" -version | head -n 1
+            echo "BALLFIGHT_FFMPEG=$(cygpath -w "$tmp/ffmpeg/ffmpeg.exe")" >> "$GITHUB_ENV"
+            echo "BF_NEED_FFMPEG=1" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=ffmpeg::the app's own ffmpeg was not fetched: tests that make a video will skip that part"
+          fi
+
       # The lines were checked by the pick job (only letters, digits, spaces and . _ : = / , -), so splitting them
       # into words is safe.
       - name: Run the named tests
