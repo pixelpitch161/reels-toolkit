@@ -39,6 +39,10 @@ use bf_picture::title::patterns::turntables as pattern;
 use bf_picture::ui::{DrawLog, Kind as NoteKind};
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 // ---------------------------------------------------------------- #31 styles.py
 /// `VINYL`: a record's black.
 const VINYL: V3 = [30.0, 28.0, 38.0];
@@ -886,6 +890,9 @@ impl Look for TurntablesLook {
 
     // ------------------------------------------------------------ the canvas: THE RECORD
     fn canvas_albedo(&self, p: &PictureCtx, alb: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_albedo(p, alb, c);
+        }
         let phi = self.floor_angle(p, c.t);
         for (j, a) in alb.iter_mut().enumerate() {
             *a = record_albedo(*a, c.sxp[j], c.szp[j], phi, self.col).0;
@@ -905,6 +912,10 @@ impl Look for TurntablesLook {
 
     /// The champion's solo: groove rings of light (a stab's: 1.9 out).
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            // the jerks' streak arcs, under the solo's rings
+            self.bold_canvas(p, ic, c);
+        }
         let t = c.t;
         // (t >= T_SOLO - 0.01, NaN-free times)
         if p.win != self.k || t < p.t_solo - 0.01 {
@@ -941,6 +952,9 @@ impl Look for TurntablesLook {
 
     /// BASS DROP's target darkening with a flashing rim, then the stomp ring.
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -997,6 +1011,9 @@ impl Look for TurntablesLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let (k, t, cam) = (self.k, f.t, f.cam);
         match payload.downcast_ref::<Item>() {
             Some(Item::Ghosts) => {
@@ -1032,6 +1049,10 @@ impl Look for TurntablesLook {
     }
 
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the falling record is drawn crisp, over the low-HP spotlight (`bold_after_grade`)
+            return;
+        }
         self.draw_drop(p, arr, f.cam, f.t, f.i, f.in_fight, true);
     }
 
@@ -1107,6 +1128,22 @@ impl Look for TurntablesLook {
                 }
             }
         }
+    }
+
+    // ------------------------------------------------------------ the bold effects (nothing without `p.bold`)
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     // ------------------------------------------------------------ lens, post
