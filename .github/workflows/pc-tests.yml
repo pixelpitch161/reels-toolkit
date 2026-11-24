@@ -26,9 +26,8 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: pc-tests-${{ github.ref }}
-  cancel-in-progress: true
+# No concurrency group: a later push that names no tests must not cancel a run that does. The PC runs one job at a
+# time anyway.
 
 env:
   CARGO_TERM_COLOR: always
