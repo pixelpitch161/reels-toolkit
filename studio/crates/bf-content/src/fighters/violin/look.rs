@@ -22,6 +22,10 @@ use bf_picture::{np, pil};
 
 use crate::fighters::shared::older::{Dart, draw_dart};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `STICK`: pernambuco.
 const STICK: V3 = [92.0, 44.0, 30.0];
 /// `STICK_HI`.
@@ -156,6 +160,8 @@ pub struct ViolinLook {
     k: usize,
     /// TREMOLO's grid multiplier (`CFG[k]['abilities']['unlock2']['mult']`), 1.0 without one.
     mult: f64,
+    /// What the bold look works out from the recording (empty without the bold effects).
+    bold: bold::Bold,
 }
 
 impl Look for ViolinLook {
@@ -172,12 +178,51 @@ impl Look for ViolinLook {
         Some(format!("abilities.unlock2.mult={}", self.mult))
     }
 
-    fn setup_as(&mut self, _p: &PictureCtx, k: usize, cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
         self.mult = cfg.unlock2.get("mult").unwrap_or(1.0);
+        if p.bold {
+            self.bold = Self::bold_setup(p, k);
+        }
+    }
+
+    fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, _phase: bf_picture::look::Phase, _gl: f64) {
+        if p.bold {
+            self.bold_state(kk, st, t);
+        }
+    }
+
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &bf_core::event::Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         // SCREECH: a jagged, shivering ring (#28)
         let k_ = (1.0 - w.r / w.rmax) * 1.3;
         let tint = p.col[w.owner].map(|v| v / 255.0 * 1.4 + 0.35);
@@ -197,7 +242,10 @@ impl Look for ViolinLook {
         }
     }
 
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(f, st);
+        }
         if st.shattered {
             return Vec::new();
         }
@@ -209,6 +257,9 @@ impl Look for ViolinLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !f.in_fight {
             return Vec::new();
         }
@@ -228,6 +279,9 @@ impl Look for ViolinLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let k = self.k;
         match payload.downcast_ref::<Item>() {
             Some(Item::Bow) => {
