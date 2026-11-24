@@ -26,6 +26,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use bf_picture::shadows::proj_point;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BRASS`.
 const BRASS: V3 = [232.0, 188.0, 92.0];
 /// `BRASS_DK`.
@@ -1049,6 +1053,9 @@ impl Look for HornLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let k = self.k;
         // the call / echo rings light the canvas
         for r in self.rings_at(p, c.t) {
@@ -1123,6 +1130,9 @@ impl Look for HornLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let (cam, t) = (f.cam, f.t);
         let mut items: Vec<(f64, Payload)> = Vec::new();
         // the blast rings, raised: first in the painter pass
@@ -1157,6 +1167,9 @@ impl Look for HornLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold && self.bold_draw_item(p, f, fr, payload) {
+            return;
+        }
         let (k, cam, t) = (self.k, f.cam, f.t);
         let Some(item) = payload.downcast_ref::<Item>() else {
             return;
@@ -1302,7 +1315,16 @@ impl Look for HornLook {
         }
     }
 
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
     fn glows(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_glows(p, f, fr);
+        }
         // a copper aura on every ghost, brighter as it echoes
         for gh in self.ghosts_at(p, f.t) {
             let s = f.cam.wp(&[scene::to_world(gh.x, gh.z, R)])[0];
