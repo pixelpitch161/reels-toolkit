@@ -41,6 +41,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use bf_picture::shadows::proj_point;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `TIN`.
 const TIN: V3 = [222.0, 228.0, 242.0];
 /// `TIN_DK`.
@@ -802,6 +806,9 @@ impl Look for OrganLook {
 
     // ------------------------------------------------------------ state
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t, phase);
+        }
         // the organ ball thumps on every row
         if kk != self.k || phase != Phase::Fight || self.line_t.is_empty() {
             return;
@@ -1036,6 +1043,9 @@ impl Look for OrganLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let k = self.k;
         // the pipes' glow pools while they speak
         for q in self.pipes_at(p, c.t) {
@@ -1075,6 +1085,9 @@ impl Look for OrganLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -1117,7 +1130,10 @@ impl Look for OrganLook {
     }
 
     // ------------------------------------------------------------ the painter: pipes, the dome
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(f, st);
+        }
         let sk = self.shield_k(st);
         if sk <= 0.0 {
             return Vec::new();
@@ -1128,6 +1144,9 @@ impl Look for OrganLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         self.pipes_at(p, f.t)
             .into_iter()
             .map(|q| {
@@ -1139,6 +1158,9 @@ impl Look for OrganLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         match payload.downcast_ref::<Item>() {
             Some(Item::Pipe(q)) => draw_pipe(fr, f.cam, f.l, q.sx, q.sz, q.h, q.glow, p.col[q.owner], q.r),
             Some(Item::Dome(sk)) => {
@@ -1239,6 +1261,12 @@ impl Look for OrganLook {
                 let s = f.cam.wp(&[scene::to_world(q.sx, q.sz, q.h)])[0];
                 fr.glow(s.0, s.1, 5.0, p.col[q.owner].map(|c| c * 0.7 + 70.0), 0.35 * q.glow);
             }
+        }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
         }
     }
 

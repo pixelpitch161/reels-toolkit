@@ -37,6 +37,10 @@ use bf_picture::sprite::{Mesh, render_sprite_padded};
 use bf_picture::ui::{DrawLog, label};
 use bf_picture::{font, np, pil, title};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 // ================================================================ #42 styles.py: the whole note
 /// `INK`: the notehead's ink (a deep blue-black, so the teal rim reads).
 const INK: V3 = [44.0, 44.0, 66.0];
@@ -1000,6 +1004,9 @@ impl Look for ViolaLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         // the resting viola's pool (it pulses on each count)
         let g = &p.show.grid;
         let t = c.t;
@@ -1025,6 +1032,9 @@ impl Look for ViolaLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         let t = c.t;
         for &(t0, _, tl, x, z) in &self.jokes {
             if t0 <= t && t < tl && t < p.t_hs {
@@ -1071,6 +1081,9 @@ impl Look for ViolaLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(NoteItem(n)) = payload.downcast_ref::<NoteItem>() else {
             return;
         };
@@ -1181,7 +1194,29 @@ impl Look for ViolaLook {
         how == "wave" || (how == "note" && e.i(8) == 2)
     }
 
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn after_post(&self, p: &PictureCtx, img: &mut Img<u8>, log: &mut DrawLog, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_after_post(p, img, log, f, drawn);
+        }
         if title::door_offset(&p.show.grid, f.t) != 0.0 {
             self.draw_rests(p, img, log, f.t, drawn);
         }
