@@ -91,6 +91,18 @@ and handed straight to Windows; nobody needs to know it. The registration token 
 window (hidden), used once, and expires in an hour. The runner keeps its own GitHub credentials in
 `F:\bf-runner\runner` (`.credentials`, `.credentials_rsaparams`), as every runner does.
 
+## Known differences on the runner
+
+- `bf-pack`'s `install::tests::a_stopped_update_is_taken_back_while_the_new_exe_runs_at_its_place` fails on the
+  runner ("Close BALLFIGHT Studio first." at one of its 28 stop points), alone as well as in the full run, while it
+  passes as the owner and on GitHub's machines (Nov 23, 2026). Most likely a just-killed test exe stays locked a
+  moment longer in the service session; not yet looked into.
+- bf-harness's fighter checks for bagpipes, bari_sax, synth, turntables and viola fail here as in the owner's
+  checkout: their git-ignored cache files are missing (docs/studio/HANDOFF.md).
+- Timing tests (the five `bf-app` update/search ones) can time out while the PC is busy; rerun them alone with a
+  `PC-Tests:` line before calling them failures. `engine::search::tests::a_filter_change_then_a_new_fight_ends_the_old_search`
+  timed out in the first full run and passed alone.
+
 ## Common fixes
 
 - **The reference cache changed** (a new export): run `-Step Copy` again.
