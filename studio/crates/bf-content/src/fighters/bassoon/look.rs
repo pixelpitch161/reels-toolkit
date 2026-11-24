@@ -31,6 +31,10 @@ use bf_picture::{np, pil};
 
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `INK`.
 const INK: V3 = [18.0, 10.0, 26.0];
 /// `WHITE`.
@@ -700,6 +704,9 @@ impl Look for BassoonLook {
                 Self::air(st);
             }
         }
+        if p.bold {
+            self.bold_state(p, st, t);
+        }
     }
 
     // ------------------------------------------------------------ events -> camera, sparks, glows
@@ -716,6 +723,26 @@ impl Look for BassoonLook {
 
     fn rope(&self, _p: &PictureCtx, _e: &Event) -> Option<f64> {
         None
+    }
+
+    fn shake_more(&self, p: &PictureCtx, e: &Event) -> Vec<(f64, f64)> {
+        if p.bold {
+            return self.bold_shake_more(p, e);
+        }
+        Vec::new()
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(p, e, by_damage)
     }
 
     fn spark(&self, p: &PictureCtx, e: &Event) -> Spark {
@@ -875,6 +902,9 @@ impl Look for BassoonLook {
     // ------------------------------------------------------------ the canvas
     /// The stomp rings (a backstab's bigger and double).
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let col = p.col[self.k];
         let bayer = config::bayer_full();
         for (s, age) in self.live_stomps(p, c.t) {
@@ -910,6 +940,9 @@ impl Look for BassoonLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         if payload.downcast_ref::<Crook>().is_none() {
             return;
         }
@@ -924,6 +957,10 @@ impl Look for BassoonLook {
 
     // ------------------------------------------------------------ over the ring: hop arcs, slashes, the dance
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the bold hop arcs, slashes and dance are crisp overlays after the grade (`bold.rs`)
+            return;
+        }
         let (cam, t, col) = (f.cam, f.t, p.col[self.k]);
         for (p0, p1, fade, peak) in self.live_hops(p, t) {
             draw_hop_arc(arr, cam, p0, p1, fade, col, R, peak);
@@ -1008,6 +1045,9 @@ impl Look for BassoonLook {
 
     // ------------------------------------------------------------ after the grade: the hooked enemy whips round
     fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_after_grade(p, img, f, drawn);
+        }
         let enemy = 1 - self.k;
         if f.in_fight
             && let Some(d) = drawn.iter().find(|d| d.k == enemy)
