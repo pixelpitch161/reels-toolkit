@@ -33,6 +33,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use bf_picture::shadows::proj_point;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BRASS`.
 const BRASS: V3 = [232.0, 188.0, 92.0];
 /// `BRASS_HI`.
@@ -702,6 +706,9 @@ impl Look for TromboneLook {
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let k = self.k;
         let col = p.col[k];
         // SAD TROMBONE: the slowed enemy drags a droopy wobble
@@ -745,6 +752,9 @@ impl Look for TromboneLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind != "shockwave" {
             return;
         }
@@ -763,6 +773,9 @@ impl Look for TromboneLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -818,6 +831,9 @@ impl Look for TromboneLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr);
+        }
         let k = self.k;
         let st = &f.fs[k];
         let cam = f.cam;
@@ -837,6 +853,9 @@ impl Look for TromboneLook {
     }
 
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, arr: &mut Img<f32>, depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, fr, arr, depth);
+        }
         if !f.in_fight {
             return;
         }
@@ -962,6 +981,13 @@ impl Look for TromboneLook {
             let tp = [st.p[0] + reach * d[0], st.p[1] + reach * d[1]];
             let s = f.cam.wp(&[scene::to_world(tp[0], tp[1], R)])[0];
             fr.glow(s.0, s.1, 7.0, p.col[self.k].map(|c| c * 0.6 + 90.0), 0.35 * st.thr_k);
+        }
+    }
+
+    // ------------------------------------------------------------ the bold effects
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
         }
     }
 

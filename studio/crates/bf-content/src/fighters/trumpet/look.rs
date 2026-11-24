@@ -41,6 +41,10 @@ use bf_picture::{np, pil};
 
 use crate::fighters::shared::reeds::{Num, blend_into, mask_of};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BRASS`.
 const BRASS: V3 = [232.0, 184.0, 72.0];
 /// `BRASS_HI`.
@@ -1228,6 +1232,9 @@ impl Look for TrumpetLook {
     // ------------------------------------------------------------ the canvas
     /// Each blast throws a streak of light on the canvas; the charging bell lights a faint lane.
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let bayer = bayer_full();
         for b in self.beams_live(p, c.t) {
             let d = unit(b.a);
@@ -1267,6 +1274,9 @@ impl Look for TrumpetLook {
 
     /// FANFARE's ring of light on the canvas (a shockwave band; a wave would be jagged and shivering).
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind == "pulse" {
             return;
         }
@@ -1318,6 +1328,9 @@ impl Look for TrumpetLook {
     // ------------------------------------------------------------ the painter pass, effects over the ring
     /// VALVE COMBO: the pistons out right now, each at its own depth.
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let mut out: Vec<(f64, Payload)> = Vec::new();
         for q in self.punches_live(p, f.t) {
             let st = &f.fs[q.k];
@@ -1332,6 +1345,9 @@ impl Look for TrumpetLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(q) = payload.downcast_ref::<Piston>() else {
             return;
         };
@@ -1342,6 +1358,9 @@ impl Look for TrumpetLook {
 
     /// FANFARE's banners, the HIGH C sight and blasts, the champion's solo notes rising from the bell.
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let (cam, t) = (f.cam, f.t);
         if f.in_fight {
             for w in p.run.waves(f.i) {
@@ -1516,6 +1535,22 @@ impl Look for TrumpetLook {
                 fr.glow(s.0, s.1, 10.0 + 8.0 * b.wd, p.col[b.k].map(|c| c * 0.7 + 70.0), inten);
             }
         }
+    }
+
+    // ------------------------------------------------------------ the bold effects
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(e, by_damage)
     }
 
     // ------------------------------------------------------------ checks
