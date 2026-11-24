@@ -93,10 +93,10 @@ window (hidden), used once, and expires in an hour. The runner keeps its own Git
 
 ## Known differences on the runner
 
-- `bf-pack`'s `install::tests::a_stopped_update_is_taken_back_while_the_new_exe_runs_at_its_place` fails on the
-  runner ("Close BALLFIGHT Studio first." at one of its 28 stop points), alone as well as in the full run, while it
-  passes as the owner and on GitHub's machines (Nov 23, 2026). Most likely a just-killed test exe stays locked a
-  moment longer in the service session; not yet looked into.
+- `bf-pack`'s `install::tests::a_stopped_update_is_taken_back_while_the_new_exe_runs_at_its_place` can fail while
+  the PC is busy ("Close BALLFIGHT Studio first." at one of its 28 stop points: a just-killed test program's file is
+  still held for a moment). It failed twice in the first runs, both slow ones (27 and 36 s), then passed seven times
+  in a row on the runner (about 18 s each, Nov 23, 2026). Rerun it alone before calling it a failure.
 - bf-harness's fighter checks for bagpipes, bari_sax, synth, turntables and viola fail here as in the owner's
   checkout: their git-ignored cache files are missing (docs/studio/HANDOFF.md).
 - Timing tests (the five `bf-app` update/search ones) can time out while the PC is busy; rerun them alone with a
