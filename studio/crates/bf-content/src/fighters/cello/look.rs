@@ -31,6 +31,10 @@ use bf_picture::title::layout;
 
 use crate::fighters::shared::reeds::{self, INK, Num, Px};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `STICK`: the pernambuco bow stick.
 const STICK: V3 = [92.0, 52.0, 30.0];
 /// `HAIR`: the bow's ivory hair.
@@ -410,7 +414,9 @@ impl Look for CelloLook {
             if self.vib_on(self.ta(p, t)) {
                 // f = int(round(t * 30)); st['p'] + 0.05 * np.array([math.sin(f * 2.7), math.cos(f * 3.9)])
                 let f = py::round_half_even(t * 30.0);
-                let d = [0.05 * dmath::sin(f * 2.7), 0.05 * dmath::cos(f * 3.9)];
+                // (the bold look shakes it harder)
+                let amp = if p.bold { 0.09 } else { 0.05 };
+                let d = [amp * dmath::sin(f * 2.7), amp * dmath::cos(f * 3.9)];
                 st.p = [st.p[0] + d[0], st.p[1] + d[1]];
             }
         }
@@ -593,7 +599,16 @@ impl Look for CelloLook {
     }
 
     // ------------------------------------------------------------ the canvas: PRELUDE's rings, the splash
-    fn canvas_wave(&self, _p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind != "prelude" || w.owner != self.k {
             return;
         }
@@ -641,6 +656,10 @@ impl Look for CelloLook {
 
     // ------------------------------------------------------------ over the ring: the bow arm, rings, wings
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the bold arms, crescents and wings are drawn after the grade
+            return;
+        }
         let (cam, k, t) = (f.cam, self.k, f.t);
         let col = p.col[k];
         if !self.show(p, t) {
@@ -781,6 +800,25 @@ impl Look for CelloLook {
                 );
             }
         }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut bf_picture::look::Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 
     fn glows(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _drawn: &[DrawnBall]) {
