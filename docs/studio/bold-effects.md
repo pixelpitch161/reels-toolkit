@@ -147,6 +147,13 @@ Look at the sheets (they are PNGs) and fix what does not read. "Close enough for
 each of the three beats of each move should be clearly visible, bigger and clearer than classic, in the
 fighter's colours. Do not polish beyond that.
 
+## Maths
+
+Every `sin`, `cos`, `tan`, `atan2`, `hypot`, `powf`, `powi`, `exp`, `ln` goes through `bf_core::dmath`
+(`dmath::cos(a)`, `dmath::hypot(x, y)`, `dmath::TAU`), never the std methods (`a.cos()`, `f64::powi`): the
+engine's frames must be the same bits on every PC, and the test `bf-core/tests/no_std_maths.rs` fails on any
+direct call in these crates. `sqrt`, `abs`, `min`, `max`, `floor`, `round` are fine as methods.
+
 ## Before you report
 
 ```

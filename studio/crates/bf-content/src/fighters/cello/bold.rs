@@ -74,7 +74,7 @@ fn draw_neck(img: &mut Pic, cam: &Cam, pts: &[V3], a: f64) {
 
 /// A feather on the screen at `c`, turned by `rot`: a white leaf with a quill line.
 fn feather(img: &mut Pic, c: (f64, f64), rot: f64, len: f64, a: f64) {
-    let (ux, uy) = (rot.cos(), rot.sin());
+    let (ux, uy) = (dmath::cos(rot), dmath::sin(rot));
     let at = |s: f64, w: f64| (c.0 + ux * s * len - uy * w * len, c.1 + uy * s * len + ux * w * len);
     px::ink_poly(
         img,

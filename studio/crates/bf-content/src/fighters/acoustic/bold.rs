@@ -534,7 +534,10 @@ impl AcousticLook {
             for i in 0..8u64 {
                 let ang = TAU * (i as f64 + px::rnd(77, i)) / 8.0;
                 let far = (16.0 + 26.0 * px::rnd(78, i)) * bold::ease_out(v);
-                let c = (c0.0 + ang.cos() * far, c0.1 + ang.sin() * far * 0.7 - 8.0 * v);
+                let c = (
+                    c0.0 + dmath::cos(ang) * far,
+                    c0.1 + dmath::sin(ang) * far * 0.7 - 8.0 * v,
+                );
                 px::note(img, c, bold::GOLD, ((1.0 - v) / 0.4).min(1.0));
             }
         }
