@@ -39,6 +39,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state::{self, Land, Salvo};
 use crate::fighters::shared::reeds::{self, Num, Px};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `INK`.
 const INK: V3 = [18.0, 10.0, 26.0];
 /// `WHITE`.
@@ -491,6 +495,16 @@ impl Look for EuphoniumLook {
                 st.glow = py_max(st.glow, 0.5 * crisis);
             }
         }
+        if p.bold && phase == Phase::Fight {
+            self.bold_state(p, st, t);
+        }
+    }
+
+    fn ball(&self, p: &PictureCtx, kk: usize, _st: &BallState, t: f64, glass: [f64; 3], roll: f64) -> ([f64; 3], f64) {
+        if p.bold && kk == self.k {
+            return (glass, self.bold_roll(p, t, roll));
+        }
+        (glass, roll)
     }
 
     fn ball_sprite<'a>(
@@ -594,6 +608,9 @@ impl Look for EuphoniumLook {
 
     // ---------------------------------------------------------------- effects (#38's _fx_build, in its order)
     fn fx_setup(&self, p: &PictureCtx, fx: &mut Fx) {
+        if p.bold {
+            return self.bold_fx_setup(p, fx);
+        }
         let col = p.col[self.k];
         // fx_salvos: BELL MORTAR: smoke out of the bell
         for s in &self.salvos {
@@ -724,6 +741,9 @@ impl Look for EuphoniumLook {
     /// The shells' growing shadows and splash-radius rings, the splashes, then the shadows darken it all (#38 did the
     /// darkening last, after every canvas light).
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         if let Some(d) = &self.dup {
             d.canvas_after(p, ic, c);
         }
@@ -782,6 +802,9 @@ impl Look for EuphoniumLook {
 
     // ---------------------------------------------------------------- the shells in the air, shards
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, arr: &mut Img<f32>, depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, fr, arr, depth);
+        }
         if let Some(d) = &self.dup {
             d.over_ring(p, f, fr, arr, depth);
         }
@@ -866,6 +889,28 @@ impl Look for EuphoniumLook {
         if let Some(d) = &self.dup {
             d.shimmer_after(p, img, cam, t);
         }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        if how(e) == "shell" {
+            return self.bold_hit(p, e);
+        }
+        Some(by_damage)
     }
 
     fn focus_points(&self, p: &PictureCtx, t: f64, st: &BallState) -> Vec<(V3, String)> {
