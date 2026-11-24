@@ -513,11 +513,14 @@ pub fn chips<S: Surface + ?Sized>(
     let out = 1.0 - (1.0 - u) * (1.0 - u);
     let pale = col.map(|v| (v * 0.55 + 125.0).min(255.0));
     for i in 0..n.min(64) {
-        let ang = rnd(seed, i) * std::f64::consts::TAU;
+        let ang = rnd(seed, i) * dmath::TAU;
         let far = reach * (0.5 + 0.7 * rnd(seed, i + 64)) * out;
-        let q = (c.0 + ang.cos() * far, c.1 + ang.sin() * far * 0.7 + 10.0 * u * u);
+        let q = (
+            c.0 + dmath::cos(ang) * far,
+            c.1 + dmath::sin(ang) * far * 0.7 + 10.0 * u * u,
+        );
         let turn = ang * 3.0 + age * 30.0;
-        let tip = (q.0 + turn.cos() * 3.6, q.1 + turn.sin() * 3.6);
+        let tip = (q.0 + dmath::cos(turn) * 3.6, q.1 + dmath::sin(turn) * 3.6);
         ink_line(
             s,
             q,
