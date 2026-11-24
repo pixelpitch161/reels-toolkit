@@ -85,6 +85,13 @@ pub fn thick_line(fr: &mut Frame, cam: &Cam, pts: &[V3], col: V3, width: u32) {
     fr.line(cam, pts, pale(col), 1);
 }
 
+/// A world polyline too fine for [`thick_line`] that must still read (a resting string, a thread, a wire): a
+/// 3-pixel dark line under a 1-pixel one in `col`.
+pub fn thin_line(fr: &mut Frame, cam: &Cam, pts: &[V3], col: V3) {
+    fr.line(cam, pts, INK, 3);
+    fr.line(cam, pts, col, 1);
+}
+
 /// A world polygon filled with `col` inside a dark outline.
 pub fn outlined_poly(fr: &mut Frame, cam: &Cam, pts: &[V3], col: V3) {
     if pts.len() < 3 {
@@ -119,9 +126,21 @@ pub fn blob(fr: &mut Frame, cam: &Cam, w: V3, r: f64, col: V3) {
     }
 }
 
+/// [`blob`] without the highlight: a dull, matte round thing (a damped mallet, a mute, a lump of rosin).
+pub fn matte_blob(fr: &mut Frame, cam: &Cam, w: V3, r: f64, col: V3) {
+    let pc = cam.to_cam(&[w])[0];
+    if pc[2] <= cam.near {
+        return;
+    }
+    let s = cam.proj(&[pc])[0];
+    let rp = (r * cam.f / pc[2]).max(2.5);
+    fr.disc(s, rp + 1.2, INK, 14, 0.0, Some(pc[2]));
+    fr.disc(s, rp, col, 14, 0.0, Some(pc[2] - 0.01));
+}
+
 /// The event of one of `kinds` by `who` that is most lately at or before `t`, no more than `window` seconds
 /// ago: its age in seconds and the event. For a `hit`, give the hit's `how` (its element 7) in `kinds` as
-/// `"hit:how"`, or `"hit"` for any hit.
+/// `"hit:how"`, or `"hit"` for any hit; for an `ability`, `"ability:kind"` or `"ability:NAME"` picks one.
 pub fn since<'a>(p: &'a PictureCtx, who: usize, kinds: &[&str], t: f64, window: f64) -> Option<(f64, &'a Event)> {
     let i0 = p.ev_t.partition_point(|&te| te < t - window);
     let i1 = p.ev_t.partition_point(|&te| te <= t);
@@ -147,11 +166,48 @@ pub fn until<'a>(p: &'a PictureCtx, who: usize, kinds: &[&str], t: f64, window: 
         .map(|e| (1.0 - (e.t - t) / window, e))
 }
 
-/// Whether the event is one of `kinds` (see [`since`]).
+/// Every event of one of `kinds` by `who` from `t0` up to and including `t1`, oldest first: for a move drawn from
+/// several events at once (each shot of a volley, each tick of a grind). Kinds as in [`since`].
+pub fn events_in<'a>(
+    p: &'a PictureCtx,
+    who: usize,
+    kinds: &'a [&'a str],
+    t0: f64,
+    t1: f64,
+) -> impl Iterator<Item = &'a Event> + 'a {
+    let i0 = p.ev_t.partition_point(|&te| te < t0);
+    let i1 = p.ev_t.partition_point(|&te| te <= t1);
+    p.rec.events[i0..i1.max(i0)]
+        .iter()
+        .filter(move |e| e.who() == Some(who) && is_kind(e, kinds))
+}
+
+/// The text at an event's Python index `i` (`e[i]`), or `""` when the event is shorter or holds something else
+/// there: the guarded way to read a hit's `how` (`text(e, 7)`) or an ability's kind (`text(e, 4)`).
+pub fn text(e: &Event, i: usize) -> &str {
+    match i.checked_sub(2).and_then(|n| e.fields.get(n)) {
+        Some(bf_core::event::Value::Str(s)) => s,
+        _ => "",
+    }
+}
+
+/// How a hit landed (its element 7), or `""` for an event without one.
+pub fn how(e: &Event) -> &str {
+    text(e, 7)
+}
+
+/// Whether the event is one of `kinds` (see [`since`]): a plain kind, `"hit:how"` for a hit by how it landed, or
+/// `"ability:x"` for an `ability` event by its ability kind (element 4, `haste`, `shield`, ...) or its name
+/// (element 3).
 fn is_kind(e: &Event, kinds: &[&str]) -> bool {
-    kinds.iter().any(|k| match k.strip_prefix("hit:") {
-        Some(how) => e.kind == "hit" && matches!(e.fields.get(5), Some(bf_core::event::Value::Str(s)) if s == how),
-        None => e.kind == *k,
+    kinds.iter().any(|k| {
+        if let Some(how) = k.strip_prefix("hit:") {
+            e.kind == "hit" && text(e, 7) == how
+        } else if let Some(what) = k.strip_prefix("ability:") {
+            e.kind == "ability" && (text(e, 4) == what || text(e, 3) == what)
+        } else {
+            e.kind == *k
+        }
     })
 }
 

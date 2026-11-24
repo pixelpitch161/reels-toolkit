@@ -1,5 +1,5 @@
 //! `ballfight moves <fight.toml> --out <dir> [--effects bold|classic] [--fighter 0|1] [--kinds a,b] [--nth N]
-//! [--at t,t] [--seed N | --rec F]`: contact sheets of a fight's moves, for looking at how they read.
+//! [--at t,t] [--list] [--seed N | --rec F]`: contact sheets of a fight's moves, for looking at how they read.
 //!
 //! A dev tool for the people and agents who draw the fighters' moves: it finds the first time each kind of
 //! event happens (each ability by its name, each hit by how it landed, every other kind as it is) and draws the
@@ -32,8 +32,8 @@ pub struct Args {
     /// The fight file.
     fight: PathBuf,
     /// The folder to write the sheets into (a new folder).
-    #[arg(long, value_name = "DIR")]
-    out: PathBuf,
+    #[arg(long, value_name = "DIR", required_unless_present = "list")]
+    out: Option<PathBuf>,
     /// Draw with these effects instead of the fight file's: classic or bold.
     #[arg(long, value_name = "NAME", value_parser = ["classic", "bold"])]
     effects: Option<String>,
@@ -64,6 +64,10 @@ pub struct Args {
     /// closely at a move.
     #[arg(long)]
     zoom: bool,
+    /// Draw nothing: print every kind of event of the fight with how often it happens and its first times, to
+    /// find the moments worth drawing (then `--out` is not needed).
+    #[arg(long)]
+    list: bool,
     /// Only the times of `--at`, no events.
     #[arg(long)]
     only_at: bool,
@@ -101,6 +105,45 @@ fn ring_twice(img: &Img<u8>) -> Img<u8> {
     out
 }
 
+/// `--list`: every kind of event with how often it happens and its first five times.
+fn list(a: &Args, ctx: &Ctx, events: &[Event], seed: u64) -> Done {
+    let mut kinds: Vec<(String, Option<usize>, Vec<f64>)> = Vec::new();
+    for e in events {
+        let who = e.who();
+        if matches!((a.fighter, who), (Some(k), Some(w)) if k as usize != w) {
+            continue;
+        }
+        let label = label_of(e);
+        if !a.kinds.is_empty() && !a.kinds.iter().any(|k| label.starts_with(k.as_str())) {
+            continue;
+        }
+        match kinds.iter_mut().find(|s| s.0 == label && s.1 == who) {
+            Some(s) => s.2.push(e.t),
+            None => kinds.push((label, who, vec![e.t])),
+        }
+    }
+    if ctx.json {
+        let rows: Vec<_> = kinds
+            .iter()
+            .map(|(label, who, ts)| json!({"label": label, "who": who, "count": ts.len(), "times": ts}))
+            .collect();
+        say_json(&json!({"seed": seed, "kinds": rows}));
+        return Ok(());
+    }
+    say(&format!("seed {seed}: {} kinds of event", kinds.len()));
+    for (label, who, ts) in &kinds {
+        let first: Vec<String> = ts.iter().take(5).map(|t| format!("{t:.2}")).collect();
+        say(&format!(
+            "{} {label}: {} times, at {}{}",
+            who.map_or("-".to_string(), |w| w.to_string()),
+            ts.len(),
+            first.join(" "),
+            if ts.len() > 5 { " ..." } else { "" }
+        ));
+    }
+    Ok(())
+}
+
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
     if let Some(effects) = &a.effects {
@@ -109,16 +152,22 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
             .find(|e| *e == effects)
             .map_or_else(|| EFFECTS[0].to_string(), |e| (*e).to_string());
     }
-    if std::fs::symlink_metadata(&a.out).is_ok() {
-        return Err(Fail(format!(
-            "{} already exists, and ballfight never replaces a file; choose another name or delete it first.",
-            a.out.display()
-        )));
-    }
     let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
     need_ko(&rec)?;
     stopped(ctx, "the sheets")?;
     let seed = rec.seed;
+    if a.list {
+        return list(a, ctx, &rec.events, seed);
+    }
+    let Some(out) = a.out.as_deref() else {
+        return Err(Fail("give --out, the new folder for the sheets.".to_string()));
+    };
+    if std::fs::symlink_metadata(out).is_ok() {
+        return Err(Fail(format!(
+            "{} already exists, and ballfight never replaces a file; choose another name or delete it first.",
+            out.display()
+        )));
+    }
 
     // the moments: (label, who, the event's time), in the order they first happen
     let mut moments: Vec<(String, Option<usize>, f64)> = Vec::new();
@@ -174,8 +223,7 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
 
     let pic =
         bf_content::build_picture(Arc::new(rec), &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
-    std::fs::create_dir_all(&a.out)
-        .map_err(|e| Fail(format!("the folder {} cannot be made ({e}).", a.out.display())))?;
+    std::fs::create_dir_all(out).map_err(|e| Fail(format!("the folder {} cannot be made ({e}).", out.display())))?;
     let mut listed = Vec::new();
     let mut sheets = 0;
     for (n, chunk) in tiles.chunks(cols * rows).enumerate() {
@@ -198,20 +246,20 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
             );
         }
         if let Some(sh) = sheet {
-            write_new(&a.out.join(format!("sheet_{:02}.png", n + 1)), &png_bytes(&sh))?;
+            write_new(&out.join(format!("sheet_{:02}.png", n + 1)), &png_bytes(&sh))?;
             sheets += 1;
         }
     }
     let report =
         json!({"seed": seed, "effects": ff.picture.effects, "sheets": sheets, "dropped": dropped, "tiles": listed});
-    write_new(&a.out.join("moments.json"), crate::json_text(&report).as_bytes())?;
+    write_new(&out.join("moments.json"), crate::json_text(&report).as_bytes())?;
     if ctx.json {
         say_json(&report);
     } else {
         say(&format!(
             "seed {seed}: {} tiles on {sheets} sheets in {}{}",
             listed.len(),
-            a.out.display(),
+            out.display(),
             if dropped > 0 {
                 format!(" ({dropped} more were left out)")
             } else {

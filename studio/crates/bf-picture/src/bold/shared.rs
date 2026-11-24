@@ -20,9 +20,9 @@
 
 use bf_core::dmath;
 
-use super::px::{self, Surface, bad};
+use super::px::{self, bad};
 use super::{GOLD, INK, WHITE, deep, ease_out, pale};
-use crate::camera::{Cam, V3};
+use crate::camera::Cam;
 use crate::config::{FPS, W};
 use crate::font;
 use crate::img::{Img, Rgb8};
@@ -296,16 +296,6 @@ fn rnd(seed: u64, n: u64) -> f64 {
     (h % 100_000) as f64 / 100_000.0
 }
 
-/// A small eighth note at `c`: the "little symbol" that circles a hasted ball.
-fn note<S: Surface + ?Sized>(s: &mut S, c: (f64, f64), col: V3, a: f64) {
-    px::line(s, (c.0 + 1.5, c.1 + 2.0), (c.0 + 1.5, c.1 - 5.0), 3.0, INK, a);
-    px::disc(s, (c.0, c.1 + 2.0), 3.2, INK, a);
-    px::line(s, (c.0 + 1.5, c.1 - 5.0), (c.0 + 4.5, c.1 - 3.0), 3.0, INK, a);
-    px::line(s, (c.0 + 1.5, c.1 + 2.0), (c.0 + 1.5, c.1 - 5.0), 1.0, col, a);
-    px::disc(s, (c.0, c.1 + 2.0), 2.2, col, a);
-    px::line(s, (c.0 + 1.5, c.1 - 5.0), (c.0 + 4.5, c.1 - 3.0), 1.0, col, a);
-}
-
 /// The angle on the screen from `a` to `b`.
 fn angle(a: (f64, f64), b: (f64, f64)) -> f64 {
     dmath::atan2(b.1 - a.1, b.0 - a.0)
@@ -385,7 +375,7 @@ impl PictureCtx {
                         d.s.0 + dmath::cos(ang) * (d.rp + 9.0),
                         d.s.1 + dmath::sin(ang) * (d.rp + 9.0) * 0.45 - d.rp * 0.2,
                     );
-                    note(img, c, pale(col), 1.0);
+                    px::note(img, c, pale(col), 1.0);
                     if let Some(left) = Shared::left_in(&sh.haste[k], t) {
                         let a0 = -dmath::PI / 2.0;
                         px::ink_arc(

@@ -89,6 +89,14 @@ All in `bf-picture/src/bold/shared.rs`, automatic when bold:
   outlined `ink_*` versions of each. Colours are 0 to 255.
 - Colours and easing: `bold::INK`, `WHITE`, `GOLD`, `pale`, `deep`, `light`, `ease_out`, `ease_in`,
   `bold::px_per_unit`.
+- Small things several fighters needed: `bold::thin_line` (a string or wire too fine for `thick_line`),
+  `bold::matte_blob` (a blob without the highlight), `bold::events_in(p, who, kinds, t0, t1)` (every event in
+  a stretch, for volleys and grinds), `bold::how(e)` / `bold::text(e, i)` (an event's text without a panic on
+  a short event), `px::chips` (splinters flying from a point), `px::note` (a little eighth note),
+  `px::speed_lines` (streaks behind a ball sent flying), `px::rnd(seed, n)` (the dice: always the same for
+  the same numbers).
+- The kinds of `since`, `until` and `events_in` may be a plain event kind, `"hit:how"`, or `"ability:kind"` /
+  `"ability:NAME"` for one ability.
 
 The files are short and documented; read the signatures there rather than guessing.
 
@@ -121,6 +129,14 @@ cargo build -p bf-cli 2>&1 | grep -E "^(warning|error)" -A12
   `--offsets=-0.2,0.04,0.3,0.8` sets the frames, `--at 12.5,13 --only-at` draws given times, `--zoom` shows the
   ring at twice the size (leave it out to see the whole frame with the banners), `--effects classic` draws
   the old look for comparison. `--out` must be a folder that does not exist yet.
+- `--list` (no `--out`) draws nothing and prints every kind of event with how often it happens and its first
+  times: start there. An event is filed under the fighter in its element 2, which for some is the victim
+  (`slow`, `parry`, `muffle`), so list without `--fighter` when one seems missing.
+- For a look that needs something the two dev fights lack (a projectile to parry, a shield to hit), copy a dev
+  fight file to your scratch folder with another opponent and use that; do not add fight files to the
+  repository.
+- Under the low-HP spotlight the ring is dimmed after the painter pass, so white drawn in `draw_item` or
+  `over_ring` comes out grey there: the brightest marks of a low-HP move belong in `after_grade`.
 - Only still frames: do not run tests, `ballfight render`, `check` or `bench` here. Tests run on the owner's
   PC.
 

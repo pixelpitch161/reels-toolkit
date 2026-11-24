@@ -482,6 +482,99 @@ pub fn glint<S: Surface + ?Sized>(s: &mut S, c: (f64, f64), r: f64, col: V3, a: 
     disc(s, c, (r * 0.3).max(1.0), [255.0, 255.0, 255.0], a);
 }
 
+/// A number from 0 to 1 that is always the same for the same `(seed, n)`: the dice of everything here that
+/// scatters (chips, sparks), so a frame is the same however often it is drawn.
+pub fn rnd(seed: u64, n: u64) -> f64 {
+    let mut h = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ n.wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    h ^= h >> 29;
+    h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    h ^= h >> 32;
+    (h % 100_000) as f64 / 100_000.0
+}
+
+/// `n` chips flying out from the screen point `c`, `age` seconds after they were struck and gone after `life`:
+/// small outlined splinters in `col` (every third one paler) that reach about `reach` pixels, tumble and drop
+/// a little. `seed` picks their directions; give each burst its own (its event's time in milliseconds, say).
+#[allow(clippy::too_many_arguments)]
+pub fn chips<S: Surface + ?Sized>(
+    s: &mut S,
+    c: (f64, f64),
+    age: f64,
+    life: f64,
+    n: u64,
+    reach: f64,
+    seed: u64,
+    col: V3,
+) {
+    if bad(life) || bad(reach) || !(0.0..life).contains(&age) {
+        return;
+    }
+    let u = age / life;
+    let out = 1.0 - (1.0 - u) * (1.0 - u);
+    let pale = col.map(|v| (v * 0.55 + 125.0).min(255.0));
+    for i in 0..n.min(64) {
+        let ang = rnd(seed, i) * std::f64::consts::TAU;
+        let far = reach * (0.5 + 0.7 * rnd(seed, i + 64)) * out;
+        let q = (c.0 + ang.cos() * far, c.1 + ang.sin() * far * 0.7 + 10.0 * u * u);
+        let turn = ang * 3.0 + age * 30.0;
+        let tip = (q.0 + turn.cos() * 3.6, q.1 + turn.sin() * 3.6);
+        ink_line(
+            s,
+            q,
+            tip,
+            2.0,
+            if i % 3 == 0 { pale } else { col },
+            ((1.0 - u) / 0.4).min(1.0),
+        );
+    }
+}
+
+/// A small outlined eighth note at `c`, about 8 pixels high: a fighter's "little symbol", a note popping off a
+/// plucked string.
+pub fn note<S: Surface + ?Sized>(s: &mut S, c: (f64, f64), col: V3, a: f64) {
+    let ink = [22.0, 14.0, 30.0];
+    line(s, (c.0 + 1.5, c.1 + 2.0), (c.0 + 1.5, c.1 - 5.0), 3.0, ink, a);
+    disc(s, (c.0, c.1 + 2.0), 3.2, ink, a);
+    line(s, (c.0 + 1.5, c.1 - 5.0), (c.0 + 4.5, c.1 - 3.0), 3.0, ink, a);
+    line(s, (c.0 + 1.5, c.1 + 2.0), (c.0 + 1.5, c.1 - 5.0), 1.0, col, a);
+    disc(s, (c.0, c.1 + 2.0), 2.2, col, a);
+    line(s, (c.0 + 1.5, c.1 - 5.0), (c.0 + 4.5, c.1 - 3.0), 1.0, col, a);
+}
+
+/// Speed lines behind something sent flying: `n` thin streaks of `len` pixels trailing from round the screen
+/// point `c` (a ball of radius `r` pixels) against its travel direction `dir` (a screen vector, any length).
+#[allow(clippy::too_many_arguments)]
+pub fn speed_lines<S: Surface + ?Sized>(
+    s: &mut S,
+    c: (f64, f64),
+    r: f64,
+    dir: (f64, f64),
+    len: f64,
+    n: u64,
+    col: V3,
+    a: f64,
+) {
+    let d = (dir.0 * dir.0 + dir.1 * dir.1).sqrt();
+    if bad(d) || bad(len) || bad(r) {
+        return;
+    }
+    let (ux, uy) = (dir.0 / d, dir.1 / d);
+    let n = n.clamp(1, 12);
+    for i in 0..n {
+        // spread across the ball's width, the middle ones longest
+        let v = if n == 1 {
+            0.0
+        } else {
+            i as f64 / (n - 1) as f64 * 2.0 - 1.0
+        };
+        let side = v * r * 0.85;
+        let back = r * (1.0 - v * v).max(0.0).sqrt() + 2.0;
+        let p0 = (c.0 - ux * back - uy * side, c.1 - uy * back + ux * side);
+        let l = len * (1.0 - 0.45 * v.abs());
+        line(s, p0, (p0.0 - ux * l, p0.1 - uy * l), 1.0, col, a);
+    }
+}
+
 /// Drains the colour out of the whole picture with strength `k` (0: untouched, 1: black and white), for a
 /// moment when time stops or the lights go.
 pub fn wash<S: Surface + ?Sized>(s: &mut S, k: f64) {
