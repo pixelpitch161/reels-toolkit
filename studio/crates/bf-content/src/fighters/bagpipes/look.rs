@@ -30,6 +30,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use crate::fighters::shared::older::{blend_into, mask_of_lines};
 use crate::fighters::shared::reeds::Num;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `TARTAN['dk']`.
 const TARTAN_DK: V3 = [26.0, 96.0, 46.0];
 /// `TARTAN['lt']`.
@@ -259,6 +263,9 @@ impl Look for BagpipesLook {
         if kk != self.k || phase != Phase::Fight {
             return;
         }
+        if p.bold {
+            return self.bold_state(p, st, t);
+        }
         let i = p.sim_i(py_min(t, p.t_ko));
         let tc = py_min(t, p.t_ko);
         st.scale = self.rad(i, kk) / R;
@@ -283,9 +290,12 @@ impl Look for BagpipesLook {
     }
 
     /// (opt-in) BAG INFLATE: the bag's tartan stretched over the glass as the ball swells.
-    fn ball_glass(&self, _p: &PictureCtx, kk: usize, st: &BallState, _t: f64, px: &GlassPx, inner: &mut V3) {
+    fn ball_glass(&self, p: &PictureCtx, kk: usize, st: &BallState, _t: f64, px: &GlassPx, inner: &mut V3) {
         if kk != self.k {
             return;
+        }
+        if p.bold {
+            return self.bold_ball_glass(st, px, inner);
         }
         let on = st.extra.get("phase").is_some_and(|&ph| ph != 0.0);
         let infl = if on {
@@ -499,7 +509,16 @@ impl Look for BagpipesLook {
     }
 
     // ------------------------------------------------------------ the canvas: WAR CRY's band, BAG BURST's gust
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         let (cx, cz, r, rmax) = (w.cx, w.cz, w.r, w.rmax);
         let k_ = 1.0 - r / rmax;
         if w.kind == "shockwave" {
@@ -537,6 +556,9 @@ impl Look for BagpipesLook {
     /// (opt-in) WAR CRY's tartan bands, lit by the spot like the canvas: one per WAR CRY ring of its in the frame's
     /// row of `WAVES`, in the row's order (the order `canvas_wave` met them in).
     fn canvas_paint(&self, p: &PictureCtx, col: &mut [V3], ic: &[V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_paint(p, col, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -571,6 +593,9 @@ impl Look for BagpipesLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         if let Some(Item::Trail) = payload.downcast_ref::<Item>() {
             let tc = py_min(f.t, p.t_ko);
             let j1 = p.sim_i(tc) as i64;
@@ -686,9 +711,21 @@ impl Look for BagpipesLook {
         );
     }
 
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     /// Chromatic fringing on its big hits (local), as #30: 0.1 s, (30, 2.6) on BAG BURST, (20, 1.8) on a flight or
     /// a body slam (before the K.O.'s fringe, the ability moments and the bursts, as #30's renderer).
-    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, _drawn: &[DrawnBall]) {
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
         let t = f.t;
         for i in p.events_between(t - 0.1, t, &["hit"]) {
             let e = &p.rec.events[i];
