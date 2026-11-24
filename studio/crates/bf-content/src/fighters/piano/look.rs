@@ -34,6 +34,10 @@ use bf_picture::scene::{A, CANVAS_RIM, R_BALL as R, to_world};
 use bf_picture::shadows::proj_point;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `PAPER`: cream punched paper.
 const PAPER: V3 = [238.0, 228.0, 200.0];
 /// `PAPER_DK`.
@@ -707,6 +711,9 @@ impl Look for PianoLook {
 
     // ------------------------------------------------------------ canvas: the roll, the mines' rings, shot lights
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         let k = self.k;
         let t = c.t;
         let rim = CANVAS_RIM;
@@ -908,6 +915,9 @@ impl Look for PianoLook {
 
     // ------------------------------------------------------------ the note-shots (painter items)
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !f.in_fight {
             return Vec::new();
         }
@@ -922,6 +932,9 @@ impl Look for PianoLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(s) = payload.downcast_ref::<Shot>() else {
             return;
         };
@@ -985,6 +998,21 @@ impl Look for PianoLook {
             };
             fr.glow(sp.0, sp.1, r, p.col[k].map(|v| v * 0.8 + 50.0), a);
         }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut bf_picture::look::Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        self.bold_hit(e, by_damage)
     }
 
     // ------------------------------------------------------------ shards

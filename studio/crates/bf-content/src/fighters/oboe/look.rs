@@ -28,6 +28,10 @@ use bf_picture::scene::{self, R_BALL as R};
 
 use crate::fighters::shared::reeds::{self, CANE, CANE_D, INK, KO_CHIPS, Num, Px, SOUR, THREAD, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BEAM_Y = R * 1.0`: the beam's and the reed's height (the ball's centre).
 const BEAM_Y: f64 = R * 1.0;
 
@@ -718,6 +722,9 @@ impl Look for OboeLook {
 
     // ------------------------------------------------------------ canvas, reed, beams
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         // the beams' lit lanes
         let tint = p.col[self.k].map(|v| v / 255.0 * 0.9 + 0.25);
         for b in self.live_beams(p, c.t) {
@@ -751,6 +758,9 @@ impl Look for OboeLook {
     }
 
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         if w.kind == "stun" || w.kind == "pulse" {
             return;
         }
@@ -787,6 +797,9 @@ impl Look for OboeLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, _payload);
+        }
         let k = self.k;
         let st = &f.fs[k];
         let (mut arr, depth) = (fr.array(), fr.depth());
@@ -809,6 +822,10 @@ impl Look for OboeLook {
     }
 
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            // the bold beams are drawn after the grade (`bold_after_grade`)
+            return;
+        }
         for b in self.live_beams(p, f.t) {
             draw_beam(
                 arr,
@@ -855,7 +872,23 @@ impl Look for OboeLook {
         );
     }
 
+    fn bold_status(&self, p: &PictureCtx, t: f64) -> Vec<bf_picture::bold::Status> {
+        self.bold_statuses(p, t)
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_after_grade(p, img, f, drawn);
+        }
         if !f.in_fight {
             return;
         }

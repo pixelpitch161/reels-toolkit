@@ -37,6 +37,10 @@ use bf_picture::title::layout::Layout;
 use bf_picture::title::patterns::synth as pattern;
 use bf_picture::{np, pil};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 // ---------------------------------------------------------------- #31 render.py: its pieces
 /// `CYAN_SPARK`.
 const CYAN_SPARK: [V3; 3] = [[150.0, 240.0, 255.0], [230.0, 252.0, 255.0], [70.0, 228.0, 255.0]];
@@ -850,6 +854,9 @@ impl Look for SynthLook {
 
     /// One of its rings on the canvas; WHITE NOISE's a ring of static (#31 render.py 1207-1221).
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(p, ic, c, w);
+        }
         let t = c.t;
         let shock = w.kind == "shockwave";
         let wave = w.kind == "wave";
@@ -892,6 +899,9 @@ impl Look for SynthLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         match payload.downcast_ref::<Item>() {
             Some(Item::Cables) => self.with_frame(p, f, |cf| {
                 // arr = F.fr.array(); draw_cables(...); F.fr.set_array(arr): bytes in, the same bytes out where
@@ -1039,6 +1049,9 @@ impl Look for SynthLook {
 
     /// The voltage pulses' and the lash tips' glows (#31 draw_cables' `glows`).
     fn glows(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, _drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_glows(p, f, fr);
+        }
         self.with_frame(p, f, |cf| {
             for &(x, y, r, c, a) in &cf.glows {
                 fr.glow(x, y, r, c, a);
@@ -1064,5 +1077,17 @@ impl Look for SynthLook {
             let (r, px) = if big { (26.0, 2.5) } else { (16.0, 1.4) };
             img.fringe(s.0, s.1, r, px, 1.0 - (t - e.t) / 0.12);
         }
+        if p.bold {
+            self.bold_after_grade(p, img, f, _drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
     }
 }
