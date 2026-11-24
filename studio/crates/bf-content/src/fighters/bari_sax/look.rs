@@ -35,6 +35,10 @@ use bf_picture::scene::{self, R_BALL as R};
 use super::state::{self, Cycle, Snap, Src, Wreckage};
 use crate::fighters::shared::reeds::{self, Num};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `VERT`: the crane's pendulum drawn 1.6 x taller (the view looks down at 58 degrees: heights read short).
 const VERT: f64 = 1.6;
 /// `LEAP_H`: a hop that sails over the swinging ball is drawn this high by the hopper.
@@ -880,6 +884,9 @@ impl Look for BariSaxLook {
 
     // ------------------------------------------------------------ the ball: its height on the cable
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t, phase);
+        }
         if kk != self.k {
             return;
         }
@@ -907,6 +914,9 @@ impl Look for BariSaxLook {
     fn ball_under(&self, p: &PictureCtx, kk: usize, _st: &BallState, t: f64, arr: &mut Img<f32>, cam: &Cam) {
         if kk != self.k || !self.wrecker || !(p.show.grid.t_fight <= t && t < p.t_hs) {
             return;
+        }
+        if p.bold {
+            return self.bold_ball_under(p, arr, cam, t);
         }
         self.draw_swing_fx(p, arr, cam, t);
     }
@@ -1234,6 +1244,9 @@ impl Look for BariSaxLook {
     // ------------------------------------------------------------ the canvas
     /// GROWL's gravelly, broken ring.
     fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            return self.bold_canvas_wave(ic, c, w);
+        }
         let bayer = config::bayer_full();
         let gain = if w.kind == "quake" { 1.3 } else { 1.0 };
         let tint = p.col[self.k].map(|v| v / 255.0 * 1.3 + 0.2);
@@ -1249,6 +1262,9 @@ impl Look for BariSaxLook {
 
     /// CABLE SNAP's target: the falling ball's shadow and a pulsing danger ring.
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         let t = c.t;
         let tcn = py_min(t, p.t_ko);
         let bayer = config::bayer_full();
@@ -1282,6 +1298,9 @@ impl Look for BariSaxLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         if payload.downcast_ref::<CraneItem>().is_none() {
             return;
         }
@@ -1291,6 +1310,9 @@ impl Look for BariSaxLook {
     }
 
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         if self.wrecker && !self.crane_first(p, f.t) {
             Self::draw_crane(arr, f.cam, self.crane_state(p, f.t).as_ref());
         }
@@ -1383,6 +1405,12 @@ impl Look for BariSaxLook {
             1.0 - w.r / w.rmax,
             w.owner as f64,
         );
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
     }
 
     // ------------------------------------------------------------ checks
