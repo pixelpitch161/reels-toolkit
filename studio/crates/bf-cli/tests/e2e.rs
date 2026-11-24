@@ -411,6 +411,68 @@ fn moves_lists_and_draws() {
     assert!(again.contains("already exists"), "{again}");
 }
 
+/// Every fighter draws its bold moves without stopping the program: for each dev fight of `studio/fights/dev`
+/// (each fighter against the target dummy and, pressed to low HP, against the TROMBONE), 40 frames spread over
+/// the whole fight are drawn with the bold effects. A look that panics in some situation fails here, not in a
+/// person's render.
+#[test]
+#[ignore = "3360 frames of 84 fights, some minutes in release: run it by name"]
+fn every_fighter_draws_its_bold_moves() {
+    let dir = repo_root().join("studio/fights/dev");
+    let mut fights: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap()
+        .map(|e| e.unwrap().path())
+        .filter(|p| {
+            let name = p.file_name().unwrap().to_string_lossy().into_owned();
+            name.starts_with("bold_") && name.ends_with(".toml")
+        })
+        .collect();
+    fights.sort();
+    assert!(
+        fights.len() >= 84,
+        "two dev fights for each of the 42 fighters: {}",
+        fights.len()
+    );
+    let times: Vec<String> = (0..40).map(|i| format!("{:.2}", 1.3 + 1.47 * f64::from(i))).collect();
+    let at = times.join(",");
+    let root = TempRoot::new("bold sweep");
+    let workers = std::thread::available_parallelism()
+        .map_or(4, |n| n.get())
+        .min(fights.len());
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let failed = std::sync::Mutex::new(Vec::new());
+    std::thread::scope(|s| {
+        for _ in 0..workers {
+            s.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    let Some(fight) = fights.get(i) else { break };
+                    let name = fight.file_stem().unwrap().to_string_lossy().into_owned();
+                    let ran = ballfight(
+                        &root.0,
+                        &[&"moves", fight, &"--out", &root.join(&name), &"--only-at", &"--at", &at],
+                    );
+                    if ran.code != 0 || ran.stderr.contains("panicked") {
+                        let last = ran.stderr.lines().rev().take(6).collect::<Vec<_>>().join(" | ");
+                        failed
+                            .lock()
+                            .unwrap()
+                            .push(format!("{name}: exit code {}: {last}", ran.code));
+                    }
+                }
+            });
+        }
+    });
+    let failed = failed.into_inner().unwrap();
+    assert!(
+        failed.is_empty(),
+        "{} of {} fights failed:\n{}",
+        failed.len(),
+        fights.len(),
+        failed.join("\n")
+    );
+}
+
 /// `studio/replay/render_hashes.txt`.
 fn render_hashes_file() -> PathBuf {
     repo_root().join("studio/replay/render_hashes.txt")
