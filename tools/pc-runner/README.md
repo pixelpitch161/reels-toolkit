@@ -99,8 +99,9 @@ window (hidden), used once, and expires in an hour. The runner keeps its own Git
   in a row on the runner (about 18 s each, Nov 23, 2026). Rerun it alone before calling it a failure.
 - bf-harness's fighter checks for bagpipes, bari_sax, synth, turntables and viola fail here as in the owner's
   checkout: their git-ignored cache files are missing (docs/studio/HANDOFF.md).
-- Timing tests (the five `bf-app` update/search ones) can time out while the PC is busy; rerun them alone with a
-  `PC-Tests:` line before calling them failures. `engine::search::tests::a_filter_change_then_a_new_fight_ends_the_old_search`
+- Timing tests (the `bf-app` update, search and preview ones) can miss their deadline while the PC is busy. On the
+  PC, the `studio` checks run up to 5 failed app tests again alone and pass with a warning naming each when they pass
+  alone; elsewhere, rerun them alone with a `PC-Tests:` line before calling them failures. `engine::search::tests::a_filter_change_then_a_new_fight_ends_the_old_search`
   timed out in the first full run and passed alone.
 
 ## Common fixes

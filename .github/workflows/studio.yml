@@ -257,7 +257,27 @@ jobs:
           set -o pipefail
           log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
           echo "the test output is kept in $log"
-          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log"
+          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log" && exit 0
+          code=$?
+          # On the owner's PC a few timing tests (the search, update and preview ones) can miss their deadline while
+          # the PC is busy (docs/studio/HANDOFF.md: rerun them alone before calling them failures). There, up to 5
+          # failed tests are each run again alone: the step passes, with a warning naming each, only when every one
+          # passes alone. Anything else (a compile error, more failures, one that fails again) fails as before.
+          [ "${{ runner.environment }}" = self-hosted ] || exit $code
+          failed="$(sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" | sed -n 's/^test \(.*\) \.\.\. FAILED$/\1/p' | sort -u)"
+          [ -n "$failed" ] || exit $code
+          n="$(wc -l <<<"$failed")"
+          [ "$n" -le 5 ] || { echo "$n tests failed: more than the PC being busy explains"; exit $code; }
+          for t in $failed; do
+            echo "::group::$t, alone"
+            cargo test --release --locked -p bf-app --lib --bins --test compat -- --exact "$t" 2>&1 \
+              | tee "$log.alone" || { echo "::endgroup::"; echo "::error title=app tests::$t failed again alone"; exit 1; }
+            echo "::endgroup::"
+            # (it must really have run: a name that matched nothing would pass by running nothing)
+            sed -E 's/\x1b\[[0-9;]*m//g' "$log.alone" | grep -E '^test result: ok\. 1 passed' >/dev/null \
+              || { echo "::error title=app tests::$t did not run alone"; exit 1; }
+            echo "::warning title=app tests::$t failed in the full run and passed alone (the PC was busy)"
+          done
 
       # The package the owner installs, made from the app built above and the ffmpeg fetched above (`package` never
       # downloads), in the runner's temp folder. Then every file is checked against its MANIFEST.txt (size and
