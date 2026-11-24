@@ -34,6 +34,10 @@ use bf_picture::{np, pil};
 use super::state::{self, Held, Oom, Pah, Sub};
 use crate::fighters::shared::reeds;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BRASS`: #32's brass (the bell, the dome).
 const BRASS: V3 = [232.0, 184.0, 78.0];
 /// `BRASS_HI`.
@@ -589,6 +593,9 @@ impl Look for TubaLook {
                 }
             }
         }
+        if p.bold {
+            self.bold_state(p, kk, st, t);
+        }
     }
 
     /// Held inside the bell (the HP number shows again as the enemy pops back out at full size).
@@ -619,6 +626,9 @@ impl Look for TubaLook {
 
     /// oom: the bell inhales, air streaks pour into it; pah: a blast of air (and the spat enemy).
     fn fx_setup(&self, p: &PictureCtx, fx: &mut Fx) {
+        if p.bold {
+            return self.bold_fx_setup(p, fx);
+        }
         let k = self.k;
         let origin = up(0.0, 0.0, 0.0);
         for o in &self.ooms {
@@ -814,6 +824,9 @@ impl Look for TubaLook {
     // ------------------------------------------------------------ canvas
     /// The suction cone while the bell inhales: under every other look's decals.
     fn canvas_first(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_first(p, ic, c);
+        }
         let st = &c.fs[self.k];
         if !(c.in_fight && st.vis && c.t < p.t_ko) {
             return;
@@ -834,6 +847,9 @@ impl Look for TubaLook {
     }
 
     fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(p, ic, c);
+        }
         // SUBSONIC: the floor ripples like water
         for s in &self.subs {
             if !(s.t0 <= c.t && c.t < s.t_slam + 1.6 && s.t0 < p.t_hs) {
@@ -856,7 +872,10 @@ impl Look for TubaLook {
     }
 
     // ------------------------------------------------------------ the dome, the bell, shards
-    fn items_ball(&self, _p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+    fn items_ball(&self, p: &PictureCtx, f: &FrameCtx<'_>, st: &BallState) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_ball(p, f, st);
+        }
         let mut out: Vec<(f64, Payload)> = Vec::new();
         if st.shield > 0.0 {
             let dz = f.cam.depth(&[scene::to_world(st.p[0], st.p[1], R)])[0];
@@ -871,7 +890,32 @@ impl Look for TubaLook {
         out
     }
 
+    fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
+        Vec::new()
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[bf_picture::look::DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
+    }
+
+    fn bold_hit_size(
+        &self,
+        _p: &PictureCtx,
+        e: &Event,
+        by_damage: bf_picture::bold::HitSize,
+    ) -> Option<bf_picture::bold::HitSize> {
+        Self::bold_hit(e, by_damage)
+    }
+
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let k = self.k;
         let st = &f.fs[k];
         let (cam, t) = (f.cam, f.t);
@@ -966,6 +1010,9 @@ impl Look for TubaLook {
 
     // ------------------------------------------------------------ lens
     fn shimmer_after(&self, p: &PictureCtx, img: &mut Pic, cam: &Cam, t: f64) {
+        if p.bold {
+            return self.bold_shimmer_after(p, img, cam, t);
+        }
         for s in &self.subs {
             if s.t_slam <= t && t < s.t_slam + 1.0 && s.t_slam < p.t_hs {
                 let u = t - s.t_slam;
