@@ -20,6 +20,10 @@ use bf_picture::scene;
 use crate::fighters::shared::older::{Poly, blend_into, mask_of_lines, mask_of_polys};
 use crate::fighters::shared::reeds::Num;
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// The tube's centre height above the floor.
 const PIPE_Y: f64 = 0.14;
 /// The tube's drawn radius (world units).
@@ -309,6 +313,9 @@ impl Look for ContrabassoonLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         let mut out: Vec<(f64, Payload)> = Vec::new();
         let tc = p.fx_clock(f.t);
         let fade = if f.t >= p.t_ko {
@@ -352,7 +359,10 @@ impl Look for ContrabassoonLook {
         out
     }
 
-    fn draw_item(&self, _p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+    fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return Self::bold_draw_item(f, fr, payload);
+        }
         let Some(item) = payload.downcast_ref::<Item>() else {
             return;
         };
@@ -362,6 +372,25 @@ impl Look for ContrabassoonLook {
             Item::Spray(x, z, age) => draw_spray(&mut arr, f.cam, *x, *z, *age),
         }
         fr.set_array(&arr, Some(&depth));
+    }
+
+    // ------------------------------------------------------------ the bold effects (nothing without `p.bold`)
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &bf_picture::look::CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn after_grade(
+        &self,
+        p: &PictureCtx,
+        img: &mut bf_picture::look::Pic,
+        f: &FrameCtx<'_>,
+        drawn: &[bf_picture::look::DrawnBall],
+    ) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
+        }
     }
 }
 
