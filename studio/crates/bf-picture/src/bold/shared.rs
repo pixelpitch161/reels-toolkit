@@ -628,7 +628,8 @@ impl PictureCtx {
     pub(crate) fn bold_banners(&self, img: &mut Rgb8, log: &mut DrawLog, t: f64) {
         for b in &self.bold_fx.banners {
             let u = t - b.t0;
-            let hold = b.t1 - b.t0;
+            // a banner is gone by the K.O., whose own words take its place
+            let hold = b.t1.min(self.t_ko) - b.t0;
             if !(0.0..hold).contains(&u) {
                 continue;
             }
