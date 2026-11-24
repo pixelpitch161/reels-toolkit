@@ -1,0 +1,152 @@
+# Runs the tests a change names, on the owner's PC (the runner labelled bf-pc, set up by tools/pc-runner): the way a
+# thread working in the cloud tests on the PC. Two ways to ask:
+#
+#   - Push with a line in the last commit's message:   PC-Tests: -p bf-sim --test violin_quick
+#     (one line per test run, up to 10). A push whose last commit names none starts nothing.
+#   - Actions, "pc-tests", "Run workflow" on a branch, with the same text in "tests" (several runs: separate them
+#     with a semicolon).
+#
+# Each line is what follows `cargo test --release --locked` in studio/ (always release, so the PC keeps one build
+# folder, shared with the studio checks). It may start with NAME=value settings (`ALL_PAIRINGS_SEEDS=40 -p bf-sim
+# --test all_pairings`). Only letters, digits, spaces and . _ : = / , - are allowed. The PC's copy of the git-ignored
+# reference cache is put in studio/reference/.cache first, so bf-harness's fighter checks run too, and the
+# interface tests draw through DirectX 12 there. Only people who can push to the repository can start this; it
+# never runs for a pull request.
+name: pc-tests
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      tests:
+        description: "What follows `cargo test --release --locked` (several runs: separate with ;)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+# No concurrency group: a later push that names no tests must not cancel a run that does. The PC runs one job at a
+# time anyway.
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  # Reads and checks the named tests on one of GitHub's small machines, so a push that names none never wakes the PC.
+  # (The job-level test is only a quick filter: a message that mentions "PC-Tests:" mid-line names nothing.)
+  pick:
+    name: Read the tests to run
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'PC-Tests:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      count: ${{ steps.read.outputs.count }}
+      tests: ${{ steps.read.outputs.tests }}
+    steps:
+      - name: Read the tests to run
+        id: read
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+          INPUT: ${{ inputs.tests }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            tr ';' '\n' <<<"$INPUT"
+          else
+            sed -n 's/^[[:space:]]*PC-Tests:[[:space:]]*//p' <<<"$MSG"
+          fi | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | { grep -v '^$' || true; } > list.txt
+          n="$(wc -l < list.txt)"
+          if [ "$EVENT" = workflow_dispatch ] && [ "$n" -lt 1 ]; then echo "::error::no tests were named"; exit 1; fi
+          [ "$n" -le 10 ] || { echo "::error::$n test runs were named; at most 10"; exit 1; }
+          while IFS= read -r line; do
+            if ! grep -Eq '^[A-Za-z0-9_ .:=/,-]+$' <<<"$line"; then
+              echo "::error::not allowed (only letters, digits, spaces and . _ : = / , -): $line"; exit 1
+            fi
+            echo "will run: cargo test --release --locked $line"
+          done < list.txt
+          [ "$n" -ge 1 ] || echo "The last commit's message has no line starting with PC-Tests:, so nothing runs."
+          echo "count=$n" >> "$GITHUB_OUTPUT"
+          { echo 'tests<<PC_TESTS_END'; cat list.txt; echo 'PC_TESTS_END'; } >> "$GITHUB_OUTPUT"
+
+  pc:
+    name: The named tests, on the owner's PC
+    needs: pick
+    if: needs.pick.outputs.count != '0' && vars.BF_PC_RUNNER == 'on'
+    runs-on: [self-hosted, Windows, bf-pc]
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: studio
+        shell: bash
+    steps:
+      - name: Keep line endings as committed
+        working-directory: ${{ github.workspace }}
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v5
+
+      - name: Build files folder and the reference cache (owner's PC)
+        # The runner user's execution policy blocks script files, so the step's script is run with Bypass.
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -Command ". '{0}'"
+        run: |
+          "CARGO_TARGET_DIR=$env:BF_PC_TARGET" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          $src = $env:BF_PC_REFERENCE_CACHE
+          if ($src -and (Test-Path "$src\*")) {
+            & robocopy.exe $src reference\.cache /MIR /NFL /NDL /NJH /NJS /NP /R:2 /W:2 | Out-Null
+            if ($LASTEXITCODE -ge 8) { throw "copying the reference cache failed (robocopy $LASTEXITCODE)" }
+            Write-Host "the reference cache was copied from $src"
+            exit 0
+          }
+          Write-Host "::warning::the PC has no copy of the reference cache: tests that need it will say their files are missing"
+
+      - name: Install the pinned toolchain
+        run: |
+          channel="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
+          test -n "$channel"
+          rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
+          rustc -vV
+
+      # The lines were checked by the pick job (only letters, digits, spaces and . _ : = / , -), so splitting them
+      # into words is safe.
+      - name: Run the named tests
+        env:
+          TESTS: ${{ needs.pick.outputs.tests }}
+        run: |
+          set +e
+          failed=0
+          { echo '### Tests run on the owner'"'"'s PC'; echo; } >> "$GITHUB_STEP_SUMMARY"
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            read -r -a words <<<"$line"
+            envs=(); args=()
+            for w in "${words[@]}"; do
+              if [ ${#args[@]} -eq 0 ] && [[ "$w" =~ ^[A-Z][A-Z0-9_]*= ]]; then envs+=("$w"); else args+=("$w"); fi
+            done
+            echo "::group::cargo test --release --locked $line"
+            start=$SECONDS
+            env "${envs[@]}" cargo test --release --locked "${args[@]}" < /dev/null
+            code=$?
+            echo "::endgroup::"
+            took=$((SECONDS - start))
+            if [ $code -eq 0 ]; then
+              echo "- passed (${took}s): \`$line\`" >> "$GITHUB_STEP_SUMMARY"
+            else
+              failed=$((failed + 1))
+              echo "::error title=pc-tests::failed (exit $code): cargo test --release --locked $line"
+              echo "- **failed** (exit $code, ${took}s): \`$line\`" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done <<<"$(tr -d '\r' <<<"$TESTS")"
+          exit $(( failed > 0 ))
+
+  pc-off:
+    name: The PC runner is switched off
+    needs: pick
+    if: needs.pick.outputs.count != '0' && vars.BF_PC_RUNNER != 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo "::error::tests were named for the owner's PC, but the repository variable BF_PC_RUNNER is not on (see tools/pc-runner/README.md)"
+          exit 1

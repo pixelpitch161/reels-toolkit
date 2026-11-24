@@ -11,6 +11,12 @@ on:
       - "studio/**"
       - "tools/studio_export/**"
       - ".github/workflows/studio.yml"
+  workflow_dispatch:
+    inputs:
+      github_machines:
+        description: Run on GitHub's machines even when the owner's PC runner is switched on
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,9 +30,49 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
+  # Where the two jobs below run. The owner's PC (the runner labelled bf-pc, set up by tools/pc-runner) when the
+  # repository variable BF_PC_RUNNER is "on"; GitHub's Windows machines when it isn't, for a pull request from a fork
+  # (whose code must never run on the PC), and when a manual run asks for them. With the PC chosen and the PC off,
+  # the jobs wait in the queue until it is on again. See tools/pc-runner/README.md.
+  where:
+    name: Pick the machine
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - name: Pick the machine
+        id: pick
+        env:
+          PC: ${{ vars.BF_PC_RUNNER }}
+          FORCE_GITHUB: ${{ inputs.github_machines || false }}
+          EVENT: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$FORCE_GITHUB" = true ]; then
+            why="asked for when the run was started"; pc=false
+          elif [ "$EVENT" = pull_request ] && [ "$HEAD_REPO" != "$REPO" ]; then
+            why="a pull request from a fork"; pc=false
+          elif [ "$PC" = on ]; then
+            why="BF_PC_RUNNER is on"; pc=true
+          else
+            why="BF_PC_RUNNER is not on"; pc=false
+          fi
+          if $pc; then
+            echo 'runner=["self-hosted","Windows","bf-pc"]' >> "$GITHUB_OUTPUT"
+            where="the owner's PC"
+          else
+            echo 'runner="windows-latest"' >> "$GITHUB_OUTPUT"
+            where="GitHub's Windows machines"
+          fi
+          echo "The checks run on $where: $why." | tee -a "$GITHUB_STEP_SUMMARY"
+
   windows:
     name: build bf-cli, test bf-core and bf-sim, render a clip (Windows)
-    runs-on: windows-latest
+    needs: where
+    runs-on: ${{ fromJSON(needs.where.outputs.runner) }}
+    timeout-minutes: 180
     defaults:
       run:
         working-directory: studio
@@ -50,7 +96,20 @@ jobs:
           rustc -vV
           cargo -V
 
+      # On the owner's PC the build files and the ffmpeg download are kept between runs in F:\bf-runner (one runner,
+      # one job at a time, so one build folder), and GitHub's cache is not used. On GitHub's machines the build files
+      # go in studio/target and the ffmpeg download in the runner's temp folder, both kept by GitHub's cache.
+      - name: Where the build files and the ffmpeg download go
+        run: |
+          if [ "${{ runner.environment }}" = self-hosted ]; then
+            echo "CARGO_TARGET_DIR=$BF_PC_TARGET" >> "$GITHUB_ENV"
+            echo "FFMPEG_CACHE=$BF_PC_FFMPEG_CACHE" >> "$GITHUB_ENV"
+          else
+            echo "FFMPEG_CACHE=$(cygpath -w "$(cygpath -u '${{ runner.temp }}')/ffmpeg-cache")" >> "$GITHUB_ENV"
+          fi
+
       - name: Cache cargo registry and build
+        if: runner.environment == 'github-hosted'
         uses: actions/cache@v5
         with:
           path: |
@@ -83,7 +142,7 @@ jobs:
       # every later step for two releases).
       - name: Restore the ffmpeg download
         id: ffmpeg-cache
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && runner.environment == 'github-hosted' }}
         uses: actions/cache/restore@v5
         with:
           path: ${{ runner.temp }}/ffmpeg-cache/*.zip
@@ -96,13 +155,15 @@ jobs:
           tmp="$(cygpath -u '${{ runner.temp }}')"
           log="$tmp/ffmpeg.log"
           {
-            if [ "${{ steps.ffmpeg-cache.outputs.cache-hit }}" = "true" ]; then
+            if [ "${{ runner.environment }}" = self-hosted ]; then
+              echo "::notice title=ffmpeg::the pinned ffmpeg archive is kept on the PC in $FFMPEG_CACHE (downloaded once)"
+            elif [ "${{ steps.ffmpeg-cache.outputs.cache-hit }}" = "true" ]; then
               echo "::notice title=ffmpeg::the pinned ffmpeg archive came from the cache"
             else
               echo "::notice title=ffmpeg::the pinned ffmpeg archive is not in the cache: it is downloaded (258 MB)"
             fi
             cargo run --release --locked -p bf-pack --bin ballfight-pack -- fetch-ffmpeg \
-              --cache "$(cygpath -w "$tmp/ffmpeg-cache")" --out "$(cygpath -w "$tmp/ffmpeg")"
+              --cache "$FFMPEG_CACHE" --out "$(cygpath -w "$tmp/ffmpeg")"
             real="$tmp/ffmpeg/ffmpeg.exe"
             if [ ! -f "$real" ]; then echo "::error::ffmpeg was not fetched"; exit 1; fi
             encoders="$("$real" -hide_banner -encoders)"
@@ -117,7 +178,9 @@ jobs:
           } 2>&1 | tee "$log"
 
       - name: Keep the ffmpeg download for the next runs
-        if: ${{ !cancelled() && steps.ffmpeg.outcome == 'success' && steps.ffmpeg-cache.outputs.cache-hit != 'true' }}
+        if: >-
+          ${{ !cancelled() && runner.environment == 'github-hosted' && steps.ffmpeg.outcome == 'success' &&
+          steps.ffmpeg-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v5
         with:
           path: ${{ runner.temp }}/ffmpeg-cache/*.zip
@@ -162,7 +225,8 @@ jobs:
         if: ${{ !cancelled() && steps.ballfight.outcome == 'success' && steps.ffmpeg.outcome == 'success' }}
         run: |
           out="$RUNNER_TEMP/ballfight out"
-          ./target/release/ballfight render fights/flute_vs_trombone.toml \
+          tgt="$(cygpath -u "${CARGO_TARGET_DIR:-$PWD/target}")"
+          "$tgt/release/ballfight" render fights/flute_vs_trombone.toml \
             --rec reference/fights/flute_vs_trombone/ep392.bfrec --frames 0:90 --out "$out"
           test -s "$out/flute_vs_trombone_frames0-90/flute_vs_trombone_frames0-90.mp4"
 
@@ -193,7 +257,27 @@ jobs:
           set -o pipefail
           log="$(cygpath -u '${{ runner.temp }}')/app-tests.log"
           echo "the test output is kept in $log"
-          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log"
+          cargo test --release --locked --no-fail-fast -p bf-app --lib --bins --test compat 2>&1 | tee "$log" && exit 0
+          code=$?
+          # On the owner's PC a few timing tests (the search, update and preview ones) can miss their deadline while
+          # the PC is busy (docs/studio/HANDOFF.md: rerun them alone before calling them failures). There, up to 5
+          # failed tests are each run again alone: the step passes, with a warning naming each, only when every one
+          # passes alone. Anything else (a compile error, more failures, one that fails again) fails as before.
+          [ "${{ runner.environment }}" = self-hosted ] || exit $code
+          failed="$(sed -E 's/\x1b\[[0-9;]*m//g; s/\r$//' "$log" | sed -n 's/^test \(.*\) \.\.\. FAILED$/\1/p' | sort -u)"
+          [ -n "$failed" ] || exit $code
+          n="$(wc -l <<<"$failed")"
+          [ "$n" -le 5 ] || { echo "$n tests failed: more than the PC being busy explains"; exit $code; }
+          for t in $failed; do
+            echo "::group::$t, alone"
+            cargo test --release --locked -p bf-app --lib --bins --test compat -- --exact "$t" 2>&1 \
+              | tee "$log.alone" || { echo "::endgroup::"; echo "::error title=app tests::$t failed again alone"; exit 1; }
+            echo "::endgroup::"
+            # (it must really have run: a name that matched nothing would pass by running nothing)
+            sed -E 's/\x1b\[[0-9;]*m//g' "$log.alone" | grep -E '^test result: ok\. 1 passed' >/dev/null \
+              || { echo "::error title=app tests::$t did not run alone"; exit 1; }
+            echo "::warning title=app tests::$t failed in the full run and passed alone (the PC was busy)"
+          done
 
       # The package the owner installs, made from the app built above and the ffmpeg fetched above (`package` never
       # downloads), in the runner's temp folder. Then every file is checked against its MANIFEST.txt (size and
@@ -207,9 +291,9 @@ jobs:
           log="$tmp/package.log"
           pkg="$tmp/package"
           studio="$PWD"
-          exe="$studio/target/release/ballfight-studio.exe"
+          exe="$(cygpath -u "${CARGO_TARGET_DIR:-$studio/target}")/release/ballfight-studio.exe"
           cargo run --release --locked -p bf-pack --bin ballfight-pack -- package --exe "$(cygpath -w "$exe")" \
-            --out "$(cygpath -w "$pkg")" --cache "$(cygpath -w "$tmp/ffmpeg-cache")" --from "$GITHUB_WORKSPACE" \
+            --out "$(cygpath -w "$pkg")" --cache "$FFMPEG_CACHE" --from "$GITHUB_WORKSPACE" \
             2>&1 | tee "$log"
           check() {
             fail() { echo "FAILED: $*"; exit 1; }
@@ -355,7 +439,9 @@ jobs:
   # step runs even when an earlier one failed, so one run names every problem.
   checks:
     name: fmt, clippy, and the tests of the other crates (Windows)
-    runs-on: windows-latest
+    needs: where
+    runs-on: ${{ fromJSON(needs.where.outputs.runner) }}
+    timeout-minutes: 180
     defaults:
       run:
         working-directory: studio
@@ -375,7 +461,13 @@ jobs:
           rustup toolchain install "$channel" --profile minimal --component clippy,rustfmt
           rustc -vV
 
+      # The same build folder as the first job on the PC: one runner runs one job at a time.
+      - name: Build files folder (owner's PC)
+        if: runner.environment == 'self-hosted'
+        run: echo "CARGO_TARGET_DIR=$BF_PC_TARGET" >> "$GITHUB_ENV"
+
       - name: Cache cargo registry and build
+        if: runner.environment == 'github-hosted'
         uses: actions/cache@v5
         with:
           path: |

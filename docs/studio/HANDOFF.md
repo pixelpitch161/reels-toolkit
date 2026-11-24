@@ -104,7 +104,9 @@ version on this PC; no download, no token in the app).
 3. Run the **quick install check** (below), commit and push. Don't wait for CI (`.github/workflows/studio.yml`):
    it runs in the background, and anything it catches is fixed in the next version. Before tagging, open the last
    GitHub run of the previous tag (Actions, workflow `studio`) and fix what it caught: nobody else looks (lesson of
-   1.8.0 and 1.8.1, whose checks were red for two releases). GitHub runs two jobs on Windows: the first builds the
+   1.8.0 and 1.8.1, whose checks were red for two releases). The two jobs run on this PC's runner when the
+   repository variable `BF_PC_RUNNER` is `on` (`tools/pc-runner/README.md`), otherwise on GitHub's Windows machines.
+   The first builds the
    command line and the app, tests bf-core, bf-sim and bf-pack, renders and encodes the example episode, tests the
    app without a window and checks the package (each step runs even when an earlier one failed, unless it needs
    that step's output); the second runs `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
@@ -159,6 +161,15 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
   fighters you changed (`cargo test -p <crate>`, `--test fighter_<name>`), plus `cargo check --workspace
   --all-targets` so nothing else breaks to compile, and the count snapshots in `bf-app/tests/ui` when a count
   changes. Don't run the whole suite; GitHub CI does that.
+- **Tests run on this PC, never in a cloud container** (the owner, Nov 23, 2026). A thread that works on this PC
+  (Remote Control) runs its tests here as above. A thread in a cloud container builds and tests nothing there: it
+  pushes, and names the tests it needs in its last commit's message, one line each, `PC-Tests: -p bf-sim --test
+  violin_quick` (what follows `cargo test --release --locked` in `studio/`). The `pc-tests` workflow runs them on
+  this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface tests run too; the
+  result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what changed, none for a
+  small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
+  (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
+  `F:\bf-runner\target` (30 to 95 GB), which counts toward the 150 GB to keep free on F:.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
   must be empty before every commit.
@@ -222,7 +233,8 @@ new fighter's fights need not match anything bit for bit. A theme is added the s
    --frame N --out <file.png>`) next to the old episode's look; the render's own checks pass, or the report says
    which one fails and why that is acceptable.
 5. `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo check --workspace --all-targets`
-   and the tests above (not the whole suite: GitHub runs that), then the release steps above.
+   and the tests above (not the whole suite: CI runs that), on this PC (from the cloud: `PC-Tests:` lines, above),
+   then the release steps above.
 
 **The exact route (optional)**, used by the 20 kit fighters in milestone 3, only when a fighter must match a Python
 reference bit for bit: export its references from the frozen kit (`python -m tools.studio_export fighter_<slug>`,
