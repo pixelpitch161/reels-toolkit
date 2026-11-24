@@ -23,7 +23,9 @@
 # F:\bf-runner\admin and to folders it has just checked or made itself.
 param(
     [ValidateSet('Account', 'Folders', 'Copy', 'Runner', 'Lock', 'Tools', 'Smoke', 'All')][string]$Step = 'All',
-    [string]$ScratchBranch = ''
+    [string]$ScratchBranch = '',
+    # Get the registration token from the BallPhysicsEngine WSL test machine's `beat` GitHub login instead of asking.
+    [switch]$TokenFromWsl
 )
 
 . "$PSScriptRoot\common.ps1"
@@ -239,6 +241,13 @@ function Write-RunnerEnv {
 
 # The registration token, typed (hidden) into this window. Kept only in memory.
 function Read-Token {
+    if ($TokenFromWsl) {
+        # The owner agreed (Nov 23, 2026) to use the BallPhysicsEngine WSL test machine's `beat` GitHub login for this
+        # one call; nothing in WSL is changed.
+        $t = (& wsl.exe -d bpe-ci -u beat -- gh api -X POST "repos/$Repo/actions/runners/registration-token" --jq .token)
+        if (-not $t) { throw 'Could not get a registration token from the WSL beat login' }
+        return "$t".Trim()
+    }
     Write-Host ''
     Write-Host 'GitHub registration token: on github.com open pixelpitch161/reels-toolkit, Settings, Actions, Runners,'
     Write-Host '"New self-hosted runner", Windows. Copy the token from the line that starts with ./config.cmd'
