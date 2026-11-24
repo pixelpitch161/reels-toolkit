@@ -137,6 +137,9 @@ cargo build -p bf-cli 2>&1 | grep -E "^(warning|error)" -A12
   repository.
 - Under the low-HP spotlight the ring is dimmed after the painter pass, so white drawn in `draw_item` or
   `over_ring` comes out grey there: the brightest marks of a low-HP move belong in `after_grade`.
+- The camera looks down on the ring from about 60 degrees, so a flat thing tilted steeply towards it (a
+  flipped plate, a lid, a card) is nearly edge-on and vanishes: lay such shapes flat on the floor or stand
+  them upright facing the camera.
 - Only still frames: do not run tests, `ballfight render`, `check` or `bench` here. Tests run on the owner's
   PC.
 
