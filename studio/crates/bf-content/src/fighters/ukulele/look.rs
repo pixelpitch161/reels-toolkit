@@ -14,15 +14,19 @@ use bf_picture::config::{H, W, ss};
 use bf_picture::fx::{Emit, Mark, MarkKind};
 use bf_picture::img::Img;
 use bf_picture::lighting::shade;
-use bf_picture::look::{DefaultLook, FrameCtx, Fx, Look, Payload, Phase, Pic};
+use bf_picture::look::{CanvasCtx, DefaultLook, DrawnBall, FrameCtx, Fx, Look, Payload, Phase, Pic};
 use bf_picture::raster::Frame;
-use bf_picture::ring::state::BallState;
+use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::ring::{PictureCtx, layer_blend, screen};
 use bf_picture::scene::{self, R_BALL as R};
 use bf_picture::shadows::proj_point;
 use bf_picture::{np, pil};
 
 use super::state::{self, Spout, Surf};
+
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
 
 /// `WATER`: deep, mid, lite, foam, streak.
 const DEEP: V3 = [40.0, 128.0, 170.0];
@@ -395,6 +399,9 @@ impl Look for UkuleleLook {
 
     /// The uke rides its wave: lifted on the crest, glowing.
     fn state(&self, p: &PictureCtx, kk: usize, st: &mut BallState, t: f64, phase: Phase, _gl: f64) {
+        if p.bold {
+            return self.bold_state(p, kk, st, t, phase);
+        }
         if phase != Phase::Fight || kk != self.k {
             return;
         }
@@ -587,6 +594,9 @@ impl Look for UkuleleLook {
     }
 
     fn items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
+        if p.bold {
+            return self.bold_items_free(p, f);
+        }
         if !Self::show(p, f.t) {
             return Vec::new();
         }
@@ -606,6 +616,9 @@ impl Look for UkuleleLook {
     }
 
     fn draw_item(&self, p: &PictureCtx, f: &FrameCtx<'_>, fr: &mut Frame, payload: &Payload) {
+        if p.bold {
+            return self.bold_draw_item(p, f, fr, payload);
+        }
         let Some(item) = payload.downcast_ref::<Item>() else {
             return;
         };
@@ -708,6 +721,25 @@ impl Look for UkuleleLook {
                 );
             }
             _ => {}
+        }
+    }
+
+    // ------------------------------------------------------------ the bold effects
+    fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            self.bold_canvas(p, ic, c);
+        }
+    }
+
+    fn canvas_wave(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>, w: &Wave) {
+        if p.bold {
+            self.bold_canvas_wave(p, ic, c, w);
+        }
+    }
+
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
         }
     }
 
