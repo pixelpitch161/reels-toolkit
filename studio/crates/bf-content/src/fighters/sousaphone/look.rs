@@ -22,7 +22,7 @@ use bf_picture::camera::{Cam, V3};
 use bf_picture::config::BAYER;
 use bf_picture::fx::{Emit, Mark, MarkKind};
 use bf_picture::img::{Img, RgbF};
-use bf_picture::look::{CanvasCtx, FrameCtx, Fx, Look, Phase, Spark};
+use bf_picture::look::{CanvasCtx, DrawnBall, FrameCtx, Fx, Look, Phase, Pic, Spark};
 use bf_picture::np;
 use bf_picture::raster::Frame;
 use bf_picture::ring::effects::up;
@@ -35,6 +35,10 @@ use bf_picture::title::layout;
 use super::state::{self, Blast, Front, Set};
 use crate::fighters::shared::padded::padded_sprite;
 use crate::fighters::shared::reeds::{self, INK, Num, WHITE};
+
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
 
 /// `CHALK`.
 const CHALK: V3 = [238.0, 236.0, 226.0];
@@ -562,6 +566,9 @@ impl Look for SousaphoneLook {
 
     // ------------------------------------------------------------ the canvas: chalk lines, the cone, the sweep
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         let k = self.k;
         let t = c.t;
         let col = p.col[k].map(|v| v / 255.0);
@@ -652,6 +659,9 @@ impl Look for SousaphoneLook {
 
     // ------------------------------------------------------------ over the ring: sound waves, the ghost line
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         let (cam, k) = (f.cam, self.k);
         let t = f.t;
         let col = p.col[k];
@@ -758,6 +768,13 @@ impl Look for SousaphoneLook {
                 let spr = self.ghost_sprite(rp * 1.9);
                 paste_ghost(arr, &spr, col, al, c.0, c.1);
             }
+        }
+    }
+
+    // ------------------------------------------------------------ the bold effects
+    fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            self.bold_after_grade(p, img, f, drawn);
         }
     }
 
