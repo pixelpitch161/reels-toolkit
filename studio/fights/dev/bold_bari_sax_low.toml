@@ -5,7 +5,7 @@ arena = "ring"
 handicap = [0.6, 1.5]
 dmg_scale = 1.0
 tempo_bpm = 140.0
-seed = 1
+seed = 12
 
 [pair_rules]
 
