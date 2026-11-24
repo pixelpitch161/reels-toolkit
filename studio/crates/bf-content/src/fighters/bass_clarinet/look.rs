@@ -42,6 +42,10 @@ use bf_picture::scene::{R_BALL as R, to_world};
 use super::state::{self, Anch};
 use crate::fighters::shared::reeds::{self, CANE, INK, Num, Px, WHITE};
 
+/// The same moves with the bold effects.
+#[path = "bold.rs"]
+mod bold;
+
 /// `BLACK`: grenadilla.
 const BLACK: V3 = [30.0, 26.0, 32.0];
 /// `NICKEL` of #38's styles (the endpin rod).
@@ -693,6 +697,9 @@ impl Look for BassClarinetLook {
 
     // ---------------------------------------------------------------- the canvas
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas(p, ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -741,7 +748,10 @@ impl Look for BassClarinetLook {
         }
     }
 
-    fn canvas_after(&self, _p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+    fn canvas_after(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
+        if p.bold {
+            return self.bold_canvas_after(ic, c);
+        }
         if !c.in_fight {
             return;
         }
@@ -769,6 +779,9 @@ impl Look for BassClarinetLook {
 
     // ---------------------------------------------------------------- over the ring: the endpin, the twin, the paddle
     fn over_ring(&self, p: &PictureCtx, f: &FrameCtx<'_>, _fr: &mut Frame, arr: &mut Img<f32>, _depth: &mut Img<f32>) {
+        if p.bold {
+            return self.bold_over_ring(p, f, arr);
+        }
         if !f.in_fight {
             return;
         }
@@ -872,6 +885,9 @@ impl Look for BassClarinetLook {
     }
 
     fn after_grade(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>, drawn: &[DrawnBall]) {
+        if p.bold {
+            return self.bold_after_grade(p, img, f, drawn);
+        }
         // LIGHTS OUT: the whole arena eases darker (at most 40 %); both balls stay readable (soft keep circles)
         let d = self.dim_at(p.t_ko, f.t);
         if d <= 0.0 {
