@@ -287,7 +287,7 @@ impl Groove {
         self.mix
             .iter()
             .find(|(b, _)| *b == bus)
-            .map_or(1.0, |(_, db)| 10f64.powf(db / 20.0))
+            .map_or(1.0, |(_, db)| bf_core::dmath::pow(10.0, db / 20.0))
     }
 
     /// The move of layer `layer`'s range, in semitones.
