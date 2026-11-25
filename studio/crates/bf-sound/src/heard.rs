@@ -203,11 +203,14 @@ mod tests {
         // K-weighting's +0.69 dB near 1 kHz (the offset is there to cancel it). At -20 dBFS, 20 lower.
         let x = sine(997.0, -20.0, 3.0);
         assert!((integrated(&x) - -20.0).abs() < 0.1, "{}", integrated(&x));
-        // Silence before and after does not change a gated figure by much.
+        // Silence before and after does not change a gated figure by much: the silent blocks are gated out, and
+        // only the six blocks that straddle the tone's two edges and pass the relative gate pull it down, by 0.41 LU
+        // for this 3 s tone (worked out on the block powers).
         let mut padded = vec![[0.0; 2]; SR * 2];
         padded.extend(&x);
         padded.extend(vec![[0.0; 2]; SR * 2]);
-        assert!((integrated(&padded) - integrated(&x)).abs() < 0.3);
+        let moved = integrated(&padded) - integrated(&x);
+        assert!((moved - -0.41).abs() < 0.05, "{moved}");
         assert_eq!(integrated(&[[0.0; 2]; SR * 2]), -99.0);
         assert!(blocks(&x[..BLOCK]).is_empty());
         assert_eq!(blocks(&x).len(), (x.len() - BLOCK).div_ceil(HOP));
