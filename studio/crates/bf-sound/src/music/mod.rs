@@ -35,6 +35,7 @@
 mod error;
 mod events;
 mod fx;
+pub mod groove;
 pub mod layers;
 mod num;
 mod played;
