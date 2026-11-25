@@ -29,7 +29,7 @@ use bf_core::fightfile::is_extra_line;
 use bf_sound::master::BUS;
 
 use crate::composed_parts;
-use crate::composer::{PER_BAR, compose};
+use crate::composer::{Brief, PER_BAR, compose, harmonise};
 use crate::error::ContentError;
 use crate::fighters;
 use crate::personality::{Role, personality};
@@ -334,6 +334,8 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
     let signal = StorySignal::from(ctx)?;
     let seed = ff.music.music_seed;
     let style = composed_parts::style_of(ff.music.melody_style.as_deref());
+    let mut roles: [Option<Role>; 2] = [None, None];
+    let mut registers = [(0, 127); 2];
     for (k, name) in ctx.show.names.clone().iter().enumerate() {
         if ff.music.pinned.contains(name) {
             continue;
@@ -351,7 +353,12 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
         } else {
             p.roles.first().copied().unwrap_or(Role::Melody)
         };
-        let c = compose(p, role, k, &ctx.harmony, &signal, seed);
+        // a piercing instrument writes its line under the top octave of its register (M3)
+        let part = composed_parts::part_note(name);
+        let ceiling = part.piercing.then(|| (part.register.1 - 12).max(part.register.0));
+        let c = compose(p, role, k, &ctx.harmony, &signal, seed, Brief { style, ceiling });
+        roles[k] = Some(role);
+        registers[k] = (part.register.0, ceiling.unwrap_or(part.register.1));
         ctx.composed.insert(
             name.clone(),
             ComposedPart {
@@ -360,6 +367,35 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
                 solo: c.solo,
             },
         );
+    }
+    // The harmony pass (C2), where the composer wrote both lines: the melody gives way to a bass, otherwise the
+    // instrument with the lower register does. A pairing with an unpitched fighter has nothing to clash.
+    let pitched = ctx
+        .show
+        .names
+        .iter()
+        .all(|n| !composed_parts::UNPITCHED.contains(&n.as_str()));
+    if let ([Some(r0), Some(r1)], true) = (roles, pitched) {
+        let names = &ctx.show.names;
+        let lower = registers[0].0 + registers[0].1 <= registers[1].0 + registers[1].1;
+        let giver = if r1 == Role::Bass && r0 != Role::Bass {
+            0
+        } else if r0 == Role::Bass && r1 != Role::Bass {
+            1
+        } else {
+            usize::from(!lower)
+        };
+        let scale_pcs: Vec<i32> = ctx
+            .harmony
+            .scale
+            .iter()
+            .map(|s| (ctx.harmony.key_pc + s).rem_euclid(12))
+            .collect();
+        let other = ctx.composed[&names[1 - giver]].song.clone();
+        let register = registers[giver];
+        if let Some(part) = ctx.composed.get_mut(&names[giver]) {
+            harmonise(&mut part.song, &other, &scale_pcs, register);
+        }
     }
     // What the parts and the master read of the upgrade (sound upgrade, 2026-11-25): Composed only.
     let bass = ctx

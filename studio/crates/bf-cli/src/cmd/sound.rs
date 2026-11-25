@@ -33,8 +33,8 @@ pub struct Args {
     /// The composer's seed (default: the fight file's music seed).
     #[arg(long, value_name = "N")]
     music_seed: Option<u64>,
-    /// The melody style of the Composed arrangement: signature, climbing, riff, runs, broken_chords or anchor
-    /// (default: the fight file's).
+    /// The melody style of the Composed arrangement: signature, climbing, riff, runs, broken_chords or anchor,
+    /// or auto for the pick the theme and the music seed give (default: the fight file's).
     #[arg(long, value_name = "NAME", value_parser = melody_style)]
     melody_style: Option<String>,
     /// Also save the notes each fighter sounded, as JSON (a new file).
@@ -42,15 +42,21 @@ pub struct Args {
     played: Option<PathBuf>,
 }
 
+/// `--melody-style auto`: the style the theme's list and the music seed pick.
+const AUTO: &str = "auto";
+
 /// `--melody-style <name>`.
 fn melody_style(text: &str) -> Result<String, String> {
     use bf_sound::music::Style;
     let t = text.trim();
-    if Style::from_key(t).is_some() {
+    if t == AUTO || Style::from_key(t).is_some() {
         Ok(t.to_string())
     } else {
         let all: Vec<&str> = Style::ALL.iter().map(|s| s.key()).collect();
-        Err(format!("{text} is not a melody style; give one of {}", all.join(", ")))
+        Err(format!(
+            "{text} is not a melody style; give {AUTO} or one of {}",
+            all.join(", ")
+        ))
     }
 }
 
@@ -58,7 +64,13 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
     crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
     if let Some(style) = &a.melody_style {
-        ff.music.melody_style = Some(style.clone());
+        ff.music.melody_style = Some(if style == AUTO {
+            bf_content::composer::pick_style(&ff.music.theme, ff.music.music_seed)
+                .key()
+                .to_string()
+        } else {
+            style.clone()
+        });
     }
     new_file(&a.out)?;
     if let Some(path) = &a.played {

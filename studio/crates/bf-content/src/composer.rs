@@ -24,11 +24,16 @@
 //! (8 notes a bar), [`Composition::song`] is the same line written out for every bar of the song with the lead's
 //! shaping (for Task 7 to play bar by bar), and [`Composition::solo`] is a `music.solos` entry.
 
+mod harmonise;
+mod styles;
+
 use bf_core::fightfile::SoloNote;
 use bf_core::harmony::{Harmony, parse_chord};
 use bf_core::rng::Generator;
+use bf_sound::music::Style;
 use bf_sound::music::signal::{Phase, StorySignal};
 
+pub use self::harmonise::harmonise;
 use crate::personality::{Ornament, Personality, Role, Step};
 
 /// Notes a bar of a composed line: 8ths.
@@ -76,6 +81,8 @@ struct Pitch<'a> {
     hi: i32,
     /// Where scale degree 0 sits: the key's note nearest the personality's home.
     base: i32,
+    /// The notes the fighter's own motifs start on (a Riff is not built on one).
+    own: Vec<i32>,
 }
 
 impl Pitch<'_> {
@@ -198,8 +205,38 @@ fn seed_of(seed: u64, side: usize) -> u64 {
         & 0xFFFF_FFFF_FFFF
 }
 
+/// The melody style a fight on `theme` gets when none is chosen (the Music panel's "Auto"): one of the styles
+/// that suit the theme's family, picked with the fight's music seed, the same for both fighters. A new seed is a
+/// new pick; the fight file then stores the style's name, so the fight keeps it.
+pub fn pick_style(theme: &str, music_seed: u64) -> Style {
+    let list = crate::themes::family::styles_of(theme);
+    // a stream of its own, so the pick does not move with what the lines draw
+    let mut rng = Generator::new(seed_of(music_seed, 2) ^ 0x0057_171E);
+    list[pick(&mut rng, list.len())]
+}
+
+/// How a fighter's music is to be written (sound upgrade, 2026-11-25).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Brief {
+    /// The melody style of the fight (C11).
+    pub style: Style,
+    /// The highest note the music may use, for a piercing instrument that is kept out of the top octave of its
+    /// register (M3); `None` for the whole register.
+    pub ceiling: Option<i32>,
+}
+
+impl Brief {
+    /// The Signature style over the whole register.
+    pub fn signature() -> Brief {
+        Brief {
+            style: Style::Signature,
+            ceiling: None,
+        }
+    }
+}
+
 /// `compose(personality, role, chord loop, key, scale, signal, music seed)`: fighter `side`'s line and victory
-/// solo. The chord loop, key and scale are the harmony's.
+/// solo, written as `brief` asks. The chord loop, key and scale are the harmony's.
 pub fn compose(
     p: &Personality,
     role: Role,
@@ -207,14 +244,23 @@ pub fn compose(
     h: &Harmony,
     signal: &StorySignal,
     music_seed: u64,
+    brief: Brief,
 ) -> Composition {
     let (lo, hi) = (i32::from(p.register.0), i32::from(p.register.1.max(p.register.0)));
+    let hi = brief.ceiling.map_or(hi, |c| hi.min(c).max(lo));
     let home = i32::from(p.home);
     let base = home + (h.key_pc - home + 6).rem_euclid(12) - 6;
-    let pitch = Pitch { h, lo, hi, base };
+    let mut pitch = Pitch {
+        h,
+        lo,
+        hi,
+        base,
+        own: Vec::new(),
+    };
+    pitch.own = p.motifs.iter().map(|m| pitch.motif(m, false)[0].1).collect();
     let mut rng = Generator::new(seed_of(music_seed, side));
-    let line = loop_line(p, role, &pitch, &mut rng);
-    let song = song_line(role, side, &pitch, signal, &line, &mut rng);
+    let line = loop_line(p, role, &pitch, &mut rng, brief.style);
+    let song = song_line(role, side, &pitch, signal, &line, &mut rng, brief.style);
     let solo = victory_solo(p, &pitch, signal, &mut rng);
     Composition { line, song, solo }
 }
@@ -253,29 +299,157 @@ fn slots_of(cell: &[u8]) -> Vec<usize> {
     s
 }
 
-/// The strong 8ths of a role's bar, which take chord tones.
-fn strong(role: Role) -> &'static [usize] {
+/// The strong 8ths of a role's bar, which take chord tones. A Signature bass keeps every beat on a root or a
+/// fifth; in the other styles a bass walks (by step, through the chord, to its octave), so only its downbeat is
+/// held to the chord.
+fn strong(role: Role, style: Style) -> &'static [usize] {
     match role {
-        Role::Bass => &[0, 2, 4, 6],
+        Role::Bass if style == Style::Signature => &[0, 2, 4, 6],
+        Role::Bass => &[0],
         _ => &[0, 4],
     }
 }
 
 /// The strong 8ths of `bar` snapped to `chord`'s tones (a bass's to its roots and fifths).
-fn snap(role: Role, pitch: &Pitch, chord: &str, bar: &mut [Option<i32>]) {
+fn snap(role: Role, style: Style, pitch: &Pitch, chord: &str, bar: &mut [Option<i32>]) {
     let tones = match role {
         Role::Bass => pitch.roots_and_fifths(chord),
         _ => pitch.chord_tones(chord),
     };
-    for &j in strong(role) {
+    for &j in strong(role, style) {
         if let Some(m) = bar[j] {
             bar[j] = Some(nearest(&tones, m));
         }
     }
 }
 
+/// What a bar between a Signature phrase's motif and its echo is made of (sound upgrade, C10).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Between {
+    /// The motif's own shape turned upside down, from the chord tone nearest the note before.
+    Answer,
+    /// A run by step into the chord tone nearest the motif's first note.
+    Cadence,
+    /// A walk by step with one of the fighter's favourite leaps, turned back after it.
+    Walk,
+}
+
+/// The `k` notes of a melody's or answering line's bar between the motif and its echo, written out of the motif
+/// itself instead of a walk by leaps (C10): lively, but no longer scattered.
+fn lively_bar(
+    (p, pitch): (&Personality, &Pitch),
+    rng: &mut Generator,
+    chord: &str,
+    k: usize,
+    kind: Between,
+    motif: &[(usize, i32, usize)],
+    prev: i32,
+) -> Vec<i32> {
+    let scale = pitch.scale_tones(chord);
+    let tones = pitch.chord_tones(chord);
+    let top = scale.len() as i32 - 1;
+    let idx = |m: i32| {
+        (0..scale.len())
+            .min_by_key(|&i| ((scale[i] - m).abs(), scale[i]))
+            .unwrap_or(0) as i32
+    };
+    let at = |i: i32| scale[i.clamp(0, top) as usize];
+    let mut notes = Vec::with_capacity(k);
+    match kind {
+        Between::Cadence => {
+            let goal = idx(nearest(&tones, motif[0].1));
+            let side = if idx(prev) >= goal { 1 } else { -1 };
+            for i in 0..k {
+                let left = ((k - 1 - i) as i32).min(4);
+                let j = goal + side * left;
+                notes.push(at(if (0..=top).contains(&j) { j } else { goal - side * left }));
+            }
+        }
+        Between::Answer => {
+            // the motif's moves in scale steps, each the other way
+            let moves: Vec<i32> = motif
+                .windows(2)
+                .map(|w| (idx(w[1].1) - idx(w[0].1)).clamp(-3, 3))
+                .collect();
+            let mut cur = idx(nearest(&tones, prev));
+            let mut flip = -1;
+            for i in 0..k {
+                notes.push(at(cur));
+                let d = moves[i % moves.len()];
+                if !(0..=top).contains(&(cur + flip * d)) {
+                    flip = -flip;
+                }
+                cur = (cur + flip * d).clamp(0, top);
+            }
+        }
+        Between::Walk => {
+            let mid = (pitch.lo + pitch.hi) / 2;
+            let mut dir = if prev > mid { -1 } else { 1 };
+            let mut cur = idx(prev);
+            let leap_at = 1 + pick(rng, k.max(2) - 1);
+            for i in 0..k {
+                if i == leap_at {
+                    cur = idx(nearest(&scale, at(cur) + dir * leap(p, rng)));
+                    dir = -dir;
+                } else {
+                    if !(0..=top).contains(&(cur + dir)) {
+                        dir = -dir;
+                    }
+                    cur = (cur + dir).clamp(0, top);
+                }
+                notes.push(at(cur));
+            }
+        }
+    }
+    notes
+}
+
+/// In a moving style no two notes written one after the other are the same (the line wraps round): a note that
+/// repeats the one before it moves to the nearest other tone, a chord tone on a strong 8th and a scale tone
+/// elsewhere, on the side of the note after it. What a held note or a thinned bar still repeats is dealt with
+/// where the notes are played (`MusicCtx::play_line`).
+fn unrepeat(out: &mut [Option<i32>], written: &[bool], role: Role, style: Style, pitch: &Pitch) {
+    let chords = &pitch.h.loop_;
+    let slots: Vec<usize> = (0..out.len()).filter(|&i| written[i]).collect();
+    let len = slots.len();
+    if len < 3 {
+        return;
+    }
+    // the nearest other tone for slot `n` that is neither of its neighbours' notes
+    let other = |out: &[Option<i32>], n: usize| -> Option<i32> {
+        let i = slots[n];
+        let m = out[i]?;
+        let (before, after) = (out[slots[(n + len - 1) % len]], out[slots[(n + 1) % len]]);
+        let chord = &chords[i / PER_BAR];
+        let tones = match role {
+            _ if !strong(role, style).contains(&(i % PER_BAR)) => pitch.scale_tones(chord),
+            Role::Bass => pitch.roots_and_fifths(chord),
+            _ => pitch.chord_tones(chord),
+        };
+        let upward = after.is_some_and(|a| a > m);
+        tones
+            .iter()
+            .copied()
+            .filter(|&t| Some(t) != before && Some(t) != after)
+            .min_by_key(|&t| ((t - m).abs(), u8::from((t > m) != upward), t))
+    };
+    for n in 0..len {
+        let before = (n + len - 1) % len;
+        if out[slots[n]].is_none() || out[slots[n]] != out[slots[before]] {
+            continue;
+        }
+        // the note itself moves; where it has nowhere to go (a strong 8th with two chord tones in reach), the
+        // note before it does
+        if let Some(t) = other(out, n) {
+            out[slots[n]] = Some(t);
+        } else if let Some(t) = other(out, before) {
+            out[slots[before]] = Some(t);
+        }
+    }
+}
+
 /// The line over the loop at its normal shape.
-fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) -> Vec<Option<i32>> {
+fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator, style: Style) -> Vec<Option<i32>> {
     let chords = &pitch.h.loop_;
     let n = chords.len();
     let mut out = vec![None; n * PER_BAR];
@@ -289,6 +463,16 @@ fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) ->
     let mut lb = 0;
     while lb < n {
         let phrase_len = PHRASE.min(n - lb);
+        // Every style but Signature writes the whole phrase as a new tune (C11).
+        if style != Style::Signature {
+            if role == Role::Bass {
+                styles::bass_phrase(style, pitch, rng, lb, phrase_len, &mut out);
+            } else {
+                styles::phrase(style, role, pitch, rng, lb, phrase_len, &mut out);
+            }
+            lb += phrase_len;
+            continue;
+        }
         let motif = if p.motifs.is_empty() {
             vec![(0, pitch.chord_tones(&chords[lb])[0], 4)]
         } else {
@@ -327,7 +511,9 @@ fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) ->
         if let Some(&(_, m, _)) = motif.last() {
             prev = m;
         }
-        // The other bars: rhythm cells and a walk by favourite leaps, the last bar of the phrase a cadence.
+        // The other bars, on the fighter's rhythm cells. A bass walks its roots and fifths. A melody or an answering
+        // line writes them out of the motif (C10): its shape upside down as the answer in the second bar, a run by
+        // step into the cadence in the last, a walk by step with one favourite leap anywhere else.
         for b in 0..phrase_len {
             let bar = lb + b;
             let chord = &chords[bar];
@@ -345,34 +531,29 @@ fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) ->
                     s
                 }
             };
-            let scale = pitch.scale_tones(chord);
-            let mid = (pitch.lo + pitch.hi) / 2;
-            for (i, &j) in slots.iter().enumerate() {
-                let m = match role {
-                    Role::Bass if j == 0 => pitch.low_root(chord),
-                    Role::Bass => {
-                        let rf = pitch.roots_and_fifths(chord);
-                        rf[pick(rng, rf.len().min(3))]
-                    }
-                    _ if cadence && i + 1 == slots.len() => nearest(&pitch.chord_tones(chord), prev),
-                    _ => {
-                        let up = if prev > mid + (pitch.hi - pitch.lo) / 4 {
-                            false
-                        } else if prev < mid - (pitch.hi - pitch.lo) / 4 {
-                            true
-                        } else {
-                            rng.random() < 0.5
-                        };
-                        let iv = leap(p, rng);
-                        let to = if up { prev + iv } else { prev - iv };
-                        // a leap out of the register turns back
-                        let to = if (pitch.lo..=pitch.hi).contains(&to) {
-                            to
-                        } else {
-                            2 * prev - to
-                        };
-                        nearest(&scale, to)
-                    }
+            if role != Role::Bass {
+                let kind = if cadence {
+                    Between::Cadence
+                } else if b == 1 && motif.len() >= 2 {
+                    Between::Answer
+                } else {
+                    Between::Walk
+                };
+                let notes = lively_bar((p, pitch), rng, chord, slots.len(), kind, &motif, prev);
+                for (&j, &m) in slots.iter().zip(&notes) {
+                    out[bar * PER_BAR + j] = Some(m);
+                }
+                if let Some(&m) = notes.last() {
+                    prev = m;
+                }
+                continue;
+            }
+            for &j in &slots {
+                let m = if j == 0 {
+                    pitch.low_root(chord)
+                } else {
+                    let rf = pitch.roots_and_fifths(chord);
+                    rf[pick(rng, rf.len().min(3))]
                 };
                 out[bar * PER_BAR + j] = Some(m);
                 prev = m;
@@ -388,10 +569,21 @@ fn loop_line(p: &Personality, role: Role, pitch: &Pitch, rng: &mut Generator) ->
         .next()
         .copied()
         .unwrap_or_else(|| pitch.low_root(&chords[0]));
+    let written: Vec<bool> = out.iter().map(Option::is_some).collect();
     hold(&mut out, first);
     for (bar, chord) in chords.iter().enumerate() {
         let slice = &mut out[bar * PER_BAR..(bar + 1) * PER_BAR];
-        snap(role, pitch, chord, slice);
+        snap(role, style, pitch, chord, slice);
+    }
+    if style.moving() {
+        unrepeat(&mut out, &written, role, style, pitch);
+        for (n, w) in out.iter_mut().zip(&written) {
+            if !w {
+                *n = None;
+            }
+        }
+        let first = out.iter().rev().flatten().next().copied().unwrap_or(first);
+        hold(&mut out, first);
     }
     out
 }
@@ -448,6 +640,7 @@ fn song_line(
     signal: &StorySignal,
     line: &[Option<i32>],
     rng: &mut Generator,
+    style: Style,
 ) -> Vec<Option<i32>> {
     let h = pitch.h;
     let n = h.loop_.len().max(1);
@@ -458,6 +651,12 @@ fn song_line(
         let chord = h.chords.get(b).unwrap_or(&h.loop_[lb]).clone();
         let next = h.chords.get(b + 1).unwrap_or(&chord).clone();
         let mut bar: Vec<Option<i32>> = line[lb * PER_BAR..(lb + 1) * PER_BAR].to_vec();
+        // Variation (C10): on every other pass of the loop a melody's answering bar (the second of each phrase) is
+        // turned upside down about its first note, so two passes in a row are never the same.
+        let pass = b.checked_sub(h.loop_start).map_or(0, |d| d / n);
+        if role != Role::Bass && pass % 2 == 1 && lb % PHRASE == 1 {
+            mirror(pitch, &chord, &mut bar);
+        }
         let shape = shape_of(side, signal, b);
         if role == Role::Bass {
             shape_bass(pitch, &chord, &next, shape, &mut bar);
@@ -470,10 +669,44 @@ fn song_line(
             .flatten()
             .or_else(|| line.iter().rev().flatten().next().copied());
         hold(&mut bar, first.unwrap_or_else(|| pitch.low_root(&chord)));
-        snap(role, pitch, &chord, &mut bar);
+        snap(role, style, pitch, &chord, &mut bar);
+        // No bar twice in a row (C10). A thinned line can hold one note over two bars, which comes out as the same
+        // bar again: its second half then moves to the nearest other chord tones. A riff is the same bar on purpose.
+        if role != Role::Bass && style != Style::Riff && b > 0 && out[(b - 1) * PER_BAR..] == bar[..] {
+            let tones = pitch.chord_tones(&chord);
+            for m in bar[PER_BAR / 2..].iter_mut().flatten() {
+                let other = tones
+                    .iter()
+                    .copied()
+                    .filter(|t| t != m)
+                    .min_by_key(|&t| ((t - *m).abs(), t));
+                *m = other.unwrap_or(*m);
+            }
+        }
         out.extend(bar);
     }
     out
+}
+
+/// `bar` turned upside down about its first note, in steps of the scale over `chord` (a note whose mirror would
+/// leave the register stays).
+fn mirror(pitch: &Pitch, chord: &str, bar: &mut [Option<i32>]) {
+    let scale = pitch.scale_tones(chord);
+    let idx = |m: i32| {
+        (0..scale.len())
+            .min_by_key(|&i| ((scale[i] - m).abs(), scale[i]))
+            .unwrap_or(0) as i32
+    };
+    let Some(first) = bar.iter().flatten().next().copied() else {
+        return;
+    };
+    let axis = idx(first);
+    for m in bar.iter_mut().flatten() {
+        let j = 2 * axis - idx(*m);
+        if (0..scale.len() as i32).contains(&j) {
+            *m = scale[j as usize];
+        }
+    }
 }
 
 /// A melody's or answering line's bar at `shape`.
@@ -719,6 +952,31 @@ mod tests {
     use bf_sound::music::signal::{BarSignal, Phase, StorySignal};
 
     use super::*;
+
+    /// Auto picks one of the theme's styles with the music seed: the same for the same seed, and over a few seeds
+    /// every style of the list.
+    #[test]
+    fn auto_picks_from_the_themes_styles() {
+        for theme in [
+            "mambo",
+            "hot_jazz",
+            "stadium_rock",
+            "starfighter",
+            "dubstep",
+            "klezmer",
+            "big_top",
+        ] {
+            let list = crate::themes::family::styles_of(theme);
+            let picks: Vec<Style> = (0..64).map(|seed| pick_style(theme, seed)).collect();
+            for (seed, s) in picks.iter().enumerate() {
+                assert!(list.contains(s), "{theme}, seed {seed}: {s:?}");
+                assert_eq!(pick_style(theme, seed as u64), *s);
+            }
+            for s in list {
+                assert!(picks.contains(s), "{theme}: {s:?} is never picked in 64 seeds");
+            }
+        }
+    }
     use crate::personality::personality;
 
     const ALL: [&str; 39] = [
@@ -805,7 +1063,15 @@ mod tests {
     fn compose_for(name: &str, role: Role, side: usize, seed: u64) -> Composition {
         let h = harmony();
         let sig = signal(h.chords.len());
-        compose(personality(name).unwrap(), role, side, &h, &sig, seed)
+        compose(
+            personality(name).unwrap(),
+            role,
+            side,
+            &h,
+            &sig,
+            seed,
+            Brief::signature(),
+        )
     }
 
     fn solo_notes(c: &Composition) -> Vec<(f64, i32, f64)> {
@@ -832,7 +1098,13 @@ mod tests {
             for &role in p.roles {
                 for seed in [1, 7, 99] {
                     let c = compose_for(name, role, 1, seed);
-                    let pitch = Pitch { h: &h, lo, hi, base: 0 };
+                    let pitch = Pitch {
+                        h: &h,
+                        lo,
+                        hi,
+                        base: 0,
+                        own: Vec::new(),
+                    };
                     let notes = c.line.iter().chain(&c.song).flatten().copied();
                     let solo = solo_notes(&c);
                     for m in notes.chain(solo.iter().map(|n| n.1)) {
@@ -840,7 +1112,7 @@ mod tests {
                     }
                     for (lb, chord) in h.loop_.iter().enumerate() {
                         let tones = pitch.chord_tones(chord);
-                        for &j in strong(role) {
+                        for &j in strong(role, Style::Signature) {
                             if let Some(m) = c.line[lb * PER_BAR + j] {
                                 assert!(
                                     tones.contains(&m),
@@ -851,7 +1123,7 @@ mod tests {
                     }
                     for (b, chord) in h.chords.iter().enumerate() {
                         let tones = pitch.chord_tones(chord);
-                        for &j in strong(role) {
+                        for &j in strong(role, Style::Signature) {
                             if let Some(m) = c.song_bar(b)[j] {
                                 assert!(tones.contains(&m), "{name} {role:?} song bar {b}: {m} on {chord}");
                             }
@@ -893,6 +1165,7 @@ mod tests {
                 lo,
                 hi,
                 base: home + (h.key_pc - home + 6).rem_euclid(12) - 6,
+                own: Vec::new(),
             };
             let firsts: Vec<i32> = p
                 .motifs
@@ -953,6 +1226,7 @@ mod tests {
                     &build.ctx.harmony,
                     &sig,
                     ff.music.music_seed,
+                    Brief::signature(),
                 );
                 println!("{name} line {:?}\n{name} solo {:?}", c.line, solo_notes(&c));
                 lines.push((name.to_string(), c.line));

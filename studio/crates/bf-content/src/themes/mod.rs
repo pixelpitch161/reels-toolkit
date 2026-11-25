@@ -23,6 +23,8 @@ use crate::error::ContentError;
 use crate::fighters;
 use crate::registry::roster;
 
+pub mod family;
+
 pub mod baroque_storm;
 pub mod big_top;
 pub mod bossa_noir;

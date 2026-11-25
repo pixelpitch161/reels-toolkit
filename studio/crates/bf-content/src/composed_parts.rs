@@ -39,6 +39,10 @@ pub const ONE_VOICE: [&str; 27] = [
     "VIOLIN",
 ];
 
+/// The fighters without a pitch of their own: their composed line steers no note, so the harmony pass (C2) leaves
+/// a pairing with one of them alone.
+pub const UNPITCHED: [&str; 5] = ["BASS DRUM", "DRUMS", "SNARE DRUM", "TURNTABLES", "TARGET DUMMY"];
+
 /// The melody style a fight file asks for: its `music.melody_style`, Signature for a file without one or with a
 /// word this app does not know.
 pub fn style_of(melody_style: Option<&str>) -> Style {
