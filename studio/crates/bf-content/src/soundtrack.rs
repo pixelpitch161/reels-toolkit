@@ -28,6 +28,7 @@ use bf_sound::voice::Voice;
 use bf_core::fightfile::is_extra_line;
 use bf_sound::master::BUS;
 
+use crate::composed_parts;
 use crate::composer::{PER_BAR, compose};
 use crate::error::ContentError;
 use crate::fighters;
@@ -332,6 +333,7 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
     let ff = ctx.ff;
     let signal = StorySignal::from(ctx)?;
     let seed = ff.music.music_seed;
+    let style = composed_parts::style_of(ff.music.melody_style.as_deref());
     for (k, name) in ctx.show.names.clone().iter().enumerate() {
         if ff.music.pinned.contains(name) {
             continue;
@@ -359,6 +361,14 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
             },
         );
     }
+    // What the parts and the master read of the upgrade (sound upgrade, 2026-11-25): Composed only.
+    let bass = ctx
+        .show
+        .names
+        .iter()
+        .find(|n| ff.music.roles.get(*n).map(String::as_str) == Some("bass"))
+        .cloned();
+    ctx.polish = Some(composed_parts::polish(&ctx.show.names, style, bass.as_deref()));
     theme.bed_with(themes::COMPOSED, &theme.options_of(ff)?, cues(&signal), seed)
 }
 
@@ -398,13 +408,31 @@ fn panic_text(payload: Box<dyn Any + Send>) -> String {
 /// - [`ContentError::Sound`]: the recording lacks something the score reads, or holds values the sound code
 ///   cannot use (a panic inside it is caught and reported here too).
 pub fn build_soundtrack(rec: &Recording, ff: &FightFile) -> Result<Soundtrack, ContentError> {
+    build_soundtrack_played(rec, ff).map(|(st, _)| st)
+}
+
+/// The ordinary notes each fighter sounded in a soundtrack, `(seconds, note)` in time order, by fighter.
+pub type PlayedNotes = std::collections::BTreeMap<String, Vec<(f64, i32)>>;
+
+/// [`build_soundtrack`], and with it the ordinary notes each fighter sounded (`MusicCtx::played`: under the
+/// Composed arrangement the notes its part took from its line; no notes under Classic).
+///
+/// # Errors
+/// As [`build_soundtrack`].
+pub fn build_soundtrack_played(rec: &Recording, ff: &FightFile) -> Result<(Soundtrack, PlayedNotes), ContentError> {
     validate(ff)?;
     let show = Show::new(rec, ff)?;
-    let built = catch_unwind(AssertUnwindSafe(|| -> Result<Soundtrack, ContentError> {
-        let build = SoundBuild::new(&show, rec, ff)?;
-        let mix = build.score()?;
-        Ok(build.master(&mix))
-    }));
+    let built = catch_unwind(AssertUnwindSafe(
+        || -> Result<(Soundtrack, PlayedNotes), ContentError> {
+            let build = SoundBuild::new(&show, rec, ff)?;
+            let mix = build.score()?;
+            let mut played = PlayedNotes::new();
+            for name in &show.names {
+                played.insert(name.clone(), build.ctx.played(name)?);
+            }
+            Ok((build.master(&mix), played))
+        },
+    ));
     match built {
         Ok(result) => result,
         Err(payload) => Err(ContentError::Sound(panic_text(payload))),

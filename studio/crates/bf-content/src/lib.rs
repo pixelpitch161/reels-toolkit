@@ -9,10 +9,12 @@
 //! before any fight exists ([`title_preview`]).
 
 mod cards;
+pub mod composed_parts;
 pub mod composer;
 mod error;
 pub mod fighters;
 pub mod fit;
+pub mod levels_table;
 mod pair_rules;
 pub mod personality;
 mod picture;
@@ -28,6 +30,6 @@ pub use pair_rules::pair_rules;
 pub use personality::{Ornament, Personality, Role, Step, personality};
 pub use picture::{build_picture, mesh, title_preview};
 pub use registry::{PORTED, RETIRED, available, music_feeds_fight, name_status, roster};
-pub use soundtrack::{SoundBuild, build_soundtrack, validate};
+pub use soundtrack::{PlayedNotes, SoundBuild, build_soundtrack, build_soundtrack_played, validate};
 pub use starter::{draft_captions, episode_pairs, home_config, home_fight, kit_pair_fights, starter};
 pub use themes::{theme_names, themes_for};

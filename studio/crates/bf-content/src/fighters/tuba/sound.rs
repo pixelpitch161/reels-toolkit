@@ -142,6 +142,18 @@ impl TubaSound {
         self.root(ctx, ctx.harmony.chord_at(tq + 0.01))
     }
 
+    /// The note of an ordinary oom or pah at `tq`. Under the Composed arrangement it is the written bass line's
+    /// note there (sound upgrade: every pitched fighter plays its line); under Classic, and on a rest of the line,
+    /// the kit's own: the chord's root and `up` semitones.
+    fn step(&self, ctx: &MusicCtx, tq: f64, up: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), tq)?
+        {
+            return Ok(m);
+        }
+        Ok(self.root_at(ctx, tq)? + up)
+    }
+
     /// `self.colour(x, t, drive_k, low=True)`.
     fn col(&self, ctx: &MusicCtx, x: &[f64], t: f64, drive_k: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         let args = ColourArgs {
@@ -165,10 +177,11 @@ impl TubaSound {
             if kind == "oom" && event_is(H, e, 2, k)? {
                 let tq = ctx.q16(t);
                 let t_in = event_number(H, e, 3)?;
-                let root = self.root_at(ctx, tq)?;
+                let root = self.step(ctx, tq, 0)?;
+                let one = ctx.one_voice(self.name(ctx));
                 let beats = py_max(1.0, (ctx.q16(t_in) - tq) / beat + 0.4);
                 let (sig, g, lead) = self.col(ctx, &tuba(ctx, f64::from(root), beats, 0.9)?, t, 0.8)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.62 * g, 0.12);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.62 * g, 0.12, one);
                 // the inhale: air sucked in, rising into the bell
                 let n = samples(t_in - t + 0.1)?;
                 if n > 400 {
@@ -195,7 +208,7 @@ impl TubaSound {
                         .zip(&env)
                         .map(|(s, e)| s * e)
                         .collect();
-                    mix.place(&bus, &Sig::Mono(sub), tq, 0.22 * py_min(1.0, lead * 4.0), 0.0);
+                    mix.note(&bus, &Sig::Mono(sub), tq, 0.22 * py_min(1.0, lead * 4.0), 0.0, one);
                 }
             } else if kind == "pah" && event_is(H, e, 2, k)? {
                 let tq = ctx.q16(t);
@@ -204,9 +217,18 @@ impl TubaSound {
                 let root = self.root_at(ctx, tq)?;
                 if hp > 25.0 || caught {
                     // pah: the fifth as a short blast (gone below 25 HP)
-                    let x = tuba(ctx, f64::from(root + 7), 0.6, if caught { 0.95 } else { 0.75 })?;
+                    let fifth = self.step(ctx, tq, 7)?;
+                    let x = tuba(ctx, f64::from(fifth), 0.6, if caught { 0.95 } else { 0.75 })?;
                     let (sig, g, _) = self.col(ctx, &x, t, 0.8)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, (if caught { 0.62 } else { 0.45 }) * g, 0.12);
+                    let one = ctx.one_voice(self.name(ctx));
+                    mix.note(
+                        &bus,
+                        &Sig::Mono(sig),
+                        tq,
+                        (if caught { 0.62 } else { 0.45 }) * g,
+                        0.12,
+                        one,
+                    );
                 }
                 if caught {
                     // the spit: an octave blast and the cannonball's whoosh

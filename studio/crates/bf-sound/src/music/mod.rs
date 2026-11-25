@@ -37,8 +37,10 @@ mod events;
 mod fx;
 pub mod layers;
 mod num;
+mod played;
 mod shape;
 pub mod signal;
+pub mod style;
 #[cfg(test)]
 pub(crate) mod testkit;
 #[cfg(test)]
@@ -65,11 +67,13 @@ pub use self::fx::{
 };
 pub use self::num::MAX_SECONDS;
 use self::num::int;
+pub use self::played::clashes;
 use self::shape::no_room;
 pub use self::shape::{
     COLOUR_CUT_SPAN, COLOUR_CUT0, COLOUR_DRIVE, COLOUR_DRIVE_K, COLOUR_LOW, COLOUR_LOW_CUT, ColourArgs, FIT_FADE,
     VIBRATO_DELAY, VIBRATO_DEPTH, VIBRATO_RATE, bend, colour_hp, fit, gliss, vibrato, wah,
 };
+pub use self::style::{PartNote, Polish, Style};
 pub use self::thin::{Thinner, h01, h01_37, q16, thin_37};
 pub use self::timeline::ComposedPart;
 use crate::SRF;
@@ -152,6 +156,9 @@ struct State {
     first: Vec<NoteCall>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
     fighter_stops: Vec<f64>,
+    /// The ordinary notes each fighter sounded under the Composed arrangement, by their time in microseconds
+    /// ([`MusicCtx::play_line`]).
+    played: BTreeMap<String, BTreeMap<i64, played::Hit>>,
 }
 
 impl State {
@@ -164,6 +171,7 @@ impl State {
             first: Vec::new(),
             line_overrides: BTreeMap::new(),
             fighter_stops: Vec::new(),
+            played: BTreeMap::new(),
         }
     }
 }
@@ -196,6 +204,9 @@ pub struct MusicCtx<'a> {
     /// whole-song line and its solo from here instead of the fight file's ([`MusicCtx::line_at`],
     /// [`MusicCtx::solo_entries`]). The build fills it before the parts are made.
     pub composed: BTreeMap<String, ComposedPart>,
+    /// What a build of the Composed arrangement carries beside its lines (sound upgrade, 2026-11-25): the melody
+    /// style and how each fighter's notes are treated. `None` under Classic, where nothing of the upgrade applies.
+    pub polish: Option<Polish>,
     /// `RUN['HP']`: both fighters' HP at every recorded frame, frame after frame.
     hp: &'a [f64],
     state: Mutex<State>,
@@ -292,6 +303,7 @@ impl<'a> MusicCtx<'a> {
             voices,
             theme_voices,
             composed: BTreeMap::new(),
+            polish: None,
             hp,
             state: Mutex::new(State::new(PpNoise::start())),
         })

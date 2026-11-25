@@ -16,6 +16,7 @@
 //! - [`mod@master`]: the master chain (bus levels, reverb, the fold onto the loop point, compressor, limiter).
 
 pub mod dsp;
+pub mod heard;
 pub mod master;
 pub mod mix;
 pub mod music;

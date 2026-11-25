@@ -16,13 +16,7 @@ use super::{CheckResult, sample_at, unusable};
 const NAME: &str = "loudness";
 const TITLE: &str = "Perceived loudness";
 
-/// The first K-weighting stage (the high shelf), `b1, a1`.
-const SHELF: ([f64; 3], [f64; 3]) = (
-    [1.53512485958697, -2.69169618940638, 1.19839281085285],
-    [1.0, -1.69065929318241, 0.73248077421585],
-);
-/// The second stage (the high-pass), `b2, a2`.
-const HIGH_PASS: ([f64; 3], [f64; 3]) = ([1.0, -2.0, 1.0], [1.0, -1.99004745483398, 0.99007225036621]);
+use bf_sound::heard::{K_HIGH_PASS as HIGH_PASS, K_SHELF as SHELF};
 
 /// `lufs(z)`: `-0.691 + 10 * np.log10((z ** 2).mean(0).sum() + 1e-12)`. numpy's mean down the rows adds each
 /// channel in order. NaN for no samples.

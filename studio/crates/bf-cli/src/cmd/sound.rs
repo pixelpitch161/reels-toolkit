@@ -1,7 +1,8 @@
 //! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F] [--arrangement A]
-//! [--music-seed N]`: build the soundtrack and save
+//! [--music-seed N] [--melody-style S] [--played FILE]`: build the soundtrack and save
 //! the master as a 16-bit stereo .wav (48 kHz, 2,928,640 frames, as the video holds it); `--stems` also saves each
-//! bus as `<bus>.wav` in that folder (made if missing; it must be empty).
+//! bus as `<bus>.wav` in that folder (made if missing; it must be empty); `--played` saves the ordinary notes each
+//! fighter sounded under the Composed arrangement, as JSON (`{"FLUTE": [[seconds, note], ...], ...}`).
 
 use std::path::{Path, PathBuf};
 
@@ -32,12 +33,37 @@ pub struct Args {
     /// The composer's seed (default: the fight file's music seed).
     #[arg(long, value_name = "N")]
     music_seed: Option<u64>,
+    /// The melody style of the Composed arrangement: signature, climbing, riff, runs, broken_chords or anchor
+    /// (default: the fight file's).
+    #[arg(long, value_name = "NAME", value_parser = melody_style)]
+    melody_style: Option<String>,
+    /// Also save the notes each fighter sounded, as JSON (a new file).
+    #[arg(long, value_name = "FILE")]
+    played: Option<PathBuf>,
+}
+
+/// `--melody-style <name>`.
+fn melody_style(text: &str) -> Result<String, String> {
+    use bf_sound::music::Style;
+    let t = text.trim();
+    if Style::from_key(t).is_some() {
+        Ok(t.to_string())
+    } else {
+        let all: Vec<&str> = Style::ALL.iter().map(|s| s.key()).collect();
+        Err(format!("{text} is not a melody style; give one of {}", all.join(", ")))
+    }
 }
 
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
     crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
+    if let Some(style) = &a.melody_style {
+        ff.music.melody_style = Some(style.clone());
+    }
     new_file(&a.out)?;
+    if let Some(path) = &a.played {
+        new_file(path)?;
+    }
     if let Some(dir) = &a.stems {
         empty_folder(dir)?;
     }
@@ -45,9 +71,13 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
     need_ko(&rec)?;
     stopped(ctx, "the soundtrack")?;
     note("sound: building the soundtrack");
-    let st = bf_content::build_soundtrack(&rec, &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    let (st, played) =
+        bf_content::build_soundtrack_played(&rec, &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
     stopped(ctx, "the soundtrack")?;
     write_new(&a.out, &wav16_bytes(&st.master))?;
+    if let Some(path) = &a.played {
+        write_new(path, json!(played).to_string().as_bytes())?;
+    }
     let mut stems = Vec::new();
     if let Some(dir) = &a.stems {
         std::fs::create_dir_all(dir)
