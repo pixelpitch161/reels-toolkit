@@ -91,6 +91,28 @@ impl ContraSound {
         }
     }
 
+    /// The note of the bass line it sounds at `t`: [`ContraSound::line`] for a note that really plays, asked for once
+    /// the note is known to sound. Under the Composed arrangement the context keeps what was played, and a moving
+    /// melody style never hands back the note before it (sound upgrade); under Classic it is `line`.
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        match ctx.play_line(self.name(ctx), t)? {
+            Some(m) => Ok(Self::fit(m, 28, 45)),
+            None => ctx.harmony.root_above(ctx.harmony.chord_at(t), 28).map_err(bad),
+        }
+    }
+
+    /// The note of a foghorn blast at `t`: the chord's root and `up` semitones. Under the Composed arrangement it
+    /// is the written bass line's note there instead (sound upgrade: every pitched fighter plays its line), the
+    /// root's own on a rest of the line.
+    fn call(&self, ctx: &MusicCtx, t: f64, up: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(Self::fit(m, 28, 45));
+        }
+        Ok(self.root(ctx, t)? + up)
+    }
+
     /// The chord's root at `t` from D1 up.
     fn root(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         ctx.harmony.root_above(ctx.harmony.chord_at(t), 26).map_err(bad)
@@ -151,25 +173,32 @@ impl Sound for ContraSound {
         let t0 = ctx.show.grid.t_fight;
         // the bass line, a note on every beat, thinned as it loses
         let mut thin = Thinner::new(3.0);
+        // sound upgrade (M5): under Composed a clarinet sounds one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(self.name(ctx));
         let mut slot: i64 = py::round_half_even(ctx.q16(t0) / s16) as i64;
         while slot as f64 * s16 < t_ko {
             let tq = slot as f64 * s16;
             let hp = ctx.hp_at(k, tq) / 100.0;
             if thin.keep(slot as f64, hp) {
-                let m = self.line(ctx, tq)?;
+                let m = self.sounded(ctx, tq)?;
                 let (sig, g, _) = self.colour(ctx, &self.reed(ctx, m, 3.0, 0.8)?, tq, 1.0, &self.colour_args())?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, pan);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g, pan, one);
             }
             slot += 4;
         }
-        // its blasts: the foghorn call, the root and then the fifth, long
+        // its blasts: the foghorn call, the root and then the fifth, long (Composed: the line's note at each)
         for h in horns(&ctx.rec.events, k).into_iter().filter(|h| h.t0 < t_ko) {
             let tq = ctx.q16(h.t0);
-            let r = self.root(ctx, tq)?;
+            let r = self.call(ctx, tq, 0)?;
             let (a, g, _) = self.colour(ctx, &self.reed(ctx, r, 4.0, 1.0)?, tq, 1.0, &self.colour_args())?;
-            mix.place(&bus, &Sig::Mono(a), tq, 0.36 * g, pan);
-            let (b, _, _) = self.colour(ctx, &self.reed(ctx, r + 7, 4.0, 0.9)?, tq, 1.0, &self.colour_args())?;
-            mix.place(&bus, &Sig::Mono(b), tq + 4.0 * s16, 0.28 * g, pan);
+            mix.note(&bus, &Sig::Mono(a), tq, 0.36 * g, pan, one);
+            let fifth = if ctx.composed_on() {
+                self.call(ctx, tq + 4.0 * s16, 7)?
+            } else {
+                r + 7
+            };
+            let (b, _, _) = self.colour(ctx, &self.reed(ctx, fifth, 4.0, 0.9)?, tq, 1.0, &self.colour_args())?;
+            mix.note(&bus, &Sig::Mono(b), tq + 4.0 * s16, 0.28 * g, pan, one);
             let seed = (h.t0 * 100.0) as u64;
             mix.place("fx", &Sig::Mono(air(h.dur + 0.3, seed, 90.0, 700.0)), tq, 0.08, pan);
         }

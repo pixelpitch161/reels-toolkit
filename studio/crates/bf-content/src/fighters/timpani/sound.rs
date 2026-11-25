@@ -3,6 +3,10 @@
 //! high kettle its fifth, FULL SET's kettles the octave and the low fifth. The interval hit sounds root and fifth at
 //! once with a crack; PEDAL SLIDE is a pedal glissando up a fourth; CROSS-STICKING's fast hops play themselves as
 //! quick alternating strokes. Notes come from its own voice ([`stroke`]) through a cache of its own.
+//!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) every boom plays the written line's note of its 16th
+//! instead of the kettle's own, and the interval hit stands on the line's note. PEDAL SLIDE, FULL SET's fanfare and
+//! the endings keep their notes. Classic is the part above.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -82,6 +86,37 @@ impl TimpaniSound {
         })
     }
 
+    /// The written line's note for a stroke at `tq` (sound upgrade: under the Composed arrangement the kettles play
+    /// the timpani's line). `None` under Classic and on a rest of the line: the kettle's own note stands then.
+    fn written(&self, ctx: &MusicCtx, tq: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), tq)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// The octave of `m` that a second kettle sounds with it: the one below while it is inside the register, else
+    /// the one above.
+    fn octave_of(&self, ctx: &MusicCtx, m: i32) -> i32 {
+        if m - 12 >= ctx.cfg[self.k].register.0 {
+            m - 12
+        } else {
+            m + 12
+        }
+    }
+
+    /// The second note of an interval hit on `m` at `t`: the tone of the bar's chord nearest the fifth above it (a
+    /// third to a sixth above), so the two kettles stay in the harmony whatever note the line has; the plain fifth
+    /// where the chord has no tone there.
+    fn fifth_over(&self, ctx: &MusicCtx, m: i32, t: f64) -> Result<i32, MusicError> {
+        let tones = ctx
+            .harmony
+            .chord_tones(m + 3, m + 9, ctx.harmony.chord_at(t))
+            .map_err(bad)?;
+        Ok(tones.into_iter().min_by_key(|c| (c - (m + 7)).abs()).unwrap_or(m + 7))
+    }
+
     /// `x` through its tone at `t` on its bus.
     fn put(&self, ctx: &MusicCtx, mix: &mut Mix, x: &[f64], t: f64, gain: f64) -> Played {
         let (sig, g, _) = self.colour(ctx, x, t, 1.0, &self.colour_args())?;
@@ -147,12 +182,20 @@ impl Sound for TimpaniSound {
         let t_ko = ctx.show.t_ko + 0.01;
         let beat = ctx.show.grid.beat;
         // every boom: that kettle's note, louder for the low kettle
+        let mut last_tq = None;
         for b in state::booms(ev, k) {
             if b.t > t_ko {
                 break;
             }
             let tq = ctx.q16(b.t);
-            let m = self.kettle_note(ctx, b.kettle, tq)?;
+            // Composed: the line's note on that 16th, whichever kettle booms; a second kettle booming on the same
+            // 16th sounds its octave instead of doubling it
+            let m = match self.written(ctx, tq)? {
+                Some(m) if last_tq == Some(tq) => self.octave_of(ctx, m),
+                Some(m) => m,
+                None => self.kettle_note(ctx, b.kettle, tq)?,
+            };
+            last_tq = Some(tq);
             let (vel, gain) = match b.kettle {
                 0 => (0.95, 0.46),
                 1 => (0.85, 0.36),
@@ -166,8 +209,15 @@ impl Sound for TimpaniSound {
                 break;
             }
             let tq = ctx.q16(t);
-            let r = self.low(ctx, tq)?;
-            for (m, g) in [(r, 0.34), (r + 7, 0.30), (r + 12, 0.18)] {
+            // Composed: the interval stands on the line's note, its upper kettle on the chord
+            let (r, fifth) = match self.written(ctx, tq)? {
+                Some(m) => (m, self.fifth_over(ctx, m, tq)?),
+                None => {
+                    let r = self.low(ctx, tq)?;
+                    (r, r + 7)
+                }
+            };
+            for (m, g) in [(r, 0.34), (fifth, 0.30), (r + 12, 0.18)] {
                 self.put(ctx, mix, &self.tim(f64::from(m), beat, 1.0, 0.0)?, tq, g)?;
             }
             let crack = synth::thud(0.08, 1800.0, 900.0, 29);

@@ -199,6 +199,31 @@ impl AcousticSound {
         Ok(out.iter().map(|v| v / root * 1.5).collect())
     }
 
+    /// The note of the written line a stroke or a pop at `t` sounds, under the Composed arrangement only (sound
+    /// upgrade: every pitched fighter plays its line). `None` under Classic and on a rest of the line: the kit's own
+    /// chord shape and bass notes then.
+    fn line(&self, ctx: &MusicCtx, t: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), t)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// The strings of a stroke: the shape's strings `vo` as they are, or (Composed, sound upgrade) the line's note
+    /// `line` on top of the shape, so the chord stays the harmony's and the line is the highest string heard: the
+    /// shape's strings more than a tone under the note, one string fewer than the shape to make room, then the
+    /// note itself.
+    fn on_top(vo: &[i32], line: Option<i32>) -> Vec<i32> {
+        let Some(m) = line else {
+            return vo.to_vec();
+        };
+        let room = vo.len().saturating_sub(1);
+        let mut out: Vec<i32> = vo.iter().copied().filter(|&s| s < m - 2).take(room).collect();
+        out.push(m);
+        out
+    }
+
     /// `self.colour(x, t, drive_k)` with its colour arguments: `(signal, gain, lead)`.
     fn col(&self, ctx: &MusicCtx, x: &[f64], t: f64, drive_k: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         self.colour(ctx, x, t, drive_k, &self.colour_args())
@@ -321,21 +346,27 @@ impl Sound for AcousticSound {
                 let main = event_int(H, e, 3)? != 0;
                 let down = event_number(H, e, 8)? > 0.0;
                 let lead = (hp - ctx.hp_at(1 - k, t)) / 100.0;
-                let (mut sig, gain) = if down {
+                // Composed (sound upgrade): a stroke that sounds has the line's note on its top string (asked for
+                // after the dropout, so a dropped stroke plays no note of the line)
+                let (mut sig, gain, line) = if down {
+                    let line = self.line(ctx, tq)?;
+                    let vo = Self::on_top(vo, line);
                     let s = if main {
-                        self.strum(ctx, vo, 0.92, 0.013, false, 0.40, 1.0)?
+                        self.strum(ctx, &vo, 0.92, 0.013, false, 0.40, 1.0)?
                     } else {
-                        self.strum(ctx, vo, 0.7, 0.009, false, 0.2, 0.6)?
+                        self.strum(ctx, &vo, 0.7, 0.009, false, 0.2, 0.6)?
                     };
-                    (s, if main { 0.36 } else { 0.24 })
+                    (s, if main { 0.36 } else { 0.24 }, line)
                 } else {
                     // the up-strokes drop out when hurt
                     if main && h01_33(&[tq, 7.0]) < 0.6 * dmath::pow(1.0 - hp / 100.0, 1.6) {
                         continue;
                     }
+                    let line = self.line(ctx, tq)?;
+                    let vo = Self::on_top(vo, line);
                     let top = &vo[vo.len() - vo.len().min(4)..];
                     let s = self.strum(ctx, top, if main { 0.74 } else { 0.6 }, 0.008, true, 0.2, 0.6)?;
-                    (s, if main { 0.27 } else { 0.2 })
+                    (s, if main { 0.27 } else { 0.2 }, line)
                 };
                 if !main {
                     // CAPO: bright and short
@@ -348,13 +379,20 @@ impl Sound for AcousticSound {
                     let (r, f5) = bass_pair(ch)?;
                     let pos = (round_half_even(tq / beat) as i64).rem_euclid(4);
                     let m = if pos == 0 || pos == 1 { r } else { f5 };
-                    let x = self.note(ctx, f64::from(m), 0.4, 0.7, 1.0)?;
-                    mix.place(&bus, &Sig::Mono(self.col(ctx, &x, t, 1.0)?.0), tq, 0.24 * g, pan);
+                    // (Composed: the bass stays the chord's, but is left out where it would sit on or over the
+                    // line's note)
+                    if line.is_none_or(|l| m < l - 2) {
+                        let x = self.note(ctx, f64::from(m), 0.4, 0.7, 1.0)?;
+                        mix.place(&bus, &Sig::Mono(self.col(ctx, &x, t, 1.0)?.0), tq, 0.24 * g, pan);
+                    }
                 }
             } else if kind == "hit" && event_is(H, e, 2, k)? && event_is_str(H, e, 7, "rake")? {
                 let tq = ctx.q16(t);
                 let r = bass_pair(ctx.harmony.chord_at(tq))?.0;
                 let m = if r - 12 >= 40 { r - 12 } else { r };
+                // Composed (sound upgrade): the pop is the line's note on the low strings (E2 to D#3, where the
+                // kit puts the chord's root)
+                let m = self.line(ctx, tq)?.map_or(m, |l| 40 + (l - 40).rem_euclid(12));
                 let x = self.note(ctx, f64::from(m), 0.3, 0.6, 1.0)?;
                 mix.place(&bus, &Sig::Mono(self.col(ctx, &x, t, 1.0)?.0), tq, 0.18, pan);
                 // the strings' slap

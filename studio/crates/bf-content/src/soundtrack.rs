@@ -24,16 +24,18 @@ use bf_sound::music::{ComposedPart, MusicCtx, MusicError};
 use bf_sound::score::score;
 use bf_sound::traits::{Bed, Sound};
 use bf_sound::voice::Voice;
+use bf_sound::{heard, polish};
 
 use bf_core::fightfile::is_extra_line;
 use bf_sound::master::BUS;
 
-use crate::composer::{PER_BAR, compose};
+use crate::composer::{Brief, PER_BAR, compose, harmonise};
 use crate::error::ContentError;
 use crate::fighters;
 use crate::personality::{Role, personality};
 use crate::registry::{name_status, roster};
 use crate::themes::{self, Theme};
+use crate::{composed_parts, levels_table};
 
 /// The theme a fight file names, or the error that it is none.
 fn theme_of(ff: &FightFile) -> Result<&'static Theme, ContentError> {
@@ -315,9 +317,95 @@ impl<'a> SoundBuild<'a> {
         )
     }
 
-    /// `kit.music.master(mix)`: the mix mastered: the soundtrack and its stems.
+    /// `kit.music.master(mix)`: the mix mastered: the soundtrack and its stems. Under the Composed arrangement
+    /// the mix and polish of the sound upgrade ([`bf_sound::polish`]) take the Classic master's place.
     pub fn master(&self, mix: &Mix) -> Soundtrack {
-        master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING)
+        match self.plan(None) {
+            Some(plan) => polish::master(mix, &self.levels(), &plan).0,
+            None => master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING),
+        }
+    }
+
+    /// The Composed master with what it did (each fighter's trim, the loudness reached); `None` under Classic.
+    pub fn master_report(&self, mix: &Mix) -> Option<(Soundtrack, polish::Report)> {
+        self.plan(None)
+            .map(|plan| polish::master_detail(mix, &self.levels(), &plan, true))
+    }
+
+    /// What the Composed master is told about this fight (`None` under Classic): the two fighters' buses, their
+    /// saved levels and kinds, the stretch from FIGHT! to the K.O. and the winner. `kinds` gives each fighter's
+    /// `(low, piercing)` in place of the level table's, with no saved level (the calibration run measures them
+    /// itself).
+    pub fn plan(&self, kinds: Option<[(bool, bool); 2]>) -> Option<polish::Plan> {
+        self.ctx.polish.as_ref()?;
+        let show = self.ctx.show;
+        let part = |k: usize| {
+            let saved = levels_table::of(&show.names[k]);
+            let (low, piercing) = match kinds {
+                Some(kinds) => kinds[k],
+                None => (saved.is_some_and(|s| s.low()), saved.is_some_and(|s| s.piercing())),
+            };
+            polish::Part {
+                bus: self.sounds[k].bus(&self.ctx),
+                saved: if kinds.is_some() { None } else { saved.map(|s| s.gain) },
+                low,
+                piercing,
+            }
+        };
+        Some(polish::Plan {
+            parts: [part(0), part(1)],
+            window: (show.grid.t_fight, show.t_ko),
+            winner: show.win,
+            bass_room: self.ctx.polish.as_ref().is_some_and(|p| p.hand_bass),
+        })
+    }
+}
+
+/// A fighter's level as the calibration run measures it (`ballfight levels`): the left fighter of the fight
+/// `rec` under `ff`, which is the reference fight (a Composed theme, the fighter against the target dummy).
+///
+/// The fighter's bus at its part's own gain gives the rumble and piercing shares between FIGHT! and the K.O.;
+/// with the treatments those call for, the gain is the one that puts it [`polish::OVER_BAND`] dB over the band.
+///
+/// # Errors
+/// As [`build_soundtrack`]; or the fight is not under the Composed arrangement, or the fighter never sounds.
+pub fn measure_level(rec: &Recording, ff: &FightFile) -> Result<(String, levels_table::Saved), ContentError> {
+    validate(ff)?;
+    let show = Show::new(rec, ff)?;
+    let measured = catch_unwind(AssertUnwindSafe(|| -> Result<levels_table::Saved, ContentError> {
+        let build = SoundBuild::new(&show, rec, ff)?;
+        let mix = build.score()?;
+        let levels = build.levels();
+        let refuse = |why: &str| ContentError::Sound(format!("the level of {}: {why}", show.names[0]));
+        let plain = build
+            .plan(Some([(false, false); 2]))
+            .ok_or_else(|| refuse("the fight is not under the Composed arrangement"))?;
+        let (from, to) = plain.window;
+        let bus = plain.parts[0].bus.clone();
+        let hand = levels.get(&bus).map_or(1.0, |(gain, _)| gain);
+        let raw = mix.bus(&bus).ok_or_else(|| refuse("its part played nothing"))?;
+        let fight = heard::span(raw, from, to);
+        let (rumble, piercing) = (heard::share(fight, heard::RUMBLE), heard::share(fight, heard::PIERCING));
+        let saved = levels_table::Saved {
+            gain: hand,
+            rumble,
+            piercing,
+        };
+        let plan = build
+            .plan(Some([(saved.low(), saved.piercing()), (false, false)]))
+            .expect("a plan, as before");
+        let buses = polish::treated(&mix, &levels, &plan);
+        let band = polish::band(&buses, &plan);
+        let over = heard::over_band(&buses[&bus], &band, from, to)
+            .ok_or_else(|| refuse("it never sounds between FIGHT! and the K.O."))?;
+        Ok(levels_table::Saved {
+            gain: hand * heard::gain(polish::OVER_BAND - over),
+            ..saved
+        })
+    }));
+    match measured {
+        Ok(result) => result.map(|saved| (show.names[0].clone(), saved)),
+        Err(payload) => Err(ContentError::Sound(panic_text(payload))),
     }
 }
 
@@ -332,6 +420,9 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
     let ff = ctx.ff;
     let signal = StorySignal::from(ctx)?;
     let seed = ff.music.music_seed;
+    let style = composed_parts::style_of(ff.music.melody_style.as_deref());
+    let mut roles: [Option<Role>; 2] = [None, None];
+    let mut registers = [(0, 127); 2];
     for (k, name) in ctx.show.names.clone().iter().enumerate() {
         if ff.music.pinned.contains(name) {
             continue;
@@ -349,7 +440,12 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
         } else {
             p.roles.first().copied().unwrap_or(Role::Melody)
         };
-        let c = compose(p, role, k, &ctx.harmony, &signal, seed);
+        // a piercing instrument writes its line under the top octave of its register (M3)
+        let part = composed_parts::part_note(name);
+        let ceiling = part.piercing.then(|| (part.register.1 - 12).max(part.register.0));
+        let c = compose(p, role, k, &ctx.harmony, &signal, seed, Brief { style, ceiling });
+        roles[k] = Some(role);
+        registers[k] = (part.register.0, ceiling.unwrap_or(part.register.1));
         ctx.composed.insert(
             name.clone(),
             ComposedPart {
@@ -359,6 +455,43 @@ fn compose_into(theme: &Theme, ctx: &mut MusicCtx) -> Result<Box<dyn Bed>, Conte
             },
         );
     }
+    // The harmony pass (C2), where the composer wrote both lines: the melody gives way to a bass, otherwise the
+    // instrument with the lower register does. A pairing with an unpitched fighter has nothing to clash.
+    let pitched = ctx
+        .show
+        .names
+        .iter()
+        .all(|n| !composed_parts::UNPITCHED.contains(&n.as_str()));
+    if let ([Some(r0), Some(r1)], true) = (roles, pitched) {
+        let names = &ctx.show.names;
+        let lower = registers[0].0 + registers[0].1 <= registers[1].0 + registers[1].1;
+        let giver = if r1 == Role::Bass && r0 != Role::Bass {
+            0
+        } else if r0 == Role::Bass && r1 != Role::Bass {
+            1
+        } else {
+            usize::from(!lower)
+        };
+        let scale_pcs: Vec<i32> = ctx
+            .harmony
+            .scale
+            .iter()
+            .map(|s| (ctx.harmony.key_pc + s).rem_euclid(12))
+            .collect();
+        let other = ctx.composed[&names[1 - giver]].song.clone();
+        let register = registers[giver];
+        if let Some(part) = ctx.composed.get_mut(&names[giver]) {
+            harmonise(&mut part.song, &other, &scale_pcs, register);
+        }
+    }
+    // What the parts and the master read of the upgrade (sound upgrade, 2026-11-25): Composed only.
+    let bass = ctx
+        .show
+        .names
+        .iter()
+        .find(|n| ff.music.roles.get(*n).map(String::as_str) == Some("bass"))
+        .cloned();
+    ctx.polish = Some(composed_parts::polish(&ctx.show.names, style, bass.as_deref()));
     theme.bed_with(themes::COMPOSED, &theme.options_of(ff)?, cues(&signal), seed)
 }
 
@@ -398,13 +531,31 @@ fn panic_text(payload: Box<dyn Any + Send>) -> String {
 /// - [`ContentError::Sound`]: the recording lacks something the score reads, or holds values the sound code
 ///   cannot use (a panic inside it is caught and reported here too).
 pub fn build_soundtrack(rec: &Recording, ff: &FightFile) -> Result<Soundtrack, ContentError> {
+    build_soundtrack_played(rec, ff).map(|(st, _)| st)
+}
+
+/// The ordinary notes each fighter sounded in a soundtrack, `(seconds, note)` in time order, by fighter.
+pub type PlayedNotes = std::collections::BTreeMap<String, Vec<(f64, i32)>>;
+
+/// [`build_soundtrack`], and with it the ordinary notes each fighter sounded (`MusicCtx::played`: under the
+/// Composed arrangement the notes its part took from its line; no notes under Classic).
+///
+/// # Errors
+/// As [`build_soundtrack`].
+pub fn build_soundtrack_played(rec: &Recording, ff: &FightFile) -> Result<(Soundtrack, PlayedNotes), ContentError> {
     validate(ff)?;
     let show = Show::new(rec, ff)?;
-    let built = catch_unwind(AssertUnwindSafe(|| -> Result<Soundtrack, ContentError> {
-        let build = SoundBuild::new(&show, rec, ff)?;
-        let mix = build.score()?;
-        Ok(build.master(&mix))
-    }));
+    let built = catch_unwind(AssertUnwindSafe(
+        || -> Result<(Soundtrack, PlayedNotes), ContentError> {
+            let build = SoundBuild::new(&show, rec, ff)?;
+            let mix = build.score()?;
+            let mut played = PlayedNotes::new();
+            for name in &show.names {
+                played.insert(name.clone(), build.ctx.played(name)?);
+            }
+            Ok((build.master(&mix), played))
+        },
+    ));
     match built {
         Ok(result) => result,
         Err(payload) => Err(ContentError::Sound(panic_text(payload))),

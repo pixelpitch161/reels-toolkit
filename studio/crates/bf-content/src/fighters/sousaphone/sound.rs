@@ -222,6 +222,24 @@ impl SousaphoneSound {
         Ok(fit_reg(m, lo, lo + 22))
     }
 
+    /// The note a footfall or a beat of marking time sounds at `t`: as [`SousaphoneSound::line_note`], read
+    /// through [`MusicCtx::play_line`] (sound upgrade: under Composed the note is counted there, and in a moving
+    /// style it is never the note of the step before it).
+    ///
+    /// # Errors
+    /// As [`SousaphoneSound::line_note`].
+    fn step_note(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        let name = self.name(ctx);
+        let lo = self.register(ctx).0;
+        let m = ctx.play_line(name, t)?.ok_or_else(|| {
+            MusicError::new(
+                H,
+                format!("{name}'s line has a rest at {t} s, where its bass needs a note"),
+            )
+        })?;
+        Ok(fit_reg(m, lo, lo + 22))
+    }
+
     /// `root_of(t)`: the root of the chord at `t`, the lowest at or above a fourth over its bottom note.
     fn root_of(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let lo = self.register(ctx).0;
@@ -282,6 +300,7 @@ impl SousaphoneSound {
         // nb0, nb1 = int(math.ceil(T.T_FIGHT / T.BEAT)), int(M.T_KO / T.BEAT)
         let nb0 = slot((grid.t_fight / grid.beat).ceil())?;
         let nb1 = slot((ctx.show.t_ko / grid.beat).trunc())?;
+        let one = ctx.one_voice(self.name(ctx));
         for nb in nb0..=nb1 {
             let tq = nb as f64 * grid.beat;
             if !marking(tq) {
@@ -290,9 +309,9 @@ impl SousaphoneSound {
             if !th.keep((nb * 4) as f64, ctx.hp_at(k, tq) / 100.0) {
                 continue;
             }
-            let x = self.tone(ctx, self.line_note(ctx, tq)?, grid.beat * 0.5, 0.9, 0.0)?;
+            let x = self.tone(ctx, self.step_note(ctx, tq)?, grid.beat * 0.5, 0.9, 0.0)?;
             let (sig, g) = self.col(ctx, &x, tq, 1.0)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, 0.48 * g, pan);
+            mix.note(&bus, &Sig::Mono(sig), tq, 0.48 * g, pan, one);
         }
         Ok(())
     }
@@ -303,6 +322,9 @@ impl SousaphoneSound {
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let lo = self.register(ctx).0;
+        // sound upgrade: under Composed it sounds one note at a time, and its footfalls and bell blasts play the
+        // written bass line
+        let one = ctx.one_voice(self.name(ctx));
         let thud = |mix: &mut Mix, dur: f64, f0: f64, f1: f64, seed: f64, tq: f64, g: f64| -> Played {
             let x = synth::thud(dur, f0, f1, noise_seed(H, seed)?);
             mix.place("fx", &Sig::Mono(x), tq, g, 0.0);
@@ -325,7 +347,10 @@ impl SousaphoneSound {
                     }
                     let on8 = (tq / (2.0 * s16) - round_half_even(tq / (2.0 * s16))).abs() < 1e-6;
                     let (m, dur) = if on8 {
-                        (self.line_note(ctx, tq)?, s16 * 1.6)
+                        (self.step_note(ctx, tq)?, s16 * 1.6)
+                    } else if ctx.composed_on() {
+                        // DOUBLE TIME's 16ths: the line's own note on each (a moving style walks them)
+                        (self.step_note(ctx, tq)?, s16 * 0.9)
                     } else {
                         // DOUBLE TIME's 16ths: chromatic approach notes
                         let nxt = self.line_note(ctx, tq + s16)?;
@@ -333,16 +358,29 @@ impl SousaphoneSound {
                     };
                     let x = self.tone(ctx, m, dur, 0.92, 0.0)?;
                     let (sig, g) = self.col(ctx, &x, t, 1.0)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.52 * g, pan);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.52 * g, pan, one);
                     thud(mix, 0.12, 90.0, 50.0, t * 13.0, tq, 0.05)?;
                 }
                 "blast" => {
                     // the bell blast: a big blat on the root + its octave
-                    let r = self.root_of(ctx, tq)?;
+                    let mut r = self.root_of(ctx, tq)?;
+                    if ctx.composed_on()
+                        && let Some(own) = ctx.play_line(self.name(ctx), tq)?
+                    {
+                        // the line's note at the blast, in the octave the root's blat sits in
+                        r = fit_reg(own, lo + 5, lo + 16);
+                    }
                     let x = self.tone(ctx, r, beat * 1.4, 1.0, 1.0)?;
                     let (sig, g) = self.col(ctx, &x, t, 1.3)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.62 * g, pan);
-                    mix.place(&bus, &self.sig(ctx, r + 12, beat * 1.2, 0.9, 0.8)?, tq, 0.30 * g, pan);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.62 * g, pan, one);
+                    mix.note(
+                        &bus,
+                        &self.sig(ctx, r + 12, beat * 1.2, 0.9, 0.8)?,
+                        tq,
+                        0.30 * g,
+                        pan,
+                        one,
+                    );
                     thud(mix, 0.5, 120.0, 45.0, t * 7.0, tq, 0.16)?;
                 }
                 "drill_trample" => thud(mix, 0.5, 110.0, 32.0, t * 17.0, tq, 0.30)?,

@@ -148,6 +148,17 @@ impl ViolinSound {
         }
     }
 
+    /// The note a bowed note sounds at `t`: as [`ViolinSound::line`], read through [`MusicCtx::play_line`] (sound
+    /// upgrade: under Composed the note is counted there, and in a moving style it is never the note bowed before
+    /// it).
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        let (lo, hi) = ctx.cfg[self.k].register;
+        match ctx.play_line(self.name(ctx), t)? {
+            Some(m) => Ok(Self::fit(m, lo, hi - 7)),
+            None => self.line(ctx, t),
+        }
+    }
+
     /// The chord tones from A4 to A6 at `t` (the plucks' pitches).
     fn plucks(&self, ctx: &MusicCtx, t: f64) -> Result<Vec<i32>, MusicError> {
         let ms = ctx.harmony.chord_tones(69, 93, ctx.harmony.chord_at(t)).map_err(bad)?;
@@ -263,6 +274,10 @@ impl Sound for ViolinSound {
         slots.sort_unstable();
         slots.dedup();
         let mut thin = Thinner::new(3.0);
+        // sound upgrade: under Composed the bow sounds one note at a time (a double stop is one event), and its
+        // notes are softer the higher they are above C6
+        let name = self.name(ctx);
+        let one = ctx.one_voice(name);
         for (j, &slot) in slots.iter().enumerate() {
             let tq = slot as f64 * s16;
             let n16 = slots.get(j + 1).map_or(4, |&nx| (nx - slot).clamp(1, 8)) as f64;
@@ -270,10 +285,10 @@ impl Sound for ViolinSound {
             if !thin.keep(slot as f64, hp) {
                 continue;
             }
-            let m = self.line(ctx, tq)?;
+            let m = self.sounded(ctx, tq)?;
             let vel = 0.62 + 0.25 * (2.0 / n16).min(1.0);
             let (sig, g, lead) = self.colour(ctx, &self.bow_note(ctx, m, n16, vel)?, tq, 1.0, &self.colour_args())?;
-            mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g, pan);
+            mix.note(&bus, &Sig::Mono(sig), tq, 0.34 * g * ctx.soften(name, m), pan, one);
             if 1.0 - hp > 0.25 {
                 let x = scratch((n16 * s16).min(0.25), slot.unsigned_abs());
                 mix.place(&bus, &Sig::Mono(x), tq, 0.09 * dmath::pow(1.0 - hp, 1.3), pan);
@@ -288,7 +303,7 @@ impl Sound for ViolinSound {
                     let x = self
                         .colour(ctx, &self.bow_note(ctx, u, n16, 0.6)?, tq, 1.0, &self.colour_args())?
                         .0;
-                    mix.place(&bus, &Sig::Mono(x), tq, 0.14 * g, pan);
+                    mix.note(&bus, &Sig::Mono(x), tq, 0.14 * g, pan, one);
                 }
             }
         }
@@ -299,11 +314,15 @@ impl Sound for ViolinSound {
                 "hit" if event_is_str(H, e, 7, "blade")? && !climb.is_empty() => {
                     // a landed bow: accents climbing the scale
                     let sub = event_int(H, e, 8)?;
-                    let m = climb[py::imod_py(sub, climb.len() as i64) as usize];
+                    let mut m = climb[py::imod_py(sub, climb.len() as i64) as usize];
+                    if ctx.composed_on() {
+                        // the written line's note at the hit, not the next step of the climb
+                        m = self.sounded(ctx, tq)?;
+                    }
                     let (sig, g, _) =
                         self.colour(ctx, &self.bow_note(ctx, m, 1.0, 1.0)?, t, 1.0, &self.colour_args())?;
                     let p = clip(e.f(5) / 3.5, -0.6, 0.6);
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, p);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g * ctx.soften(name, m), p, one);
                     mix.place(&bus, &Sig::Mono(scratch(0.05, noise_seed(H, t * 11.0)?)), tq, 0.05, p);
                 }
                 "hit" if event_is_str(H, e, 7, "key")? => {

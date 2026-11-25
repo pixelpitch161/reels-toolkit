@@ -89,6 +89,8 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     for s in sounds {
         s.count_in(ctx, bed, &mut mix)?;
     }
+    // the one-voice notes of the stage go onto their buses (sound upgrade, M5; nothing waits under Classic)
+    mix.settle();
     let into_fight = synth::whoosh(beat, 400.0, 6000.0, WHOOSH_RISE, WHOOSH_SEED);
     place(&mut mix, into_fight, bar + 3.0 * beat, 0.12);
     bed.fight_start(ctx, &mut mix)?;
@@ -110,15 +112,18 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     for (k, s) in sounds.iter().enumerate() {
         s.play_with(ctx, bed, &mut mix, sounds[1 - k])?;
     }
+    mix.settle();
     shared_events(ctx, bed, &mut mix)?;
 
     // ---- the K.O. (music.py 332-340)
     bed.ko(ctx, &mut mix)?;
     sounds[show.lose].fall_apart(ctx, bed, &mut mix)?;
+    mix.settle();
     place(&mut mix, roar(5.5, ROAR_SEED)?, show.t_ko + 0.2, bed.roar_gain());
     // The winner's stinger on "(WINNER) WINS".
     let tw = ctx.q16(show.t_ko + 1.3);
     sounds[show.win].stinger(ctx, bed, &mut mix, tw)?;
+    mix.settle();
     bed.stinger(ctx, &mut mix, tw)?;
     let t_solo = show.t_solo;
     bed.after_ko(ctx, &mut mix, bar_ko, tw, t_solo)?;
@@ -129,6 +134,7 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     sounds[show.win].solo(ctx, bed, &mut mix, t_solo)?;
     // The loser's pieces fly home, a glass pop when it is whole.
     sounds[show.lose].reassemble(ctx, bed, &mut mix)?;
+    mix.settle();
     let (p_lo, p_hi, p_g) = bed.pop();
     // A.chime(p_lo, 0.5) + A.chime(p_hi, 0.5) * 0.5
     let pop: Vec<f64> = synth::chime(p_lo, 0.5)
@@ -143,6 +149,7 @@ pub fn score(ctx: &MusicCtx, bed: &dyn Bed, sounds: [&dyn Sound; 2]) -> Result<M
     for s in sounds {
         s.last_bar(ctx, bed, &mut mix)?;
     }
+    mix.settle();
     // The doors sliding shut into the title slam: nc = int((T.T_CLOSE + 0.012) * SR).
     let nc = ((grid.t_close + DOORS_OVER) * crate::SR as f64) as usize;
     let mut noise = vec![0.0; nc];

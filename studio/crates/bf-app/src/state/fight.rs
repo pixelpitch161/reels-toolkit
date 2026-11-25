@@ -77,6 +77,7 @@ impl AppState {
             chord_loop: d.chord_loop,
             music_seed: d.music_seed,
             arrangement: d.arrangement.clone(),
+            melody_style: d.melody_style.clone(),
             pinned: d.pinned.clone(),
         }
     }
@@ -414,6 +415,16 @@ impl AppState {
     pub(super) fn set_arrangement(&mut self, name: &str) {
         if bf_core::fightfile::ARRANGEMENTS.contains(&name) {
             self.vm.draft.arrangement = Some(name.to_string());
+        }
+    }
+
+    /// The melody style, when it is Auto (`None`) or one the composer has.
+    pub(super) fn set_melody_style(&mut self, style: Option<String>) {
+        if style
+            .as_deref()
+            .is_none_or(|key| bf_sound::music::Style::from_key(key).is_some())
+        {
+            self.vm.draft.melody_style = style;
         }
     }
 

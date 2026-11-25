@@ -15,6 +15,7 @@
 //! egui's own (where the two scroll areas are scrolled, which control has the keyboard, whether the theme's list is
 //! open).
 
+use bf_sound::music::Style;
 use egui::accesskit::Role;
 use egui::text::{LayoutJob, TextWrapping};
 use egui::{
@@ -97,6 +98,8 @@ pub const CLASSIC_WHY: &str =
 /// Under the arrangement switch, on Classic and on Composed.
 pub const CLASSIC_LINE: &str = "The theme's own band part, and each fighter plays its series line.";
 pub const COMPOSED_LINE: &str = "The band follows the fight, and each fighter gets a line written for this take.";
+/// Under the melody style on Composed, while it is Auto.
+pub const AUTO_STYLE_LINE: &str = "Auto picks a style that suits the theme, new with each re-roll.";
 /// Under the music seed on Composed.
 pub const REROLL_LINE: &str = "Re-roll music writes new lines and solos for the same fight.";
 /// Under the music seed on Composed, when a fighter's notes are its weapon.
@@ -309,6 +312,9 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     ui.add_space(LABEL_GAP);
     hint(ui, if composed { COMPOSED_LINE } else { CLASSIC_LINE });
     ui.add_space(GROUP_GAP);
+    if composed {
+        melody_style(ui, vm, width, out);
+    }
 
     group_label(ui, "This take");
     ui.horizontal(|ui| {
@@ -388,6 +394,39 @@ fn chord_loop(ui: &mut Ui, label: &str, chosen: bool, width: f32) -> Response {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+/// The "Melody style" menu (Composed only): Auto, naming the style it picked for this take, then the styles that
+/// suit the theme; a style the draft holds that the theme does not list (a file's own) is offered after them.
+fn melody_style(ui: &mut Ui, vm: &ViewModel, width: f32, out: &mut Vec<Action>) {
+    let auto = bf_content::composer::pick_style(&vm.draft.theme, vm.draft.music_seed);
+    let held = vm.draft.melody_style.as_deref().and_then(Style::from_key);
+    let mut styles: Vec<Style> = bf_content::themes::family::styles_of(&vm.draft.theme).to_vec();
+    if let Some(s) = held
+        && !styles.contains(&s)
+    {
+        styles.push(s);
+    }
+    let mut options = vec![format!("Auto ({})", auto.title())];
+    options.extend(styles.iter().map(|s| s.title().to_string()));
+    let chosen = held
+        .and_then(|s| styles.iter().position(|&t| t == s))
+        .map_or(0, |i| i + 1);
+    group_label(ui, "Melody style");
+    if let Some(i) = buttons::dropdown(ui, "Melody style", &options, chosen, width)
+        && i != chosen
+    {
+        let style = i
+            .checked_sub(1)
+            .and_then(|k| styles.get(k))
+            .map(|s| s.key().to_string());
+        out.push(Action::SetMelodyStyle(style));
+    }
+    if held.is_none() {
+        ui.add_space(LABEL_GAP);
+        hint(ui, AUTO_STYLE_LINE);
+    }
+    ui.add_space(GROUP_GAP);
+}
+
 // The arrangement
 // ---------------------------------------------------------------------------------------------------------------
 

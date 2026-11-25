@@ -186,6 +186,10 @@ pub struct Music {
     pub chords_tail: Vec<String>,
     /// The composer's seed.
     pub music_seed: u64,
+    /// The melody style of the `composed` arrangement (format 2, optional: `signature`, `climbing`, `riff`, `runs`,
+    /// `broken_chords` or `anchor`). A file without one plays `signature`, as does a word this app does not know;
+    /// the `classic` arrangement has no styles.
+    pub melody_style: Option<String>,
     /// Who plays what (`bass`, `melody`, ...), by fighter.
     pub roles: BTreeMap<String, String>,
     /// Hand-written lines over the loop (8 notes a bar = 8ths, 4 = beats), by fighter, or by an extra line a

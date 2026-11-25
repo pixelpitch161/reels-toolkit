@@ -201,9 +201,26 @@ impl ElectricSound {
 
     /// `power(root, dur=0.3, cap=0.8, vel=0.95, gain=7.0)`: a power chord (root, fifth, octave) through the fuzz.
     fn power(&self, ctx: &MusicCtx, root: i32, dur: f64, cap: f64, vel: f64, gain: f64) -> Samples {
+        self.chord(ctx, &[root, root + 7, root + 12], dur, cap, vel, gain)
+    }
+
+    /// The riff's stab under the Composed arrangement (sound upgrade): the kit's stab (`power(root, 0.18, 0.5, 0.95,
+    /// 7.0)`) voiced under the riff's note `top`, so the written line's note is the highest pitch of the hit: the
+    /// root (an octave lower while it lies over `top`), and its fifth and octave only where they do not pass `top`.
+    fn stab_under(&self, ctx: &MusicCtx, root: i32, top: i32) -> Samples {
+        let mut root = root;
+        while root > top {
+            root -= 12;
+        }
+        let notes: Vec<i32> = [root, root + 7, root + 12].into_iter().filter(|&m| m <= top).collect();
+        self.chord(ctx, &notes, 0.18, 0.5, 0.95, 7.0)
+    }
+
+    /// The notes `ms` of its voice summed and put through the fuzz together (the cab at 4200 Hz).
+    fn chord(&self, ctx: &MusicCtx, ms: &[i32], dur: f64, cap: f64, vel: f64, gain: f64) -> Samples {
         // x = sum(M.note(...) for m in (root, root + 7, root + 12)): from the int 0
         let mut x: Vec<f64> = Vec::new();
-        for (j, m) in [root, root + 7, root + 12].into_iter().enumerate() {
+        for (j, m) in ms.iter().copied().enumerate() {
             let y = self.raw(ctx, f64::from(m), dur, cap, vel)?;
             if j == 0 {
                 x = y.iter().map(|v| 0.0 + v).collect();
@@ -224,11 +241,13 @@ impl ElectricSound {
         ctx.harmony.root_above(ctx.harmony.chord_at(t), 40).map_err(bad)
     }
 
-    /// `riff_note(t)`: its line's note at `t`, folded by octaves into its register.
+    /// `riff_note(t)`: the note of its line a bolt sounds at `t`, folded by octaves into its register. Under Classic
+    /// it is the line's note; under the Composed arrangement the context keeps what was played, and a moving melody
+    /// style never hands back the note before it (sound upgrade). Asked for once the bolt is known to sound.
     fn riff_note(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let (lo, hi) = self.register(ctx);
         let mut m = ctx
-            .line_at(self.name(ctx), t)?
+            .play_line(self.name(ctx), t)?
             .ok_or_else(|| MusicError::new(H, format!("its line rests at {t} s (Python compares None)")))?;
         while m > hi {
             m -= 12;
@@ -393,7 +412,12 @@ impl Sound for ElectricSound {
                     mix.place(&bus, &Sig::Mono(sig), tq, 0.40 * g, pan);
                     if event_int(H, e, 3)? == 0 || fork {
                         // the riff's first note / a forked bolt: a stab
-                        let stab = self.power(ctx, self.root_of(ctx, tq)?, 0.18, 0.5, 0.95, 7.0)?;
+                        let root = self.root_of(ctx, tq)?;
+                        let stab = if ctx.composed_on() {
+                            self.stab_under(ctx, root, m)?
+                        } else {
+                            self.power(ctx, root, 0.18, 0.5, 0.95, 7.0)?
+                        };
                         mix.place(&bus, &Sig::Mono(self.col(ctx, &stab, t)?.0), tq, 0.22 * g, pan);
                     }
                     let seed = (t * 37.0) as u64;

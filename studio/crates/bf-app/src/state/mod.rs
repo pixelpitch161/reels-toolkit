@@ -383,6 +383,8 @@ pub enum Action {
     SetBass(usize),
     /// The Music screen's "Arrangement": `classic` or `composed`.
     SetArrangement(String),
+    /// The Music screen's "Melody style": a `music.melody_style` word, or `None` for Auto.
+    SetMelodyStyle(Option<String>),
     /// "Re-roll music": a new music seed, nothing else.
     RerollMusic,
     /// "Keep this fighter's line": the fighter on `side` keeps its written line and solo under Composed.
@@ -474,6 +476,7 @@ pub(crate) struct MusicKey {
     pub chord_loop: usize,
     pub music_seed: u64,
     pub arrangement: Option<String>,
+    pub melody_style: Option<String>,
     pub pinned: Option<Vec<String>>,
 }
 
@@ -630,6 +633,7 @@ impl AppState {
             Action::SetChordLoop(i) => self.set_chord_loop(i),
             Action::SetBass(side) => self.set_bass(side),
             Action::SetArrangement(name) => self.set_arrangement(&name),
+            Action::SetMelodyStyle(style) => self.set_melody_style(style),
             Action::RerollMusic => self.reroll_music(),
             Action::SetPinned { side, keep } => self.set_pinned(side, keep),
             Action::SetCaptionTab(platform) => self.vm.caption_tab = platform,
@@ -791,6 +795,7 @@ fn empty_draft() -> Draft {
         },
         captions_edited: false,
         arrangement: None,
+        melody_style: None,
         pinned: None,
         base: None,
     }

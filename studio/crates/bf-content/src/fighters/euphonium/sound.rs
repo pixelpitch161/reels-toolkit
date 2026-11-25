@@ -251,6 +251,8 @@ impl EuphoniumSound {
         let grid = &ctx.show.grid;
         let (beat, s16, t_ko) = (grid.beat, grid.s16, ctx.show.t_ko);
         let haste_w = self.windows(ctx, "haste")?;
+        // sound upgrade (M5): under Composed a euphonium sounds one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(self.name(ctx));
         let mut dropped = false;
         let mut lands: BTreeMap<(i64, String), Landings> = BTreeMap::new();
         for l in state::lands(&ctx.rec.events, k) {
@@ -275,7 +277,13 @@ impl EuphoniumSound {
             let hp = ctx.hp_at(k, t0) / 100.0;
             let haste = haste_w.iter().any(|&(a, b)| a <= t0 && t0 < b);
             dropped = thin_37(slot, 11.0, hp, dropped);
-            let m = self.melody_at(ctx, tq)?;
+            // (the kit reads the line before it knows the note plays; under Composed the note is asked for below,
+            // once it is known to sound)
+            let m = if ctx.composed_on() {
+                None
+            } else {
+                self.melody_at(ctx, tq)?
+            };
             if dropped && haste {
                 // thinned: a note of the every-beat run drops out
                 continue;
@@ -285,6 +293,12 @@ impl EuphoniumSound {
                 // (on the 2-beat grid it is clipped, not dropped: no hole while it is still firing)
                 dur = 0.5 * beat;
             }
+            // sound upgrade: the note the salvo sounds (a moving melody style never repeats the note before it)
+            let m = if ctx.composed_on() {
+                ctx.play_line(self.name(ctx), tq)?
+            } else {
+                m
+            };
             let m = f64::from(m.ok_or_else(|| {
                 MusicError::new(
                     H,
@@ -293,11 +307,18 @@ impl EuphoniumSound {
             })?);
             let n = s.n.min(5) as f64;
             let (sig, g, lead) = self.col(ctx, &self.eup(m, dur, 0.75 + 0.04 * n)?, t0)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, if dropped { 0.26 } else { 0.40 } * g, 0.2);
+            mix.note(
+                &bus,
+                &Sig::Mono(sig),
+                tq,
+                if dropped { 0.26 } else { 0.40 } * g,
+                0.2,
+                one,
+            );
             if self.twin_on(ctx, t0)? {
                 // a copied MULTIPHONICS: two notes at once
                 let (sig, _, _) = self.col(ctx, &self.eup(m + 7.0, dur, 0.6)?, t0)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.20 * g, 0.25);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.20 * g, 0.25, one);
             }
             if lead > 0.04 {
                 // the leader: a third under (fuller)
@@ -308,7 +329,7 @@ impl EuphoniumSound {
                     .map_err(bad)?;
                 if let Some(&u) = under.last() {
                     let (sig, _, _) = self.col(ctx, &self.eup(f64::from(u), dur, 0.55)?, t0)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.15 * g, 0.25);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.15 * g, 0.25, one);
                 }
             }
             // the mortar's pop
@@ -329,14 +350,26 @@ impl EuphoniumSound {
             );
             if q.hits != 0 && kind == "mortar" {
                 // landed: a fat chord tone a sixth under
-                let m = self.note_at(ctx, tq)?;
-                let tones = ctx
-                    .harmony
-                    .chord_tones(m - 10, m - 7, ctx.harmony.chord_at(tq))
-                    .map_err(bad)?;
-                if let Some(&u) = tones.last() {
+                // (sound upgrade: under Composed the landing sounds the written line's own note there)
+                let fat = if ctx.composed_on() {
+                    ctx.play_line(self.name(ctx), tq)?
+                } else {
+                    None
+                };
+                let fat = match fat {
+                    Some(m) => Some(m),
+                    None => {
+                        let m = self.note_at(ctx, tq)?;
+                        let tones = ctx
+                            .harmony
+                            .chord_tones(m - 10, m - 7, ctx.harmony.chord_at(tq))
+                            .map_err(bad)?;
+                        tones.last().copied()
+                    }
+                };
+                if let Some(u) = fat {
                     let (sig, g, _) = self.col(ctx, &self.eup(f64::from(u), 0.35, 0.95)?, t)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.25);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.25, one);
                 }
             }
         }

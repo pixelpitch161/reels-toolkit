@@ -10,6 +10,7 @@
 //! Instagram tags when it is saved again (the Instagram text's first line is the caption).
 
 use bf_core::fightfile::{Captions, FightFile, Music};
+use bf_sound::music::Style;
 
 use crate::model::draft::{CaptionTexts, Draft};
 use crate::model::roster::{BASS_ROLE, parts_with_bass};
@@ -67,6 +68,15 @@ pub(crate) fn written_parts(ff: &FightFile, fighters: &[String; 2]) -> [String; 
 /// music is kept as it is while the theme is its own and the loop is its own: the same loop of the theme, or one
 /// past the theme's last loop when its loop is none of them. In another theme the file's theme options and mix
 /// (the old theme's) are dropped, so the new theme plays at its defaults.
+/// The melody style a draft plays under Composed: the owner's pick, else Auto's for its theme and music seed.
+pub fn melody_style(draft: &Draft) -> Style {
+    draft
+        .melody_style
+        .as_deref()
+        .and_then(Style::from_key)
+        .unwrap_or_else(|| bf_content::composer::pick_style(&draft.theme, draft.music_seed))
+}
+
 pub(crate) fn set_music(m: &mut Music, theme: &str, chord_loop: usize) {
     let same_theme = m.theme == theme;
     let card = bf_content::theme_card(theme);
@@ -136,6 +146,14 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
     ff.music.music_seed = draft.music_seed;
     if let Some(arrangement) = &draft.arrangement {
         ff.music.arrangement.clone_from(arrangement);
+    }
+    // the melody style (sound upgrade, C11): the owner's, else the one Auto picks for the theme and music seed;
+    // written only when it changes what the file plays, so a file opened and saved again stays as it was
+    if ff.music.arrangement == bf_content::themes::COMPOSED {
+        let chosen = melody_style(draft);
+        if bf_content::composed_parts::style_of(ff.music.melody_style.as_deref()) != chosen {
+            ff.music.melody_style = Some(chosen.key().to_string());
+        }
     }
     if let Some(pinned) = &draft.pinned {
         ff.music.pinned = pinned.iter().filter(|p| draft.fighters.contains(p)).cloned().collect();
@@ -210,6 +228,12 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
         captions: caption_texts(&ff.captions),
         captions_edited: true,
         arrangement: None,
+        // the style the file plays (Signature when it names none), so opening a file never changes its melodies
+        melody_style: Some(
+            bf_content::composed_parts::style_of(ff.music.melody_style.as_deref())
+                .key()
+                .to_string(),
+        ),
         pinned: None,
         base: Some(toml.to_string()),
         fighters,
@@ -556,6 +580,46 @@ mod tests {
             "Flute's solo: a chord, but FLUTE's solo plays one note at a time (the kit's FLUTE part stops on a chord; \
              only ACOUSTIC can strum one)."
         );
+    }
+
+    /// Under Composed the take plays the owner's melody style, else the one Auto picks for the theme and music seed,
+    /// and the fight file says which; Classic writes none, and a file opened without one keeps playing Signature.
+    #[test]
+    fn the_melody_style_reaches_the_fight_file() {
+        let mut d = starting_draft();
+        d.arrangement = Some(bf_content::themes::COMPOSED.to_string());
+        d.melody_style = Some("runs".to_string());
+        assert_eq!(melody_style(&d), Style::Runs);
+        assert_eq!(
+            fight_file(&d).expect("composed").music.melody_style.as_deref(),
+            Some("runs")
+        );
+        // Auto: the theme's and music seed's pick (left unwritten only when it is Signature, which a file without
+        // one plays), and another music seed can pick another
+        d.melody_style = None;
+        let auto = bf_content::composer::pick_style(&d.theme, d.music_seed);
+        assert_eq!(melody_style(&d), auto);
+        let written = fight_file(&d).expect("auto").music.melody_style;
+        assert_eq!(bf_content::composed_parts::style_of(written.as_deref()), auto);
+        assert!((2..200).any(|seed| bf_content::composer::pick_style(&d.theme, seed) != auto));
+        // a word the composer does not know is Auto
+        d.melody_style = Some("polka".to_string());
+        assert_eq!(melody_style(&d), auto);
+        // a file opened without a style shows Signature and is written back as it was
+        d.melody_style = Some("signature".to_string());
+        let first = fight_file(&d).expect("signature");
+        assert_eq!(
+            first.music.melody_style, None,
+            "Signature is what a file without one plays"
+        );
+        let text = first.to_toml();
+        let opened = draft_of(&FightFile::parse(&text).expect("read back"), &text);
+        assert_eq!(opened.melody_style.as_deref(), Some("signature"));
+        assert_eq!(fight_file(&opened).expect("written again").to_toml(), text);
+        // Classic plays no style and writes none
+        d.arrangement = Some("classic".to_string());
+        d.melody_style = Some("runs".to_string());
+        assert_eq!(fight_file(&d).expect("classic").music.melody_style, None);
     }
 
     #[test]

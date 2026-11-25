@@ -228,6 +228,9 @@ pub struct BandPlan {
     /// The buses the fighters must sit above: the bed's own, in the order the theme lists them, then `fx`
     /// (`list(M.bed.buses) + ['fx']`).
     pub bed_buses: Vec<String>,
+    /// The fight is under the Composed arrangement: the band check measures by ear ([`band::band_heard`]), the
+    /// sound fixes end with the loudness target again, and no measured sound check stops the render.
+    pub composed: bool,
 }
 
 impl BandPlan {
@@ -255,7 +258,42 @@ impl BandPlan {
         Ok(BandPlan {
             sounds: [part(0)?, part(1)?],
             bed_buses,
+            composed: ff.music.arrangement == bf_content::themes::COMPOSED,
         })
+    }
+}
+
+/// The band check `plan` calls for: [`band::band`] in each fighter's own band, or under the Composed arrangement
+/// [`band::band_heard`] by ear.
+pub fn band_of(st: &Soundtrack, show: &Show, plan: &BandPlan) -> CheckResult {
+    let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
+    if plan.composed {
+        band::band_heard(st, show, [&plan.sounds[0].0, &plan.sounds[1].0], &bed)
+    } else {
+        let sounds = [
+            (plan.sounds[0].0.as_str(), plan.sounds[0].1),
+            (plan.sounds[1].0.as_str(), plan.sounds[1].1),
+        ];
+        band::band(st, show, sounds, &bed)
+    }
+}
+
+/// The sound checks.
+pub const SOUND_CHECKS: [&str; 4] = ["band", "levels", "loudness", "loop_audio"];
+
+/// Under the Composed arrangement no sound check stops the render (sound upgrade): a sound check that measured
+/// and still fails after its fix is noted in its summary and let through. One that could not measure at all (no
+/// numbers: a fault in the app) still stops it, as everywhere.
+pub fn noted_only(results: &mut [CheckResult]) {
+    for r in results
+        .iter_mut()
+        .filter(|r| !r.pass && SOUND_CHECKS.contains(&r.name) && !r.numbers.is_empty())
+    {
+        r.pass = true;
+        r.summary = format!(
+            "{} Under the Composed arrangement this is only noted, so the video was made anyway.",
+            r.summary.trim_end()
+        );
     }
 }
 
@@ -409,15 +447,10 @@ fn pre_render_with(
         }
         // the sound checks and the camera maths, beside the frames
         let master = as_wav16(&st.master);
-        let sounds = [
-            (plan.sounds[0].0.as_str(), plan.sounds[0].1),
-            (plan.sounds[1].0.as_str(), plan.sounds[1].1),
-        ];
-        let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
         let checks: [&dyn Fn() -> CheckResult; 5] = [
             &|| focus(pic),
             &|| levels(&master),
-            &|| band(st, show, sounds, &bed),
+            &|| band_of(st, show, plan),
             &|| loudness(&master, show),
             &|| loop_audio(&master),
         ];

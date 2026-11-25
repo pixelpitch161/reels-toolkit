@@ -431,7 +431,13 @@ impl LayeredBed {
         let t0 = grid.bar_t(bar as f64);
         let plan = self.plan(section, bar);
         let chord = ctx.harmony.chord_at(t0 + 1e-6).to_string();
+        // C6 (sound upgrade): a true low instrument in the bass role is the bass from FIGHT! to the K.O., and the
+        // band's own bass layers stay silent there.
+        let hand_bass = section == Section::Fight && ctx.polish.as_ref().is_some_and(|p| p.hand_bass);
         for (i, layer) in self.layers.iter().enumerate() {
+            if hand_bass && layer.kind == LayerKind::Bass {
+                continue;
+            }
             let tones = if layer.kind.tonal() {
                 let (lo, hi) = layer.range;
                 let tones = ctx
@@ -458,7 +464,9 @@ impl LayeredBed {
                 let t = t0 + h.s16 * grid.s16;
                 let (mut midi, mut vel, mut dur) = (h.midi, h.vel, h.len * grid.s16);
                 if let Some(ko) = stop {
-                    if t >= ko {
+                    // nothing at the K.O., and no note so close before it that it would be under a sample long
+                    // (a filter on an empty note panics; found on dark_disco's strings, sound upgrade)
+                    if t >= ko || (ko - t) * crate::SRF < 1.0 {
                         continue;
                     }
                     dur = dur.min(ko - t);

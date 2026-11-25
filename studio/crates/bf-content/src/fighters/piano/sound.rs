@@ -7,6 +7,11 @@
 //!
 //! The piano's voice draws no noise, but its notes are still asked for in the kit's order: the first of them
 //! measures the voice's level.
+//!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) the composer writes the piano's melody, which the
+//! roll's rows do not hold: each fired row then sounds the written line's note of its 8th on top of the bar's chord
+//! (as many notes as the row has holes), and a landed key's accent is the line's note at the hit. Classic plays the
+//! rows as they are.
 
 use bf_core::dmath;
 use bf_core::event::{Event, Value};
@@ -109,6 +114,35 @@ impl PianoSound {
     fn tone(&self, ctx: &MusicCtx, x: &[f64], t: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         self.colour(ctx, x, t, 1.0, &self.colour_args())
     }
+
+    /// A row of `n` holes with the written line's note `m` on top (sound upgrade: under the Composed arrangement
+    /// the piano plays its line, and its chord comes from the harmony at `tq`). It is built as the roll's own rows
+    /// are (`Harmony::roll_rows`): the melody, its octave below, then the chord's tones under it, the nearest first,
+    /// each at least a minor third from every note already in the row; the keyboard ends an octave under the
+    /// register.
+    fn row_under(&self, ctx: &MusicCtx, m: i32, n: usize, tq: f64) -> Result<Vec<i32>, MusicError> {
+        let lo = ctx.cfg[self.k].register.0 - 12;
+        let mut row = vec![m];
+        if n > 1 {
+            if m - 12 >= lo {
+                row.push(m - 12);
+            }
+            let tones = ctx
+                .harmony
+                .chord_tones(lo, m - 3, ctx.harmony.chord_at(tq))
+                .map_err(bad)?;
+            for c in tones.into_iter().rev().filter(|&c| c != m - 12) {
+                if row.len() >= 4 {
+                    break;
+                }
+                if row.iter().all(|r| (c - r).abs() >= 3) {
+                    row.push(c);
+                }
+            }
+            row.truncate(n);
+        }
+        Ok(row)
+    }
 }
 
 impl Sound for PianoSound {
@@ -179,7 +213,7 @@ impl Sound for PianoSound {
 
     fn play(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let k = self.k;
-        let bus = self.bus(ctx);
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let cfg = ctx.cfg[k];
@@ -203,15 +237,23 @@ impl Sound for PianoSound {
                 if ps.len() > 1 && !thin.keep(slot as f64, hp) {
                     ps.truncate(1);
                 }
+                // sound upgrade: under Composed the row sounds the written line's note at its 8th, on top of
+                // as many chord notes as the row has holes (a rest of the line leaves the roll's own row)
+                if ctx.composed_on()
+                    && !ps.is_empty()
+                    && let Some(m) = ctx.play_line(name, tq)?
+                {
+                    ps = self.row_under(ctx, m, ps.len(), tq)?;
+                }
                 let sus = event_at(H, e, 5)?.truthy();
                 let dur = if sus { hang } else { 0.24 };
                 let cap = round_nd(dur + if sus { 0.6 } else { 0.3 }, 2);
                 let (sig, g, lead) = self.tone(ctx, &keys(ctx, &ps, dur, 0.9, Some(cap))?, t)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.40 * g, -0.2);
+                mix.place(&bus, &Sig::Mono(sig), tq, 0.40 * g * ctx.soften(name, ps[0]), -0.2);
                 if lead > 0.04 {
                     // the leader: the melody doubled an octave up
                     let up = self.tone(ctx, &keys(ctx, &[ps[0] + 12], 0.16, 0.6, None)?, t)?.0;
-                    mix.place(&bus, &Sig::Mono(up), tq, 0.10 * g, -0.3);
+                    mix.place(&bus, &Sig::Mono(up), tq, 0.10 * g * ctx.soften(name, ps[0] + 12), -0.3);
                 }
             } else if e.kind == "hit" && event_is(H, e, 2, k)? && event_is_str(H, e, 7, "key")? {
                 // a landed key: a bright accent (one per 16th)
@@ -222,7 +264,16 @@ impl Sound for PianoSound {
                 }
                 last_acc = Some(slot);
                 let sub = event_int(H, e, 8)?;
-                let m = if sub >= 30 {
+                // sound upgrade: under Composed the accent is the written line's note at the hit (an octave up, as
+                // the accent always is), not the key's own pitch
+                let written = if ctx.composed_on() {
+                    ctx.play_line(name, tq)?
+                } else {
+                    None
+                };
+                let m = if let Some(m) = written {
+                    m
+                } else if sub >= 30 {
                     i32::try_from(sub).map_err(|_| MusicError::new(H, format!("{sub} is not a pitch")))?
                 } else {
                     // T.scale_notes(72, 96, T.chord_at(tq))[int(e[8]) % 7]
@@ -235,7 +286,7 @@ impl Sound for PianoSound {
                         .ok_or_else(|| MusicError::new(H, "the scale has fewer than 7 notes from 72 to 96"))?
                 };
                 let acc = self.tone(ctx, &keys(ctx, &[m + 12], 0.08, 0.7, None)?, t)?.0;
-                mix.place(&bus, &Sig::Mono(acc), tq, 0.12, 0.1);
+                mix.place(&bus, &Sig::Mono(acc), tq, 0.12 * ctx.soften(name, m + 12), 0.1);
                 let thump = synth::thud(0.12, 220.0, 120.0, noise_seed(H, t * 13.0)?);
                 mix.place("fx", &Sig::Mono(thump), tq, 0.035, 0.0);
             } else if e.kind == "ability" && event_is(H, e, 2, k)? {

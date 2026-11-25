@@ -14,6 +14,7 @@
 
 use bf_core::show::Show;
 use bf_sound::dsp::{self, FilterKind};
+use bf_sound::heard;
 use bf_sound::master::Soundtrack;
 use bf_sound::wav::sample_i16;
 
@@ -175,6 +176,114 @@ pub fn band(st: &Soundtrack, show: &Show, sounds: [(&str, (f64, f64)); 2], bed_b
     result
 }
 
+/// The band check of the Composed arrangement (sound upgrade): as [`band`], but each fighter is measured as the
+/// ear hears it on small speakers ([`bf_sound::heard`]) against the bed as a whole, in place of its own band (the
+/// low treatment moves a low fighter's sound out of its band on purpose). The sections and the numbers' names
+/// are [`band`]'s: `<bus> section <n>` is the fighter's mean heard level less the bed's over the section, and
+/// `<bus> while it sounds <n>` the same over the blocks where the fighter sounds
+/// ([`bf_sound::heard::over_band`]). It passes when every "while it sounds" number is above 0.
+pub fn band_heard(st: &Soundtrack, show: &Show, buses: [&str; 2], bed_buses: &[&str]) -> CheckResult {
+    let fail = |text: String| CheckResult::failed(NAME, format!("{TITLE}: {text}"));
+    let n = st.master.len();
+    if n == 0 {
+        return fail("the soundtrack is empty, so there is nothing to measure; build the soundtrack again.".into());
+    }
+    for (k, bus) in buses.iter().enumerate() {
+        if !st.stems.contains_key(*bus) {
+            return fail(format!(
+                "the soundtrack has no part for the {} (no bus \"{bus}\"), so it cannot be measured; build the \
+                 soundtrack again.",
+                show.names[k]
+            ));
+        }
+    }
+    let bed: Vec<&str> = bed_buses
+        .iter()
+        .copied()
+        .filter(|b| st.stems.contains_key(*b))
+        .collect();
+    if bed.is_empty() {
+        return fail(
+            "the soundtrack has none of the bed's buses, so there is nothing to compare the fighters with; \
+             build the soundtrack again."
+                .into(),
+        );
+    }
+    for bus in buses.iter().copied().chain(bed.iter().copied()) {
+        let x = &st.stems[bus];
+        if x.len() != n || x.iter().any(|f| !(f[0].is_finite() && f[1].is_finite())) {
+            return fail(format!(
+                "the bus \"{bus}\" of the soundtrack is not {n} samples of numbers, so it cannot be measured; \
+                 build the soundtrack again."
+            ));
+        }
+    }
+    let mut bedx = vec![[0.0; 2]; n];
+    for b in &bed {
+        for (sum, f) in bedx.iter_mut().zip(&st.stems[*b]) {
+            sum[0] += f[0];
+            sum[1] += f[1];
+        }
+    }
+    let t = &show.grid;
+    let spans = [
+        (t.t_fight, 10.0),
+        (10.0, 20.0),
+        (20.0, 32.0),
+        (32.0, 44.0),
+        (44.0, show.t_ko),
+    ];
+    let mut result = CheckResult::new(NAME, true, String::new(), &[]);
+    let mut faults = Vec::new();
+    let mut ranges = Vec::new();
+    for (k, bus) in buses.iter().enumerate() {
+        let name = &show.names[k];
+        let x = &st.stems[*bus];
+        let (mut least, mut most): (Option<(f64, usize)>, f64) = (None, f64::NEG_INFINITY);
+        for (i, &(a, b)) in spans.iter().enumerate() {
+            // a section shorter than one loudness block cannot be measured (a K.O. before 44 s)
+            if (b - a) * SRF <= heard::BLOCK as f64 {
+                continue;
+            }
+            let (la, lb) = (
+                heard::heard(heard::span(x, a, b)),
+                heard::heard(heard::span(&bedx, a, b)),
+            );
+            let mean = |l: &[f64]| l.iter().sum::<f64>() / l.len().max(1) as f64;
+            result.put(&format!("{bus} section {}", i + 1), mean(&la) - mean(&lb));
+            if let Some(g) = heard::over_band(x, &bedx, a, b) {
+                result.put(&format!("{bus} while it sounds {}", i + 1), g);
+                if least.is_none_or(|(l, _)| g < l) {
+                    least = Some((g, i));
+                }
+                most = most.max(g);
+            }
+        }
+        match least {
+            None => faults.push(format!(
+                "the {name} is silent for the whole fight, so check that its part plays"
+            )),
+            Some((g, i)) if g <= 0.0 || g.is_nan() => faults.push(format!(
+                "the {name} is {:.1} dB under the band to the ear between {:.0} and {:.0} s while it plays, so \
+                 turn the {name} up or thin the band there",
+                -g, spans[i].0, spans[i].1
+            )),
+            Some((g, _)) => ranges.push(format!("the {name} by {g:.1} to {most:.1} dB")),
+        }
+    }
+    result.pass = faults.is_empty();
+    result.summary = if result.pass {
+        format!(
+            "{TITLE}: each fighter is louder than the band to the ear in every section of the fight while it \
+             plays: {}.",
+            ranges.join(", ")
+        )
+    } else {
+        format!("{TITLE}: {}.", faults.join("; and "))
+    };
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -199,6 +308,31 @@ mod tests {
                 [v, v]
             })
             .collect()
+    }
+
+    /// The heard version: a fighter well over the band passes, one far under it fails, with the section named.
+    #[test]
+    fn the_heard_band_check_reads_the_fighters_against_the_band() {
+        let show = show();
+        let n = bf_sound::NA;
+        let pass = band_heard(
+            &soundtrack(n, 0.3, 0.3, 0.05),
+            &show,
+            ["flute", "trombone"],
+            &["drums", "fx"],
+        );
+        assert!(pass.pass, "{}", pass.summary);
+        assert!(pass.numbers["flute while it sounds 1"] > 5.0, "{:?}", pass.numbers);
+        let fail = band_heard(&soundtrack(n, 0.3, 0.01, 0.2), &show, ["flute", "trombone"], &["drums"]);
+        assert!(!fail.pass);
+        assert!(
+            fail.summary.contains("TROMBONE is") && fail.summary.contains("under the band"),
+            "{}",
+            fail.summary
+        );
+        assert!(fail.numbers["trombone while it sounds 1"] < 0.0);
+        let missing = band_heard(&soundtrack(n, 0.3, 0.3, 0.05), &show, ["flute", "tuba"], &["drums"]);
+        assert!(!missing.pass && missing.numbers.is_empty());
     }
 
     fn soundtrack(n: usize, flute: f64, trombone: f64, bed: f64) -> Soundtrack {

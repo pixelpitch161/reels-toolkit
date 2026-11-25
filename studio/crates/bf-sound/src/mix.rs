@@ -32,6 +32,9 @@ impl Sig {
     }
 }
 
+/// A one-voice note waiting for [`Mix::settle`]: its start sample and its frames.
+type Waiting = (i64, Vec<[f64; 2]>);
+
 /// Named stereo buses.
 #[derive(Clone, Debug)]
 pub struct Mix {
@@ -40,7 +43,14 @@ pub struct Mix {
     buses: BTreeMap<String, Vec<[f64; 2]>>,
     /// The bus names in the order the buses were created.
     order: Vec<String>,
+    /// The one-voice notes waiting for [`Mix::settle`], by bus: `(start sample, frames)`.
+    queue: BTreeMap<String, Vec<Waiting>>,
 }
+
+/// How long a one-voice note takes to fade out when the next one begins ([`Mix::note`]), in seconds.
+pub const VOICE_FADE: f64 = 0.03;
+/// One-voice notes that begin within this many seconds of each other are one event (a chord, a doubled octave).
+pub const SAME_EVENT: f64 = 0.001;
 
 impl Mix {
     /// `Mix(dur)`: an empty mix of `dur` seconds (Python's default is 60.0).
@@ -50,6 +60,7 @@ impl Mix {
             ns: (SRF * dur) as usize,
             buses: BTreeMap::new(),
             order: Vec::new(),
+            queue: BTreeMap::new(),
         }
     }
 
@@ -123,13 +134,132 @@ impl Mix {
             }
         }
     }
+
+    /// Places a note of an instrument that sounds one note at a time (sound upgrade, M5: wind, brass, bowed
+    /// strings under the Composed arrangement). With `one_voice` false this is [`Mix::place`], sample for sample.
+    /// With it true the note waits until [`Mix::settle`], which lets every such note of the bus end when the next
+    /// one begins: it fades to silence over [`VOICE_FADE`] from the next note's start, so two notes of a flute
+    /// never ring through each other. Notes that begin within [`SAME_EVENT`] of each other are one event and do
+    /// not end each other.
+    ///
+    /// # Panics
+    /// As [`Mix::place`].
+    pub fn note(&mut self, bus: &str, sig: &Sig, t: f64, gain: f64, pan: f64, one_voice: bool) {
+        if !one_voice {
+            return self.place(bus, sig, t, gain, pan);
+        }
+        self.bus_mut(bus);
+        let start = t * SRF;
+        assert!(start.is_finite(), "note: the time {t} s is not a finite number");
+        let frames: Vec<[f64; 2]> = match sig {
+            Sig::Mono(x) => {
+                let a = (pan + 1.0) * dmath::PI / 4.0;
+                let (left, right) = (dmath::cos(a), dmath::sin(a));
+                x.iter().map(|&v| [v * left * gain, v * right * gain]).collect()
+            }
+            Sig::Stereo(x) => x.iter().map(|v| [v[0] * gain, v[1] * gain]).collect(),
+        };
+        self.queue
+            .entry(bus.to_string())
+            .or_default()
+            .push((round_half_even(start) as i64, frames));
+    }
+
+    /// Whether one-voice notes are waiting for [`Mix::settle`].
+    pub fn unsettled(&self) -> bool {
+        self.queue.values().any(|q| !q.is_empty())
+    }
+
+    /// Puts the waiting one-voice notes ([`Mix::note`]) on their buses, each ended by the event after it. A score
+    /// calls it after each stage that plays notes and before anything reads or reshapes a bus; with nothing
+    /// waiting it does nothing.
+    pub fn settle(&mut self) {
+        let fade = (VOICE_FADE * SRF) as usize;
+        let same = (SAME_EVENT * SRF) as i64;
+        for (bus, mut notes) in std::mem::take(&mut self.queue) {
+            notes.sort_by_key(|n| n.0);
+            let mut i = 0;
+            while i < notes.len() {
+                // the event: every note that begins with this one; `j` is the first note of the next event
+                let mut j = i + 1;
+                while j < notes.len() && notes[j].0 - notes[i].0 <= same {
+                    j += 1;
+                }
+                let next = notes.get(j).map(|n| n.0);
+                for (start, frames) in &mut notes[i..j] {
+                    if let Some(next) = next {
+                        let cut = (next - *start).max(0) as usize;
+                        frames.truncate(cut + fade);
+                        for (k, f) in frames.iter_mut().enumerate().skip(cut) {
+                            let g = 1.0 - (k - cut + 1) as f64 / fade as f64;
+                            f[0] *= g;
+                            f[1] *= g;
+                        }
+                    }
+                    let b = self.buses.get_mut(&bus).expect("note made the bus");
+                    let s0 = start.saturating_neg().max(0);
+                    let i0 = (*start).max(0);
+                    let n = (frames.len() as i64 - s0).min(b.len() as i64 - i0);
+                    if n <= 0 {
+                        continue;
+                    }
+                    let (s0, i0, n) = (s0 as usize, i0 as usize, n as usize);
+                    for (o, v) in b[i0..i0 + n].iter_mut().zip(&frames[s0..s0 + n]) {
+                        o[0] += v[0];
+                        o[1] += v[1];
+                    }
+                }
+                i = j;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    use crate::SRF;
+    /// M5: a one-voice note ends when the next one begins; notes of one instant are one event; without the flag a
+    /// note is placed as `place` places it.
+    #[test]
+    fn a_one_voice_note_ends_when_the_next_begins() {
+        let long = Sig::Mono(vec![1.0; 2 * SR]);
+        let mut plain = Mix::new(4.0);
+        plain.place("x", &long, 0.25, 0.7, 0.3);
+        let mut same = Mix::new(4.0);
+        same.note("x", &long, 0.25, 0.7, 0.3, false);
+        assert_eq!(plain.bus("x"), same.bus("x"));
+        assert!(!same.unsettled());
+
+        let mut mix = Mix::new(4.0);
+        mix.note("x", &long, 0.0, 1.0, -1.0, true);
+        mix.note("x", &long, 0.5, 0.5, -1.0, true);
+        // a chord with the second note, placed first: sorted by time, the three are two events
+        mix.note("x", &long, 0.5 + 0.0005, 0.25, -1.0, true);
+        assert!(mix.unsettled() && mix.bus("x").unwrap().iter().all(|f| *f == [0.0; 2]));
+        mix.settle();
+        assert!(!mix.unsettled());
+        let b = mix.bus("x").unwrap();
+        let at = |t: f64| b[(t * SRF) as usize][0];
+        assert_eq!(at(0.4), 1.0);
+        // 15 ms into the fade the first note is half gone, 40 ms after the second began it is silent
+        assert!((at(0.515) - (0.5 + 0.25 + 0.5)).abs() < 0.01, "{}", at(0.515));
+        assert!((at(0.54) - 0.75).abs() < 1e-12);
+        // the last event rings out whole
+        assert!((at(2.4) - 0.75).abs() < 1e-12 && at(2.6) == 0.0);
+        // settling again changes nothing; a note before the start is cut as place cuts it
+        let before = b.to_vec();
+        mix.settle();
+        assert_eq!(mix.bus("x").unwrap(), before);
+        let mut mix = Mix::new(1.0);
+        mix.note("y", &Sig::Stereo(vec![[1.0, 2.0]; 10]), -5.0 / SRF, 1.0, 0.0, true);
+        mix.settle();
+        assert_eq!(
+            mix.bus("y").unwrap()[..6],
+            [[1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [1.0, 2.0], [0.0, 0.0]]
+        );
+        assert_eq!(mix.bus_names(), ["y"]);
+    }
 
     #[test]
     fn a_bus_appears_when_something_is_placed() {

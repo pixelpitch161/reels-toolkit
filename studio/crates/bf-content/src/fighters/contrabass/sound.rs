@@ -161,6 +161,18 @@ impl ContrabassSound {
         Ok(fit_reg(m, lo, lo + 24))
     }
 
+    /// The note a footfall sounds at `t` under the Composed arrangement: the written line's note there, in the lower
+    /// two octaves of its register, on the beat and off it (sound upgrade: every pitched fighter plays its line, and
+    /// the composer wrote the 8ths). `None` under Classic and on a rest of the line: the kit's own walk then.
+    fn step_note(&self, ctx: &MusicCtx, t: f64) -> Result<Option<i32>, MusicError> {
+        if !ctx.composed_on() {
+            return Ok(None);
+        }
+        let lo = self.register(ctx).0;
+        let played = ctx.play_line(self.name(ctx), t)?;
+        Ok(played.map(|m| fit_reg(m, lo, lo + 24)))
+    }
+
     /// `root_of(t)`: the root of the chord at `t`, the lowest at or above a major third over its bottom note.
     fn root_of(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let lo = self.register(ctx).0;
@@ -356,7 +368,11 @@ impl Sound for ContrabassSound {
                         continue;
                     }
                     let on_beat = (tq / beat - round_half_even(tq / beat)).abs() < 1e-6;
-                    let (m, dur) = if on_beat {
+                    let (m, dur) = if let Some(m) = self.step_note(ctx, tq)? {
+                        // (Composed: the note it sounds; DOUBLE TIME's off-8th plays the line's own note there)
+                        let long = on_beat && e.f(6) == 0.0;
+                        (m, beat * if long { 0.9 } else { 0.45 })
+                    } else if on_beat {
                         let hasted = e.f(6) != 0.0;
                         (self.walk_note(ctx, tq)?, beat * if hasted { 0.45 } else { 0.9 })
                     } else {
@@ -366,7 +382,9 @@ impl Sound for ContrabassSound {
                     };
                     let x = self.art(ctx, How::Pizz, Some(m), dur, 0.95)?;
                     let (sig, g) = self.col(ctx, &x, t, 1.0)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.56 * g, pan);
+                    // sound upgrade (M5): under Composed one note at a time, so a footfall ends the note before it
+                    let one = ctx.one_voice(self.name(ctx));
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.56 * g, pan, one);
                     thud(mix, 0.18, 70.0, 40.0, t * 13.0, tq, 0.07)?;
                 }
                 "hit" if matches!(e.fields.get(5), Some(bf_core::event::Value::Str(s)) if s == "step") => {

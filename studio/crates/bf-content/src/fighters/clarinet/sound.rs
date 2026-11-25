@@ -182,8 +182,9 @@ impl ClarinetSound {
                 continue;
             }
             let on_beat = imod_py(slot, 4) == 0;
-            let mut m = ctx.line_at(name, tq)?.ok_or_else(|| rest(name, tq))?;
-            if !on_beat {
+            // the note it sounds (Composed: the composer wrote the 8ths, so the line's own note on every one)
+            let mut m = ctx.play_line(name, tq)?.ok_or_else(|| rest(name, tq))?;
+            if !on_beat && !ctx.composed_on() {
                 // CLARION's 8ths: a passing note toward the next beat
                 let t2 = tq + beat / 2.0;
                 let nxt = ctx.line_at(name, t2)?.ok_or_else(|| rest(name, t2))?;
@@ -197,7 +198,9 @@ impl ClarinetSound {
             let dur = py_min(0.40, py_max(0.12, gap * 0.92));
             let (vel, level) = if on_beat { (0.85, 0.40) } else { (0.7, 0.30) };
             let (sig, g, lead) = self.note(ctx, f64::from(m), dur, vel, t)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, level * g, -0.22);
+            let one = ctx.one_voice(name);
+            // sound upgrade (M3): the top notes of a piercing instrument play softer (1 for all others)
+            mix.note(&bus, &Sig::Mono(sig), tq, level * g * ctx.soften(name, m), -0.22, one);
             if lead > 0.04 && on_beat {
                 // the leader: a third under (fuller)
                 let under = ctx
@@ -206,7 +209,7 @@ impl ClarinetSound {
                     .map_err(harmony)?;
                 if let Some(&low) = under.last() {
                     let sig = self.note(ctx, f64::from(low), dur, 0.6, t)?.0;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.16 * g, -0.3);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.16 * g, -0.3, one);
                 }
             }
             if hit != 0 {

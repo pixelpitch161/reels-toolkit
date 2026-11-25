@@ -9,6 +9,11 @@
 //! boom, the biggest bent honk); a rope it pressed twangs as it springs back; dropped on the ropes a low twang and
 //! the slung-back whoosh; back in, a thud.
 //!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) the swing honk plays the written bass line's note
+//! where the swing bottoms out, each honk ends the one before it (one voice), and nothing slides ("Bari sax: no
+//! slide"): the pass keeps its swell without the doppler's pitch, the crash honk and GROWL are not bent, and every
+//! note but the falling honk of `fall_apart` is made with a scoop of at most 1.2 %. Classic is the part above.
+//!
 //! The part calls the Pixel Pitch bari's tone itself ([`super::voice::bari_tone`], with a honk), fits each note to
 //! its length plus 0.12 s with a 20 ms fade and levels it to an RMS of 0.16 over its first 0.12 s (`bari`), with the
 //! module's cache `_vc` (two calls that round to one key get the note of whichever came first, as in Python).
@@ -28,7 +33,7 @@ use bf_sound::traits::{Bed, BedHook, Played, Sound};
 use bf_sound::voice::pp;
 
 use super::state::{RecSrc, Wreckage, wobbles};
-use super::voice::bari_tone;
+use super::voice::{STEADY_SCOOP, bari_tone_scooped};
 
 /// The name the part's errors carry.
 const H: &str = "BARI SAX";
@@ -150,12 +155,15 @@ fn doppler(x: &[f64], t_bot: f64, up: f64, down: f64, width: f64) -> Vec<f64> {
         .collect()
 }
 
+/// The key of a note in the part's cache: [`key`], and whether the note is a steady one ([`BariSaxSound::bari`]).
+type NoteKey = ([u64; 4], bool);
+
 /// BARI SAX's part.
 #[derive(Debug)]
 pub struct BariSaxSound {
     k: usize,
-    /// `_vc`: the notes made so far, by [`key`].
-    vc: Mutex<BTreeMap<[u64; 4], Arc<[f64]>>>,
+    /// `_vc`: the notes made so far, by their [`NoteKey`].
+    vc: Mutex<BTreeMap<NoteKey, Arc<[f64]>>>,
     /// `_bc`: the rope twangs made so far, by `(round(m, 2), seed % 3, round(dur, 2))`.
     bc: Mutex<BTreeMap<[u64; 3], Arc<[f64]>>>,
 }
@@ -198,9 +206,24 @@ impl BariSaxSound {
         })
     }
 
+    /// The written bass line's note for a swing that bottoms out at `tb` (sound upgrade: under the Composed
+    /// arrangement the swing honk plays the line). `None` under Classic and on a rest of the line: the bar's bass
+    /// root stands then.
+    fn written(&self, ctx: &MusicCtx, tb: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), tb)
+        } else {
+            Ok(None)
+        }
+    }
+
     /// `bari(m, dur, vel=0.9, honk=0.0)`: one bari note, fitted to `dur + 0.12` s with a 20 ms fade, levelled.
-    fn bari(&self, m: f64, dur: f64, vel: f64, honk: f64) -> Result<Arc<[f64]>, MusicError> {
-        let key = key(m, dur, vel, honk);
+    ///
+    /// `steady` is the sound upgrade's "no slide": the part passes `ctx.composed_on()`, and the note's scoop is
+    /// then held to [`STEADY_SCOOP`] (the tone's own scoop starts a honk over a semitone flat). With it false the
+    /// note is the kit's, to the sample.
+    fn bari(&self, m: f64, dur: f64, vel: f64, honk: f64, steady: bool) -> Result<Arc<[f64]>, MusicError> {
+        let key = (key(m, dur, vel, honk), steady);
         let mut vc = self
             .vc
             .lock()
@@ -215,7 +238,12 @@ impl BariSaxSound {
         if !(f * 10.0).is_finite() {
             return Err(MusicError::new(H, format!("{m} is not a pitch")));
         }
-        let x = fit(&pp::to_48k(&bari_tone(f, dur, vel, honk)), dur + 0.12, 0.02)?;
+        let scoop = if steady { Some(STEADY_SCOOP) } else { None };
+        let x = fit(
+            &pp::to_48k(&bari_tone_scooped(f, dur, vel, honk, scoop)),
+            dur + 0.12,
+            0.02,
+        )?;
         let head = ((0.12 * bf_sound::SRF) as usize).min(x.len());
         let sq: Vec<f64> = x[..head].iter().map(|&v| v * v).collect();
         let level = 0.16 / (dsp::mean(&sq).sqrt() + 1e-9);
@@ -236,7 +264,7 @@ impl BariSaxSound {
         t: f64,
         drive_k: f64,
     ) -> Result<(Vec<f64>, f64, f64), MusicError> {
-        let x = self.bari(m, dur, vel, honk)?;
+        let x = self.bari(m, dur, vel, honk, ctx.composed_on())?;
         self.colour(ctx, &x, t, drive_k, &self.colour_args())
     }
 
@@ -338,8 +366,8 @@ impl Sound for BariSaxSound {
         &[BedHook::Boom]
     }
 
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.bari(m, dur, vel, 0.0)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.bari(m, dur, vel, 0.0, ctx.composed_on())
     }
 
     /// A huge honk on the root and its octave.
@@ -354,14 +382,14 @@ impl Sound for BariSaxSound {
         };
         mix.place(
             &bus,
-            &Sig::Mono(self.bari(first, 0.5, 1.0, 1.0)?.to_vec()),
+            &Sig::Mono(self.bari(first, 0.5, 1.0, 1.0, ctx.composed_on())?.to_vec()),
             t,
             0.55,
             0.0,
         );
         mix.place(
             &bus,
-            &Sig::Mono(self.bari(last, 0.4, 0.8, 0.6)?.to_vec()),
+            &Sig::Mono(self.bari(last, 0.4, 0.8, 0.6, ctx.composed_on())?.to_vec()),
             t + 0.02,
             0.20,
             0.0,
@@ -376,6 +404,10 @@ impl Sound for BariSaxSound {
         let t_ko = ctx.show.t_ko;
         let events = &ctx.rec.events;
         let cfg = ctx.cfg[k];
+        // sound upgrade, Composed only: no slide (the honks keep their swell, their pitch stays put), and a bari
+        // sax sounds one note at a time (a new swing honk ends the one before it)
+        let steady = ctx.composed_on();
+        let one = ctx.one_voice(self.name(ctx));
         for e in events {
             let t = e.t;
             if t > t_ko + 0.01 {
@@ -398,18 +430,31 @@ impl Sound for BariSaxSound {
                     let (ts0, ts1, sk) = (e.f(11), e.f(12), e.i(13) != 0);
                     let tb = ctx.q16((ts0 + ts1) / 2.0);
                     let ch = ctx.harmony.chord_at(tb + 0.01).to_string();
-                    let m = self.honk_note(ctx, &ch)? + if sk { 12.0 } else { 0.0 };
+                    // Composed: the written bass line's note where the swing bottoms out; the kit's: the bass
+                    // root of that bar
+                    let m = match self.written(ctx, tb)? {
+                        Some(m) => f64::from(m),
+                        None => self.honk_note(ctx, &ch)?,
+                    } + if sk { 12.0 } else { 0.0 };
                     let t_on = ctx.q16(ts0 - s16);
                     let dur = ts1 - t_on + 0.06;
                     let (sig, g, lead) = self.honk(ctx, m, dur, 0.95, if sk { 0.55 } else { 0.85 }, t, 0.6)?;
-                    let (up, down) = if sk { (1.0, 1.6) } else { (1.6, 2.6) };
+                    // the pass: sharp coming in, flat going away (Composed: only its swell)
+                    let (up, down) = if steady {
+                        (0.0, 0.0)
+                    } else if sk {
+                        (1.0, 1.6)
+                    } else {
+                        (1.6, 2.6)
+                    };
                     let sig = doppler(&sig, tb - t_on, up, down, 0.09);
-                    mix.place(&bus, &Sig::Mono(sig), t_on, if sk { 1.15 } else { 1.35 } * g, 0.2);
+                    mix.note(&bus, &Sig::Mono(sig), t_on, if sk { 1.15 } else { 1.35 } * g, 0.2, one);
                     if lead > 0.05 && !sk {
                         // the leader: the octave honked on top (fuller)
                         let top = self.honk(ctx, m + 12.0, dur, 0.7, 0.4, t, 1.0)?.0;
-                        let up8 = doppler(&top, tb - t_on, 1.6, 2.6, 0.09);
-                        mix.place(&bus, &Sig::Mono(up8), t_on, 0.20 * g, 0.25);
+                        let (up, down) = if steady { (0.0, 0.0) } else { (1.6, 2.6) };
+                        let up8 = doppler(&top, tb - t_on, up, down, 0.09);
+                        mix.note(&bus, &Sig::Mono(up8), t_on, 0.20 * g, 0.25, one);
                     }
                     let air = synth::whoosh(ts1 - ts0, 250.0, 3500.0, WHOOSH_RISE, WHOOSH_SEED);
                     mix.place("fx", &Sig::Mono(air), ts0, if sk { 0.07 } else { 0.10 }, 0.1);
@@ -468,7 +513,9 @@ impl Sound for BariSaxSound {
                     let ch = ctx.harmony.chord_at(tq + 0.01).to_string();
                     let m = self.honk_note(ctx, &ch)?;
                     let (sig, g, _) = self.honk(ctx, m, 0.7, 1.0, 1.0, t, 0.5)?;
-                    mix.place(&bus, &Sig::Mono(bend(&sig, -1.5, 0.3, 0.7)?), tq, 0.70 * g, 0.0);
+                    // the biggest honk sags a semitone and a half (Composed: unbent, its weight is growl and level)
+                    let sig = if steady { sig } else { bend(&sig, -1.5, 0.3, 0.7)? };
+                    mix.place(&bus, &Sig::Mono(sig), tq, 0.70 * g, 0.0);
                     let top = self.honk(ctx, m + 12.0, 0.5, 0.7, 0.5, t, 1.0)?.0;
                     mix.place(&bus, &Sig::Mono(top), tq, 0.18 * g, 0.0);
                 }
@@ -480,7 +527,9 @@ impl Sound for BariSaxSound {
                         let ch = ctx.harmony.chord_at(tq).to_string();
                         let m = self.honk_note(ctx, &ch)?;
                         let (sig, g, _) = self.honk(ctx, m, 0.6, 1.0, 1.0, t, 0.8)?;
-                        mix.place(&bus, &Sig::Mono(bend(&sig, -1.0, 0.1, 0.6)?), tq, 0.50 * g, 0.2);
+                        // bent a semitone down (Composed: unbent)
+                        let sig = if steady { sig } else { bend(&sig, -1.0, 0.1, 0.6)? };
+                        mix.place(&bus, &Sig::Mono(sig), tq, 0.50 * g, 0.2);
                         mix.place("fx", &Sig::Mono(grit(0.6, noise_seed(H, t * 10.0)?)), tq, 0.30, 0.0);
                     } else if name == cfg.unlock2.name && cfg.unlock2.kind.name() == "offbeat" {
                         // SKANK: a crash
@@ -541,7 +590,8 @@ impl Sound for BariSaxSound {
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let bus = self.bus(ctx);
         let t_hs = ctx.show.t_hs;
-        let x = self.bari(self.k0(ctx, 0), 1.0, 1.0, 0.8)?;
+        // the instrument breaking: the kit's own note, scoop and fall, under either arrangement
+        let x = self.bari(self.k0(ctx, 0), 1.0, 1.0, 0.8, false)?;
         let mut blat = bend(&x, -7.0, 0.05, 1.0)?;
         for (o, ramp) in blat.iter_mut().zip(dsp::linspace(1.0, 0.4, x.len())) {
             *o *= ramp;
@@ -563,14 +613,14 @@ impl Sound for BariSaxSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         mix.place(
             "solo",
-            &Sig::Mono(self.bari(self.k0(ctx, 0), 0.8, 1.0, 1.0)?.to_vec()),
+            &Sig::Mono(self.bari(self.k0(ctx, 0), 0.8, 1.0, 1.0, ctx.composed_on())?.to_vec()),
             tw,
             0.50,
             0.0,
         );
         mix.place(
             "solo",
-            &Sig::Mono(self.bari(self.k0(ctx, 12), 0.8, 0.8, 0.6)?.to_vec()),
+            &Sig::Mono(self.bari(self.k0(ctx, 12), 0.8, 0.8, 0.6, ctx.composed_on())?.to_vec()),
             tw + 0.02,
             0.22,
             0.0,
@@ -585,7 +635,7 @@ impl Sound for BariSaxSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.bari(f64::from(m), d * grid.beat * 0.9, 0.95, 0.7)?;
+            let x = self.bari(f64::from(m), d * grid.beat * 0.9, 0.95, 0.7, ctx.composed_on())?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.55, 0.0);
         }
         Ok(())
@@ -597,7 +647,9 @@ impl Sound for BariSaxSound {
         let run = [0, 3, 7, 10, 12, 15];
         for (j, off) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.bari(self.k0(ctx, off), 0.10, 0.7, 0.0)?.to_vec();
+            let x = self
+                .bari(self.k0(ctx, off), 0.10, 0.7, 0.0, ctx.composed_on())?
+                .to_vec();
             mix.place(&bus, &Sig::Mono(x), tj, 0.24, 0.0);
         }
         Ok(())

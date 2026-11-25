@@ -5,6 +5,10 @@
 //! picked note climbing the scale with a crash of water and a thud, one that breaks on the ropes a softer crash;
 //! CHUNK a muted chunk strum and a splash; SPEED STRUM a tremolo flourish; UKE-NADO a whirl of strums spiralling up
 //! and the waterspout's wind for as long as it lives.
+//!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) each wave's strum is the bar's chord voiced under the
+//! written line's note, which is its top string, and a landed wave's picked note is the line's note at the hit.
+//! CHUNK, SPEED STRUM, UKE-NADO and the endings keep their own notes. Classic is the part above.
 
 use bf_core::dmath;
 use bf_core::fightfile::SoloNote;
@@ -143,6 +147,30 @@ impl UkuleleSound {
     fn shape_at(&self, ctx: &MusicCtx, t: f64) -> Result<Vec<i32>, MusicError> {
         uke_chord(ctx.harmony.chord_at(t))
     }
+
+    /// The written line's note for a strum or a picked note at `tq` (sound upgrade: under the Composed arrangement
+    /// the ukulele plays its line). `None` under Classic and on a rest of the line: the part's own notes stand
+    /// then.
+    fn written(&self, ctx: &MusicCtx, tq: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), tq)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// The chord at `t` voiced under the line's note `m`, for `strings` strings: the chord's tones nearest under
+    /// `m` (at least a minor third under it, none below the low C string), then `m` itself, so the melody is the
+    /// top string of the strum.
+    fn shape_under(&self, ctx: &MusicCtx, m: i32, strings: usize, t: f64) -> Result<Vec<i32>, MusicError> {
+        let tones = ctx
+            .harmony
+            .chord_tones(GCEA[1], m - 3, ctx.harmony.chord_at(t))
+            .map_err(|e| MusicError::new(H, e.to_string()))?;
+        let mut vo = tones[tones.len().saturating_sub(strings.saturating_sub(1))..].to_vec();
+        vo.push(m);
+        Ok(vo)
+    }
 }
 
 impl Sound for UkuleleSound {
@@ -228,7 +256,13 @@ impl Sound for UkuleleSound {
                 let tq = ctx.q16(t);
                 let hp = ctx.hp_at(k, t);
                 let full = self.shape_at(ctx, tq)?;
-                let vo = &full[..uke_strings(hp).min(full.len())];
+                let strings = uke_strings(hp).min(full.len());
+                // Composed: the bar's chord with the line's note on top; the kit's: the GCEA shape
+                let voiced = match self.written(ctx, tq)? {
+                    Some(m) => self.shape_under(ctx, m, strings, tq)?,
+                    None => full[..strings].to_vec(),
+                };
+                let vo = &voiced[..];
                 let main = e.i(3) != 0;
                 let sig = if main {
                     self.strum(ctx, vo, 0.9, 0.010, false, 0.40, 1.0)?
@@ -240,6 +274,13 @@ impl Sound for UkuleleSound {
                 let whoosh = synth::whoosh(0.28, 300.0, 2400.0, WHOOSH_RISE, noise_seed(H, t * 3.0)?);
                 mix.place("fx", &Sig::Mono(whoosh), tq, 0.05, pan);
                 if main && lead > 0.04 {
+                    // the leader's off-beat up-strum (Composed: on the line's note of its own 8th)
+                    let t2 = tq + 2.0 * s16;
+                    let off = match self.written(ctx, t2)? {
+                        Some(m) => self.shape_under(ctx, m, strings, t2)?,
+                        None => voiced.clone(),
+                    };
+                    let vo = &off[..];
                     let up = self.strum(ctx, vo, 0.6, 0.008, true, 0.40, 1.0)?;
                     let y2 = self.colour(ctx, &up, t, 0.8, &self.colour_args())?.0;
                     mix.place(&bus, &Sig::Mono(y2), tq + 2.0 * s16, 0.18 * g, pan);
@@ -252,7 +293,11 @@ impl Sound for UkuleleSound {
                 && (event_is_str(H, e, 7, "surf")? || event_is_str(H, e, 7, "spout")?)
             {
                 let tq = ctx.q16(t);
-                let m = climb[n_landed % climb.len().max(1)];
+                // Composed: the picked note is the line's note at the hit; the kit's climbs the scale
+                let m = match self.written(ctx, tq)? {
+                    Some(m) => m,
+                    None => climb[n_landed % climb.len().max(1)],
+                };
                 n_landed += 1;
                 let x = self.note(ctx, f64::from(m), 0.25, 0.6, 1.0)?;
                 let (y, g, _) = self.colour(ctx, &x, t, 0.6, &self.colour_args())?;

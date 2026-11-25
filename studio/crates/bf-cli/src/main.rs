@@ -30,6 +30,7 @@ mod cmd {
     pub mod check;
     pub mod frame;
     pub mod hash;
+    pub mod levels;
     pub mod moves;
     pub mod render;
     pub mod search;
@@ -74,6 +75,8 @@ enum Command {
     Frame(cmd::frame::Args),
     /// Build the soundtrack and save it as a .wav.
     Sound(cmd::sound::Args),
+    /// Measure fighters' levels for the Composed mix (a developer's calibration run).
+    Levels(cmd::levels::Args),
     /// Run every check a video must pass before it is rendered.
     Check(cmd::check::Args),
     /// Render the video into a new folder.
@@ -186,6 +189,7 @@ fn run() -> Done {
         Command::Balance(a) => cmd::balance::run(&a, &ctx),
         Command::Frame(a) => cmd::frame::run(&a, &ctx),
         Command::Sound(a) => cmd::sound::run(&a, &ctx),
+        Command::Levels(a) => cmd::levels::run(&a, &ctx),
         Command::Check(a) => cmd::check::run(&a, &ctx),
         Command::Render(a) => cmd::render::run(&a, &ctx),
         Command::Hash(a) => cmd::hash::run(&a, &ctx),

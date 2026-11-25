@@ -195,6 +195,8 @@ impl TromboneSound {
         let riff = self.riff;
         let mut thin = Thinner::new(7.0);
         let mut last_slot = None;
+        // sound upgrade: under Composed it sounds one note at a time, and every thrust plays the written line
+        let one = ctx.one_voice(name);
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -219,7 +221,7 @@ impl TromboneSound {
             let slide = if on_beat { 3.0 } else { 1.5 };
             if riff {
                 // #48 (opt-in): a riff stab, smeared up into it.
-                let m = ctx.line_at(name, tq)?.ok_or_else(|| {
+                let m = ctx.play_line(name, tq)?.ok_or_else(|| {
                     MusicError::new(
                         H,
                         format!("{name}'s line has a rest at {tq} s, where a thrust needs a note"),
@@ -228,29 +230,49 @@ impl TromboneSound {
                 let dur = if hasted { 0.15 } else { 0.24 };
                 let x = bone(ctx, m, dur, if on_beat { 0.9 } else { 0.75 }, slide, 0.05, None)?;
                 let (sig, g, lead) = self.tone(ctx, &x, t, 0.8, false)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, (if on_beat { 0.42 } else { 0.34 }) * g, 0.15);
+                mix.note(
+                    &bus,
+                    &Sig::Mono(sig),
+                    tq,
+                    (if on_beat { 0.42 } else { 0.34 }) * g,
+                    0.15,
+                    one,
+                );
                 if lead > 0.04 && on_beat {
                     // The leader: doubled an octave down, fuller.
                     let low = bone(ctx, m - 12, dur, 0.6, 2.0, 0.05, None)?;
                     let double = self.tone(ctx, &low, t, 1.0, true)?.0;
-                    mix.place(&bus, &Sig::Mono(double), tq, 0.14 * g, 0.2);
+                    mix.note(&bus, &Sig::Mono(double), tq, 0.14 * g, 0.2, one);
                 }
                 continue;
             }
-            let m = if hasted {
-                self.walk_note(ctx, tq)?
+            // Composed: the written line's note at the thrust, not the circus bass or POWER SLIDE's walk.
+            let own = if ctx.composed_on() {
+                ctx.play_line(name, tq)?
             } else {
-                self.bass_note(ctx, tq)?
+                None
+            };
+            let m = match own {
+                Some(m) => m,
+                None if hasted => self.walk_note(ctx, tq)?,
+                None => self.bass_note(ctx, tq)?,
             };
             let dur = if hasted { 0.17 } else { 0.30 };
             let x = bone(ctx, m, dur, if on_beat { 0.85 } else { 0.7 }, slide, 0.05, None)?;
             let (sig, g, lead) = self.tone(ctx, &x, t, 0.8, true)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, (if on_beat { 0.44 } else { 0.34 }) * g, 0.15);
+            mix.note(
+                &bus,
+                &Sig::Mono(sig),
+                tq,
+                (if on_beat { 0.44 } else { 0.34 }) * g,
+                0.15,
+                one,
+            );
             if lead > 0.04 && on_beat {
                 // The leader: doubled an octave up, fuller.
                 let high = bone(ctx, m + 12, dur, 0.6, 2.0, 0.05, None)?;
                 let double = self.tone(ctx, &high, t, 1.0, false)?.0;
-                mix.place(&bus, &Sig::Mono(double), tq, 0.14 * g, 0.2);
+                mix.note(&bus, &Sig::Mono(double), tq, 0.14 * g, 0.2, one);
             }
         }
         Ok(())
@@ -260,9 +282,10 @@ impl TromboneSound {
     /// 520-557).
     fn events(&self, ctx: &MusicCtx, bed: &dyn Bed, mix: &mut Mix) -> Played {
         let k = self.k;
-        let bus = self.bus(ctx);
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
         let beat = ctx.show.grid.beat;
         let cfg = ctx.cfg[k];
+        let one = ctx.one_voice(name);
         let hit = |e: &Event, how: &str| -> Result<bool, MusicError> {
             Ok(e.kind == "hit" && event_is(H, e, 2, k)? && event_is_str(H, e, 7, how)?)
         };
@@ -281,11 +304,18 @@ impl TromboneSound {
                 if ct.is_empty() {
                     return Err(MusicError::new(H, "the chord has no tone from 52 to 62"));
                 }
-                let m = ct[imod_py(event_int(H, e, 8)?, ct.len() as i64) as usize];
+                let mut m = ct[imod_py(event_int(H, e, 8)?, ct.len() as i64) as usize];
+                if ctx.composed_on()
+                    && let Some(own) = ctx.play_line(name, tq)?
+                {
+                    // Sound upgrade: under Composed the smear lands on the written line's note at the hit, in
+                    // the smear's own octave (E3 to D#4), not on a pick from the chord.
+                    m = 52 + (own - 52).rem_euclid(12);
+                }
                 let x = bone(ctx, m, 0.22, 1.0, 7.0, 0.11, None)?;
                 let (sig, g, _) = self.tone(ctx, &x, t, 1.0, false)?;
                 let pan = clip(event_number(H, e, 5)? / 3.5, -0.6, 0.6);
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.26 * g, pan);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.26 * g, pan, one);
                 let thump = synth::thud(0.22, 150.0, 70.0, noise_seed(H, t * 7.0)?);
                 mix.place("fx", &Sig::Mono(thump), tq, 0.08, 0.0);
             } else if hit(e, "shockwave")? {

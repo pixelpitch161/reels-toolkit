@@ -72,6 +72,18 @@ impl HarpSound {
         Ok(v)
     }
 
+    /// The note of an ordinary pluck at `t`. Under the Composed arrangement it is the written line's note there
+    /// (sound upgrade: every pitched fighter plays its line); under Classic, and on a rest of the line, the kit's
+    /// own chord tone `kit`.
+    fn line(&self, ctx: &MusicCtx, t: f64, kit: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(m);
+        }
+        Ok(kit)
+    }
+
     /// The key's scale from `lo` to `hi`.
     fn scale(&self, ctx: &MusicCtx, lo: i32, hi: i32) -> Vec<i32> {
         let key = ctx.harmony.key_pc;
@@ -157,6 +169,7 @@ impl Sound for HarpSound {
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let cfg = ctx.cfg[k];
+        let name = self.name(ctx);
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -186,15 +199,25 @@ impl Sound for HarpSound {
                     let lead = (ctx.hp_at(k, t) - ctx.hp_at(1 - k, t)) / 100.0;
                     let n = arp.len();
                     let gap = if n < 4 { (4 / n.max(1)) as f64 } else { 1.0 };
-                    for (j, &m) in arp.iter().enumerate() {
+                    for (j, &kit) in arp.iter().enumerate() {
                         let tj = tq + j as f64 * 2.0 * s16 * gap;
+                        // Composed (sound upgrade): each pluck is the line's note at its own time, in place of the
+                        // climb up the chord; a note above C6 is softened (1 under Classic)
+                        let m = self.line(ctx, tj, kit)?;
                         let x = self.harp(ctx, m, 0.8 + 0.05 * j as f64, 1.0)?;
                         let (sig, g, _) = self.tone(ctx, &x, t, 1.2)?;
-                        mix.place(&bus, &Sig::Mono(sig), tj, 0.30 * g, 0.2);
+                        mix.place(&bus, &Sig::Mono(sig), tj, 0.30 * g * ctx.soften(name, m), 0.2);
                         if lead > 0.04 && j == n - 1 {
+                            // the leader's double: the octave over the note it just played
                             let x = self.harp(ctx, m + 12, 0.7, 1.0)?;
                             let sig = self.tone(ctx, &x, t, 1.0)?.0;
-                            mix.place(&bus, &Sig::Mono(sig), tj + s16, 0.16 * g, 0.25);
+                            mix.place(
+                                &bus,
+                                &Sig::Mono(sig),
+                                tj + s16,
+                                0.16 * g * ctx.soften(name, m + 12),
+                                0.25,
+                            );
                         }
                     }
                 }
@@ -203,11 +226,12 @@ impl Sound for HarpSound {
                     let sub = event_number(H, e, 8).unwrap_or(0.0).max(0.0) as usize;
                     if event_is_str(H, e, 7, "string")? {
                         // a crossing rings the string
+                        // (Composed: the line's note, and the snap an octave over it)
                         let hi = self.tones(ctx, ch, 67, 88)?;
-                        let m = hi[sub % hi.len()];
+                        let m = self.line(ctx, tq, hi[sub % hi.len()])?;
                         let x = self.harp(ctx, m, 1.0, 1.2)?;
                         let (sig, g, _) = self.tone(ctx, &x, t, 1.0)?;
-                        mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g, pan);
+                        mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g * ctx.soften(name, m), pan);
                         mix.place(&bus, &Sig::Mono(snap(f64::from(m + 12), 0.25)), tq, 0.05, pan);
                     } else if event_is_str(H, e, 7, "key")? {
                         // a PLUCK dart lands

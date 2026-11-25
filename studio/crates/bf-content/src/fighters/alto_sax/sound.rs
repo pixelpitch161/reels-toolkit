@@ -164,6 +164,24 @@ impl AltoSaxSound {
         }
     }
 
+    /// The note it sounds at `t`, in its register: [`AltoSaxSound::line`] for a note that really plays (a sweep's
+    /// 8th, a burn), asked for once the note is known to sound. Under the Composed arrangement the context keeps
+    /// what was played, and a moving melody style never hands back the note before it (sound upgrade); under
+    /// Classic it is `line`.
+    ///
+    /// # Errors
+    /// As [`AltoSaxSound::line`].
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        let (lo, hi) = self.register(ctx);
+        match ctx.play_line(self.name(ctx), t)? {
+            Some(m) => Ok(Self::fit_reg(m, lo, hi)),
+            None => Err(MusicError::new(
+                H,
+                format!("its line has a rest at {t:.3} s, and its part plays the line's note there (music.lines)"),
+            )),
+        }
+    }
+
     /// `up_tone(t, m)`: the next chord tone above `m` (the burn's squeal), `m + 12` when the chord has none from
     /// `m + 3` to `m + 12`.
     ///
@@ -272,6 +290,8 @@ impl Sound for AltoSaxSound {
         let pan = self.pan();
         let mut th = Thinner::new(510.0 + k as f64);
         let mine = |e: &bf_core::event::Event| e.who() == Some(k);
+        // sound upgrade (M5): under Composed a sax sounds one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(self.name(ctx));
         // hot_spans = [(e[0], e[3]) for e in M.EV if e[1] == 'altissimo' and e[2] == k]
         let mut hot_spans = Vec::new();
         for e in ctx.rec.events.iter().filter(|e| e.kind == "altissimo" && mine(e)) {
@@ -301,19 +321,24 @@ impl Sound for AltoSaxSound {
                         if !th.keep(slot, ctx.hp_at(k, tj) / 100.0) {
                             continue;
                         }
-                        let m = Self::fit_reg(self.line(ctx, tj)? + up, lo, hi + up);
+                        let m = Self::fit_reg(self.sounded(ctx, tj)? + up, lo, hi + up);
                         let x = self.tone(ctx, f64::from(m), beat * 0.45, 0.85, None)?;
                         let (sig, g) = self.coloured(ctx, &x, tj)?;
                         let gain = if sk == 0 { 0.40 } else { 0.22 };
                         let side = if sk != 0 { 0.15 } else { 0.0 };
-                        mix.place(&bus, &Sig::Mono(sig), tj, gain * g, pan + side);
+                        mix.note(&bus, &Sig::Mono(sig), tj, gain * g, pan + side, one);
                     }
                 }
                 "burn" => {
                     // each burn: a staccato squeal a chord tone up
                     let tq = ctx.q16(t);
                     let hot = hot_spans.iter().any(|&(a, b)| a <= t && t < b);
-                    let m = self.up_tone(ctx, tq, self.line(ctx, tq)?)?;
+                    let m = if ctx.composed_on() {
+                        // sound upgrade: the burn squeals the written line's own note, not a chord tone over it
+                        self.sounded(ctx, tq)?
+                    } else {
+                        self.up_tone(ctx, tq, self.line(ctx, tq)?)?
+                    };
                     let (x, g) = if hot {
                         let scream = self.tone(ctx, f64::from(m + 12), s16 * 1.6, 1.0, Some(0.15))?;
                         (gliss(&scream, 1.5, 0.05)?, 0.34)
@@ -321,7 +346,7 @@ impl Sound for AltoSaxSound {
                         (self.tone(ctx, f64::from(m), s16 * 0.8, 0.9, None)?.to_vec(), 0.24)
                     };
                     let (sig, gg) = self.coloured(ctx, &x, t)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, g * gg, pan * 0.6);
+                    mix.note(&bus, &Sig::Mono(sig), tq, g * gg, pan * 0.6, one);
                 }
                 "encore" => {
                     // ENCORE: a nonstop 16th run, up and down the scale

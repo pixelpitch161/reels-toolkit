@@ -1160,3 +1160,21 @@ fn the_effects_default_to_classic_and_bold_is_opt_in() {
     let e = parse_err(&FORMAT1.replace("[picture]", "[picture]\neffects = \"bold\""));
     assert!(e.contains("effects"), "{e}");
 }
+
+/// The melody style of the Composed arrangement (sound upgrade, 2026-11-25): an optional word after the music
+/// seed. A file without it reads as none and is written back without it, so every older file is unchanged.
+#[test]
+fn the_melody_style_is_optional_and_written_back() {
+    let plain = FightFile::parse(EPISODE).expect("the example parses");
+    assert_eq!(plain.music.melody_style, None);
+    assert!(!plain.to_toml().contains("melody_style"));
+    let text = with("music_seed = 1", "music_seed = 1\nmelody_style = \"runs\"");
+    let ff = FightFile::parse(&text).expect("a fight with a melody style parses");
+    assert_eq!(ff.music.melody_style.as_deref(), Some("runs"));
+    assert_eq!(ff.to_toml(), text);
+    assert_eq!(FightFile::parse(&ff.to_toml()), Ok(ff.clone()));
+    // it never feeds the fight: the search key is the same with and without it
+    assert_eq!(ff.search_key(&[true, true]), plain.search_key(&[true, true]));
+    let wrong = parse_err(&with("music_seed = 1", "music_seed = 1\nmelody_style = 3"));
+    assert!(wrong.starts_with("music.melody_style: must be a text"), "{wrong}");
+}
