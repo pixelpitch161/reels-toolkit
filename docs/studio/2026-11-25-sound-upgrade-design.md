@@ -29,11 +29,16 @@ M1 M2 M3 M5 M6 F1 F2 F3 C2 C4 C6 S1, with two notes:
 5. "The melodies are fine, could there maybe be different 'styles' or variations of how the melodies are
    composed within each theme?" (About the C10 clips. Read here as: fights on the same theme should not all
    write their melody the same way. Sketched as C11, melody styles.)
+6. "The melody styles are all playing the same instrument melodies. I meant that the fighters would play new
+   melodies in each style." (About the first C11 sketch, which kept each fighter's signature tune and only
+   changed the bars between. Two causes, both fixed in this design: the styles were too alike, and the trumpet
+   in that clip does not play the written melody at all. See "Every pitched fighter plays its written line" and
+   C11.)
 
 Because of notes 2 and 3 a new item, **C10 (melodies improved, but kept lively)**, was sketched after the picks
 and is on the page with three-way clips (today, the boring first try, the new one). It includes C2. It is part
 of this design if Aedan approves it; if he does not, C2 is built on today's lines as a harmony pass only.
-(Aedan, later: "The melodies are fine.") **C11 (melody styles within a theme)** was sketched after note 5 and
+(Aedan, later: "The melodies are fine.") **C11 (melody styles)** was sketched after note 5, reworked after note 6, and
 builds on C10.
 
 Not picked, so not built: M4, C1 (as sketched), C3, C5, C7, C8, C9, S2, all X ideas, T1.
@@ -199,6 +204,33 @@ render, that line is corrected for Composed: the render finishes and the result 
   overall loudness against the dry mix stays what it is today (about 18 dB under).
 - Done when: the room's rumble share is under 10%.
 
+### Every pitched fighter plays its written line (needed for C2, C10 and C11)
+
+- Found while checking Aedan's note 6. In Composed the composer writes a whole-song line for each fighter
+  (`ctx.composed`), but a fighter's part only sounds it if the part asks for it with `ctx.line_at`. Measured
+  (`tools/round2/b10.py`, `line_survey.json`): every fighter rendered twice, once as today and once with a
+  wholly different line; a stem that comes out bit-identical does not follow the line.
+- **Do not follow the line (stem identical):** ACCORDION, ACOUSTIC, BARI SAX, BASS GUITAR, CONTRABASSOON,
+  CORNET, HARP, MELLOPHONE, ORGAN, PIANO, SOPRANO SAX, TIMPANI, TUBA, UKULELE, and SYNTH (by its code; its test
+  fight failed to render with an unrelated error, "sosfilt: x is empty", in ALTO SAX vs SYNTH, which the builder
+  should look at). They play their own fixed notes from the chords. The unpitched BASS DRUM, DRUMS, SNARE DRUM
+  and TURNTABLES do not either and need not.
+- **TRUMPET** follows the line only when the fight file itself has a line for it
+  (`ctx.ff.music.lines.contains_key(name)` in `trumpet/sound.rs`), which some themes supply (hot jazz) and
+  others do not (mambo). So in Trumpet vs Cello it plays combo notes, and in Trumpet vs Clarinet the line.
+- **Follow the line:** the other 22 (ALTO SAX by its code).
+- So today the harmony pass, the livelier melodies and the styles would not reach 16 of the 38 pitched
+  fighters. Earlier review clips with the trumpet on mambo or the tuba changed only the other fighter.
+- Fix, Composed only: each of the 15 pitched fighters above takes the pitch of its ordinary notes from
+  `ctx.line_at(name, t)` at the note's time, as the 22 do, and the trumpet uses the line whenever
+  `ctx.composed` has one for it. Timing, tone and effects of each part stay as they are. Notes that belong to
+  a special move or a losing sound may keep their own pitch. A bass-role fighter gets its bass line this way
+  (the bari sax's swing honk plays the line's note at the swing instead of the chord's root).
+- Done when, in a test per pitched fighter: two renders with different lines give different stems, and every
+  ordinary note's pitch is the line's note at its time.
+- This changes how Composed fights with these fighters sound on a new render, like the rest of stage 1.
+  Classic is untouched.
+
 ### C10 with C2. Melodies improved but kept lively, and in harmony
 
 - Today (`composer.rs`, `loop_line`): each four-bar phrase opens with the fighter's signature motif and echoes
@@ -233,33 +265,45 @@ render, that line is corrected for Composed: the render finishes and the result 
   and moves bigger than a fourth are at most 30% of a melody's moves.
 - If Aedan does not approve C10: skip items 1 to 4 and run only the harmony pass on today's lines.
 
-### C11. Melody styles within a theme
+### C11. Melody styles: a new tune in each
 
-- Why: with C10 every fight on a theme writes its in-between bars the same way (answer, then a run). Aedan
-  asked for different styles of composing within each theme, so videos on one theme are not put together alike.
-- A **style** is a rule for the bars of a phrase that are not the motif. The fighter's motif, its rhythm cells,
-  the story shapes and the harmony pass are the same in every style, so the fighter stays recognisable and the
-  C10 measures still hold. Five styles, sketched:
-  1. **Call and answer** (C10 as above): the motif, its shape upside down, the echo, a run into the cadence.
-  2. **Climbing**: the motif's shape again one scale step higher in bar two and two steps higher in the last
-     bar, coming to rest on a chord tone.
-  3. **Riff**: the motif again on the new chord in bar two, and in the last bar its first half with a held
-     chord tone as a changed ending.
-  4. **Runs**: every eighth of the in-between bars, up the scale and back, the last bar running into its chord
-     tone.
-  5. **Broken chords**: up and down the notes of the bar's chord, the last bar coming to rest.
-- Each theme's Composed arrangement lists the styles that suit it (two to four of the five, by genre family, the
-  same grouping as C4's patterns; the builder assigns them). A fight picks one from its theme's list with its
-  music seed, the same for both fighters, so a fight still sounds like one piece. The fight file stores the
-  choice. The Music panel gets a **Melody style** menu: Auto (default) and the theme's styles by name.
-- An existing Composed fight file without the field renders with Call and answer. Classic has no styles.
-- Sketch: `BF_SPIKE_LIVELY=answer|climb|riff|runs|arp` in `spikes2.patch`, script `b8.py`, clips `c11`
-  (Trumpet vs Cello) and `c11x` (Violin vs Contrabass) with one button per style, numbers in
-  `style_stats.json`. Between two styles 26% to 57% of the trumpet's notes differ over the fight; harsh clashes
-  are zero in all five. The sketch only changes the in-between bars, so the styles are close cousins; the
-  builder may make them more distinct (for example the echo bar moved in Climbing, a denser rhythm in Runs).
-- Done when, in a unit test over generated pairings: every style passes the C10 measures; and for the same
-  fight any two styles differ in at least a quarter of the melody's notes.
+- Why: Aedan asked for different styles of composing within each theme, and then made clear that each style
+  should give the fighters **new melodies**, not the same tune with different filling.
+- A **style** is a way of writing the whole four-bar phrase, for both fighters, the bass role included. Tones
+  come from the fight's scale and chords inside the fighter's register; seeded choices (which figure, how high)
+  make the two fighters and two fights differ. The story shapes (`shape_upper`, `shape_bass`), the variation on
+  every other pass and the harmony pass run on top, as for C10. Six styles:
+  1. **Signature**: the C10 melody (the fighter's own motif, its answer, the echo, a run into the cadence).
+  2. **Climbing**: a short rising figure that starts two scale steps higher each bar; the last bar falls back
+     to a chord tone. Bass: a walk up by step from the root.
+  3. **Riff**: three or four close notes, the same bar three times on the changing chords, then a changed
+     ending. Bass: root, octave and fifth figures.
+  4. **Runs**: up the scale and back on every eighth, the last bar running into its chord tone. Bass: the
+     scale up one bar, down the next.
+  5. **Broken chords**: up and down the notes of the bar's chord. Bass: root, third, fifth.
+  6. **Anchor note**: one note keeps returning on the off eighths while a second voice moves by step against
+     it. Bass: the root with its octave at the end of the bar.
+- The signature motif is used in the Signature style and in the victory solo, in every style, so the fighter's
+  own tune is still heard at the win.
+- Each theme's Composed arrangement lists the styles that suit it (three to six, by genre family, the same
+  grouping as C4's patterns; the builder assigns them). A fight picks one from its theme's list with its music
+  seed, the same for both fighters, so a fight still sounds like one piece. The fight file stores the choice.
+  The Music panel gets a **Melody style** menu: Auto (default) and the theme's styles by name.
+- An existing Composed fight file without the field renders with Signature. Classic has no styles.
+- Sketch: `BF_SPIKE_STYLE=climb|riff|runs|arp|pedal` (with `BF_SPIKE_LIVELY=1` and `BF_SPIKE_HARMONY=1`) in
+  `spikes2.patch`, script `b9.py`, clips `c11` (Trumpet vs Clarinet, hot jazz), `c11x` (Violin vs Contrabass),
+  `c11y` (Flute vs Octobass) with one button per style, numbers in `style_stats.json` and `info.json`.
+  Measured on the notes actually played in the clips: between any two styles at least 70% of the trumpet's and
+  75% of the clarinet's notes differ, 41% of the violin's, 52% of the flute's, 25% of the contrabass's and 19%
+  of the octobass's. Written lines over the whole fight: 58% to 99% for the melody fighters. Harsh clashes
+  are zero in all six. The first sketch (`BF_SPIKE_LIVELY=climb|...`, superseded) kept the motif bars and
+  differed in only 26% to 57% of the written notes; Aedan heard it as the same melodies.
+- The figures in the sketch are a start. The builder may write more figures per style and tune them by ear on
+  the stage's listening page, as long as the measures hold.
+- Done when, in a unit test over generated pairings: every style has no semitone, tritone or major-seventh
+  pair and at most 30% of a melody's moves bigger than a fourth (Broken chords and Anchor note are exempt from
+  the last, since leaps are their nature); and for the same fight any two styles differ in at least half of
+  the melody fighter's written notes and a fifth of the bass fighter's.
 
 ### Bari sax: no slide (part of S1, brought forward to stage 1)
 
@@ -368,7 +412,7 @@ wait for an answer after a page unless Aedan objects to what he hears.
 ## Tests
 
 Only for what changes, run on the PC through `PC-Tests:` lines: the loudness target, the melody and harmony
-measures (for every style), the bari sax pitch travel, the one-note-at-a-time fade, the bass hand-over, the room's rumble share, the existing kit-parity
+measures (for every style), that every pitched fighter follows its line, the bari sax pitch travel, the one-note-at-a-time fade, the bass hand-over, the room's rumble share, the existing kit-parity
 tests and the new Classic golden hashes (together they prove Classic is untouched). No full suite.
 
 ## Left to the builder
