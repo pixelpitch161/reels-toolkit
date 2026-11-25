@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -111,6 +112,80 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The bhangra's own band (sound upgrade, stage 2): the dhol's chaal, the big head (dagga) on 1, the and of 2 and
+/// 3 and the small head (tilli) bouncing the swung off-beats, the chimta clacking eighths with claps on 2 and 4 at
+/// full tilt, the bass locked to the dagga, the synth stabs on the off-beats and the tumbi's one-string riff, a
+/// two-bar call and answer on the root and the top.
+pub static GROOVE: Groove = Groove {
+    swing: 0.6,
+    push_ms: 4.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.....x.X......."),
+                line(2, Play::Drum(KICK), "X.....x.X.....x."),
+                only(3, Play::Drum(KICK), "...g.......g....").maybe(0.6),
+                upto(1, Play::Drum(SNARE), "....x.......x..."),
+                line(2, Play::Drum(SNARE), "..o.X.o...o.X.o."),
+                only(3, Play::Drum(SNARE), ".......g.......g").maybe(0.7),
+                only(3, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chimta",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "..x...x...x...x."),
+                line(2, Play::Drum(SHAKER), "o.x.o.x.o.x.o.x."),
+                only(3, Play::Drum(SHAKER), ".g.......g......").maybe(0.6),
+                only(3, Play::Drum(CLAP), "....X.......X..."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_____..x_______"),
+                line(2, Play::Root, "x_....x.x_......"),
+                line(2, Play::Fifth, "..............x."),
+                only(3, Play::Octave, "...g.......g....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "..x...x...x..x.."),
+                only(3, Play::Chord, ".......x.......x").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "tumbi",
+            lines: &[
+                upto(1, Play::Root, "x.......x......."),
+                upto(1, Play::Top, "....x.......x..."),
+                line(2, Play::Root, "X..x..x.X..x..x.X..x..x.X.x.x.x."),
+                line(2, Play::Top, "..x..x....x..x....x..x...x.x.x.x"),
+                only(3, Play::Fifth, ".x.....x.x.....x.x.....x........"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", -2.0),
+        ("dhol", -0.5),
+        ("perc", 2.5),
+        ("synth", 4.5),
+        ("tumbi", 5.0),
+    ],
+    lows: &["bass", "dhol"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -191,5 +266,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("bhangra", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("bhangra", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

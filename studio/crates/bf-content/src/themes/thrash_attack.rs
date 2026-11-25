@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -111,6 +112,74 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The thrash attack's own band (sound upgrade, stage 2): the thrash skank beat (the kick on the beat, the snare on
+/// every off-beat) with the hats on the eighths and a backbeat when it is light, the double kicks galloping and then
+/// rolling sixteenths, the palm-muted chug in gallops and sixteenths with the fifth on its accents, the bass locked
+/// to it, and the open power chords slashing on a three-three-two.
+pub static GROOVE: Groove = Groove {
+    push_ms: 3.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "....X.......X..."),
+                line(1, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                line(2, Play::Drum(KICK), "X...X...X...X..."),
+                line(2, Play::Drum(SNARE), "..X...X...X...X."),
+                only(3, Play::Drum(CRASH), "X...............................").maybe(0.6),
+                only(3, Play::Drum(SNARE), "...............g").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "xxxxXxXX"),
+                line(1, Play::Drum(KICK), "X.X.X.X."),
+            ],
+        },
+        Part {
+            layer: "double",
+            lines: &[
+                upto(1, Play::Drum(CLAP), "X.xx....X.xx...."),
+                only(2, Play::Drum(CLAP), "X.xxX.xxX.xxX.xx"),
+                only(3, Play::Drum(CLAP), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(SHAKER), ".x.x.x.x.x.x.x.x"),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "x.x.xxxx")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X.xxX.xxX.xxX.x."),
+                only(3, Play::Root, "XxxxXxxxXxxxXx.x"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chug",
+            lines: &[
+                upto(1, Play::Root, "X.xx....X.xx...."),
+                only(2, Play::Root, "X.xxX.xxX.xxX.xx"),
+                line(3, Play::Root, "XxxxXxxxXxxxXx.xXxxxXxxxXxxxX.X."),
+                line(2, Play::Fifth, "X.......X......."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X_______________"),
+                line(2, Play::Chord, "X_.X_.X_........"),
+                only(3, Play::Chord, "........X_.X_.X."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.0), ("guitar2", 6.5), ("guitar", 1.5), ("kit", -1.0)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -186,5 +255,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("thrash_attack", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("thrash_attack", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

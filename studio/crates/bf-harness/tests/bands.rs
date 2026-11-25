@@ -9,7 +9,7 @@ use bf_harness::band::{self, PHONE_TARGET};
 fn every_band_has_its_own_patterns_and_carries_on_a_phone() {
     let next = std::sync::atomic::AtomicUsize::new(0);
     let found = std::sync::Mutex::new(Vec::new());
-    let threads = std::thread::available_parallelism().map_or(2, |n| n.get()).min(8);
+    let threads = std::thread::available_parallelism().map_or(2, |n| n.get()).min(4);
     std::thread::scope(|s| {
         for _ in 0..threads {
             s.spawn(|| {

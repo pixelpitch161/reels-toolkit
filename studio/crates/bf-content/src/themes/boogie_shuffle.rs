@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,76 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("boogie", 3), ("chords", 3), ("riser", 1)],
 );
 
+/// The boogie shuffle's own band (sound upgrade, stage 2): a triplet shuffle, the kick on 1 and 3 and the snare's
+/// backbeat under the ride's shuffled eighths, the bass walking the chord up in quarters and, flat out, the boogie's
+/// up-and-down eighths, the piano's rolling left hand, and the guitar chopping 2 and 4 with their shuffled ands.
+pub static GROOVE: Groove = Groove {
+    swing: 0.67,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......x......."),
+                line(2, Play::Drum(KICK), "X.......x.....o.X.....o.x......."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                only(3, Play::Drum(SNARE), "..........g...g.").maybe(0.6),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "x...x..."),
+                line(1, Play::Drum(SNARE), "x.x.xxxX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_____..x_____.."),
+                only(2, Play::Root, "x..............."),
+                only(2, Play::Third, "....x..........."),
+                only(2, Play::Fifth, "........x......."),
+                only(2, Play::Seventh, "............x..."),
+                only(3, Play::Root, "X..............."),
+                only(3, Play::Third, "..o...........o."),
+                only(3, Play::Fifth, "....x.......x..."),
+                only(3, Play::Seventh, "......o...o....."),
+                only(3, Play::Octave, "........x......."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "boogie",
+            lines: &[
+                upto(1, Play::Tone(0), "x.......x......."),
+                upto(1, Play::Tone(2), "....x.......x..."),
+                only(2, Play::Tone(0), "X..............."),
+                only(2, Play::Tone(1), "..x...........x."),
+                only(2, Play::Tone(2), "....x.......x..."),
+                only(2, Play::Tone(3), "......x...x....."),
+                only(2, Play::Tone(4), "........x......."),
+                only(3, Play::Tone(0), "X...............X..............."),
+                only(3, Play::Tone(1), "..x...........x.....x..........."),
+                only(3, Play::Tone(2), "....x.......x.....x.....x.....x."),
+                only(3, Play::Tone(3), "......x...x...........x.....x..."),
+                only(3, Play::Tone(4), "........x.................x....."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "....X.o.....X.o."),
+                only(3, Play::Chord, "..o.......o.....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -168,5 +239,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("boogie_shuffle", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("boogie_shuffle", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -114,6 +115,64 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The liquid drum and bass's own band (sound upgrade, stage 2): the two-step break at full speed (the kick on 1
+/// and the and of 3, the snare on 2 and 4, ghost snares and sixteenth hats when it rolls), the shaker in
+/// sixteenths, the round sub held over two-bar phrases and soft bells answering over the pad.
+pub static GROOVE: Groove = Groove {
+    push_ms: 2.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.........x.....X.x.......x....."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+                only(3, Play::Drum(SNARE), ".......g.g.....g").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "shaker",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "g.x.g.x.g.x.g.x."),
+                line(2, Play::Drum(SHAKER), "gxgogxgogxgogxgo"),
+                only(3, Play::Drum(CLAP), "......g.......g."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                line(2, Play::Root, "X_______..x_____X_______..x_x___"),
+                only(3, Play::Octave, "..............g.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bells",
+            lines: &[
+                line(1, Play::Top, "x.........x....."),
+                line(1, Play::Tone(1), ".....x.........."),
+                line(2, Play::Tone(2), "...x.......x...x"),
+                only(3, Play::Tone(0), ".x....x.x....x.."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bells", 3.0),
+        ("breaks", -1.5),
+        ("pad", 7.0),
+        ("perc", 4.5),
+        ("sub", -1.5),
+    ],
+    lows: &["sub"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -189,5 +248,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("liquid_dnb", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("liquid_dnb", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

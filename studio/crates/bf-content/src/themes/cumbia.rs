@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -110,6 +111,67 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ],
 };
 
+/// The cumbia's own band (sound upgrade, stage 2): the felt kick on 1 and 3 and the llamador's slap on 2 and 4,
+/// the shaker on the off-beats, the guacharaca's long-short-short scrape on every beat, the bass on one and three
+/// (root and fifth) with a pickup, the guitar chopping the off-beats and the accordion's figure.
+pub static GROOVE: Groove = Groove {
+    push_ms: 6.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "x.......x......."),
+                line(1, Play::Drum(SNARE), "....x.......x..."),
+                line(1, Play::Drum(HAT), "..x...x...x...x."),
+                line(2, Play::Drum(SNARE), "..............g.").maybe(0.6),
+                only(3, Play::Drum(HAT), "o...o...o...o..."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "guacharaca",
+            lines: &[
+                upto(1, Play::Drum(CLAP), "x_x.x_x.x_x.x_x."),
+                line(2, Play::Drum(CLAP), "X_oox_ooX_oox_oo"),
+                only(3, Play::Drum(SHAKER), "..x...x...x...x."),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "xxxxxxxX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                line(1, Play::Root, "x_.............."),
+                line(1, Play::Fifth, "........x_......"),
+                line(2, Play::Third, "..............o.").maybe(0.7),
+                only(3, Play::Root, "......g.........").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "..x...x...x...x."),
+                only(3, Play::Upper, "...g.......g....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "accordion",
+            lines: &[
+                line(1, Play::Tone(0), "x.x...x.x...x..."),
+                line(1, Play::Tone(1), "....x.......x.x."),
+                only(3, Play::Tone(2), "...x.......x...."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -0.5), ("guitar", 5.5), ("perc", 1.0)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The Classic arrangement's table: the band at one steady level.
 pub const PLAIN: ArrangementTable = fresh::plain(
     &[
@@ -214,5 +276,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("cumbia", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("cumbia", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -115,6 +116,70 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("clarinet", 3), ("riser", 1)],
 );
 
+/// The oompah polka's own band (sound upgrade, stage 2): the polka in two, the tuba's oom on every beat (root and
+/// fifth) and the accordion's pah on every off-beat, the bass drum with the tuba and the snare with the accordion
+/// (a drag into the next bar when it opens up), a tambourine in eighths, and the clarinet running the chord in
+/// eighths, then in sixteenths, a two-bar run up and back.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                line(2, Play::Drum(KICK), "X...x...X...x..."),
+                line(1, Play::Drum(SNARE), "..x...x...x...x."),
+                line(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(SNARE), "...g.......g...........g....ggx.").maybe(0.8),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x..............."),
+                upto(1, Play::Fifth, "........x......."),
+                line(2, Play::Root, "X.......X......."),
+                line(2, Play::Fifth, "....x.......x..."),
+                only(3, Play::Third, "..............................x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "..x.......x....."),
+                line(2, Play::Chord, "..x...x...x...x."),
+                only(3, Play::Upper, "...g.......g....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "clarinet",
+            lines: &[
+                upto(1, Play::Tone(0), "x..............."),
+                upto(1, Play::Tone(1), "....x..........."),
+                upto(1, Play::Tone(2), "........x......."),
+                upto(1, Play::Tone(3), "............x..."),
+                line(2, Play::Tone(0), "X...............X..............."),
+                line(2, Play::Tone(1), "..x...........x.....x..........."),
+                line(2, Play::Tone(2), "....x.......x.....x.....X......."),
+                line(2, Play::Tone(3), "......x...x...........x.....x..."),
+                line(2, Play::Tone(4), "........X.................x...x."),
+                only(3, Play::Tone(0), "...............o................"),
+                only(3, Play::Tone(1), ".o...........o...o.............."),
+                only(3, Play::Tone(2), "...o.......o.......o...........o"),
+                only(3, Play::Tone(3), ".....o...o...........o...o...o.."),
+                only(3, Play::Tone(4), ".......o...............o...o...."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("clarinet", 0.5), ("trumpet", 1.5)],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -203,5 +268,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("oompah_polka", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("oompah_polka", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

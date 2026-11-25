@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -111,6 +112,75 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The glam stomp's own band (sound upgrade, stage 2), on a shuffle: stomp, stomp, clap on the kit with the hats
+/// on the eighths, the floor toms pounding the beat (the higher tom pushing in at the top), the bass pumping eighths
+/// on the root, the fuzz guitar's chunky riff and the piano hammering block chords.
+pub static GROOVE: Groove = Groove {
+    swing: 0.6,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(KICK), "X.X.....X.X....."),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(KICK), "..............x.").maybe(0.5),
+                only(3, Play::Drum(SNARE), "..............g.").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "X.X.X..."),
+                line(1, Play::Drum(SNARE), "....X.XX"),
+            ],
+        },
+        Part {
+            layer: "toms",
+            lines: &[
+                upto(1, Play::Drum(CLAP), "X.......X...x..."),
+                line(2, Play::Drum(CLAP), "X.x.X.x.X.x.X.x."),
+                only(3, Play::Drum(SHAKER), "..............xx"),
+                only(3, Play::Drum(SHAKER), "......x.........").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SHAKER), "x.x.x..."),
+                line(1, Play::Drum(CLAP), ".x.x.xXX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X___....X___...."),
+                line(2, Play::Root, "X.x.x.x.X.x.x.x."),
+                only(3, Play::Octave, "..............x.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X_______X_______"),
+                line(2, Play::Chord, "X_x.x.x.X_x....."),
+                only(3, Play::Chord, "............x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "piano",
+            lines: &[
+                upto(1, Play::Chord, "X...x...X...x..."),
+                line(2, Play::Chord, "X.x.X.x.X.x.X.x."),
+                only(3, Play::Top, "..x...x...x...x."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("guitar", 3.0), ("kit", -0.5)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -186,5 +256,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("glam_stomp", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("glam_stomp", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

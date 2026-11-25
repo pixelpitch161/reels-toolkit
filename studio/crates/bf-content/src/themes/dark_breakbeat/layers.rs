@@ -1,6 +1,7 @@
 //! The dark breakbeat's Composed arrangement (milestone 5): a crunchy break (kick, snare and hats through the
 //! classic bed's grit), the Reese bass, the cold pad and a chime arpeggio when the fight heats up.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth;
 
@@ -36,6 +37,61 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("bells", 3),
         ("riser", 1),
     ],
+};
+
+/// The dark breakbeat's own band (sound upgrade, stage 2): a two-bar Amen-style break (the kick on 1 and its
+/// and, the pair on the and of 3, the snare on 2 and 4 with ghosts between), sixteenth ghosts and ghost snares on
+/// the second kit, the Reese bass held over two-bar phrases and the chimes in dotted eighths; a light sixteenth
+/// swing.
+pub static GROOVE: Groove = Groove {
+    swing: 0.54,
+    swing16: true,
+    push_ms: 2.5,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "break",
+            lines: &[
+                line(1, Play::Drum(KICK), "x.o.......oo....x.o.......o....."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(HAT), "X.x.X.x.X.x.X.x."),
+                line(2, Play::Drum(SNARE), ".......x.x.....x.......x.x....x."),
+                only(3, Play::Drum(HAT), ".x.x.x.x.x.x.x.x"),
+                only(3, Play::Drum(KICK), ".............g..").maybe(0.4),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "ghosts",
+            lines: &[
+                line(1, Play::Drum(HAT), ".o.o.o.o.o.o.o.o"),
+                line(2, Play::Drum(CLAP), "...g......g...g."),
+                only(3, Play::Drum(HAT), "g.g.g.g.g.g.g.g."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                line(2, Play::Root, "X_______..x_____X_____x___x_____"),
+                only(3, Play::Octave, "..............x_").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bells",
+            lines: &[
+                line(1, Play::Tone(0), "x.....x.....x..."),
+                line(2, Play::Tone(2), "...x.....x.....x"),
+                only(3, Play::Tone(1), ".x.x.x.x.x.x.x.x"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -6.0), ("pad", 6.0)],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -104,5 +160,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

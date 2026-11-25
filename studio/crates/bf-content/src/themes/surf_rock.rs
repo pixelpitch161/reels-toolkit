@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -128,6 +129,88 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The surf rock's own band (sound upgrade, stage 2): a driving backbeat with eighth hats, the floor toms' pounding
+/// sixteenth beat (accent, two light, accent), the round bass on root and fifth eighths, the rhythm guitar's gallop
+/// on power chords, the twang running the chord's tones up and back with a tremolo-picked top at full tilt, and the
+/// organ's stabs on the off-beats.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.09,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                line(2, Play::Drum(KICK), "......x.......x.").maybe(0.6),
+                only(3, Play::Drum(SNARE), "..............gx").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "gxxxXxxX"),
+                line(1, Play::Drum(KICK), "X......."),
+            ],
+        },
+        Part {
+            layer: "toms",
+            lines: &[
+                upto(1, Play::Drum(CLAP), "X.x.X.x.X.x.X.x."),
+                line(2, Play::Drum(CLAP), "X.xxX.xxX.XxX.xx"),
+                only(3, Play::Drum(SHAKER), "..x...x...x...x."),
+            ],
+            fill: &[
+                line(1, Play::Drum(SHAKER), "x.x.x..."),
+                line(1, Play::Drum(CLAP), ".x.x.xXX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                line(2, Play::Root, "X.x.x...X.x.x..."),
+                line(2, Play::Fifth, "......x.......x."),
+                only(3, Play::Root, ".......g.......g").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "rhythm",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X.xxX.xxX.xxX.xx"),
+                line(2, Play::Fifth, "X...X...X...X..."),
+                only(3, Play::Root, "XxxxXxxxXxxxXxxx"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "twang",
+            lines: &[
+                line(1, Play::Tone(0), "x.......x......."),
+                line(1, Play::Tone(1), "..x...........x."),
+                line(1, Play::Tone(2), "....x.......x..."),
+                line(1, Play::Tone(3), "......x...x....."),
+                line(2, Play::Tone(4), ".......g........"),
+                line(2, Play::Tone(2), ".g.g.g...g.g.g.g"),
+                only(3, Play::Top, "xgxgxgxgxgxgxgxg"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                line(1, Play::Chord, "..x...x...x...x."),
+                line(2, Play::Chord, "...............g"),
+                only(3, Play::Chord, ".......g........").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("guitar", 2.0), ("twang", 2.0), ("organ", 1.5), ("kit", -1.0)],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -212,5 +295,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("surf_rock", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("surf_rock", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

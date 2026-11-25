@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -129,6 +130,85 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The highlife's own band (sound upgrade, stage 2): the bell's time line with the congas' slaps answering it, a
+/// light kit (kick on 1 and 3 with a push on the and of 2, the rim on 2 and 4, eighth hats), the bass's bouncing
+/// figure on root, fifth and third, the rhythm guitar skanking the off-beats and the lead guitar's two-bar
+/// interlocking line in the gaps between them.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "x.......x......."),
+                line(2, Play::Drum(KICK), "x.....x.x......."),
+                line(1, Play::Drum(SNARE), "....x.......x..."),
+                line(2, Play::Drum(SNARE), "..........g.....").maybe(0.6),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bells",
+            lines: &[
+                line(1, Play::Drum(SHAKER), "X..x..x...x.x..."),
+                line(2, Play::Drum(CLAP), "....x.......x.x."),
+                only(3, Play::Drum(SHAKER), ".g...g...g.....g").maybe(0.7),
+                only(3, Play::Drum(CLAP), ".......x........"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x.......x......."),
+                line(2, Play::Root, "x.....x........."),
+                line(2, Play::Fifth, "........x.....x."),
+                line(2, Play::Third, "..........x....."),
+                only(3, Play::Octave, "...g.......................g....").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "..x...x...x...x."),
+                line(2, Play::Chord, "..x..x....x..x.."),
+                line(2, Play::Upper, "........o.......").maybe(0.5),
+                only(3, Play::Upper, ".......x.......x"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "lead",
+            lines: &[
+                upto(1, Play::Tone(0), "x..............."),
+                upto(1, Play::Tone(1), "........x......."),
+                upto(1, Play::Tone(2), "....x..........."),
+                upto(1, Play::Tone(3), "............x..."),
+                line(2, Play::Tone(0), "......x.............x..........."),
+                line(2, Play::Tone(1), "....x....x........x...x........."),
+                line(2, Play::Tone(2), "..x........o...ox........x......"),
+                line(2, Play::Tone(3), "X............x.............o...o"),
+                line(2, Play::Tone(4), ".............................x.."),
+                only(3, Play::Top, ".g.....g.........g.....g........").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", 2.0),
+        ("guitar", -2.5),
+        ("guitar2", -2.0),
+        ("horns", 1.5),
+        ("kit", 5.0),
+        ("perc", -3.0),
+    ],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -213,5 +293,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("highlife", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("highlife", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

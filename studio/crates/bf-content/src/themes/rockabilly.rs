@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,69 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("twang", 3), ("riser", 1)],
 );
 
+/// The rockabilly's own band (sound upgrade, stage 2), on a shuffle: the brushed train beat (the snare on every
+/// eighth, the backbeat accented) over the kick on 1 and 3, the slapped upright on root and fifth with its slap on
+/// the off-beats and a walking boogie at the top, the rhythm guitar's off-beat chops and the twang's boogie figure up
+/// the chord.
+pub static GROOVE: Groove = Groove {
+    swing: 0.6,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(SNARE), "o.o.X.o.o.o.X.o."),
+                line(2, Play::Drum(HAT), "x...x...x...x..."),
+                only(3, Play::Drum(SNARE), ".g.g.g.g.g.g.g.g").maybe(0.7),
+                only(3, Play::Drum(KICK), "......x.......x.").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "x.x.xxxX"),
+                line(1, Play::Drum(KICK), "X......X"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(2, Play::Root, "X.......X......."),
+                upto(2, Play::Fifth, "....x.......x..."),
+                line(2, Play::Root, "..g...g...g...g.").maybe(0.7),
+                only(3, Play::Root, "X.......................x......."),
+                only(3, Play::Third, "....x...............x..........."),
+                only(3, Play::Fifth, "........x.......x...........x..."),
+                only(3, Play::Seventh, "............x..................."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "..x...x...x...x."),
+                only(3, Play::Chord, "...........g...g").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "twang",
+            lines: &[
+                line(1, Play::Root, "x.......x......."),
+                line(1, Play::Fifth, "....x.......x..."),
+                line(2, Play::Third, "..x.......x....."),
+                line(2, Play::Seventh, "......x.......x."),
+                only(3, Play::Top, "...x.......x....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", 6.0), ("twang", 3.0), ("sax", 2.0), ("kit", -1.0)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -173,5 +237,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("rockabilly", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("rockabilly", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

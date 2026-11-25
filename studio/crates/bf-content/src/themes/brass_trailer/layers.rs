@@ -2,7 +2,10 @@
 //! downbeats, trailer ticks, the high string tremolo and the dark pad, and the braam with its sub held under the
 //! final exchange and the build.
 
-use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SNARE};
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
+use bf_sound::music::layers::{
+    ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
+};
 use bf_sound::synth;
 
 use super::{BRAAM_SWELL, THEME, braam, pad, strings_low, sub, taiko, tick, tremolo};
@@ -47,6 +50,62 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("braam", 1),
         ("riser", 1),
     ],
+};
+
+/// The brass trailer's own band (sound upgrade, stage 2): the spiccato strings' sixteenths in octaves, accented
+/// three, three, two (turning to the fifth at the end of the second bar), moved up an octave so a phone carries
+/// them; the taiko once a bar under the fight and pounding the three-three-two with the small drum on the backbeat
+/// when everything is in; the trailer ticks in sixteenths with the small taiko on 2 and 4; and the high string
+/// tremolo bowed on the bar and the half bar.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "low",
+            lines: &[
+                line(1, Play::Root, "XxxXxxXxXxxXxxXxXxxXxxXxXxxX...."),
+                line(1, Play::Fifth, "............................xxxX"),
+                line(2, Play::Octave, "XxxXxxXxXxxXxxXxXxxXxxXxXxxX...."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "tremolo",
+            lines: &[
+                upto(1, Play::Chord, "X_______x_______"),
+                line(2, Play::Chord, "X_______X_______"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "taiko",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X..............."),
+                upto(1, Play::Drum(SNARE), "..........o...o."),
+                line(2, Play::Drum(KICK), "X.....x.X......."),
+                line(2, Play::Drum(SNARE), "....x.......x..."),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "X...X.X."),
+                line(1, Play::Drum(SNARE), ".gxg.x.X"),
+            ],
+        },
+        Part {
+            layer: "ticks",
+            lines: &[
+                line(1, Play::Drum(SHAKER), "X.x.X.x.X.x.X.x."),
+                line(1, Play::Drum(SHAKER), ".x.x.x.x.x.x.x.x"),
+                line(2, Play::Drum(CLAP), "....x.......x..."),
+                only(3, Play::Drum(CLAP), "..............g.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("strings", 12.0), ("pad", 12.0), ("tremolo", 12.0)],
+    lift: &[("low", 12)],
+    lows: &["taiko", "braam"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -139,5 +198,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

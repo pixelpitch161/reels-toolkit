@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,68 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("timpani", 3), ("bass", 3), ("chords", 3), ("riser", 1)],
 );
 
+/// The kaiju stomp's own band (sound upgrade, stage 2): a half-time stomp, the bass drum's footfalls on 1 and 3
+/// with the punch landing on the second, ticks between them and the drums staggering at the top; the timpani on
+/// the root with the fifth before the next step, the braams held a bar or a half, and low piano clusters on the
+/// footfalls with the chord's upper notes trailing.
+pub static GROOVE: Groove = Groove {
+    push_ms: 6.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                line(2, Play::Drum(SNARE), "........X......."),
+                line(2, Play::Drum(HAT), "..o...o...o...o."),
+                only(3, Play::Drum(KICK), "......x.....x.x."),
+                only(3, Play::Drum(HAT), "o...o...o...o..."),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "X.x.X.x."),
+                line(1, Play::Drum(SNARE), "...x.xxX"),
+            ],
+        },
+        Part {
+            layer: "timpani",
+            lines: &[
+                line(1, Play::Root, "X.......X......."),
+                line(2, Play::Fifth, "............x..."),
+                only(3, Play::Fifth, "......x........."),
+                only(3, Play::Root, "..............x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                only(2, Play::Root, "X_____..X_____.."),
+                only(3, Play::Root, "X_____..X_..x_.."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X_______........"),
+                line(2, Play::Chord, "X.......X......."),
+                line(2, Play::Upper, "..............x."),
+                only(3, Play::Upper, "......x.....x..."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("drums", 3.0),
+        ("horns", -2.5),
+        ("low", -2.0),
+        ("piano", -3.0),
+        ("timp", -2.0),
+    ],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -168,5 +231,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("kaiju_stomp", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("kaiju_stomp", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

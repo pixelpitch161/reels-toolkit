@@ -2,6 +2,7 @@
 //! the root, the detuned music box up high, the string pad and the reverse swell into frame 0. A desperation move
 //! leaves the music box alone over the strings; the final exchange brings every layer in.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth;
 
@@ -30,6 +31,52 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["808", "drums"],
     victory: &[("drums", 1), ("808", 2), ("musicbox", 2), ("strings", 2)],
     build: &[("drums", 3), ("808", 2), ("musicbox", 3), ("swell", 1)],
+};
+
+/// The horror trap's own band (sound upgrade, stage 2): the half-time trap kit (the clap on 3, the kick moving over
+/// two bars, hats in quarters, eighths and then sixteenths), the sub 808 riding the kick and the detuned music box
+/// picking a slow, eerie figure over the strings; a light sixteenth swing.
+pub static GROOVE: Groove = Groove {
+    swing: 0.54,
+    swing16: true,
+    push_ms: 2.5,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.........x....."),
+                line(1, Play::Drum(SNARE), "........X......."),
+                line(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(HAT), "..x...x...x...x."),
+                line(2, Play::Drum(KICK), "......x............x.........x.."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+                only(3, Play::Drum(SNARE), "...............g").maybe(0.4),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "808",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                line(2, Play::Root, "X_____x___x_____X_____x___x__x__"),
+                only(3, Play::Octave, "..............x.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "musicbox",
+            lines: &[
+                line(1, Play::Top, "x.........x....."),
+                line(1, Play::Tone(1), "....x..........."),
+                line(2, Play::Tone(2), "......x.......x."),
+                only(3, Play::Tone(0), "..x.....x......."),
+            ],
+            fill: &[],
+        },
+    ],
+    lows: &["808"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -95,5 +142,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

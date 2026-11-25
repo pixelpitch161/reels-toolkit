@@ -1,8 +1,8 @@
 //! The band of each theme's Composed arrangement as a phone plays it (sound upgrade, stage 2: M6).
 //!
 //! [`measure`] renders a theme's fight (its preset pair, as the Classic lock picks it, under Composed, the first of
-//! seeds 1 to 12 with a K.O.) and reads its band from FIGHT! to the K.O.: every bus but the two fighters', the
-//! solo and the shared `fx`, at the master's gains and after the mix's treatments ([`polish::treated`]), before
+//! seeds 1 to 12 with a K.O.) and reads its band from FIGHT! to the K.O.: every bus of the bed's own but the two
+//! fighters', the solo and the shared `fx`, at the master's gains and after the mix's treatments ([`polish::treated`]), before
 //! the master's compressor. The figure that counts is [`BandFigures::phone_loss`]: the loudness the band loses
 //! through a phone's speaker. M6 holds it at [`PHONE_TARGET`] dB or less.
 //!
@@ -115,8 +115,11 @@ pub fn measure(theme: &str) -> Result<BandFigures, String> {
     let mut band = Vec::new();
     let mut figures = Vec::new();
     for (name, x) in &buses {
+        // the bed's own buses only: not the fighters' (nor a bus of a fighter's own, as the bagpipes' drone), the
+        // solo or the shared fx
+        let own = build.bed.buses().iter().any(|(b, _)| b == name);
         let shared = BUS.iter().any(|(b, _)| b == name);
-        if shared || plan.parts.iter().any(|p| &p.bus == name) {
+        if !own || shared || plan.parts.iter().any(|p| &p.bus == name) {
             continue;
         }
         let x = heard::span(x, from, to);

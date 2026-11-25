@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,82 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("banjo", 3), ("riser", 1)],
 );
 
+/// The bluegrass's own band (sound upgrade, stage 2): the boom-chick, the upright slapping the root on 1 and the
+/// fifth on 3 (walking the chord at full tilt) under the mandolin's chop on 2 and 4, a brushed kit on the same
+/// boom-chick with a train beat when it opens up, the banjo's Scruggs forward roll in sixteenths and the fiddle's
+/// long bows turning into a shuffle.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "x.......x......."),
+                line(1, Play::Drum(SNARE), "....x.......x..."),
+                line(2, Play::Drum(HAT), "o.x.o.x.o.x.o.x."),
+                only(3, Play::Drum(SNARE), "..g...g.g.g...gg").maybe(0.8),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(2, Play::Root, "x..............."),
+                upto(2, Play::Fifth, "........x......."),
+                only(2, Play::Third, "..............g.").maybe(0.5),
+                only(3, Play::Root, "x...............x..............."),
+                only(3, Play::Third, "....x.......x..................."),
+                only(3, Play::Fifth, "........x...........x.......x..."),
+                only(3, Play::Seventh, "........................x......."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "....X.......X..."),
+                line(2, Play::Upper, "..............g.").maybe(0.5),
+                only(3, Play::Upper, "......g.......g.").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "banjo",
+            lines: &[
+                upto(1, Play::Tone(0), "x...x...x...x..."),
+                upto(1, Play::Top, "..x...x...x...x."),
+                line(2, Play::Tone(0), "X..x..x.X..x..x."),
+                line(2, Play::Tone(1), ".x..x....x..x..."),
+                line(2, Play::Top, "..x..x....x..x.."),
+                only(3, Play::Top, ".......x.......x"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "fiddle",
+            lines: &[
+                upto(1, Play::Top, "x_______x_______"),
+                upto(1, Play::Tone(1), "x_______________"),
+                line(2, Play::Top, "x__x__x_x__x__x_"),
+                line(2, Play::Tone(1), "x__x__x_x__x__x_"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("banjo", 6.0),
+        ("bass", -0.5),
+        ("fiddle", 4.0),
+        ("mandolin", 3.5),
+        ("perc", 8.0),
+    ],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -173,5 +250,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("bluegrass", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("bluegrass", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

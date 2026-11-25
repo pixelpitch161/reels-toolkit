@@ -111,6 +111,8 @@ pub static GROOVE: Groove = Groove {
             fill: &[],
         },
     ],
+    mix: &[("bass", -5.0), ("perc", 1.0), ("piano", 7.0), ("sax", 1.5)],
+    lows: &["bass"],
     ..STRAIGHT
 };
 

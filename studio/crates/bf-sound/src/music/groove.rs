@@ -178,6 +178,10 @@ fn by_interval(tones: &[i32], root: i32, ivs: &[i32]) -> Option<i32> {
 
 /// The notes `play` strikes over `tones` (lowest first; a bass's root first).
 pub fn notes_of(play: Play, tones: &[i32]) -> Vec<i32> {
+    // a drum line has no tones to voice
+    if let Play::Drum(n) = play {
+        return vec![n];
+    }
     let Some(&root) = tones.first() else {
         return Vec::new();
     };

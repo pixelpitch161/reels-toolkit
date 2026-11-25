@@ -2,7 +2,8 @@
 //! cellos driving the eighths, the heartbeat kick and the timpani, the clock ticking, and the church bell tolling
 //! the chord when the fight turns grim.
 
-use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, KICK, Layer, LayerKind, LayeredBed, SNARE};
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only};
+use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE};
 use bf_sound::synth;
 
 use super::{AAH, THEME, bell, cello, choir, drone, heart, roll, tick, timp};
@@ -52,6 +53,62 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("roll", 1),
         ("riser", 1),
     ],
+};
+
+/// The gothic horror's own band (sound upgrade, stage 2): the heartbeat (lub-dub on 1 and 3) with the timpani on
+/// 2 and 4 when the fight turns, the clock's tick and tock (its eighths and sixteenths as the tension grows), the
+/// staccato cellos driving the eighths, and the church bell tolling the chord's top and its root.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "heart",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.o.....X.o....."),
+                only(2, Play::Drum(SNARE), "....x.......x..."),
+                only(3, Play::Drum(SNARE), "....x.......x.x."),
+            ],
+            fill: &[line(1, Play::Drum(SNARE), "g.g.xxxX")],
+        },
+        Part {
+            layer: "clock",
+            lines: &[
+                line(1, Play::Drum(CLAP), "x.......x......."),
+                line(1, Play::Drum(SHAKER), "....x.......x..."),
+                line(2, Play::Drum(SHAKER), "..g...g...g...g."),
+                only(3, Play::Drum(SHAKER), ".g.g.g.g.g.g.g.g"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "cellos",
+            lines: &[
+                line(1, Play::Root, "X.x.x.x.X.x.x..."),
+                line(1, Play::Fifth, "..............x."),
+                only(3, Play::Root, ".g.g.g.g.g.g.g.."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bell",
+            lines: &[
+                line(1, Play::Top, "X_______........"),
+                line(1, Play::Tone(0), "........x_______"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("drone", -2.5),
+        ("drums", -2.5),
+        ("bell", 9.5),
+        ("choir", 9.5),
+        ("perc", 9.5),
+        ("strings", 6.0),
+    ],
+    lows: &["drone", "drums"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -147,5 +204,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

@@ -9,6 +9,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -39,6 +40,74 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["gtr", "kit"],
     victory: &[("kick", 1), ("kit", 1), ("gtr", 2), ("bass", 2), ("strum", 2)],
     build: &[("kick", 3), ("kit", 3), ("gtr", 3), ("bass", 3)],
+};
+
+/// The stadium rock's own band (sound upgrade, stage 2): the arena kick (one and the and of two, then three and its
+/// and) under a big backbeat, the hats on the eighths with the tambourine on the backbeat and then on the eighths
+/// with the floor tom on the beat at full tilt; fuzz power chords chugging muted eighths with an open accent, the
+/// bass locked to them, and the acoustic strummed down, down-up, up-down-up.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "kick",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                line(2, Play::Drum(KICK), "X.....x.X.x....."),
+                only(3, Play::Drum(KICK), "..............x.").maybe(0.6),
+            ],
+            fill: &[line(1, Play::Drum(KICK), "X.x.X.X.")],
+        },
+        Part {
+            layer: "kit",
+            lines: &[
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                only(2, Play::Drum(SHAKER), "....x.......x..."),
+                only(3, Play::Drum(SHAKER), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(CLAP), "X...X...X...X...").maybe(0.5),
+                only(3, Play::Drum(CRASH), "X...............................").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "xxxx...."),
+                line(1, Play::Drum(CLAP), "....xxxX"),
+            ],
+        },
+        Part {
+            layer: "gtr",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                upto(2, Play::Fifth, "X_______X_______"),
+                only(2, Play::Root, "X_______X_______"),
+                line(3, Play::Root, "X_x.x.x.X_x.x.x."),
+                line(3, Play::Fifth, "X_......X_......"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                only(2, Play::Root, "X.......X.x....."),
+                line(3, Play::Root, "X.x.x.x.X.x.x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "strum",
+            lines: &[
+                upto(1, Play::Chord, "X_______X___x___"),
+                line(2, Play::Chord, "X___x_x___x_x_x_"),
+                only(3, Play::Upper, "..o.......o.....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("kick", -1.5), ("p_gtr", 6.0), ("u_gtr", 2.0)],
+    lows: &["kick", "u_bass"],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -77,7 +146,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

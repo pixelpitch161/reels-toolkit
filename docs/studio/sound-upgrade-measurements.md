@@ -103,3 +103,48 @@ no note clashes with the other fighter on a strong 8th, no note outside a fighte
 twice in a row in a moving style (Climbing, Runs, Broken chords). Signature melodies change from bar to bar 96 to
 99.7% as often as today's and repeat whole bars less. The six styles differ from each other in at least half of
 their notes, the bass lines in at least a quarter.
+
+# Sound upgrade, stage 2: the bands (C4, M6)
+
+Measured on 2026-11-25 with `cargo run --release -p bf-harness --example bands` (`bf-harness/src/band.rs`): each
+theme's band alone (the bed's own buses, without the fighters, the solo and the shared fx), from FIGHT! to the K.O.,
+on the theme's pinned pair under Composed (the first of seeds 1 to 12 with a K.O.), after the mix's treatments and
+before the master. Listening page: https://claude.ai/artifact/AAboxP2K6xTdzZYCR6LNm6 (source
+`ballfight-studio/sound-upgrade-2/` in the project files).
+
+| Done when | Measured | |
+|---|---|---|
+| C4: every theme's Composed band plays its own patterns | 62 of 62 have a groove (`grooved`); the story behaviour (fills, breakdowns, the final exchange, band hits) is unchanged | pass |
+| M6: the band loses at most 5 dB on a phone | 62 of 62, 4.83 dB at most (today 22 of 62; up to 15.2 dB) | pass |
+| M6: no layer moves more than 12 dB against the others | every groove's bus levels within 12 dB (`Groove::check`, the bed refuses one that is not) | pass |
+| Classic unchanged | all 64 pinned Classic fights hash as before | pass |
+
+How the bands got there, besides their patterns: bus levels (`mix`), M2's overtones on the band's deepest buses
+(`lows`: a sub bass, an 808, a taiko or a drone, so the weight survives on a phone), and an octave up for a layer
+that needed it (`lift`: the sea shanty's bass voice and its "hey", the prog duel's arpeggio, the orchestral drill's
+cellos, the brass trailer's low strings). The sea shanty also has its frame drum in the fight now: its crew of low
+voices and boots lost 7 dB on a phone with no bright part to carry it.
+
+Phone loss, today → new (dB), by family:
+
+- Latin: bossa noir 11.7 → 4.4, salsa dura 9.5 → 3.0, cumbia 8.6 → 2.9, mambo 8.5 → 4.5, samba bateria 4.4 → 2.2,
+  dark tango 1.5 → 0.8, mariachi 1.2 → 0.9.
+- Jazz: heist 13.0 → 4.7, big band swing 8.3 → 4.1, noir jazz 7.5 → 3.3, bebop chase 7.4 → 3.8, second line
+  6.6 → 3.4, hot jazz 6.1 → 3.0, acid jazz 5.8 → 4.3, boogie shuffle 4.7 → 3.7.
+- Rock: prog duel 10.1 → 3.7, pep band punk 7.0 → 3.2, funk rock 6.8 → 4.4, thrash attack 6.2 → 4.2, drumline
+  metal 6.0 → 3.4, glam stomp 5.3 → 4.2, surf rock 4.8 → 4.5, ska punk 4.8 → 3.0, stadium rock 3.6 → 2.9,
+  rockabilly 0.7 → 0.4.
+- Orchestral: brass trailer 15.2 → 4.8, orchestral drill 14.9 → 4.6, gothic horror 12.1 → 4.6, starfighter
+  11.9 → 4.4, samurai duel 8.1 → 3.1, baroque storm 7.3 → 2.8, kaiju stomp 5.7 → 4.5, heroic fanfare 5.5 → 3.4,
+  desert raid 3.0 → 3.2, spaghetti western 2.0 → 1.7, skeleton gallop 1.3 → 1.2.
+- Electronic: drift phonk 12.3 → 4.2, dark disco 12.0 → 4.8, chiptune 11.1 → 4.3, hardstyle 10.6 → 4.5, amapiano
+  9.4 → 4.4, liquid dnb 8.7 → 4.3, dark breakbeat 8.6 → 4.6, jersey club 8.5 → 4.8, brass house 6.7 → 4.8,
+  synthwave 4.8 → 4.0, dubstep 2.3 → 2.0, industrial 1.9 → 2.8, horror trap 1.3 → 1.9.
+- Folk: balkan fire 14.5 → 2.4, bhangra 9.0 → 3.3, bluegrass 8.9 → 1.8, sea shanty 7.9 → 3.5, klezmer 7.9 → 3.0,
+  celtic reel 6.5 → 2.7, cossack dance 3.3 → 2.9, flamenco 1.0 → 1.2, oompah polka 1.0 → 0.9, highlife 0.7 → 0.9.
+- Marching: villain march 3.7 → 3.6, dark drumline 0.9 → 0.8, big top 0.6 → 0.
+
+Limits: the figure is of one pairing per theme. Where that pairing has a true low fighter in the bass role (C6), the
+band's own bass is silent in the fight and is not in the figure (kaiju stomp, skeleton gallop, rockabilly). A band
+layer that shares a bus with a fighter of the same name (cumbia's accordion, boogie shuffle's piano) is counted
+with that fighter when the fighter plays.

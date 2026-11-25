@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -35,6 +36,68 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["skank", "kit"],
     victory: &[("kit", 1), ("bass", 2), ("skank", 2), ("organ", 1)],
     build: &[("kit", 3), ("bass", 3), ("skank", 2), ("organ", 2)],
+};
+
+/// The ska punk's own band (sound upgrade, stage 2): a one-drop when it is light, the ska beat with the hats on the
+/// off-beats in the fight and the punk double time (the kick on the beat, the snare on the off-beats, the ride on the
+/// eighths) flat out; the ropes walking eighths on root, fifth and octave (a held root when alone), the skank on
+/// every off-beat (doubled in sixteenths at the top) and the organ's bubble.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.09,
+    parts: &[
+        Part {
+            layer: "kit",
+            lines: &[
+                upto(1, Play::Drum(KICK), "........X......."),
+                upto(1, Play::Drum(SNARE), "........X......."),
+                upto(2, Play::Drum(HAT), "o.x.o.x.o.x.o.x."),
+                only(2, Play::Drum(KICK), "X.....x.X......."),
+                only(2, Play::Drum(SNARE), "....X.......X..."),
+                only(3, Play::Drum(KICK), "X...X...X...X..."),
+                only(3, Play::Drum(SNARE), "..X...X...X...X."),
+                only(3, Play::Drum(SHAKER), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(HAT), "..x...x...x...x."),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "xxxx...."),
+                line(1, Play::Drum(CLAP), "....xxxX"),
+                line(1, Play::Drum(KICK), "X......."),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X..x..x.X..x..x."),
+                line(3, Play::Root, "X.x.x...X.x.x..."),
+                line(3, Play::Fifth, "......x........."),
+                line(3, Play::Octave, "..............x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "skank",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "..X...X...X...X."),
+                only(3, Play::Chord, "...g...g...g...g"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "organ",
+            lines: &[
+                upto(1, Play::Chord, "..x...x...x...x."),
+                line(2, Play::Chord, "..xg..xg..xg..xg"),
+                only(3, Play::Root, "x.......x......."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("skank", 2.5), ("bubble", 2.0), ("kit", -1.0)],
+    lows: &["ropes"],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -75,7 +138,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

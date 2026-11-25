@@ -7,7 +7,8 @@
 
 use std::sync::Arc;
 
-use bf_sound::music::layers::{ArrangementTable, CLAP, Cue, Instrument, Layer, LayerKind, LayeredBed};
+use bf_sound::music::groove::{Groove, Part, Play as Note, STRAIGHT, line, only, upto};
+use bf_sound::music::layers::{ArrangementTable, CLAP, Cue, Instrument, Layer, LayerKind, LayeredBed, SHAKER};
 use bf_sound::music::{MusicCtx, RISER_OVER, RISER_SEED, Samples};
 
 use super::{MUSETTE, THEME, cimbalom, reed, roll, stab, sticks, upright};
@@ -41,6 +42,81 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("roll", 1),
         ("riser", 1),
     ],
+};
+
+/// The Balkan fire's own band (sound upgrade, stage 2): a brass-band oom-pah, the upright on 1 and 3 (root and
+/// fifth) breaking into the 3-3-2 of a čoček when the fight heats up, the accordion's pah on the off-beats, the
+/// cimbalom running its chord in eighths and then tremolo sixteenths, and the sticks clicking the off-beats with a
+/// clap on 2 and 4.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Note::Root, "x_____..........x_____.........."),
+                upto(1, Note::Fifth, "........x_____..........x___..g."),
+                only(2, Note::Root, "x.......x.......x.......x......."),
+                only(2, Note::Fifth, "....x.......x.......x.......x.g."),
+                only(3, Note::Root, "X..x..x.X..x....X..x..x.X..x...."),
+                only(3, Note::Fifth, "............x.x.............x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "stabs",
+            lines: &[
+                line(1, Note::Upper, "..x...x...x...x."),
+                line(2, Note::Upper, "...g.......g....").maybe(0.6),
+                only(3, Note::Chord, "......X.......X."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "cimbalom",
+            lines: &[
+                upto(1, Note::Tone(0), "x.......x.......x.......x......."),
+                upto(1, Note::Tone(1), "..x.......x.......x.......x....."),
+                upto(1, Note::Tone(2), "....x.......x.........x.......x."),
+                upto(1, Note::Tone(3), "......x.......x.....x.......x..."),
+                line(2, Note::Tone(0), "X.......o.......X.......o......."),
+                line(2, Note::Tone(1), ".x.....o.x.....o.x.....o.x.....o"),
+                line(2, Note::Tone(2), "..x...o...x...o...x...o...x...o."),
+                line(2, Note::Tone(3), "...x.o.....x.o.....x.o.....x.o.."),
+                line(2, Note::Tone(4), "....x.......x.......x.......x..."),
+            ],
+            fill: &[
+                line(1, Note::Tone(4), "x......."),
+                line(1, Note::Tone(3), ".x......"),
+                line(1, Note::Tone(2), "..x....."),
+                line(1, Note::Tone(1), "...x...."),
+                line(1, Note::Tone(0), "....x..."),
+                line(1, Note::Tone(1), ".....x.."),
+                line(1, Note::Tone(2), "......x."),
+                line(1, Note::Tone(3), ".......X"),
+            ],
+        },
+        Part {
+            layer: "sticks",
+            lines: &[
+                line(1, Note::Drum(SHAKER), "..x...x...x...x."),
+                line(1, Note::Drum(CLAP), "....x.......x..."),
+                line(2, Note::Drum(SHAKER), "g...g..g.g..g..g").maybe(0.7),
+                only(3, Note::Drum(CLAP), "......x.......xx"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("accordion", 10.0),
+        ("bass", -2.0),
+        ("cimbalom", 10.0),
+        ("pad", 4.5),
+        ("perc", 10.0),
+    ],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// One of a theme's sounds as a layer instrument: a function of the context, the note (a drum number for a kit), the
@@ -166,5 +242,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

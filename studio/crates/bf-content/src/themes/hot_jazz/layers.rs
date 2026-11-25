@@ -3,6 +3,7 @@
 //! exchange adds snare press rolls; the victory swings it out.
 
 use bf_core::py::round_nd;
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -33,6 +34,77 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["guitar", "drums"],
     victory: &[("drums", 2), ("tuba", 3), ("guitar", 2), ("woodblock", 1)],
     build: &[("drums", 3), ("press", 3), ("tuba", 3), ("guitar", 3), ("riser", 1)],
+};
+
+/// The hot jazz's own band (sound upgrade, stage 2): a swung two-beat, the felt bass drum on 1 and 3, the brushes
+/// and the cymbal choke on 2 and 4, press rolls leading into the next bar, the tuba on the root and the fifth (four
+/// to the bar in the last chorus), the rhythm guitar's four chops with the weight on 2 and 4, and the woodblock's
+/// clip-clop.
+pub static GROOVE: Groove = Groove {
+    swing: 0.6,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......x......."),
+                line(1, Play::Drum(SNARE), "....x.......x..."),
+                only(3, Play::Drum(SNARE), "......g.......g.").maybe(0.6),
+                upto(2, Play::Drum(HAT), "....x.......x..."),
+                only(3, Play::Drum(HAT), "x...x.o.x...x.o."),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "x......."),
+                line(1, Play::Drum(SNARE), "x.x.xxxX"),
+            ],
+        },
+        Part {
+            layer: "press",
+            lines: &[
+                line(1, Play::Drum(SHAKER), "..g...g...g...g."),
+                line(2, Play::Drum(CLAP), "............x.................x."),
+                only(3, Play::Drum(CLAP), "....x...........").maybe(0.6),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "x...x.X.")],
+        },
+        Part {
+            layer: "tuba",
+            lines: &[
+                upto(1, Play::Root, "x_______........"),
+                upto(1, Play::Fifth, "........x_______"),
+                only(2, Play::Root, "X_______........X_______........"),
+                only(2, Play::Fifth, "........x_______................"),
+                only(2, Play::Third, "........................x_______"),
+                only(3, Play::Root, "X...............X..............."),
+                only(3, Play::Third, "....x.......x..................."),
+                only(3, Play::Fifth, "........x...........x.......x..."),
+                only(3, Play::Octave, "........................x......."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "guitar",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "o...X...o...X..."),
+                only(3, Play::Chord, "......g.......g.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "woodblock",
+            lines: &[
+                line(1, Play::Drum(CLAP), "x.......x......."),
+                line(1, Play::Drum(SHAKER), "....x.......x..."),
+                line(2, Play::Drum(SHAKER), "..o...o...o...o."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("drums", -0.5), ("guitar", 2.0), ("tuba", -1.0)],
+    lows: &["tuba"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -106,5 +178,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

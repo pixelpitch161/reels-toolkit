@@ -51,6 +51,11 @@ arrangement, switched on the Music screen:
   K.O., the victory section, the build back into frame 0), and each fighter's line and victory solo are written by
   the composer from its musical personality and the music seed. The Music screen re-rolls the music seed and can
   keep one fighter's line as it is.
+  Since the sound upgrade's stage 2 (Nov 25, 2026) every theme's Composed band plays its own patterns: a `GROOVE`
+  beside the theme's `TABLE` (`bf-sound/src/music/groove.rs` explains the step strings), with its swing, its bus
+  levels and the buses that get a phone's overtones. **A new theme needs a groove**: `bf-harness/tests/bands.rs`
+  fails a theme that plays the shared patterns or whose band loses more than 5 dB on a phone. Measure and tune it with
+  `cargo run --release -p bf-harness --example bands -- <theme>` (it renders, it is not a test run).
 - **Classic**: each theme's ported bed with the fighters' kit lines and solos. The series' own match-ups (a kit pair,
   an older episode's pair, and every imported episode) keep Classic, so they sound as they always did. Classic is
   one click away for any other fight.

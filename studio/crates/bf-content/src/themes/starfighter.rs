@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,70 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("strings", 3), ("chords", 3), ("riser", 1)],
 );
 
+/// The starfighter's own band (sound upgrade, stage 2): big toms on the one, the and of two and three with the
+/// punch on the backbeat and the hats in eighths (sixteenths at the top); the reese bass held, then driving in
+/// eighths, then galloping; the strings' ostinato in eighths and, at full speed, three against four; and the
+/// supersaw stabbing on the three-three-two.
+pub static GROOVE: Groove = Groove {
+    push_ms: 3.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.....x...x....."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                only(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), "xgogxgogxgogxgog"),
+                only(3, Play::Drum(KICK), "...x.........x.."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X.x.x.x.X.x.x.x."),
+                only(3, Play::Root, "X.xxX.xxX.xxX.x."),
+                only(3, Play::Octave, "...............x"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "strings",
+            lines: &[
+                upto(2, Play::Tone(0), "x.......x.......x...........x..."),
+                upto(2, Play::Tone(1), "..o...o...o...o...o.......o...o."),
+                upto(2, Play::Tone(2), "....x.......x.......x...x......."),
+                upto(2, Play::Tone(3), "......................o........."),
+                only(3, Play::Tone(0), "X..x..x..x..x..................."),
+                only(3, Play::Tone(1), ".o..o..o..o..o..X..x..x..x..x..."),
+                only(3, Play::Tone(2), "..o..o..o..o..o..o..o..o..o..o.o"),
+                only(3, Play::Tone(3), "...............o..o..o..o..o..o."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X_______........"),
+                line(2, Play::Chord, "X..x..x...x..x.."),
+                only(3, Play::Chord, ".......x.......x").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", -1.5),
+        ("drums", -1.5),
+        ("arp", 9.0),
+        ("horns", 5.5),
+        ("strings", 10.5),
+    ],
+    lows: &["bass", "drums"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -168,5 +233,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("starfighter", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("starfighter", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,76 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("flute", 3), ("riser", 1)],
 );
 
+/// The samurai duel's own band (sound upgrade, stage 2): the taiko's two-bar call (don on 1 and 3, the small drum
+/// answering, the rim's ka between) with a flurry of ghost strokes at the top, the low strings held through the
+/// standoff and driving spiccato eighths when steel flashes, the koto's plucked two-bar figure, and the bamboo
+/// flute's long breaths turning to running eighths.
+pub static GROOVE: Groove = Groove {
+    push_ms: 6.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X.......X.....x.X......."),
+                line(2, Play::Drum(SNARE), "....x.......x.x.....x.......xx.x"),
+                line(2, Play::Drum(HAT), "..x...x...x....."),
+                only(3, Play::Drum(KICK), "..........x....."),
+                only(3, Play::Drum(SNARE), ".g.g.g.g.g.g....").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "X..X..XX"),
+                line(1, Play::Drum(SNARE), ".xx.xx.."),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                only(2, Play::Root, "X.......X..x...."),
+                only(2, Play::Fifth, "..............x."),
+                only(3, Play::Root, "X.x.x.x.X.x.x.x."),
+                only(3, Play::Fifth, ".......g.......g").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Tone(0), "x..............................."),
+                upto(1, Play::Tone(1), "................x..............."),
+                upto(1, Play::Tone(2), "........x......................."),
+                upto(1, Play::Tone(4), "........................x......."),
+                line(2, Play::Tone(0), "x...............x..............."),
+                line(2, Play::Tone(2), "...x........o......x..........o."),
+                line(2, Play::Tone(3), "........x...................o..."),
+                line(2, Play::Tone(4), "......x...............x...o....."),
+                line(2, Play::Tone(5), "........................x......."),
+                only(3, Play::Tone(1), ".o...o.....o...o").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "flute",
+            lines: &[
+                upto(2, Play::Tone(0), "............o___................"),
+                upto(2, Play::Tone(1), "........x___............x_______"),
+                upto(2, Play::Tone(2), "x_______..............o_........"),
+                upto(2, Play::Tone(3), "................x_____.........."),
+                only(3, Play::Tone(0), "....x.......................x___"),
+                only(3, Play::Tone(1), "..o...o...............o...o....."),
+                only(3, Play::Tone(2), "x.......x...........x...x......."),
+                only(3, Play::Tone(3), "..........o...o...o............."),
+                only(3, Play::Tone(4), "............x...x..............."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("taiko", -2.5), ("koto", 8.0), ("low", 5.0), ("strings", 3.5)],
+    lows: &["taiko"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -173,5 +244,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("samurai_duel", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("samurai_duel", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }
