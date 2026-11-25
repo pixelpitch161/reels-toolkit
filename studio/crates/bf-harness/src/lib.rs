@@ -35,6 +35,7 @@
 pub mod checks;
 pub mod episode;
 pub mod fight;
+pub mod golden;
 pub mod look;
 pub mod refs;
 pub mod scan;
