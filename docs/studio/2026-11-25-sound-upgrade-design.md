@@ -24,9 +24,17 @@ M1 M2 M3 M5 M6 F1 F2 F3 C2 C4 C6 S1, with two notes:
 3. "I don't mean the melodies should always stay the same as today's, they should still be improved, but just
    not to be as boring as that initial example."
 
+4. "For the bari sax, it sounds like a trombone because of the way it plays its notes. It plays a sliding note
+   that sounds like a real-life trombone's 'Wah waahhh'." (Measured and confirmed, see "Bari sax: no slide".)
+5. "The melodies are fine, could there maybe be different 'styles' or variations of how the melodies are
+   composed within each theme?" (About the C10 clips. Read here as: fights on the same theme should not all
+   write their melody the same way. Sketched as C11, melody styles.)
+
 Because of notes 2 and 3 a new item, **C10 (melodies improved, but kept lively)**, was sketched after the picks
 and is on the page with three-way clips (today, the boring first try, the new one). It includes C2. It is part
 of this design if Aedan approves it; if he does not, C2 is built on today's lines as a harmony pass only.
+(Aedan, later: "The melodies are fine.") **C11 (melody styles within a theme)** was sketched after note 5 and
+builds on C10.
 
 Not picked, so not built: M4, C1 (as sketched), C3, C5, C7, C8, C9, S2, all X ideas, T1.
 
@@ -77,7 +85,7 @@ Not picked, so not built: M4, C1 (as sketched), C3, C5, C7, C8, C9, S2, all X id
 ## Approaches considered
 
 1. **Three stages, each its own pull request into the build branch (chosen).** Stage 1 is the mix, the final
-   polish and the two small note items. Stage 2 is the bands. Stage 3 is the instruments. Stage 1 lands first
+   polish, the melody items and the bari sax slide. Stage 2 is the bands. Stage 3 is the instruments. Stage 1 lands first
    because the level of every instrument is measured there and stages 2 and 3 are tuned on top of it. Stages 2 and
    3 touch different files (themes, fighter voices) and can run one after the other or side by side. Each stage
    ends with a listening page of real renders, so Aedan hears progress early and can redirect.
@@ -225,6 +233,55 @@ render, that line is corrected for Composed: the render finishes and the result 
   and moves bigger than a fourth are at most 30% of a melody's moves.
 - If Aedan does not approve C10: skip items 1 to 4 and run only the harmony pass on today's lines.
 
+### C11. Melody styles within a theme
+
+- Why: with C10 every fight on a theme writes its in-between bars the same way (answer, then a run). Aedan
+  asked for different styles of composing within each theme, so videos on one theme are not put together alike.
+- A **style** is a rule for the bars of a phrase that are not the motif. The fighter's motif, its rhythm cells,
+  the story shapes and the harmony pass are the same in every style, so the fighter stays recognisable and the
+  C10 measures still hold. Five styles, sketched:
+  1. **Call and answer** (C10 as above): the motif, its shape upside down, the echo, a run into the cadence.
+  2. **Climbing**: the motif's shape again one scale step higher in bar two and two steps higher in the last
+     bar, coming to rest on a chord tone.
+  3. **Riff**: the motif again on the new chord in bar two, and in the last bar its first half with a held
+     chord tone as a changed ending.
+  4. **Runs**: every eighth of the in-between bars, up the scale and back, the last bar running into its chord
+     tone.
+  5. **Broken chords**: up and down the notes of the bar's chord, the last bar coming to rest.
+- Each theme's Composed arrangement lists the styles that suit it (two to four of the five, by genre family, the
+  same grouping as C4's patterns; the builder assigns them). A fight picks one from its theme's list with its
+  music seed, the same for both fighters, so a fight still sounds like one piece. The fight file stores the
+  choice. The Music panel gets a **Melody style** menu: Auto (default) and the theme's styles by name.
+- An existing Composed fight file without the field renders with Call and answer. Classic has no styles.
+- Sketch: `BF_SPIKE_LIVELY=answer|climb|riff|runs|arp` in `spikes2.patch`, script `b8.py`, clips `c11`
+  (Trumpet vs Cello) and `c11x` (Violin vs Contrabass) with one button per style, numbers in
+  `style_stats.json`. Between two styles 26% to 57% of the trumpet's notes differ over the fight; harsh clashes
+  are zero in all five. The sketch only changes the in-between bars, so the styles are close cousins; the
+  builder may make them more distinct (for example the echo bar moved in Climbing, a denser rhythm in Runs).
+- Done when, in a unit test over generated pairings: every style passes the C10 measures; and for the same
+  fight any two styles differ in at least a quarter of the melody's notes.
+
+### Bari sax: no slide (part of S1, brought forward to stage 1)
+
+- Aedan's ear: the bari sax "plays a sliding note that sounds like a real-life trombone's 'Wah waahhh'".
+- Measured (`tools/round2/b7.py`, pitch tracked through each note of BARI SAX vs TROMBONE and SOPRANO SAX vs
+  BARI SAX): nearly everything the bari sax plays in a fight is its swing honk, a note about a second long and
+  the loudest thing on its bus. Every one starts 2 to 2.6 semitones sharp and slides down to 1.6 flat, **4.2
+  semitones in all**. A real bari sax note moves 0.14 to 0.35 semitones; a real trombone note 0.5; the app's
+  own trombone 0.6 on ordinary notes. So the bari sax slides seven times further than the trombone does.
+- Where it comes from (`fighters/bari_sax/sound.rs`, `voice.rs`):
+  - `doppler(sig, .., up, down, 0.09)` on every swing honk (1.6 up, 2.6 down; 1.0 and 1.6 for SKANK swings) and
+    on the octave on top. It was meant as the wrecking ball passing by.
+  - `bari_tone`'s scoop, `0.035 + 0.04 * honk`: a honk at 0.85 starts 7% flat, over a semitone.
+  - `bend(sig, -1.5, ..)` and `bend(sig, -1.0, ..)` on the crash honks.
+- Fix, in Composed only: the swing honk keeps `doppler`'s swell (the loudness rising to the pass) but its pitch
+  stays put; the scoop is at most 1.2% (about a fifth of a semitone, like the real instrument); the crash honks
+  are not bent and get their weight from growl and level. The falling honk of `fall_apart` (the instrument
+  breaking when it loses) stays.
+- Sketch: `BF_SPIKE_BARI` in `spikes2.patch`; clips `s1b` (the fight) and `s1bs` (the bari sax alone), Today
+  against No slide. Slide per note: median 4.2 semitones today, 0.12 with the fix.
+- Done when: no bari sax note outside `fall_apart` moves more than half a semitone from start to end.
+
 ### C6. A bass fighter replaces the band's bass
 
 - Trigger: a fighter has the bass role in this fight **and** is a true low instrument, meaning its saved profile
@@ -268,9 +325,9 @@ render, that line is corrected for Composed: the render finishes and the result 
 
 ### S1. Polish every instrument, keep the style
 
-- Each of the 42 voices is compared with a recording of the real instrument (FluidR3, development only) on three
-  things: how long a note takes to speak, how strong each overtone is against the strongest, and how the note
-  ends. The voice is then reworked toward that fingerprint, with small seeded differences between repeated
+- Each of the 42 voices is compared with a recording of the real instrument (FluidR3, development only) on four
+  things: how long a note takes to speak, how strong each overtone is against the strongest, how the note
+  ends, and how far its pitch moves during the note. The voice is then reworked toward that fingerprint, with small seeded differences between repeated
   notes. It stays a built voice with the series' character.
 - **The fingerprint distance** used below and in tests: for a built note and a reference note at the same
   pitch, the levels of the first eight overtones over the steady part of the note (0.15 to 0.45 s), each in dB
@@ -282,7 +339,11 @@ render, that line is corrected for Composed: the render finishes and the result 
   euphonium and sousaphone from the tuba, cornet and flugelhorn from the trumpet (rounder), mellophone from the
   French horn, ukulele from the nylon guitar. Turntables and synth have no real counterpart and only get the
   small differences between repeated notes.
-- **Saxes first, bari sax first of all.** Measured: the built bari sax has all of its first eight overtones
+- **Pitch movement.** Sixteen fighters' parts use `gliss`, `bend` or a doppler slide somewhere, and several
+  voices scoop into the note. For each, the builder measures the pitch travel of its ordinary notes as in
+  `b7.py`. An ordinary note may travel at most half a semitone more than the real instrument's does. Slides
+  stay where they are the instrument's trademark (the trombone) and on special moves and losing sounds.
+- **Saxes first, bari sax first of all.** The slide is fixed in stage 1 (above). Its tone is next. Measured: the built bari sax has all of its first eight overtones
   within 2 dB of each other, a smooth even spectrum like brass. A real bari sax is uneven: a weak fundamental on
   low notes and strong and weak overtones side by side (for example -20, -2, -2, -1, -14, 0, -11, -21 dB on its
   low E-flat), plus reed buzz and breath. By this measure the built bari sax is as close to a real trombone as
@@ -307,7 +368,7 @@ wait for an answer after a page unless Aedan objects to what he hears.
 ## Tests
 
 Only for what changes, run on the PC through `PC-Tests:` lines: the loudness target, the melody and harmony
-measures, the one-note-at-a-time fade, the bass hand-over, the room's rumble share, the existing kit-parity
+measures (for every style), the bari sax pitch travel, the one-note-at-a-time fade, the bass hand-over, the room's rumble share, the existing kit-parity
 tests and the new Classic golden hashes (together they prove Classic is untouched). No full suite.
 
 ## Left to the builder
