@@ -34,6 +34,9 @@ M1 M2 M3 M5 M6 F1 F2 F3 C2 C4 C6 S1, with two notes:
    changed the bars between. Two causes, both fixed in this design: the styles were too alike, and the trumpet
    in that clip does not play the written melody at all. See "Every pitched fighter plays its written line" and
    C11.)
+7. "Those are better, but all of them play a lot of repeated notes consecutively. Repeated notes aren't a bad
+   thing, but I'd also like styles where they don't repeat notes a bunch." (Measured and built into C11 as
+   moving styles, see "Moving styles".)
 
 Because of notes 2 and 3 a new item, **C10 (melodies improved, but kept lively)**, was sketched after the picks
 and is on the page with three-way clips (today, the boring first try, the new one). It includes C2. It is part
@@ -283,6 +286,36 @@ render, that line is corrected for Composed: the render finishes and the result 
   5. **Broken chords**: up and down the notes of the bar's chord. Bass: root, third, fifth.
   6. **Anchor note**: one note keeps returning on the off eighths while a second voice moves by step against
      it. Bass: the root with its octave at the end of the bar.
+- **Moving styles: no note twice in a row.** Measured on the notes actually played (`b11.py`, `b13.py`,
+  `norepeat.json`): today 31% of the violin's hits and 29% of the flute's play the same note as the hit
+  before, and the six styles as first sketched did the same. Two causes. A fighter that is behind in the story
+  gets a thinned line (`shape_upper`: Thin drops every other eighth, Sparse and Rough keep two notes a bar), and
+  a held note makes every hit on it sound the same pitch. And several hits can land inside one written
+  eighth. A line is a map from time to pitch, so no written line can prevent this: the rule has to live where
+  the note is played.
+  - Each style is either **moving** (Climbing, Runs, Broken chords) or **repeating** (Signature, Riff, Anchor
+    note). Repeating styles play the line as written.
+  - In a moving style each fighter's part remembers the last note it played. If the line's note at a hit is
+    that same note, or the line is still holding the note the last hit started from, the hit plays the next
+    tone of the fight's scale from the last played note, walking toward the line's next different note and
+    turning back one step before it, so the arrival still sounds fresh. With no room between the two (a step
+    apart) it alternates with the neighbour on the far side. The bass role walks the same way.
+  - The walked note must also pass the harmony rule against the other fighter's line note at that moment (if it
+    would clash, take the next step). The sketch does not do this check.
+  - The state is per render and per fighter and is advanced only by notes that sound (a hit the part thins away
+    or a look-ahead does not count), so a render stays reproducible. This needs a play-time call beside
+    `line_at`, used by every part for its ordinary notes; it is added with "Every pitched fighter plays its
+    written line".
+  - A part's own rapid-fire effects keep their pitch (the trumpet's double tongue plays eight notes on one
+    pitch 53 ms apart; these are 14 of its 15 points of repeats in a moving style). Letting such bursts run up
+    the scale was idea C8, not picked.
+  - Sketch: `BF_SPIKE_NOREPEAT=all` (in `timeline.rs`, with state in a static, which a real build must not do).
+    In the clips, the share of hits that repeat the note before: violin 34% to 41% in the repeating styles
+    and 0% to 3% in the moving ones; flute 47% to 60% and 2% to 4%; clarinet 11% to 17% and 0%; contrabass 41%
+    to 82% and 0%; octobass 36% to 76% and 0%. Over the whole fight the flute keeps 11% to 13%, from its grace
+    notes, which by design anticipate the next note; in a moving style a grace should take a passing tone.
+  - Done when, in a test over generated fights: in a moving style no fighter plays the same pitch on two
+    successive ordinary notes.
 - The signature motif is used in the Signature style and in the victory solo, in every style, so the fighter's
   own tune is still heard at the win.
 - Each theme's Composed arrangement lists the styles that suit it (three to six, by genre family, the same
@@ -292,7 +325,8 @@ render, that line is corrected for Composed: the render finishes and the result 
 - An existing Composed fight file without the field renders with Signature. Classic has no styles.
 - Sketch: `BF_SPIKE_STYLE=climb|riff|runs|arp|pedal` (with `BF_SPIKE_LIVELY=1` and `BF_SPIKE_HARMONY=1`) in
   `spikes2.patch`, script `b9.py`, clips `c11` (Trumpet vs Clarinet, hot jazz), `c11x` (Violin vs Contrabass),
-  `c11y` (Flute vs Octobass) with one button per style, numbers in `style_stats.json` and `info.json`.
+  `c11y` (Flute vs Octobass) with one button per style (script `b13.py` for the final clips), numbers in
+  `style_stats.json` and `info.json`.
   Measured on the notes actually played in the clips: between any two styles at least 70% of the trumpet's and
   75% of the clarinet's notes differ, 41% of the violin's, 52% of the flute's, 25% of the contrabass's and 19%
   of the octobass's. Written lines over the whole fight: 58% to 99% for the melody fighters. Harsh clashes
