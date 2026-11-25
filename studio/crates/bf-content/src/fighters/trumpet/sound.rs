@@ -7,6 +7,10 @@
 //! with a shake when it fires. With a line in the fight file (`music.lines.TRUMPET`, 8 notes a bar) the punches
 //! play that line instead: the trumpet takes the melody (#46).
 //!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) the punches play the composer's written line whenever
+//! there is one for the trumpet, each punch ends the note before it (one voice), DOUBLE TONGUE's burst repeats the
+//! line's note where it starts, and the notes above C6 are softened. Classic follows only a line of the fight file.
+//!
 //! The trumpet's voice draws no noise, but its notes are still asked for in the kit's order: the first of them
 //! measures the voice's level.
 
@@ -288,7 +292,12 @@ impl Sound for TrumpetSound {
                 combo_start.insert(event_int(H, e, 3)?, e.t);
             }
         }
-        let line = ctx.ff.music.lines.contains_key(name);
+        // sound upgrade: under the Composed arrangement the punches play the written line whenever the composer
+        // wrote one for the trumpet; Classic keeps the kit's rule (only a line of the fight file itself)
+        let composed = ctx.composed_on();
+        let line = ctx.ff.music.lines.contains_key(name) || (composed && ctx.composed.contains_key(name));
+        // under Composed a trumpet sounds one note at a time: a new punch ends the note before it
+        let one = ctx.one_voice(name);
         for e in ev {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -297,18 +306,24 @@ impl Sound for TrumpetSound {
             if e.kind == "punch" && event_is(H, e, 2, k)? {
                 let (i, cn) = (event_int(H, e, 3)?, event_int(H, e, 6)?);
                 let tq = ctx.q16(t);
-                let m = if line {
+                let combo = || -> Result<i32, MusicError> {
+                    let notes = self.combo_notes(ctx, combo_start.get(&cn).copied().unwrap_or(t), cn)?;
+                    // notes[min(i, 2)] (the engine counts a combo's punches from 0)
+                    Ok(notes[i.clamp(0, 2) as usize])
+                };
+                // Classic picks the note before the thinning, as the kit does
+                let early = if composed {
+                    None
+                } else if line {
                     // the melody: the fight file's line's 8th
-                    ctx.line_at(name, tq)?.ok_or_else(|| {
+                    Some(ctx.line_at(name, tq)?.ok_or_else(|| {
                         MusicError::new(
                             H,
                             format!("{name}'s line has a rest at {tq} s, where a punch needs a note"),
                         )
-                    })?
+                    })?)
                 } else {
-                    let notes = self.combo_notes(ctx, combo_start.get(&cn).copied().unwrap_or(t), cn)?;
-                    // notes[min(i, 2)] (the engine counts a combo's punches from 0)
-                    notes[i.clamp(0, 2) as usize]
+                    Some(combo()?)
                 };
                 let landed = hit_t
                     .get(&i)
@@ -318,12 +333,21 @@ impl Sound for TrumpetSound {
                 if !landed && hp < 0.5 && h01(&[t, 4.0]) < 0.5 * dmath::pow(1.0 - hp, 1.5) {
                     continue;
                 }
+                let m = match early {
+                    Some(m) => m,
+                    // Composed: the line's note of a punch that really sounds (asked for after the thinning, so
+                    // a dropped ghost leaves no trace); the combo's own note without a line, or on a rest of it
+                    None => match if line { ctx.play_line(name, tq)? } else { None } {
+                        Some(m) => m,
+                        None => combo()?,
+                    },
+                };
                 let last = i == 2;
                 let vel = if landed { 1.0 } else { 0.7 };
                 let x = self.tpt(ctx, m, if last { 0.2 } else { 0.12 }, vel, None)?;
                 let (sig, g, lead) = self.colour(ctx, &x, t, 0.8, &self.colour_args())?;
                 let gain = (if landed { 0.38 } else { 0.17 }) * (if last { 1.15 } else { 1.0 }) * g;
-                mix.place(&bus, &Sig::Mono(sig), tq, gain, pan);
+                mix.note(&bus, &Sig::Mono(sig), tq, gain * ctx.soften(name, m), pan, one);
                 // self.hiss(0.07, int(t * 50) % 97)
                 let seed = noise_seed(H, t * 50.0)? % 97;
                 let side = if k == 0 { 1.0 } else { -1.0 };
@@ -332,19 +356,20 @@ impl Sound for TrumpetSound {
                     if lead > 0.04 {
                         // the leader: the octave below joins
                         let low = self.tpt(ctx, m - 12, 0.12, 0.8, None)?;
-                        mix.place(&bus, &Sig::Mono(self.tone(ctx, &low, t, 1.0)?), tq, 0.14 * g, pan);
+                        mix.note(&bus, &Sig::Mono(self.tone(ctx, &low, t, 1.0)?), tq, 0.14 * g, pan, one);
                     }
                     let thump = synth::thud(if last { 0.32 } else { 0.22 }, 150.0, 60.0, noise_seed(H, t * 9.0)?);
                     mix.place("fx", &Sig::Mono(thump), tq, if last { 0.16 } else { 0.09 }, -0.8 * pan);
                 }
                 if ctx.run_at("HA", t, k)? > 0.0 && !last {
-                    // DOUBLE TONGUE: a ta-ka grace on each punch
+                    // DOUBLE TONGUE: a ta-ka grace on each punch (the punch's own pitch again; it stays on `place`,
+                    // so the grace does not end the punch it follows)
                     let grace = self.tpt(ctx, m, 0.05, 0.7, None)?;
                     mix.place(
                         &bus,
                         &Sig::Mono(self.tone(ctx, &grace, t, 1.0)?),
                         tq + s16 / 2.0,
-                        0.12,
+                        0.12 * ctx.soften(name, m),
                         pan,
                     );
                 }
@@ -375,12 +400,27 @@ impl Sound for TrumpetSound {
                         0.0,
                     );
                 } else if is(&cfg.unlock2.name)? {
-                    // DOUBLE TONGUE: ta-ka-ta-ka on the fifth
+                    // DOUBLE TONGUE: ta-ka-ta-ka on the fifth. Composed: on the line's note where the burst
+                    // starts; the first note takes it and the repeats stay on it
+                    let m = match if composed && line {
+                        ctx.play_line(name, tq)?
+                    } else {
+                        None
+                    } {
+                        Some(m) => m,
+                        None => self.key_root(ctx, 72) + 7,
+                    };
                     for j in 0..8 {
                         let vel = 0.7 + 0.3 * if j % 2 == 0 { 1.0 } else { 0.0 };
-                        let x = self.tpt(ctx, self.key_root(ctx, 72) + 7, 0.05, vel, None)?;
+                        let x = self.tpt(ctx, m, 0.05, vel, None)?;
                         let at = tq + f64::from(j) * s16 / 2.0;
-                        mix.place(&bus, &Sig::Mono(self.tone(ctx, &x, t, 1.0)?), at, 0.22, pan);
+                        mix.place(
+                            &bus,
+                            &Sig::Mono(self.tone(ctx, &x, t, 1.0)?),
+                            at,
+                            0.22 * ctx.soften(name, m),
+                            pan,
+                        );
                     }
                 } else if is(&cfg.low.name)? {
                     // HIGH C: the charge, the high C swelling open

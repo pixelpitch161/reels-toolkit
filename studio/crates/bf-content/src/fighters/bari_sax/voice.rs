@@ -29,6 +29,9 @@ const FORMANTS: [(f64, f64, f64); 3] = [(560.0, 300.0, 1.7), (1350.0, 520.0, 0.8
 const BRIGHT: f64 = 0.6;
 /// The seconds a note rings past its held length: `n = int((dur + .16) * SR)`.
 const TAIL: f64 = 0.16;
+/// The widest scoop of a steady note ([`bari_tone_scooped`]): 1.2 % flat, about a fifth of a semitone, as a real
+/// bari sax's (sound upgrade, "Bari sax: no slide").
+pub const STEADY_SCOOP: f64 = 0.012;
 
 /// The BARI SAX's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -60,6 +63,17 @@ impl Voice for BariSaxVoice {
 /// Where Python raises: `dur` is not a number, or below -0.16 s (a negative number of samples); `f` is not a
 /// finite number (its seed).
 pub fn bari_tone(f: f64, dur: f64, v: f64, honk: f64) -> Vec<f64> {
+    bari_tone_scooped(f, dur, v, honk, None)
+}
+
+/// [`bari_tone`] with its scoop held to `max_scoop` (a share of the pitch; `None` leaves the module's own scoop,
+/// which is [`bari_tone`] to the sample). The Pixel Pitch tone starts each note 3.5 % flat, and a full honk 7.5 %,
+/// over a semitone: heard on every long honk that is a slide. BARI SAX's part asks for [`STEADY_SCOOP`] under the
+/// Composed arrangement (sound upgrade, "Bari sax: no slide"); Classic and the instrument's voice ask for none.
+///
+/// # Panics
+/// As [`bari_tone`].
+pub fn bari_tone_scooped(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<f64>) -> Vec<f64> {
     let n = pp::len(dur + TAIL);
     let t = pp::tt(n);
     let rel = if dur < 0.15 { 0.035 } else { 0.06 };
@@ -76,6 +90,10 @@ pub fn bari_tone(f: f64, dur: f64, v: f64, honk: f64) -> Vec<f64> {
     //      (1 + .003 * (1 - honk) * np.sin(2 * np.pi * 4.8 * t) * np.clip((t - .2) / .3, 0, 1))
     let wobble = 2.0 * PI * 4.8;
     let scoop = 0.035 + 0.04 * honk;
+    let scoop = match max_scoop {
+        Some(most) if scoop > most => most,
+        _ => scoop,
+    };
     let vib = 0.003 * (1.0 - honk);
     let fr: Vec<f64> = t
         .iter()

@@ -8,6 +8,10 @@
 //! supersaw sweep, WHITE NOISE's blast and high note; the title blast, the count-in, the fall-apart, the stinger, the
 //! solo, the reassembly run.
 //!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) the pulses play the written line instead of the arp:
+//! the first cable the line's note of its 16th, the others the chord's tones under it, and the accents of a landed
+//! plug or cut the line's note at the hit; notes above C6 are softened. The moves and the endings keep their notes.
+//!
 //! Its notes are #31's own (`note` with `_fit`'s 0.03 s fade, its own cache and gain table: `MusicCtx::own_note`,
 //! the module's `note_helper`). #31's arp table and fixed notes are the module's own rules (its docstring).
 
@@ -233,6 +237,16 @@ impl SynthSound {
         Ok(tones.into_iter().take(8).collect())
     }
 
+    /// The written line's note for a pulse or an accent at `tq` (sound upgrade: under the Composed arrangement the
+    /// synth plays its line). `None` under Classic and on a rest of the line: the arp's own note stands then.
+    fn written(&self, ctx: &MusicCtx, tq: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), tq)
+        } else {
+            Ok(None)
+        }
+    }
+
     /// The semitones from F to the tonic chord's root, in -6..5.
     pub fn shift(&self, ctx: &MusicCtx) -> Result<i32, MusicError> {
         let ch = ctx
@@ -304,7 +318,7 @@ impl Sound for SynthSound {
 
     fn play(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let k = self.k;
-        let bus = self.bus(ctx);
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
         let s16 = ctx.show.grid.s16;
         let t_ko = ctx.show.t_ko;
         let args = self.colour_args();
@@ -331,11 +345,25 @@ impl Sound for SynthSound {
             let n = evs[0].i(4);
             let arp = self.arp(ctx, ctx.harmony.chord_at(tq))?;
             let lvl = self.level(ctx, tq)?;
+            // Composed: the first cable plays the line's note of this 16th, the others the chord's tones under it
+            // (the nearest first, at least a minor third under), so the line is the top and the loudest
+            let line = self.written(ctx, tq)?;
+            let under = match line {
+                Some(l) => ctx
+                    .harmony
+                    .chord_tones(l - 24, l - 3, ctx.harmony.chord_at(tq))
+                    .map_err(bad)?,
+                None => Vec::new(),
+            };
             for (j, _) in evs.iter().enumerate() {
-                let m = arp[(n + 2 * j as i64).rem_euclid(8) as usize];
+                let m = match line {
+                    Some(l) if j == 0 => l,
+                    Some(l) => under.iter().rev().nth(j - 1).copied().unwrap_or(l - 12),
+                    None => arp[(n + 2 * j as i64).rem_euclid(8) as usize],
+                };
                 let x = self.arp_lv(ctx, f64::from(m), lvl, if j == 0 { 0.8 } else { 0.6 })?;
                 let (sig, g, _) = self.colour(ctx, &x, tq, 1.0, &args)?;
-                let gain = (if j == 0 { 0.22 } else { 0.10 }) * g;
+                let gain = (if j == 0 { 0.22 } else { 0.10 }) * g * ctx.soften(name, m);
                 mix.place(&bus, &Sig::Mono(sig), tq, gain, 0.2 + 0.15 * dmath::sin(j as f64 * 1.7));
             }
         }
@@ -356,15 +384,24 @@ impl Sound for SynthSound {
                     match e.s(7) {
                         "plug" => {
                             mix.place("fx", &Sig::Mono(jack_click((t * 31.0) as u64)), t, 0.16, pan);
-                            let x = self.arp_lv(ctx, f64::from(arp[0] + 12), lvl, 1.0)?;
+                            // Composed: the accent is the line's note at the hit (the line already sits where
+                            // the kit's accents do, an octave over the arp); the kit's: the arp's first note, up
+                            let m = match self.written(ctx, tq)? {
+                                Some(m) => m,
+                                None => arp[0] + 12,
+                            };
+                            let x = self.arp_lv(ctx, f64::from(m), lvl, 1.0)?;
                             let sig = self.colour(ctx, &x, t, 1.0, &args)?.0;
-                            mix.place(&bus, &Sig::Mono(sig), tq, 0.22, pan);
+                            mix.place(&bus, &Sig::Mono(sig), tq, 0.22 * ctx.soften(name, m), pan);
                         }
                         "lash" => {
-                            let m = arp[e.i(8).rem_euclid(8) as usize] + 12;
+                            let m = match self.written(ctx, tq)? {
+                                Some(m) => m,
+                                None => arp[e.i(8).rem_euclid(8) as usize] + 12,
+                            };
                             let x = self.arp_lv(ctx, f64::from(m), 3, 1.0)?;
                             let sig = self.colour(ctx, &x, t, 1.0, &args)?.0;
-                            mix.place(&bus, &Sig::Mono(sig), tq, 0.26, pan);
+                            mix.place(&bus, &Sig::Mono(sig), tq, 0.26 * ctx.soften(name, m), pan);
                             let th = synth::thud(0.2, 160.0, 60.0, (t * 7.0) as u64);
                             mix.place("fx", &Sig::Mono(th), tq, 0.10, 0.0);
                         }

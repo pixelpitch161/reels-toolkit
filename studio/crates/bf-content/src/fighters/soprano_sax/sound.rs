@@ -5,6 +5,10 @@
 //! chord tone, every new hornet a grace note up; KICK THE HIVE a buzzing chromatic run, BUZZ OFF a tremolo between a
 //! chord tone and its upper neighbour, QUEEN a proud descending call. It falls apart as a squealing chromatic fall; the
 //! stinger is a held high tonic with a flutter, the solo its notes, the reassembly a run up the chord.
+//!
+//! Under the Composed arrangement (sound upgrade, 2026-11-25) the trill, the grace note and the sting take their
+//! pitch from the written line, each ends the note before it (one voice), and the notes above C6 are softened.
+//! The three moves, the title blast, the count-in and the endings keep their own notes. Classic is the part above.
 
 use bf_core::harmony::HarmonyError;
 use bf_sound::mix::{Mix, Sig};
@@ -47,6 +51,17 @@ impl SopranoSaxSound {
             ));
         }
         Ok(v)
+    }
+
+    /// The written line's note for an ordinary sound at `tq` (sound upgrade: under the Composed arrangement every
+    /// trill, grace and sting takes its pitch from the line). `None` under Classic and on a rest of the line: the
+    /// part's own pick from the chord stands then.
+    fn written(&self, ctx: &MusicCtx, tq: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), tq)
+        } else {
+            Ok(None)
+        }
     }
 
     /// The episode's first chord.
@@ -109,10 +124,12 @@ impl Sound for SopranoSaxSound {
 
     fn play(&self, ctx: &MusicCtx, _bed: &dyn Bed, mix: &mut Mix) -> Played {
         let k = self.k;
-        let bus = self.bus(ctx);
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let cfg = ctx.cfg[k];
+        // under Composed a soprano sax sounds one note at a time: a new ordinary note ends the one before it
+        let one = ctx.one_voice(name);
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -131,19 +148,30 @@ impl Sound for SopranoSaxSound {
                 "hornet" => {
                     // the launch: a quick trill, one more note for every hornet sent
                     let n = event_number(H, e, 3)?.clamp(1.0, 4.0) as usize;
-                    let ms = self.tones(ctx, ch, 70, 86)?;
-                    let m = ms[0];
+                    // Composed: the trill starts on the line's note and stays on it (its upper note is the next
+                    // tone of the scale); the kit's: the chord's lowest tone and the semitone above
+                    let (m, up) = match self.written(ctx, tq)? {
+                        Some(m) => (m, ctx.passing_tone(m, m + 1) - m),
+                        None => (self.tones(ctx, ch, 70, 86)?[0], 1),
+                    };
                     for j in 0..(n + 1) {
-                        let x = self.reed(ctx, m + (j % 2) as i32, s16 * 0.45, 0.7, 0.8)?;
-                        mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16 * 0.5, 0.20, 0.25);
+                        let mj = m + (j % 2) as i32 * up;
+                        let x = self.reed(ctx, mj, s16 * 0.45, 0.7, 0.8)?;
+                        let at = tq + j as f64 * s16 * 0.5;
+                        mix.note(&bus, &Sig::Mono(x), at, 0.20 * ctx.soften(name, mj), 0.25, one);
                     }
                 }
                 "swarm_grow" => {
                     let size = event_number(H, e, 3)?.max(1.0) as usize;
-                    let ms = self.tones(ctx, ch, 72, 88)?;
-                    let m = ms[size % ms.len()];
+                    let m = match self.written(ctx, tq)? {
+                        Some(m) => m,
+                        None => {
+                            let ms = self.tones(ctx, ch, 72, 88)?;
+                            ms[size % ms.len()]
+                        }
+                    };
                     let x = self.reed(ctx, m, s16 * 0.6, 0.75, 0.8)?;
-                    mix.place(&bus, &Sig::Mono(x), tq, 0.18, -0.2);
+                    mix.note(&bus, &Sig::Mono(x), tq, 0.18 * ctx.soften(name, m), -0.2, one);
                 }
                 "hit" => {
                     let what = ["sting", "hive", "buzz", "queen"];
@@ -153,10 +181,15 @@ impl Sound for SopranoSaxSound {
                     }
                     if stung {
                         // a sting: a short, high stab and a tiny click
-                        let ms = self.tones(ctx, ch, 74, 88)?;
-                        let m = *ms.last().unwrap_or(&79);
+                        let m = match self.written(ctx, tq)? {
+                            Some(m) => m,
+                            None => {
+                                let ms = self.tones(ctx, ch, 74, 88)?;
+                                *ms.last().unwrap_or(&79)
+                            }
+                        };
                         let x = self.reed(ctx, m, s16 * 0.8, 0.95, 1.1)?;
-                        mix.place(&bus, &Sig::Mono(x), tq, 0.24, 0.1);
+                        mix.note(&bus, &Sig::Mono(x), tq, 0.24 * ctx.soften(name, m), 0.1, one);
                         mix.place(
                             "fx",
                             &Sig::Mono(synth::thud(0.05, 1800.0, 900.0, THUD_SEED)),
