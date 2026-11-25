@@ -199,10 +199,10 @@ mod tests {
 
     #[test]
     fn a_full_scale_tone_reads_as_the_standard_says() {
-        // BS.1770: a 997 Hz sine at 0 dBFS in both channels is -0.691 + 10 log10(2 * 0.5) + K(997 Hz) = about
-        // -0.7 + 0.0; at -20 dBFS, 20 lower. The K-weighting is 0 dB at 1 kHz to within 0.1.
+        // BS.1770: a 997 Hz sine at 0 dBFS in both channels reads 0 LKFS: -0.691 + 10 log10(2 * 0.5) plus the
+        // K-weighting's +0.69 dB near 1 kHz (the offset is there to cancel it). At -20 dBFS, 20 lower.
         let x = sine(997.0, -20.0, 3.0);
-        assert!((integrated(&x) - -20.69).abs() < 0.2, "{}", integrated(&x));
+        assert!((integrated(&x) - -20.0).abs() < 0.1, "{}", integrated(&x));
         // Silence before and after does not change a gated figure by much.
         let mut padded = vec![[0.0; 2]; SR * 2];
         padded.extend(&x);
