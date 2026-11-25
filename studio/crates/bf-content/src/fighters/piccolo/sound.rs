@@ -5,7 +5,7 @@
 //! a shower of glassy high notes falling one per shard. Notes come from its own voice ([`tone`]) through a cache of
 //! its own.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 
 use bf_core::harmony::HarmonyError;
@@ -83,6 +83,16 @@ impl PiccoloSound {
         Ok(())
     }
 
+    /// An ordinary note (a needle's note, a pierce): `x` through its tone at `t` on its bus. Under Composed the
+    /// piccolo sounds one note at a time, so this note ends the one before it (sound upgrade, M5); under Classic it
+    /// is [`PiccoloSound::put`].
+    fn sing(&self, ctx: &MusicCtx, mix: &mut Mix, x: &[f64], t: f64, gain: f64) -> Played {
+        let (sig, g, _) = self.colour(ctx, x, t, 1.0, &self.colour_args())?;
+        let one = ctx.one_voice(self.name(ctx));
+        mix.note(&self.bus(ctx), &Sig::Mono(sig), t, gain * g, 0.15, one);
+        Ok(())
+    }
+
     /// The `b`th note of the key's scale above `m` (the ticks up the ropes), kept inside its register.
     fn step_up(&self, ctx: &MusicCtx, m: i32, b: i64, t: f64) -> Result<i32, MusicError> {
         let hi = ctx.cfg[self.k].register.1;
@@ -148,6 +158,12 @@ impl Sound for PiccoloSound {
         let ev = &ctx.rec.events;
         let t_ko = ctx.show.t_ko + 0.01;
         let beat = ctx.show.grid.beat;
+        let name = self.name(ctx);
+        // sound upgrade: under Composed a needle and a pierce sound the note `play_line` hands them, every ordinary
+        // note is softer the higher it is above C6, and the bounce ticks play an octave lower (M3); GLASS SHATTER's
+        // shards keep their own notes
+        let composed = ctx.composed_on();
+        let mut shards: BTreeSet<i64> = BTreeSet::new();
         let mut base: BTreeMap<i64, i32> = BTreeMap::new();
         let mut last = self.top(ctx) - 12;
         // the shots: a grace note a step above, then the line's note (GLASS SHATTER: one falling note per shard)
@@ -165,16 +181,21 @@ impl Sound for PiccoloSound {
                 j_sh += 1;
                 let m = fall.get(i).copied().unwrap_or(last);
                 base.insert(w.id, m);
+                shards.insert(w.id);
                 self.put(ctx, mix, &self.pic(f64::from(m), 0.08, 0.6)?, w.t, 0.12)?;
                 continue;
             }
             let tq = ctx.q16(w.t);
-            let m = self.line(ctx, tq, last)?;
+            // the note it sounds (Classic: the line's, as `line` reads it)
+            let m = ctx.play_line(name, tq)?.unwrap_or(last);
             last = m;
             base.insert(w.id, m);
+            // the grace stays ahead of the note and does not end the note before it
             let grace = self.step_up(ctx, m, 1, tq)?;
-            self.put(ctx, mix, &self.pic(f64::from(grace), 0.03, 0.6)?, tq - 0.035, 0.16)?;
-            self.put(ctx, mix, &self.pic(f64::from(m), 0.45 * beat, 0.85)?, tq, 0.30)?;
+            let x = self.pic(f64::from(grace), 0.03, 0.6)?;
+            self.put(ctx, mix, &x, tq - 0.035, 0.16 * ctx.soften(name, grace))?;
+            let x = self.pic(f64::from(m), 0.45 * beat, 0.85)?;
+            self.sing(ctx, mix, &x, tq, 0.30 * ctx.soften(name, m))?;
         }
         // the bounces: quick high ticks up the scale, a rope at a time
         for b in state::bounces(ev, k) {
@@ -182,8 +203,14 @@ impl Sound for PiccoloSound {
                 break;
             }
             let Some(&m) = base.get(&b.id) else { continue };
-            let n = self.step_up(ctx, m, b.b + 1, b.t)?;
-            self.put(ctx, mix, &self.pic(f64::from(n), 0.02, 0.5)?, b.t, 0.07)?;
+            let mut n = self.step_up(ctx, m, b.b + 1, b.t)?;
+            let mut soft = 1.0;
+            if composed && !shards.contains(&b.id) {
+                // the same climb an octave lower, out of the top of its register; a tick is too short to end a note
+                n -= 12;
+                soft = ctx.soften(name, n);
+            }
+            self.put(ctx, mix, &self.pic(f64::from(n), 0.02, 0.5)?, b.t, 0.07 * soft)?;
         }
         // a pierce: a bright chord tone above the line
         for h in state::pierces(ev, k) {
@@ -196,7 +223,14 @@ impl Sound for PiccoloSound {
                 .harmony
                 .chord_tones(m + 1, m + 9, ctx.harmony.chord_at(tq))
                 .map_err(bad)?;
-            if let Some(&u) = tones.first() {
+            if composed
+                && !shards.contains(&h.id)
+                && let Some(own) = ctx.play_line(name, tq)?
+            {
+                // the line's note at the pierce, not a chord tone above the needle's
+                let x = self.pic(f64::from(own), 0.3 * beat, 1.0)?;
+                self.sing(ctx, mix, &x, tq, 0.22 * ctx.soften(name, own))?;
+            } else if let Some(&u) = tones.first() {
                 let hi = ctx.cfg[k].register.1;
                 let u = if u > hi { u - 12 } else { u };
                 self.put(ctx, mix, &self.pic(f64::from(u), 0.3 * beat, 1.0)?, tq, 0.22)?;

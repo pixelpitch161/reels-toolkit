@@ -337,9 +337,14 @@ impl Sound for HornSound {
                         if h01(&[round_half_even(tq / s16), 3.0]) < 0.5 * dmath::pow(1.0 - hp, 1.6) {
                             continue;
                         }
+                        // the note it sounds (sound upgrade: under Composed the one `play_line` hands this call, which
+                        // its echoes then repeat; under Classic the line's note, as above)
+                        let m = ctx.play_line(&name, tq)?.unwrap_or(m);
+                        call_note.insert(call, (tq, m));
+                        let one = ctx.one_voice(&name);
                         let x = self.horn(ctx, m, 0.55 * beat, 0.8, None)?;
                         let (sig, g, lead) = self.tone(ctx, &x, t, 1.0)?;
-                        mix.place(&bus, &Sig::Mono(sig), tq, 0.24 * g, pan);
+                        mix.note(&bus, &Sig::Mono(sig), tq, 0.24 * g, pan, one);
                         if lead > 0.04 {
                             // the leader: a horn a sixth below (its own harmony)
                             let under = ctx
@@ -349,11 +354,12 @@ impl Sound for HornSound {
                             if let Some(&low) = under.last() {
                                 let x = self.horn(ctx, low, 0.55 * beat, 0.65, None)?;
                                 let sig = self.tone(ctx, &x, t, 1.0)?.0;
-                                mix.place(&bus, &Sig::Mono(sig), tq, 0.10 * g, pan);
+                                mix.note(&bus, &Sig::Mono(sig), tq, 0.10 * g, pan, one);
                             }
                         }
                     } else if let Some(&(_, m)) = call_note.get(&call) {
-                        // an echo: the same note, quieter and darker each time
+                        // an echo: the same note, quieter and darker each time (its ghost's answer: it rings over
+                        // the horn's own next call, so it is not one of the horn's one-voice notes)
                         let x = self.horn(ctx, m, 0.4 * beat, 0.6, None)?;
                         let x = synth::lp(&x, 2600.0 / dmath::pow(1.55, j as f64), FILTER_O);
                         let sig = self.tone(ctx, &x, t, 0.5)?.0;
@@ -370,9 +376,17 @@ impl Sound for HornSound {
                     let sub = event_int(H, e, 8)?;
                     // ct[(int(e[8]) + int(_h01_34(t, 5) * 3)) % len(ct)]
                     let at = imod_py(sub + (h01(&[t, 5.0]) * 3.0) as i64, ct.len() as i64);
-                    let m = ct[at as usize];
+                    let mut m = ct[at as usize];
+                    if ctx.composed_on()
+                        && let Some(own) = ctx.play_line(&name, tq)?
+                    {
+                        // sound upgrade: under Composed the stab is the written line's note at the hit, in the
+                        // stab's own octave (F4 to E5), not a pick from the chord
+                        m = 65 + (own - 65).rem_euclid(12);
+                    }
                     let pan = pan_of(event_number(H, e, 5)?);
                     let call = sub == 0;
+                    // a short accent on top of the call: it does not end the horn's note
                     let sig = self.tone(ctx, &self.horn(ctx, m, 0.1, 0.9, None)?, t, 1.0)?.0;
                     mix.place(&bus, &Sig::Mono(sig), tq, if call { 0.12 } else { 0.08 }, pan);
                     let thump = synth::thud(0.2, 160.0, 70.0, noise_seed(H, t * 11.0)?);

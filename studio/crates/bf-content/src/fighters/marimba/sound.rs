@@ -4,7 +4,7 @@
 //! rolls the line's note in 32nds; DEAD STROKE's pin is a dead, muted stroke and a thud; FIVE OCTAVES is one note per
 //! mallet, rising through the whole instrument. Notes come from its own voice ([`bar`]) through a cache of its own.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 
 use bf_core::harmony::HarmonyError;
@@ -74,6 +74,13 @@ impl MarimbaSound {
     /// Its line's note at `t`, or the last note it played (a rest keeps the run going on that note).
     fn line(&self, ctx: &MusicCtx, t: f64, last: i32) -> Result<i32, MusicError> {
         Ok(ctx.line_at(self.name(ctx), t)?.unwrap_or(last))
+    }
+
+    /// The note an ordinary stroke sounds at `t`: the line's note through [`MusicCtx::play_line`] (under Composed
+    /// the stroke is counted there, and in a moving style it is never the note of the stroke before it), or `or`
+    /// on a rest.
+    fn sounded(&self, ctx: &MusicCtx, t: f64, or: i32) -> Result<i32, MusicError> {
+        Ok(ctx.play_line(self.name(ctx), t)?.unwrap_or(or))
     }
 
     /// `x` through its tone at `t` on its bus.
@@ -149,6 +156,11 @@ impl Sound for MarimbaSound {
         let t_ko = ctx.show.t_ko + 0.01;
         let beat = ctx.show.grid.beat;
         let lo = ctx.cfg[k].register.0;
+        let name = self.name(ctx);
+        // sound upgrade: under Composed every ordinary stroke (a throw, its bounces, its landing) sounds the written
+        // line's note at its own 16th, softer at the very top; FIVE OCTAVES' mallets keep their own notes
+        let composed = ctx.composed_on();
+        let mut five: BTreeSet<i64> = BTreeSet::new();
         let mut base: BTreeMap<i64, i32> = BTreeMap::new();
         let mut last = self.top(ctx) - 12;
         // the throws: the line's note (FIVE OCTAVES: one note per mallet, rising through the instrument)
@@ -168,14 +180,16 @@ impl Sound for MarimbaSound {
                 j_oct += 1;
                 let m = span.get(i).copied().unwrap_or(last);
                 base.insert(w.id, m);
+                five.insert(w.id);
                 self.put(ctx, mix, &self.mar(f64::from(m), 0.25, 0.7)?, w.t, 0.16)?;
                 continue;
             }
             let tq = ctx.q16(w.t);
-            let m = self.line(ctx, tq, last)?;
+            let m = self.sounded(ctx, tq, last)?;
             last = m;
             base.insert(w.id, m);
-            self.put(ctx, mix, &self.mar(f64::from(m), 0.6 * beat, 0.85)?, tq, 0.36)?;
+            let x = self.mar(f64::from(m), 0.6 * beat, 0.85)?;
+            self.put(ctx, mix, &x, tq, 0.36 * ctx.soften(name, m))?;
         }
         // the bounces: up the scale, a wall at a time
         for b in state::bounces(ev, k) {
@@ -184,13 +198,19 @@ impl Sound for MarimbaSound {
             }
             let Some(&m) = base.get(&b.id) else { continue };
             let tq = ctx.q16(b.t);
-            let n = self.step_up(ctx, m, b.b, tq)?;
+            let mut n = self.step_up(ctx, m, b.b, tq)?;
+            let mut soft = 1.0;
+            if composed && !five.contains(&b.id) {
+                // the line's note at the bounce, not the next step of the run
+                n = self.sounded(ctx, tq, n)?;
+                soft = ctx.soften(name, n);
+            }
             self.put(
                 ctx,
                 mix,
                 &self.mar(f64::from(n), 0.3 * beat, 0.6 + 0.08 * b.b.min(4) as f64)?,
                 tq,
-                0.22,
+                0.22 * soft,
             )?;
         }
         // the landings: a chord tone under the line and a wooden knock
@@ -207,8 +227,18 @@ impl Sound for MarimbaSound {
                 .harmony
                 .chord_tones(m - 9, m - 3, ctx.harmony.chord_at(tq))
                 .map_err(bad)?;
-            if let Some(&u) = tones.last() {
-                self.put(ctx, mix, &self.mar(f64::from(u), 0.5 * beat, 1.0)?, tq, 0.30)?;
+            let mut under = tones.last().copied();
+            let mut soft = 1.0;
+            if composed
+                && !five.contains(&e.id)
+                && let Some(own) = ctx.play_line(name, tq)?
+            {
+                // the line's note at the landing, not a chord tone under the mallet's
+                under = Some(own);
+                soft = ctx.soften(name, own);
+            }
+            if let Some(u) = under {
+                self.put(ctx, mix, &self.mar(f64::from(u), 0.5 * beat, 1.0)?, tq, 0.30 * soft)?;
             }
             let knock = synth::thud(0.12, 420.0, 180.0, (e.id.rem_euclid(97) + 3) as u64);
             mix.place("fx", &Sig::Mono(knock), tq, 0.08, 0.0);

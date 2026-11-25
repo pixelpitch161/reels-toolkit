@@ -130,6 +130,17 @@ impl OboeSound {
         let (name, bus) = (self.name(ctx), self.bus(ctx));
         let (beat, s16) = (ctx.show.grid.beat, ctx.show.grid.s16);
         let low = &ctx.cfg[k].low.name;
+        // sound upgrade: under Composed the oboe sounds one note at a time, and its beams and their rings play the
+        // written line (the tuning A stays in its special moves and the title)
+        let one = ctx.one_voice(name);
+        let top = ctx.cfg[k].register.1;
+        let written = |tq: f64| -> Result<Option<i32>, MusicError> {
+            if ctx.composed_on() {
+                ctx.play_line(name, tq)
+            } else {
+                Ok(None)
+            }
+        };
         let mine = |e: &Event, kind: &str| -> Result<bool, MusicError> { Ok(e.kind == kind && event_is(H, e, 2, k)?) };
         let hit =
             |e: &Event, how: &str| -> Result<bool, MusicError> { Ok(mine(e, "hit")? && event_is_str(H, e, 7, how)?) };
@@ -142,19 +153,32 @@ impl OboeSound {
             if mine(e, "tune")? {
                 // the tuning A with every beam
                 let tq = ctx.q16(t);
-                let (sig, g, lead) = self.note(ctx, A4, 0.75 * beat, 0.95, t)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.48 * g, 0.22);
+                let own = written(tq)?;
+                let (m, soft) = own.map_or((A4, 1.0), |m| (f64::from(m), ctx.soften(name, m)));
+                let (sig, g, lead) = self.note(ctx, m, 0.75 * beat, 0.95, t)?;
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.48 * g * soft, 0.22, one);
                 if lead > 0.04 {
-                    let high = self.note(ctx, A4 + 12.0, 0.75 * beat, 0.6, t)?.0;
-                    mix.place(&bus, &Sig::Mono(high), tq, 0.14 * g, 0.25);
+                    // the leader: its octave (under a written note whose upper octave is out of its register)
+                    let (high, soft) = match own {
+                        Some(m) if m + 12 > top => (f64::from(m - 12), 1.0),
+                        Some(m) => (f64::from(m + 12), ctx.soften(name, m + 12)),
+                        None => (A4 + 12.0, 1.0),
+                    };
+                    let high = self.note(ctx, high, 0.75 * beat, 0.6, t)?.0;
+                    mix.note(&bus, &Sig::Mono(high), tq, 0.14 * g * soft, 0.25, one);
                 }
             } else if hit(e, "tune")? {
                 // it lands: the A rings out against a sour twin
                 let tq = ctx.q16(t);
-                let ring = self.note(ctx, A4 + 12.0, 0.25, 0.9, t)?.0;
-                mix.place(&bus, &Sig::Mono(ring), tq + s16, 0.22, 0.2);
+                // Composed: the line's note on the ring's own 16th, and the twin a quarter-tone flat an octave under it
+                let own = written(tq + s16)?;
+                let (m, twin, soft) = own.map_or((A4 + 12.0, A4 - 0.5, 1.0), |m| {
+                    (f64::from(m), f64::from(m) - 12.5, ctx.soften(name, m))
+                });
+                let ring = self.note(ctx, m, 0.25, 0.9, t)?.0;
+                mix.note(&bus, &Sig::Mono(ring), tq + s16, 0.22 * soft, 0.2, one);
                 // in the enemy's own voice
-                let sour: Vec<f64> = victim.voice(ctx, A4 - 0.5, 0.3, 0.7)?.iter().map(|v| v * 0.5).collect();
+                let sour: Vec<f64> = victim.voice(ctx, twin, 0.3, 0.7)?.iter().map(|v| v * 0.5).collect();
                 let twin = ctx.colour(&sour, victim.k(), t, 1.0, &victim.colour_args())?.0;
                 mix.place(&victim.bus(ctx), &Sig::Mono(twin), tq + s16, 0.18, -0.15);
             } else if hit(e, "sting")? {
@@ -165,14 +189,14 @@ impl OboeSound {
                 if o_dropped {
                     continue;
                 }
-                let m = ctx.line_at(name, tq)?.ok_or_else(|| {
+                let m = ctx.play_line(name, tq)?.ok_or_else(|| {
                     MusicError::new(
                         H,
                         format!("{name}'s line has a rest at {tq} s: this part plays a note on every sting"),
                     )
                 })?;
                 let (sig, g, _) = self.note(ctx, f64::from(m), 0.13, 0.78, t)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.25);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g * ctx.soften(name, m), 0.25, one);
             } else if mine(e, "endless")? {
                 // ENDLESS NOTE: the A held for a bar (circular breathing)
                 let tq = ctx.q16(t);

@@ -187,6 +187,24 @@ impl TenorSaxSound {
         Ok(fit_reg(m, lo, lo + 19))
     }
 
+    /// The note a throw or its landing sounds at `t`: as [`TenorSaxSound::line`], read through
+    /// [`MusicCtx::play_line`] (sound upgrade: under Composed the note is counted there, and in a moving style it
+    /// is never the note sounded before it).
+    ///
+    /// # Errors
+    /// As [`TenorSaxSound::line`].
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        let name = self.name(ctx);
+        let lo = self.register(ctx).0;
+        let m = ctx.play_line(name, t)?.ok_or_else(|| {
+            MusicError::new(
+                H,
+                format!("{name}'s line has a rest at {t} s, where its riff needs a note"),
+            )
+        })?;
+        Ok(fit_reg(m, lo, lo + 19))
+    }
+
     /// `root(t)`: the root of the chord at `t`, the lowest at or above its bottom note.
     fn root(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let lo = self.register(ctx).0;
@@ -297,6 +315,9 @@ impl Sound for TenorSaxSound {
         let ev = &ctx.rec.events;
         let mut th = Thinner::new(530.0 + k as f64);
         let mut riff_j: BTreeMap<i64, i64> = BTreeMap::new();
+        // sound upgrade: under Composed it sounds one note at a time, and its poses, throws and landed throws play
+        // the written line
+        let one = ctx.one_voice(self.name(ctx));
         for e in ev {
             let t = e.t;
             if t > t_ko + 0.01 {
@@ -309,10 +330,16 @@ impl Sound for TenorSaxSound {
             match e.kind.as_str() {
                 "pose" => {
                     // the pose: a big honk on the root
-                    let m = self.root(ctx, tq)?;
+                    let mut m = self.root(ctx, tq)?;
+                    if ctx.composed_on()
+                        && let Some(own) = ctx.play_line(self.name(ctx), tq)?
+                    {
+                        // the line's note at the pose, in the octave the root's honk sits in
+                        m = fit_reg(own, lo, lo + 11);
+                    }
                     let x = self.tone(ctx, m, beat * 0.7, 1.0, 1.0, 0.0)?;
                     let (sig, g) = self.col(ctx, &x, t)?;
-                    mix.place(&bus, &Sig::Mono(gliss(&sig, 1.5, 0.06)?), tq, 0.55 * g, pan);
+                    mix.note(&bus, &Sig::Mono(gliss(&sig, 1.5, 0.06)?), tq, 0.55 * g, pan, one);
                 }
                 "throw" => {
                     // each throw: a note of the riff (8ths of its line)
@@ -322,17 +349,24 @@ impl Sound for TenorSaxSound {
                     if !th.keep(round_half_even(tq / s16), ctx.hp_at(k, tq) / 100.0) {
                         continue;
                     }
-                    let m = self.line(ctx, tq)?;
+                    let m = self.sounded(ctx, tq)?;
                     let x = self.tone(ctx, m, s16 * 1.7, 0.9, 0.45, 0.0)?;
                     let (sig, g) = self.col(ctx, &x, t)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.44 * g, pan + 0.1 * dmath::sin(j as f64));
+                    mix.note(
+                        &bus,
+                        &Sig::Mono(sig),
+                        tq,
+                        0.44 * g,
+                        pan + 0.1 * dmath::sin(j as f64),
+                        one,
+                    );
                 }
                 "splat" => {
                     let seed = noise_seed(H, (t * 100.0).trunc())?;
                     if e.at(6).truthy() {
                         // a landed throw: a growl stab + the squish
-                        let m = fit_reg(self.line(ctx, tq)? + 12, lo + 7, hi);
-                        mix.place(&bus, &self.sig(ctx, m, s16 * 1.2, 1.0, 1.0, 0.0)?, tq, 0.28, pan);
+                        let m = fit_reg(self.sounded(ctx, tq)? + 12, lo + 7, hi);
+                        mix.note(&bus, &self.sig(ctx, m, s16 * 1.2, 1.0, 1.0, 0.0)?, tq, 0.28, pan, one);
                         mix.place("fx", &Sig::Mono(squish(seed)), tq, 0.10, 0.0);
                     } else {
                         mix.place("fx", &Sig::Mono(squish(seed)), tq, 0.04, 0.0);

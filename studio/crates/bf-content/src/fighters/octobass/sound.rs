@@ -103,6 +103,16 @@ impl OctobassSound {
         }
     }
 
+    /// The note a bowed note of the bass line sounds at `t`: as [`OctobassSound::line`], read through
+    /// [`MusicCtx::play_line`] (sound upgrade: under Composed the note is counted there, and in a moving style it
+    /// is never the note of the bow stroke before it).
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        match ctx.play_line(self.name(ctx), t)? {
+            Some(m) => Ok(Self::fit(m - 12, 24, 40)),
+            None => ctx.harmony.root_above(ctx.harmony.chord_at(t), 24).map_err(bad),
+        }
+    }
+
     /// The chord's root at `t` from C1 up.
     fn root(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         ctx.harmony.root_above(ctx.harmony.chord_at(t), 24).map_err(bad)
@@ -182,16 +192,18 @@ impl Sound for OctobassSound {
         let (s16, t_ko) = (ctx.show.grid.s16, ctx.show.t_ko);
         let t0 = ctx.show.grid.t_fight;
         let quiet = state::silences(&ctx.rec.events, k, t_ko);
-        // the bass line an octave down, a long bowed note every beat, thinned as it loses
+        // the bass line an octave down, a long bowed note every beat, thinned as it loses (Composed: one string at
+        // a time, each note ending as the next is bowed)
+        let one = ctx.one_voice(self.name(ctx));
         let mut thin = Thinner::new(3.0);
         let mut slot: i64 = py::round_half_even(ctx.q16(t0) / s16) as i64;
         while slot as f64 * s16 < t_ko {
             let tq = slot as f64 * s16;
             let hp = ctx.hp_at(k, tq) / 100.0;
             if thin.keep(slot as f64, hp) && !state::within(&quiet, tq) {
-                let m = self.line(ctx, tq)?;
+                let m = self.sounded(ctx, tq)?;
                 let (sig, g, _) = self.colour(ctx, &self.note(ctx, m, 4.0, 0.8)?, tq, 1.0, &self.colour_args())?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, pan);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g, pan, one);
             }
             slot += 4;
         }

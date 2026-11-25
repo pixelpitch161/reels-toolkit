@@ -533,6 +533,18 @@ impl ViolaSound {
             .ok_or_else(|| MusicError::new(H, format!("the chord {c:?} has no tone from C3 to G4")))
     }
 
+    /// The note the viola sounds at `t`. Under the Composed arrangement it is its own written line's note there,
+    /// through [`MusicCtx::play_line`] (sound upgrade: every pitched fighter plays its line); under Classic, and on
+    /// a rest of the line, the kit's inner voice under the enemy's line ([`ViolaSound::inner`]).
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<(i32, bool), MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok((m, true));
+        }
+        Ok((self.inner(ctx, t)?, false))
+    }
+
     /// `self.colour(x, t, drive_k)`.
     fn col(&self, ctx: &MusicCtx, x: &[f64], t: f64, drive_k: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         self.colour(ctx, x, t, drive_k, &self.colour_args())
@@ -605,6 +617,9 @@ impl Sound for ViolaSound {
         let (beat, bar, s16) = (grid.beat, grid.bar, grid.s16);
         let run = self.run(ctx)?;
         let mut thin_a = Thinner::new(9.0);
+        // sound upgrade: under Composed its bowed notes are one voice (a new one ends the one before it); the plucks
+        // between them are plucked, and ring over the bow as they do today
+        let one = ctx.one_voice(self.name(ctx));
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -618,15 +633,14 @@ impl Sound for ViolaSound {
                     // the counting: a soft muted pluck on 1-2-3
                     let tq = ctx.q16(t);
                     let count = event_int(H, e, 3)?;
-                    let m = self.inner(ctx, tq)? - if count == 1 { 12 } else { 0 };
-                    put(
-                        mix,
-                        &bus,
-                        pizz(48.max(m), 0.7, true)?,
-                        tq,
-                        0.22 + 0.03 * count as f64,
-                        -0.2,
-                    );
+                    let (m, own) = self.sounded(ctx, tq)?;
+                    let m = if own {
+                        // its written note, the "1" an octave down where the C string reaches it
+                        if count == 1 && m - 12 >= 48 { m - 12 } else { m }
+                    } else {
+                        48.max(m - if count == 1 { 12 } else { 0 })
+                    };
+                    put(mix, &bus, pizz(m, 0.7, true)?, tq, 0.22 + 0.03 * count as f64, -0.2);
                 }
                 "note" => {
                     let nkind = event_int(H, e, 8)?;
@@ -640,7 +654,12 @@ impl Sound for ViolaSound {
                         continue;
                     }
                     let dur = py_max(0.3, py_min(bar, t1 - t_land) * 0.96);
-                    let m = self.inner(ctx, ts)?;
+                    // VIOLA JOKE's chord is its own: only a plain or a double-stopped note sounds the line
+                    let (m, own) = if nkind == 2 {
+                        (self.inner(ctx, ts)?, false)
+                    } else {
+                        self.sounded(ctx, ts)?
+                    };
                     if nkind == 2 {
                         // VIOLA JOKE: the open C + G, fortissimo
                         for (mm, g) in [(48, 0.50), (55, 0.42), (60, 0.26)] {
@@ -650,7 +669,7 @@ impl Sound for ViolaSound {
                     }
                     let (sig, g, lead) = self.col(ctx, &self.viola(ctx, m, dur, 0.9, 0.45)?, ts, 0.8)?;
                     let gain = if nkind == 0 { 0.52 } else { 0.38 };
-                    put(mix, &bus, sig, ts, gain * g, -0.2);
+                    mix.note(&bus, &Sig::Mono(sig), ts, gain * g, -0.2, one);
                     if nkind == 1 {
                         // DOUBLE STOP: a second string a sixth above
                         let tones = ctx
@@ -659,13 +678,12 @@ impl Sound for ViolaSound {
                             .map_err(bad)?;
                         let m2 = tones.into_iter().min().unwrap_or(m + 7);
                         let x = self.col(ctx, &self.viola(ctx, m2, dur, 0.85, 0.3)?, ts, 1.0)?.0;
-                        put(mix, &bus, x, ts, 0.26 * g, -0.25);
+                        mix.note(&bus, &Sig::Mono(x), ts, 0.26 * g, -0.25, one);
                     } else if lead > 0.04 {
-                        // the leader: doubled an octave down
-                        let x = self
-                            .col(ctx, &self.viola(ctx, 48.max(m - 12), dur, 0.7, 0.0)?, ts, 1.0)?
-                            .0;
-                        put(mix, &bus, x, ts, 0.16 * g, -0.2);
+                        // the leader: doubled an octave down (a written note under C4: an octave up, not the open C)
+                        let low = if own && m - 12 < 48 { m + 12 } else { 48.max(m - 12) };
+                        let x = self.col(ctx, &self.viola(ctx, low, dur, 0.7, 0.0)?, ts, 1.0)?.0;
+                        mix.note(&bus, &Sig::Mono(x), ts, 0.16 * g, -0.2, one);
                     }
                 }
                 "crush" => {
