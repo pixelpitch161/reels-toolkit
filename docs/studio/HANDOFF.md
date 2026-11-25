@@ -284,8 +284,11 @@ fighter_<slug>` (and with `-- --include-ignored`), `cargo test --release -p bf-s
   frame given to ffmpeg), and a finished file that fails its own checks (or an ffmpeg that stops) is made once more
   with the flashes held one under the rule. Each fix leaves a passing video exactly as it was and adds a sentence
   to its check's summary. Only a check that still fails after its fix, or one that cannot measure at all (an app
-  fault), stops the render. `ballfight check` still reports the checks before any fix (for diagnosis); the Music
-  view of the app shows them after the sound fixes, as the render does.
+  fault), stops the render. Under the Composed arrangement (sound upgrade, Nov 25, 2026) a measured sound check
+  (band, levels, loudness, loop sound) that still fails after its fix is only noted and never stops the render;
+  the band check reads the fighters over the band by ear (`checks::band::band_heard`), and after any sound fix the
+  loudness is brought back to -14 LUFS. `ballfight check` still reports the checks before any fix (for
+  diagnosis); the Music view of the app shows them after the sound fixes, as the render does.
 - **TROMBONE vs HORN on brass trailer** fails the levels check before the fix (the brass trailer ending is too quiet
   after a late K.O.); the render evens it out.
 - **The band check ignores an early K.O.** It looks at 32 to 44 s, so a fight with a K.O. at 31 s would fail it. The

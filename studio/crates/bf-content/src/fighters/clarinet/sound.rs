@@ -199,7 +199,8 @@ impl ClarinetSound {
             let (vel, level) = if on_beat { (0.85, 0.40) } else { (0.7, 0.30) };
             let (sig, g, lead) = self.note(ctx, f64::from(m), dur, vel, t)?;
             let one = ctx.one_voice(name);
-            mix.note(&bus, &Sig::Mono(sig), tq, level * g, -0.22, one);
+            // sound upgrade (M3): the top notes of a piercing instrument play softer (1 for all others)
+            mix.note(&bus, &Sig::Mono(sig), tq, level * g * ctx.soften(name, m), -0.22, one);
             if lead > 0.04 && on_beat {
                 // the leader: a third under (fuller)
                 let under = ctx

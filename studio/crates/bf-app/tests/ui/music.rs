@@ -9,7 +9,7 @@ use bf_app::model::queue::Queue;
 use bf_app::model::shortlist::{SearchState, Shortlist};
 use bf_app::model::take::CheckLine;
 use bf_app::model::{EncodeChoice, Settings, Step, View};
-use bf_app::screens::music::{CONTROLS_W, NAMES_W};
+use bf_app::screens::music::{AUTO_STYLE_LINE, CONTROLS_W, NAMES_W};
 use bf_app::seam::{Command, Event};
 use bf_app::state::{Action, AppState, ViewModel};
 use bf_app::store::Paths;
@@ -435,6 +435,40 @@ fn the_switch_sets_the_arrangement() {
             .accesskit_node()
             .is_disabled()
     );
+}
+
+/// The Melody style menu shows only on Composed: Auto first, naming the style it picked, then the theme's styles;
+/// picking one asks for it and it reaches the fight file.
+#[test]
+fn the_melody_style_menu_is_composed_only() {
+    let _gpu = gpu();
+    let harness = showing(REF, music::vm());
+    assert!(!has(&harness, "Melody style"));
+    drop(harness);
+    let vm = music::composed();
+    let auto = bf_content::composer::pick_style(&vm.draft.theme, vm.draft.music_seed);
+    let mut harness = showing(REF, vm);
+    let auto_name = format!("Auto ({})", auto.title());
+    assert_eq!(
+        by_role(&harness, "Melody style", Role::ComboBox).value().as_deref(),
+        Some(auto_name.as_str())
+    );
+    assert!(has(&harness, AUTO_STYLE_LINE));
+    by_role(&harness, "Melody style", Role::ComboBox).scroll_to_me();
+    harness.run();
+    by_role(&harness, "Melody style", Role::ComboBox).click();
+    harness.run();
+    by_role(&harness, "Climbing", Role::ListBoxOption).click();
+    harness.run();
+    assert_eq!(
+        harness.state().log,
+        vec![Action::SetMelodyStyle(Some("climbing".to_string()))]
+    );
+    let draft = &harness.state().state.vm.draft;
+    assert_eq!(draft.melody_style.as_deref(), Some("climbing"));
+    let ff = convert::fight_file(draft).expect("a fight file");
+    assert_eq!(ff.music.melody_style.as_deref(), Some("climbing"));
+    assert!(!has(&harness, AUTO_STYLE_LINE), "the Auto line goes with Auto");
 }
 
 #[test]

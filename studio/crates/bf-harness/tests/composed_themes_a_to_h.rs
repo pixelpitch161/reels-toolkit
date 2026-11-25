@@ -1,6 +1,7 @@
 //! The Composed arrangements of the first 13 themes (milestone 5, Task 4): for each theme, a composed bed builds
-//! and plays a whole song for its preset's pairing, and the master passes the levels check. The fight is the first
-//! whose classic soundtrack passes it: the layered bed hands the K.O. and the bars after it to the classic bed.
+//! and plays a whole song for its preset's pairing, and after the render's sound fixes the master passes the levels
+//! check. The fight is the first whose classic soundtrack passes it: the layered bed hands the K.O. and the bars
+//! after it to the classic bed.
 //! Judged by ear otherwise: `BF_COMPOSED_CLIP_DIR` writes a 20 s clip and the whole song; `BF_COMPOSED_COMPARE`
 //! prints each bed bus's loudness next to the classic bed's.
 
@@ -95,11 +96,21 @@ fn composed_builds(theme: &str, composed: Composed) {
     let own: Vec<String> = own.into_iter().map(String::from).collect();
     build.bed = Box::new(bed);
     let mix = build.score().unwrap_or_else(|e| panic!("{theme}: {e}"));
-    let st = build.master(&mix);
+    let mut st = build.master(&mix);
     assert_eq!(st.master.len(), NA);
+    assert!(st.master.as_flattened().iter().all(|v| v.is_finite() && v.abs() <= 1.0));
+    // the render's sound fixes, as a render makes them: the Composed master (sound upgrade) compresses more
+    // gently than the Classic one, so a song that swells is evened out there
+    let raw = checks::levels(&checks::as_wav16(&st.master));
+    let plan = bf_export::BandPlan::of(&ff).unwrap_or_else(|e| panic!("{theme}: {e}"));
+    let fixed = bf_export::fix::fix_sound(&mut st, &show, &plan);
     assert!(st.master.as_flattened().iter().all(|v| v.is_finite() && v.abs() <= 1.0));
     let levels = checks::levels(&checks::as_wav16(&st.master));
     println!("{theme}: seed {}, {}", rec.seed, levels.summary);
+    if !fixed.is_empty() {
+        let names: Vec<&str> = fixed.iter().map(|f| f.name).collect();
+        println!("  before the fixes ({}): {}", names.join(", "), raw.summary);
+    }
     println!(
         "  bar {:.2} s, fight bar {}, K.O. {:.1} s, solo {:.1} s, bars {}",
         show.grid.bar, show.grid.fight_bar, show.t_ko, show.t_solo, show.grid.n_bars

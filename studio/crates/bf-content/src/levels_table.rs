@@ -37,7 +37,91 @@ pub fn of(name: &str) -> Option<Saved> {
         .map(|&(_, gain, rumble, piercing)| Saved { gain, rumble, piercing })
 }
 
+/// The line the table starts after and the one it ends before, for `ballfight levels --write`.
+pub const TABLE_OPENS: &str = "pub const LEVELS: &[(&str, f64, f64, f64)] = &[";
+pub const TABLE_CLOSES: &str = "];";
+
+/// A row of the table as the source holds it.
+pub fn row(name: &str, saved: Saved) -> String {
+    format!(
+        "    ({name:?}, {:.4}, {:.3}, {:.3}),",
+        saved.gain, saved.rumble, saved.piercing
+    )
+}
+
 /// `(fighter, gain, rumble, piercing)`, in roster order.
 #[rustfmt::skip]
 pub const LEVELS: &[(&str, f64, f64, f64)] = &[
+    ("PIANO", 1.4307, 0.031, 0.054),
+    ("DRUMS", 2.8309, 0.642, 0.023),
+    ("VIOLIN", 1.2474, 0.000, 0.260),
+    ("BAGPIPES", 2.9300, 0.000, 0.423),
+    ("ACCORDION", 2.8371, 0.114, 0.075),
+    ("TUBA", 1.7360, 0.963, 0.000),
+    ("FLUTE", 2.3708, 0.000, 0.020),
+    ("TROMBONE", 2.4748, 0.483, 0.006),
+    ("HORN", 3.1033, 0.000, 0.009),
+    ("ORGAN", 2.6872, 0.195, 0.101),
+    ("HARP", 1.5486, 0.213, 0.023),
+    ("UKULELE", 1.7102, 0.000, 0.098),
+    ("ACOUSTIC", 1.0183, 0.017, 0.205),
+    ("TRUMPET", 2.5601, 0.000, 0.145),
+    ("TURNTABLES", 2.0389, 0.050, 0.039),
+    ("SYNTH", 2.1809, 0.002, 0.076),
+    ("CLARINET", 2.4201, 0.255, 0.006),
+    ("OBOE", 2.0669, 0.000, 0.115),
+    ("BASS CLARINET", 4.2928, 0.661, 0.002),
+    ("EUPHONIUM", 1.6449, 0.000, 0.011),
+    ("BASSOON", 2.8648, 0.000, 0.011),
+    ("BARI SAX", 1.6827, 0.164, 0.012),
+    ("VIOLA", 0.9090, 0.003, 0.006),
+    ("ELECTRIC", 0.9502, 0.001, 0.169),
+    ("CELLO", 1.3824, 0.046, 0.030),
+    ("CONTRABASS", 1.9806, 0.903, 0.001),
+    ("ALTO SAX", 1.5518, 0.001, 0.044),
+    ("TENOR SAX", 2.2549, 0.122, 0.010),
+    ("SOUSAPHONE", 1.7851, 0.913, 0.001),
+    ("BASS DRUM", 1.1151, 0.990, 0.000),
+    ("CORNET", 3.4248, 0.000, 0.005),
+    ("CONTRABASS CLARINET", 2.2592, 0.670, 0.006),
+    ("MARIMBA", 0.7043, 0.000, 0.007),
+    ("PICCOLO", 1.0140, 0.000, 0.572),
+    ("SOPRANO SAX", 4.9182, 0.000, 0.102),
+    ("MELLOPHONE", 6.1115, 0.000, 0.029),
+    ("TIMPANI", 1.6501, 0.784, 0.000),
+    ("CONTRABASSOON", 3.1050, 0.009, 0.013),
+    ("FLUGELHORN", 4.1265, 0.034, 0.004),
+    ("SNARE DRUM", 3.5863, 0.229, 0.347),
+    ("OCTOBASS", 5.7355, 0.904, 0.000),
+    ("BASS GUITAR", 3.2451, 0.128, 0.092),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every row is a roster fighter, once, with a gain above zero and shares that are shares.
+    #[test]
+    fn the_table_holds_roster_fighters() {
+        for (i, &(name, gain, rumble, piercing)) in LEVELS.iter().enumerate() {
+            assert!(
+                crate::roster().iter().any(|f| f.name == name),
+                "{name} is not in the roster"
+            );
+            assert!(LEVELS[..i].iter().all(|(n, ..)| *n != name), "{name} is listed twice");
+            assert!(gain > 0.0 && gain.is_finite(), "{name}: gain {gain}");
+            assert!(
+                (0.0..=1.0).contains(&rumble) && (0.0..=1.0).contains(&piercing),
+                "{name}"
+            );
+        }
+        assert_eq!(of("no such fighter"), None);
+        let saved = Saved {
+            gain: 1.5,
+            rumble: 0.61234,
+            piercing: 0.0,
+        };
+        assert_eq!(row("TUBA", saved), "    (\"TUBA\", 1.5000, 0.612, 0.000),");
+        assert!(saved.low() && !saved.piercing());
+    }
+}

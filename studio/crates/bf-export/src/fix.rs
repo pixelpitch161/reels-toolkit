@@ -25,7 +25,8 @@ use bf_sound::master::{MASTER_CEILING, Soundtrack};
 use crate::checks::evenout::limit;
 use crate::checks::flash::{AREA, FPS, LIMIT, rel_lum};
 use crate::checks::loopcheck::{HEAD_S as HEAD_S_PICTURE, TAIL_S as TAIL_S_PICTURE, steps};
-use crate::checks::{BandPlan, CheckResult, Kept, SRF, as_wav16, band, loop_audio, loop_picture, median};
+use crate::checks::{BandPlan, CheckResult, Kept, SRF, as_wav16, band_of, loop_audio, loop_picture, median};
+use bf_sound::polish::loud;
 
 /// What a fix changed: the check it is for and a plain sentence.
 #[derive(Clone, Debug, PartialEq)]
@@ -68,6 +69,19 @@ pub fn fix_sound(st: &mut Soundtrack, show: &Show, plan: &BandPlan) -> Vec<Fixed
     if let Some(note) = join_loop_audio(&mut st.master) {
         fixes.push(Fixed::new("loop_audio", note));
     }
+    // Under the Composed arrangement the loudness target comes last (sound upgrade, F1), so it holds whatever a
+    // fix did; a soundtrack no fix touched is already on it.
+    if plan.composed && !fixes.is_empty() {
+        let mut stems: Vec<&mut Vec<[f64; 2]>> = st.stems.values_mut().collect();
+        let r = loud::to_target(&mut st.master, &mut stems, loud::TARGET, loud::PEAK);
+        fixes.push(Fixed::new(
+            "loudness",
+            format!(
+                "After the fixes the soundtrack was brought back to {:.1} LUFS with its true peak at {:.1} dB.",
+                r.lufs, r.true_peak
+            ),
+        ));
+    }
     fixes
 }
 
@@ -99,8 +113,7 @@ pub fn lift_fighters(st: &mut Soundtrack, show: &Show, plan: &BandPlan) -> Optio
         (plan.sounds[0].0.as_str(), plan.sounds[0].1),
         (plan.sounds[1].0.as_str(), plan.sounds[1].1),
     ];
-    let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
-    let mut r = band(st, show, sounds, &bed);
+    let mut r = band_of(st, show, plan);
     if r.pass {
         return None;
     }
@@ -147,7 +160,7 @@ pub fn lift_fighters(st: &mut Soundtrack, show: &Show, plan: &BandPlan) -> Optio
             st.stems.insert((*bus).to_string(), stem);
         }
         st.master = limit(&m, MASTER_CEILING);
-        r = band(st, show, sounds, &bed);
+        r = band_of(st, show, plan);
         if r.pass {
             break;
         }
@@ -568,6 +581,7 @@ fn worst(flashes: &[usize]) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::checks::band;
     use crate::checks::flash;
 
     fn plain(v: u8) -> Rgb8 {
@@ -656,6 +670,7 @@ mod tests {
                 ("trombone".to_string(), (70.0, 700.0)),
             ],
             bed_buses: vec!["drums".to_string(), "fx".to_string()],
+            composed: false,
         };
         let sounds = [("flute", (600.0, 3200.0)), ("trombone", (70.0, 700.0))];
         assert!(!band(&st, &show, sounds, &["drums", "fx"]).pass);
@@ -697,6 +712,7 @@ mod tests {
                 ("trombone".to_string(), (70.0, 700.0)),
             ],
             bed_buses: vec!["drums".to_string()],
+            composed: false,
         };
         let sounds = [("flute", (600.0, 3200.0)), ("trombone", (70.0, 700.0))];
         assert!(!band(&st, &show, sounds, &["drums"]).pass);

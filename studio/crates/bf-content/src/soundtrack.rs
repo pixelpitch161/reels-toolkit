@@ -24,17 +24,18 @@ use bf_sound::music::{ComposedPart, MusicCtx, MusicError};
 use bf_sound::score::score;
 use bf_sound::traits::{Bed, Sound};
 use bf_sound::voice::Voice;
+use bf_sound::{heard, polish};
 
 use bf_core::fightfile::is_extra_line;
 use bf_sound::master::BUS;
 
-use crate::composed_parts;
 use crate::composer::{Brief, PER_BAR, compose, harmonise};
 use crate::error::ContentError;
 use crate::fighters;
 use crate::personality::{Role, personality};
 use crate::registry::{name_status, roster};
 use crate::themes::{self, Theme};
+use crate::{composed_parts, levels_table};
 
 /// The theme a fight file names, or the error that it is none.
 fn theme_of(ff: &FightFile) -> Result<&'static Theme, ContentError> {
@@ -316,9 +317,95 @@ impl<'a> SoundBuild<'a> {
         )
     }
 
-    /// `kit.music.master(mix)`: the mix mastered: the soundtrack and its stems.
+    /// `kit.music.master(mix)`: the mix mastered: the soundtrack and its stems. Under the Composed arrangement
+    /// the mix and polish of the sound upgrade ([`bf_sound::polish`]) take the Classic master's place.
     pub fn master(&self, mix: &Mix) -> Soundtrack {
-        master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING)
+        match self.plan(None) {
+            Some(plan) => polish::master(mix, &self.levels(), &plan).0,
+            None => master(mix, &self.levels(), self.bed.as_ref(), MASTER_CEILING),
+        }
+    }
+
+    /// The Composed master with what it did (each fighter's trim, the loudness reached); `None` under Classic.
+    pub fn master_report(&self, mix: &Mix) -> Option<(Soundtrack, polish::Report)> {
+        self.plan(None)
+            .map(|plan| polish::master_detail(mix, &self.levels(), &plan, true))
+    }
+
+    /// What the Composed master is told about this fight (`None` under Classic): the two fighters' buses, their
+    /// saved levels and kinds, the stretch from FIGHT! to the K.O. and the winner. `kinds` gives each fighter's
+    /// `(low, piercing)` in place of the level table's, with no saved level (the calibration run measures them
+    /// itself).
+    pub fn plan(&self, kinds: Option<[(bool, bool); 2]>) -> Option<polish::Plan> {
+        self.ctx.polish.as_ref()?;
+        let show = self.ctx.show;
+        let part = |k: usize| {
+            let saved = levels_table::of(&show.names[k]);
+            let (low, piercing) = match kinds {
+                Some(kinds) => kinds[k],
+                None => (saved.is_some_and(|s| s.low()), saved.is_some_and(|s| s.piercing())),
+            };
+            polish::Part {
+                bus: self.sounds[k].bus(&self.ctx),
+                saved: if kinds.is_some() { None } else { saved.map(|s| s.gain) },
+                low,
+                piercing,
+            }
+        };
+        Some(polish::Plan {
+            parts: [part(0), part(1)],
+            window: (show.grid.t_fight, show.t_ko),
+            winner: show.win,
+            bass_room: self.ctx.polish.as_ref().is_some_and(|p| p.hand_bass),
+        })
+    }
+}
+
+/// A fighter's level as the calibration run measures it (`ballfight levels`): the left fighter of the fight
+/// `rec` under `ff`, which is the reference fight (a Composed theme, the fighter against the target dummy).
+///
+/// The fighter's bus at its part's own gain gives the rumble and piercing shares between FIGHT! and the K.O.;
+/// with the treatments those call for, the gain is the one that puts it [`polish::OVER_BAND`] dB over the band.
+///
+/// # Errors
+/// As [`build_soundtrack`]; or the fight is not under the Composed arrangement, or the fighter never sounds.
+pub fn measure_level(rec: &Recording, ff: &FightFile) -> Result<(String, levels_table::Saved), ContentError> {
+    validate(ff)?;
+    let show = Show::new(rec, ff)?;
+    let measured = catch_unwind(AssertUnwindSafe(|| -> Result<levels_table::Saved, ContentError> {
+        let build = SoundBuild::new(&show, rec, ff)?;
+        let mix = build.score()?;
+        let levels = build.levels();
+        let refuse = |why: &str| ContentError::Sound(format!("the level of {}: {why}", show.names[0]));
+        let plain = build
+            .plan(Some([(false, false); 2]))
+            .ok_or_else(|| refuse("the fight is not under the Composed arrangement"))?;
+        let (from, to) = plain.window;
+        let bus = plain.parts[0].bus.clone();
+        let hand = levels.get(&bus).map_or(1.0, |(gain, _)| gain);
+        let raw = mix.bus(&bus).ok_or_else(|| refuse("its part played nothing"))?;
+        let fight = heard::span(raw, from, to);
+        let (rumble, piercing) = (heard::share(fight, heard::RUMBLE), heard::share(fight, heard::PIERCING));
+        let saved = levels_table::Saved {
+            gain: hand,
+            rumble,
+            piercing,
+        };
+        let plan = build
+            .plan(Some([(saved.low(), saved.piercing()), (false, false)]))
+            .expect("a plan, as before");
+        let buses = polish::treated(&mix, &levels, &plan);
+        let band = polish::band(&buses, &plan);
+        let over = heard::over_band(&buses[&bus], &band, from, to)
+            .ok_or_else(|| refuse("it never sounds between FIGHT! and the K.O."))?;
+        Ok(levels_table::Saved {
+            gain: hand * heard::gain(polish::OVER_BAND - over),
+            ..saved
+        })
+    }));
+    match measured {
+        Ok(result) => result.map(|saved| (show.names[0].clone(), saved)),
+        Err(payload) => Err(ContentError::Sound(panic_text(payload))),
     }
 }
 

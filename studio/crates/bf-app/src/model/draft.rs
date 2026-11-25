@@ -32,6 +32,10 @@ pub struct Draft {
     /// own.
     #[serde(default)]
     pub arrangement: Option<String>,
+    /// The melody style the owner picked on the Music screen (a `music.melody_style` word, such as `runs`); `None`
+    /// is Auto: the theme and the music seed choose one (`bf_content::composer::pick_style`). Only Composed plays it.
+    #[serde(default)]
+    pub melody_style: Option<String>,
     /// The fighters (roster names) whose lines and solos are kept as written under Composed, when the owner has
     /// said; `None` keeps the fight file's own list.
     #[serde(default)]
@@ -72,6 +76,7 @@ mod tests {
             },
             captions_edited: false,
             arrangement: None,
+            melody_style: None,
             pinned: None,
             base: None,
         }

@@ -32,7 +32,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use bf_core::show::{Show, ShowError};
-use bf_export::checks::{BandPlan, CheckResult, as_wav16, band, levels, loudness};
+use bf_export::checks::{BandPlan, CheckResult, as_wav16, band_of, levels, loudness};
 use bf_picture::ring::Picture;
 use bf_sound::master::Soundtrack;
 use bf_story::{BeatSheet, Candidate, Story};
@@ -577,14 +577,7 @@ fn sound_views(
     let plan = BandPlan::of(ff);
     std::thread::scope(|s| {
         let band_r = s.spawn(|| match &plan {
-            Ok(plan) => {
-                let sounds = [
-                    (plan.sounds[0].0.as_str(), plan.sounds[0].1),
-                    (plan.sounds[1].0.as_str(), plan.sounds[1].1),
-                ];
-                let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
-                band(st, show, sounds, &bed)
-            }
+            Ok(plan) => band_of(st, show, plan),
             Err(e) => CheckResult {
                 name: "band",
                 pass: false,

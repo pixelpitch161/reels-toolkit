@@ -34,7 +34,7 @@ use bf_sound::wav::wav16_bytes;
 use bf_story::{BeatSheet, story};
 
 use crate::checks::flash::LIMIT;
-use crate::checks::{BandPlan, CheckResult, Checked, Kept, flash_span, panic_text, pre_render_keeping};
+use crate::checks::{BandPlan, CheckResult, Checked, Kept, flash_span, noted_only, panic_text, pre_render_keeping};
 use crate::encode::{ENCODING_NOTE, EncodeSpeed, Encoder, Ffmpeg, find_ffmpeg};
 use crate::fix::{Fixed, FlashGuard, fix_frames, fix_sound, with_notes};
 use crate::output::{TempFolder, caption_text, clip_folder_name, folder_stem, png_bytes, prepare_root, taken};
@@ -261,6 +261,7 @@ impl Job<'_> {
         stop()?;
         // the sound that would fail a check is fixed before the render
         let mut fixes: Vec<Fixed> = focus_fix.into_iter().collect();
+        let composed = ff.music.arrangement == bf_content::themes::COMPOSED;
         if self.whole {
             let plan = BandPlan::of(ff)?;
             fixes.extend(fix_sound(&mut st, &pic.ctx().show, &plan));
@@ -306,7 +307,11 @@ impl Job<'_> {
             let (frame_fixes, changed) = fix_frames(&mut results, &mut kept, pic.nf(), span);
             fixes.extend(frame_fixes);
             fixed = changed;
-            report(with_notes(results, &fixes), on)?;
+            let mut results = with_notes(results, &fixes);
+            if composed {
+                noted_only(&mut results);
+            }
+            report(results, on)?;
             stop()?;
         }
 
@@ -463,8 +468,12 @@ impl Job<'_> {
         stop().map_err(Retry::Stop)?;
 
         on(JobEvent::Stage(stage::VERIFY));
-        let results = verify_until(self.ffmpeg, part_path, total, self.whole, self.cancel)
+        let mut results = verify_until(self.ffmpeg, part_path, total, self.whole, self.cancel)
             .ok_or_else(|| Retry::Stop(ExportError::cancelled()))?;
+        // under the Composed arrangement a measured sound check of the finished file is only noted (sound upgrade)
+        if self.ff.music.arrangement == bf_content::themes::COMPOSED {
+            noted_only(&mut results);
+        }
         match results.iter().find(|r| !r.pass) {
             Some(failed) => Err(Retry::Check(failed.clone(), results)),
             None => Ok(results),

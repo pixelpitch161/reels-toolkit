@@ -14,12 +14,14 @@
 //! - [`traits`]: what a fighter's part and a theme's bed provide to the score (`Sound`, `Bed`).
 //! - [`mod@score`]: the order a soundtrack is built in, `kit/music.py score()`.
 //! - [`mod@master`]: the master chain (bus levels, reverb, the fold onto the loop point, compressor, limiter).
+//! - [`mod@polish`]: the mix and polish of the Composed arrangement (levels by ear, treatments, room, loudness).
 
 pub mod dsp;
 pub mod heard;
 pub mod master;
 pub mod mix;
 pub mod music;
+pub mod polish;
 pub mod score;
 pub mod synth;
 pub mod traits;

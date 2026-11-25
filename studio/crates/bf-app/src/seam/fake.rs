@@ -587,6 +587,7 @@ impl Engine {
             captions: sample::captions(),
             captions_edited: false,
             arrangement: None,
+            melody_style: None,
             pinned: None,
             base: None,
         }
@@ -848,6 +849,7 @@ mod tests {
             captions: sample::captions(),
             captions_edited: false,
             arrangement: None,
+            melody_style: None,
             pinned: None,
             base: None,
         }
