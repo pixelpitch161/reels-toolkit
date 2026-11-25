@@ -177,6 +177,37 @@ impl OrganSound {
         Ok(sum)
     }
 
+    /// The note of the written line a row or a landing at `t` sounds, under the Composed arrangement only (sound
+    /// upgrade: every pitched fighter plays its line). `None` under Classic and on a rest of the line: the kit's own
+    /// voicing and pedal then.
+    fn line(&self, ctx: &MusicCtx, t: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), t)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// The Composed stab (sound upgrade): chord `ch` voiced under the line's note `top`, so the chord stays the
+    /// harmony's and the line is the stab's top pipe: the chord's tones in the octave under the note (none within
+    /// a tone of it, none below C3), then the note itself. It loses voices as the kit's stab does: one tone under
+    /// the note is left below 50 HP (`hp` 0 to 1; which one by the kit's hash of the row's time `t`), none below 25.
+    fn line_stab(&self, ctx: &MusicCtx, ch: &str, top: i32, hp: f64, t: f64) -> Result<Vec<i32>, MusicError> {
+        let mut vo = ctx.harmony.chord_tones((top - 11).max(48), top - 3, ch).map_err(bad)?;
+        if hp < 0.5 && vo.len() > 1 {
+            if h01(&[t, 1.0]) < 0.6 {
+                vo.truncate(1);
+            } else {
+                vo.drain(..vo.len() - 1);
+            }
+        }
+        if hp < 0.25 {
+            vo.clear();
+        }
+        vo.push(top);
+        Ok(vo)
+    }
+
     /// `-1.0 if k == 0 else 1.0`: #35's organ sat left: it pans toward its own side.
     fn side(&self) -> f64 {
         if self.k == 0 { -1.0 } else { 1.0 }
@@ -312,18 +343,34 @@ impl Sound for OrganSound {
                     if hp < 0.25 {
                         vo.truncate(1);
                     }
+                    // Composed (sound upgrade): the stab keeps the bar's chord, voiced under the line's note
+                    let line = self.line(ctx, tq)?;
+                    if let Some(m) = line {
+                        vo = self.line_stab(ctx, ch, m, hp, t)?;
+                    }
                     let x = self.chord(ctx, &vo, 0.17, 0.85, None)?;
                     let (sig, g, lead) = self.tone(ctx, &x, t, 0.8, false)?;
                     mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g, 0.15 * side);
                     if bass {
-                        // the bass role: the pedal under every stab
-                        let x = self.chord(ctx, &[self.pedal(ctx, ch)?], 0.3, 0.9, None)?;
+                        // the bass role: the pedal under every stab (Composed: the pedal is the bass line's own
+                        // note, in the pedal's octave, A1 to G#2, where the kit puts the chord's root)
+                        let pedal = self.pedal(ctx, ch)?;
+                        let pedal = line.map_or(pedal, |m| 33 + (m - 33).rem_euclid(12));
+                        let x = self.chord(ctx, &[pedal], 0.3, 0.9, None)?;
                         let sig = self.tone(ctx, &x, t, 0.6, true)?.0;
                         mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.1 * side);
                     }
                     if lead > 0.04 {
-                        // the leader: the pedal an octave up under it
-                        let x = self.chord(ctx, &[self.pedal(ctx, ch)? + 12], 0.2, 0.7, None)?;
+                        // the leader: the pedal an octave up under it (Composed: in the bass role the octave over
+                        // the pedal's own note, the line's; else the chord's root still, an octave lower where
+                        // it would sit on or over the line's note)
+                        let up = self.pedal(ctx, ch)? + 12;
+                        let up = match line {
+                            Some(m) if bass => 45 + (m - 45).rem_euclid(12),
+                            Some(m) if up > m - 3 => up - 12,
+                            _ => up,
+                        };
+                        let x = self.chord(ctx, &[up], 0.2, 0.7, None)?;
                         let sig = self.tone(ctx, &x, t, 1.0, false)?.0;
                         mix.place(&bus, &Sig::Mono(sig), tq, 0.16 * g, 0.1 * side);
                     }
@@ -333,6 +380,8 @@ impl Sound for OrganSound {
                     let pan = clip(event_number(H, e, 5)? / 3.5, -0.6, 0.6);
                     let tl = if ctx.q16(t) < t { tq + s16 } else { tq };
                     let top = highest(ch, &self.voicing(ctx, ch)?)? + 12;
+                    // Composed (sound upgrade): the accent is the line's note at the landing
+                    let top = self.line(ctx, tl)?.unwrap_or(top);
                     if bass {
                         // (the pedal is already under every row)
                         let x = self.chord(ctx, &[top], 0.22, 1.0, None)?;

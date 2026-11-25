@@ -112,6 +112,17 @@ pub fn tear(dur: f64, seed: u64) -> Vec<f64> {
         .collect()
 }
 
+/// How many reeds of its chord still sound at `hp` (0 to 1): it loses notes as it gets hurt.
+fn reeds_left(hp: f64) -> usize {
+    if hp > 0.5 {
+        4
+    } else if hp > 0.25 {
+        3
+    } else {
+        2
+    }
+}
+
 /// `e[7]`, the `how` of a `hit` event.
 fn how(e: &Event) -> &str {
     match e.fields.get(5) {
@@ -151,17 +162,35 @@ impl AccordionSound {
     /// `acc_chord(t, hp, lead)`: the chord thinned as its HP drops, with a top note added when it leads.
     fn acc_chord(&self, ctx: &MusicCtx, t: f64, hp: f64, lead: f64) -> Result<Vec<f64>, MusicError> {
         let (mut vo, _) = self.voicing(ctx, t)?;
-        let keep = if hp > 0.5 {
-            4
-        } else if hp > 0.25 {
-            3
-        } else {
-            2
-        };
-        vo.truncate(keep);
+        vo.truncate(reeds_left(hp));
         if lead > 0.04 {
             vo.push(vo[0] + 12.0);
         }
+        Ok(vo)
+    }
+
+    /// The note of the written line a bite or a snap at `t` sounds, under the Composed arrangement only (sound
+    /// upgrade: every pitched fighter plays its line). `None` under Classic and on a rest of the line: the kit's own
+    /// chord and bass button then.
+    fn line(&self, ctx: &MusicCtx, t: f64) -> Result<Option<i32>, MusicError> {
+        if ctx.composed_on() {
+            ctx.play_line(self.name(ctx), t)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// The Composed chord (sound upgrade): the harmony's chord at `t` voiced under the line's note `top`, so the
+    /// line is the top reed of the hit. `keep` reeds in all: the chord's tones nearest under the note (none within a
+    /// tone of it), then the note itself; the leader gets one reed more under it (where the kit adds a top note,
+    /// which would cover the line).
+    fn line_chord(&self, ctx: &MusicCtx, t: f64, top: i32, keep: usize, lead: bool) -> Result<Vec<f64>, MusicError> {
+        let ch = ctx.harmony.chord_at(t).to_string();
+        let bad = |e: bf_core::harmony::HarmonyError| MusicError::new(H, e.to_string());
+        let under = ctx.harmony.chord_tones(top - 17, top - 3, &ch).map_err(bad)?;
+        let n = (keep.max(1) - 1 + usize::from(lead)).min(under.len());
+        let mut vo: Vec<f64> = under[under.len() - n..].iter().copied().map(f64::from).collect();
+        vo.push(f64::from(top));
         Ok(vo)
     }
 
@@ -228,12 +257,22 @@ impl Sound for AccordionSound {
                     let hp = ctx.hp_at(k, t0) / 100.0;
                     main_open = e.f(3) != 0.0;
                     let (_, oom) = self.voicing(ctx, t0)?;
+                    // Composed (sound upgrade): the bass button is the line's note in the buttons' own octave (E2
+                    // to D#3, where the kit puts the chord's root), and the little inhale has the line on top
+                    let line = self.line(ctx, t0)?;
+                    let oom = line.map_or(oom, |m| f64::from(40 + (m - 40).rem_euclid(12)));
                     let x = self
                         .tone(ctx, &reeds(&[oom - 12.0, oom], 0.20, 0.85, false, 0.0, 3), t0, 1.0)?
                         .0;
                     mix.place(&bus, &Sig::Mono(x), t0, if main_open { 0.24 } else { 0.16 }, 0.1);
-                    let mut vo = self.acc_chord(ctx, t0, hp, 0.0)?;
-                    vo.truncate(2);
+                    let vo = match line {
+                        Some(m) => self.line_chord(ctx, t0, m, 2, false)?,
+                        None => {
+                            let mut vo = self.acc_chord(ctx, t0, hp, 0.0)?;
+                            vo.truncate(2);
+                            vo
+                        }
+                    };
                     mix.place(&bus, &Sig::Mono(reeds(&vo, 0.12, 0.6, true, 0.5, 5)), t0, 0.06, 0.2);
                 }
                 "snap" => {
@@ -242,7 +281,11 @@ impl Sound for AccordionSound {
                     let lead = (ctx.hp_at(k, tq) - ctx.hp_at(1 - k, tq)) / 100.0;
                     let wz = 0.3 + 0.9 * dmath::pow(1.0 - hp, 1.3);
                     let landed = e.f(4) != 0.0;
-                    let vo = self.acc_chord(ctx, tq, hp, lead)?;
+                    // Composed (sound upgrade): the stab keeps the harmony's chord, voiced under the line's note
+                    let vo = match self.line(ctx, tq)? {
+                        Some(m) => self.line_chord(ctx, tq, m, reeds_left(hp), lead > 0.04)?,
+                        None => self.acc_chord(ctx, tq, hp, lead)?,
+                    };
                     let seed = noise_seed(H, tq * 10.0)?;
                     let x = reeds(&vo, 0.16, if landed { 0.95 } else { 0.8 }, false, wz, seed);
                     let (sig, gg, _) = self.tone(ctx, &x, tq, 0.8)?;

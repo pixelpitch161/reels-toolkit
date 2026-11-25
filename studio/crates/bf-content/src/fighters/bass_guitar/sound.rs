@@ -58,6 +58,18 @@ impl BassGuitarSound {
             .ok_or_else(|| MusicError::new(H, "the episode has no bars"))
     }
 
+    /// The note of an ordinary pick at `t`. Under the Composed arrangement it is the written bass line's note there
+    /// (sound upgrade: every pitched fighter plays its line); under Classic, and on a rest of the line, the kit's
+    /// own `kit`.
+    fn line(&self, ctx: &MusicCtx, t: f64, kit: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(m);
+        }
+        Ok(kit)
+    }
+
     fn thud(&self, mix: &mut Mix, t: f64, gain: f64) {
         mix.place("fx", &Sig::Mono(synth::thud(0.45, 90.0, 38.0, THUD_SEED)), t, gain, 0.0);
     }
@@ -130,11 +142,13 @@ impl Sound for BassGuitarSound {
                 // PICK TOSS: the root, then the fifth and the octave for the second and third picks
                 let n = event_number(H, e, 3)?.clamp(1.0, 3.0) as usize;
                 for j in 0..n {
-                    let m = match j {
+                    let kit = match j {
                         0 => root,
                         1 => *ms.get(2).unwrap_or(&(root + 7)),
                         _ => root + 12,
                     };
+                    // Composed (sound upgrade): each pick plays the line's note at its own 16th
+                    let m = self.line(ctx, tq + j as f64 * s16, kit)?;
                     let x = self.bass(ctx, m, beat * 0.8, 0.9 - 0.1 * j as f64, 1.0)?;
                     mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16, 0.30, 0.0);
                 }

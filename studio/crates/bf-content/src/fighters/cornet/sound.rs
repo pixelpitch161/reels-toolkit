@@ -64,6 +64,18 @@ impl CornetSound {
         Ok(v)
     }
 
+    /// The note of an ordinary cup or wah at `t`. Under the Composed arrangement it is the written line's note there
+    /// (sound upgrade: every pitched fighter plays its line); under Classic, and on a rest of the line, the kit's
+    /// own chord tone `kit`.
+    fn line(&self, ctx: &MusicCtx, t: f64, kit: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(m);
+        }
+        Ok(kit)
+    }
+
     /// The episode's first chord.
     fn first_chord<'a>(&self, ctx: &'a MusicCtx) -> Result<&'a str, MusicError> {
         ctx.harmony
@@ -128,6 +140,8 @@ impl Sound for CornetSound {
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let cfg = ctx.cfg[k];
+        // Composed (sound upgrade): a horn sounds one note at a time, so an ordinary note ends the one before it
+        let one = ctx.one_voice(self.name(ctx));
         for e in &ctx.rec.events {
             let t = e.t;
             if t > ctx.show.t_ko + 0.01 {
@@ -155,16 +169,19 @@ impl Sound for CornetSound {
                         0.18,
                         0.0,
                     );
+                    // (Composed: the line's note in place of the chord tone)
                     let ms = self.tones(ctx, ch, 60, 74)?;
-                    let x = wah(&self.horn(ctx, ms[0], beat * 0.9, 0.8, 1.0)?, beat * 0.3);
-                    mix.place(&bus, &Sig::Mono(x), tq, 0.24, 0.1);
+                    let m = self.line(ctx, tq, ms[0])?;
+                    let x = wah(&self.horn(ctx, m, beat * 0.9, 0.8, 1.0)?, beat * 0.3);
+                    mix.note(&bus, &Sig::Mono(x), tq, 0.24, 0.1, one);
                 }
                 "wah" => {
                     let n = event_number(H, e, 3)?.max(1.0) as usize;
                     let ms = self.tones(ctx, ch, 62, 81)?;
-                    let m = ms[(n - 1) % ms.len()];
+                    // (Composed: the line's note in place of the climb up the chord)
+                    let m = self.line(ctx, tq, ms[(n - 1) % ms.len()])?;
                     let x = wah(&self.horn(ctx, m, beat * 0.7, 0.9, 1.1)?, beat * 0.22);
-                    mix.place(&bus, &Sig::Mono(x), tq, 0.30, 0.15);
+                    mix.note(&bus, &Sig::Mono(x), tq, 0.30, 0.15, one);
                 }
                 "derby_land" => {
                     if event_number(H, e, 5)? > 0.5 {

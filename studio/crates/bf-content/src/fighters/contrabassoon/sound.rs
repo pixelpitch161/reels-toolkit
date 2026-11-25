@@ -84,6 +84,18 @@ impl ContrabassoonSound {
         Ok(v)
     }
 
+    /// The note of an ordinary pipe or bounce at `t`. Under the Composed arrangement it is the written line's note
+    /// there (sound upgrade: every pitched fighter plays its line); under Classic, and on a rest of the line, the
+    /// kit's own chord tone `kit`.
+    fn line(&self, ctx: &MusicCtx, t: f64, kit: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(m);
+        }
+        Ok(kit)
+    }
+
     /// The key's scale from `lo` to `hi`.
     fn scale(&self, ctx: &MusicCtx, lo: i32, hi: i32) -> Vec<i32> {
         let key = ctx.harmony.key_pc;
@@ -170,6 +182,8 @@ impl Sound for ContrabassoonSound {
         let grid = &ctx.show.grid;
         let (beat, s16) = (grid.beat, grid.s16);
         let cfg = ctx.cfg[k];
+        // Composed (sound upgrade): a reed sounds one note at a time, so an ordinary note ends the one before it
+        let one = ctx.one_voice(self.name(ctx));
         let mut landed = 0usize;
         for e in &ctx.rec.events {
             let t = e.t;
@@ -184,13 +198,15 @@ impl Sound for ContrabassoonSound {
             match e.kind.as_str() {
                 "pipe" => {
                     // a new pipe: the bar's lowest chord tone, short, and a clank
-                    let m = self.tones(ctx, ch, 34, 46)?[0];
+                    // (Composed: the line's note; the clank keeps the chord tone's pitch)
+                    let low = self.tones(ctx, ch, 34, 46)?[0];
+                    let m = self.line(ctx, tq, low)?;
                     let x = self.reed(ctx, m, 0.85, 0.14)?;
                     let (sig, g, _) = self.tone(ctx, &x, t, 1.1)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g, 0.0);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.34 * g, 0.0, one);
                     mix.place(
                         "fx",
-                        &Sig::Mono(clank(synth::mtof(f64::from(m + 36)), 0.6)),
+                        &Sig::Mono(clank(synth::mtof(f64::from(low + 36)), 0.6)),
                         tq,
                         0.08,
                         0.0,
@@ -201,12 +217,14 @@ impl Sound for ContrabassoonSound {
                     if event_is_str(H, e, 7, "pipe")? || event_is_str(H, e, 7, "pipe_box")? {
                         // a bounce that lands: a grumbling chord tone, a little higher each time
                         let ms = self.tones(ctx, ch, 34, 58)?;
-                        let m = ms[landed % ms.len()];
+                        // (Composed: the line's note; the clank keeps the chord tone's pitch)
+                        let tone = ms[landed % ms.len()];
                         landed += 1;
+                        let m = self.line(ctx, tq, tone)?;
                         let x = self.reed(ctx, m, 1.0, 0.22)?;
                         let (sig, g, _) = self.tone(ctx, &x, t, 1.3)?;
-                        mix.place(&bus, &Sig::Mono(sig), tq, 0.36 * g, pan);
-                        let f = synth::mtof(f64::from(m + 31));
+                        mix.note(&bus, &Sig::Mono(sig), tq, 0.36 * g, pan, one);
+                        let f = synth::mtof(f64::from(tone + 31));
                         mix.place("fx", &Sig::Mono(clank(f, 0.9)), tq, 0.12, pan);
                     } else if event_is_str(H, e, 7, "spray")? {
                         mix.place("fx", &Sig::Mono(hiss(0.35, 0.7, 5)), tq, 0.14, pan);
