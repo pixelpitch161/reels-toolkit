@@ -218,7 +218,7 @@ impl FluteSound {
     /// The melody of `play`: one note per 8th while the cobras are up (flute.py 586-618).
     fn melody(&self, ctx: &MusicCtx, mix: &mut Mix, look: &Charmer) -> Played {
         let k = self.k;
-        let (name, bus) = (self.name(ctx), self.bus(ctx));
+        let name = self.name(ctx);
         let s16 = ctx.show.grid.s16;
         let WeaponCfg::Striker(weapon) = &ctx.cfg[k].weapon else {
             return Err(MusicError::new(H, format!("{name} has no cobras to rise")));
@@ -234,6 +234,24 @@ impl FluteSound {
                 format!("the melody would run from 8th {k0} to {k1}"),
             ));
         }
+        if ctx.composed_on() {
+            // Sound upgrade: the notes that sound are asked of the line first, each only once the thinning has
+            // kept it, so that a grace note can tell which note it leads into.
+            let mut kept: Vec<(i64, f64, f64, Option<i32>)> = Vec::new();
+            for s8 in k0 as i64..=k1 as i64 {
+                let tq = (s8 * 2) as f64 * s16;
+                let hp = ctx.hp_at(k, tq) / 100.0;
+                if thin.keep(s8 as f64, hp) {
+                    kept.push((s8, tq, hp, ctx.play_line(name, tq)?));
+                }
+            }
+            for (j, &(s8, tq, hp, line)) in kept.iter().enumerate() {
+                // the note of the next 8th, where that 8th sounds
+                let next = kept.get(j + 1).filter(|n| n.0 == s8 + 1).and_then(|n| n.3);
+                self.eighth(ctx, mix, look, (s8, tq, hp), line, next)?;
+            }
+            return Ok(());
+        }
         for s8 in k0 as i64..=k1 as i64 {
             let tq = (s8 * 2) as f64 * s16;
             let line = ctx.line_at(name, tq)?;
@@ -241,44 +259,84 @@ impl FluteSound {
             if !thin.keep(s8 as f64, hp) {
                 continue;
             }
-            let m = line.ok_or_else(|| rest(name, tq))?;
-            let hasted = ctx.run_at("HA", tq, k)? > 0.0;
-            let dancing = look.dances.iter().any(|&(a, b)| a <= tq && tq < b);
-            let dur = if hasted || dancing { 0.11 } else { 0.2 };
-            let mut x = self.flute(ctx, m, dur, 0.8)?;
-            if hasted {
-                x = flutter(&x, FLUTTER_RATE);
-            }
-            let (sig, g, lead) = self.tone(ctx, &x, tq, 0.9)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, 0.26 * g, -0.2);
-            if hasted || dancing {
-                // The 16th between: a grace note. SNAKE DANCE slithers a semitone down.
-                let m2 = if dancing {
-                    m - 1
-                } else {
-                    let t2 = tq + 2.0 * s16;
-                    ctx.line_at(name, t2)?.ok_or_else(|| rest(name, t2))?
+            self.eighth(ctx, mix, look, (s8, tq, hp), line, None)?;
+        }
+        Ok(())
+    }
+
+    /// One 8th of the melody that sounds: 8th `s8` at `tq`, the fighter at `hp` of its HP (0 to 1), `line` the note
+    /// of its line there. `next` is the note the next 8th sounds, where the Composed arrangement knows it.
+    fn eighth(
+        &self,
+        ctx: &MusicCtx,
+        mix: &mut Mix,
+        look: &Charmer,
+        (s8, tq, hp): (i64, f64, f64),
+        line: Option<i32>,
+        next: Option<i32>,
+    ) -> Played {
+        let k = self.k;
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
+        let s16 = ctx.show.grid.s16;
+        // sound upgrade (M5, M3): under Composed a flute sounds one note at a time, so a new note ends the one
+        // before, and its top notes play softer; under Classic `one` is false and `soft` is 1
+        let one = ctx.one_voice(name);
+        let m = line.ok_or_else(|| rest(name, tq))?;
+        let soft = ctx.soften(name, m);
+        let hasted = ctx.run_at("HA", tq, k)? > 0.0;
+        let dancing = look.dances.iter().any(|&(a, b)| a <= tq && tq < b);
+        let dur = if hasted || dancing { 0.11 } else { 0.2 };
+        let mut x = self.flute(ctx, m, dur, 0.8)?;
+        if hasted {
+            x = flutter(&x, FLUTTER_RATE);
+        }
+        let (sig, g, lead) = self.tone(ctx, &x, tq, 0.9)?;
+        mix.note(&bus, &Sig::Mono(sig), tq, 0.26 * g * soft, -0.2, one);
+        if hasted || dancing {
+            // The 16th between: a grace note. SNAKE DANCE slithers a semitone down.
+            let m2 = if dancing {
+                m - 1
+            } else {
+                let t2 = tq + 2.0 * s16;
+                let to = match next {
+                    Some(to) => to,
+                    None => ctx.line_at(name, t2)?.ok_or_else(|| rest(name, t2))?,
                 };
-                if m2 != m || dancing {
-                    let mut x2 = self.flute(ctx, m2, 0.1, 0.7)?;
-                    if hasted {
-                        x2 = flutter(&x2, FLUTTER_RATE);
+                if ctx.moving() && to != m {
+                    // Sound upgrade: in a moving melody style the grace does not anticipate the next note (the
+                    // same pitch twice in a row); it takes the scale's passing tone toward it, and where the next
+                    // note is that very step, the neighbour on the far side.
+                    let pass = ctx.passing_tone(m, to);
+                    if pass == to {
+                        ctx.passing_tone(m, m + (m - to).signum())
+                    } else {
+                        pass
                     }
-                    let grace = self.tone(ctx, &x2, tq, 1.0)?.0;
-                    mix.place(&bus, &Sig::Mono(grace), tq + s16, 0.20 * g, -0.2);
+                } else {
+                    to
                 }
+            };
+            if m2 != m || dancing {
+                let mut x2 = self.flute(ctx, m2, 0.1, 0.7)?;
+                if hasted {
+                    x2 = flutter(&x2, FLUTTER_RATE);
+                }
+                let grace = self.tone(ctx, &x2, tq, 1.0)?.0;
+                // (a 16th after its note, it is a note of the run: under Composed it ends the 8th before it)
+                let soft2 = ctx.soften(name, m2);
+                mix.note(&bus, &Sig::Mono(grace), tq + s16, 0.20 * g * soft2, -0.2, one);
             }
-            if (1.0 - hp) > 0.3 {
-                // breath(0.1, s8): the 8th's number is the seed.
-                let seed = u64::try_from(s8).map_err(|_| MusicError::new(H, format!("8th {s8} is no noise seed")))?;
-                mix.place(&bus, &Sig::Mono(breath(0.1, seed)?), tq, 0.07 * (1.0 - hp), -0.2);
-            }
-            if lead > 0.04 {
-                // The leader: a thin octave double underneath.
-                let low = self.flute(ctx, m - 12, dur, 0.6)?;
-                let double = self.tone(ctx, &low, tq, 1.0)?.0;
-                mix.place(&bus, &Sig::Mono(double), tq, 0.08 * g, -0.25);
-            }
+        }
+        if (1.0 - hp) > 0.3 {
+            // breath(0.1, s8): the 8th's number is the seed.
+            let seed = u64::try_from(s8).map_err(|_| MusicError::new(H, format!("8th {s8} is no noise seed")))?;
+            mix.place(&bus, &Sig::Mono(breath(0.1, seed)?), tq, 0.07 * (1.0 - hp), -0.2);
+        }
+        if lead > 0.04 {
+            // The leader: a thin octave double underneath.
+            let low = self.flute(ctx, m - 12, dur, 0.6)?;
+            let double = self.tone(ctx, &low, tq, 1.0)?.0;
+            mix.note(&bus, &Sig::Mono(double), tq, 0.08 * g, -0.25, one);
         }
         Ok(())
     }
@@ -286,7 +344,7 @@ impl FluteSound {
     /// The events of `play`: strikes, bites, baskets, the wave, swats and the abilities (flute.py 619-654).
     fn events(&self, ctx: &MusicCtx, mix: &mut Mix) -> Played {
         let k = self.k;
-        let bus = self.bus(ctx);
+        let (name, bus) = (self.name(ctx), self.bus(ctx));
         let s16 = ctx.show.grid.s16;
         let cfg = ctx.cfg[k];
         let hit = |e: &Event, how: &str| -> Result<bool, MusicError> {
@@ -326,8 +384,24 @@ impl FluteSound {
                 } else {
                     ct[imod_py(event_int(H, e, 8)?, ct.len() as i64) as usize]
                 };
+                // Sound upgrade: under Composed the accent is the written line's own note there, in the accent's
+                // high octave (82 to 93), not a pick from the chord (the pick stays on a rest of the line).
+                let m = if ctx.composed_on() {
+                    ctx.play_line(name, tq)?.map_or(m, |mut played| {
+                        while played < 82 {
+                            played += 12;
+                        }
+                        while played > 93 {
+                            played -= 12;
+                        }
+                        played
+                    })
+                } else {
+                    m
+                };
                 let (sig, g, _) = self.tone(ctx, &self.flute(ctx, m, 0.07, 1.0)?, t, 0.9)?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.16 * g, side(e)?);
+                let (one, soft) = (ctx.one_voice(name), ctx.soften(name, m));
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.16 * g * soft, side(e)?, one);
             } else if e.kind == "basket" && event_is(H, e, 2, k)? {
                 // A basket lands: a soft wicker thump.
                 let thump = synth::thud(0.18, 220.0, 120.0, noise_seed(H, t * 9.0)?);

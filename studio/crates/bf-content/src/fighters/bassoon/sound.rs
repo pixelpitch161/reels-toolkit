@@ -284,9 +284,10 @@ impl Sound for BassoonSound {
                 continue;
             }
             last_played = tq;
-            let mut m = ctx.line_at(name, tq)?.ok_or_else(|| rest(name, tq))?;
+            // the note it sounds (Composed: the composer wrote the line, so its own note on every landing)
+            let mut m = ctx.play_line(name, tq)?.ok_or_else(|| rest(name, tq))?;
             let chord = ctx.harmony.chord_at(tq);
-            if (slot as i64).rem_euclid(2) == 1 {
+            if (slot as i64).rem_euclid(2) == 1 && !ctx.composed_on() {
                 // STACCATO's 16th landings: a passing note
                 let t2 = tq + s16;
                 let nxt = ctx.line_at(name, t2)?.ok_or_else(|| rest(name, t2))?;
@@ -307,13 +308,15 @@ impl Sound for BassoonSound {
                 0.6
             };
             let (sig, g, lead) = self.note(ctx, f64::from(m), 0.085, vel, t, 1.0, 0.0)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, if hit { 0.46 } else { 0.30 } * g, -0.22);
+            // sound upgrade (M5): under Composed a bassoon sounds one note at a time, so a new dot ends the one before
+            let one = ctx.one_voice(name);
+            mix.note(&bus, &Sig::Mono(sig), tq, if hit { 0.46 } else { 0.30 } * g, -0.22, one);
             if lead > 0.05 && hit {
                 // the leader: a sixth under (fuller)
                 let under = ctx.harmony.chord_tones(m - 9, m - 5, chord).map_err(bad)?;
                 if let Some(&u) = under.first() {
                     let sig = self.note(ctx, f64::from(u), 0.085, 0.6, t, 1.0, 0.0)?.0;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.16 * g, -0.3);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.16 * g, -0.3, one);
                 }
             }
             if back {

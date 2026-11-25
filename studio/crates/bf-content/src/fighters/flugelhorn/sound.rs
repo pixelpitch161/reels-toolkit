@@ -91,6 +91,28 @@ impl FlugelSound {
         }
     }
 
+    /// The note of the tune it sounds at `t`: [`FlugelSound::line`] for a note that really plays, asked for once the
+    /// note is known to sound. Under the Composed arrangement the context keeps what was played, and a moving melody
+    /// style never hands back the note before it (sound upgrade); under Classic it is `line`.
+    fn sounded(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
+        match ctx.play_line(self.name(ctx), t)? {
+            Some(m) => Ok(Self::fit(m, 55, 74)),
+            None => Ok(self.root(ctx, t)? + 4),
+        }
+    }
+
+    /// The note of a flank call at `t`: the chord's root and `up` semitones. Under the Composed arrangement it is
+    /// the written line's note there instead (sound upgrade: every pitched fighter plays its line), the root's own
+    /// on a rest of the line.
+    fn call(&self, ctx: &MusicCtx, t: f64, up: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(Self::fit(m, 55, 74));
+        }
+        Ok(self.root(ctx, t)? + up)
+    }
+
     /// The chord's root at `t` from G3 up.
     fn root(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         ctx.harmony.root_above(ctx.harmony.chord_at(t), 55).map_err(bad)
@@ -157,25 +179,33 @@ impl Sound for FlugelSound {
         let t0 = ctx.show.grid.t_fight;
         // the tune, held softly on every other beat, thinned as it loses
         let mut thin = Thinner::new(3.0);
+        // sound upgrade (M5): under Composed a horn sounds one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(self.name(ctx));
         let mut slot: i64 = py::round_half_even(ctx.q16(t0) / s16) as i64;
         while slot as f64 * s16 < t_ko {
             let tq = slot as f64 * s16;
             let hp = ctx.hp_at(k, tq) / 100.0;
             if thin.keep(slot as f64, hp) {
-                let m = self.line(ctx, tq)?;
+                let m = self.sounded(ctx, tq)?;
                 let (sig, g, _) = self.colour(ctx, &self.horn(ctx, m, 7.0, 0.7)?, tq, 1.0, &self.colour_args())?;
-                mix.place(&bus, &Sig::Mono(sig), tq, 0.22 * g, pan);
+                mix.note(&bus, &Sig::Mono(sig), tq, 0.22 * g, pan, one);
             }
             slot += 8;
         }
-        // its claps: the flank call, the root and then up a sixth, with a rush of wings
+        // its claps: the flank call, the root and then up a sixth, with a rush of wings (Composed: the line's note
+        // at each)
         for c in claps(&ctx.rec.events, k).into_iter().filter(|c| c.t0 < t_ko) {
             let tq = ctx.q16(c.t0);
-            let r = self.root(ctx, tq)?;
+            let r = self.call(ctx, tq, 0)?;
             let (a, g, _) = self.colour(ctx, &self.horn(ctx, r, 1.0, 0.8)?, tq, 1.0, &self.colour_args())?;
-            mix.place(&bus, &Sig::Mono(a), tq, 0.22 * g, pan);
-            let (b, _, _) = self.colour(ctx, &self.horn(ctx, r + 9, 2.0, 0.9)?, tq, 1.0, &self.colour_args())?;
-            mix.place(&bus, &Sig::Mono(b), tq + s16, 0.20 * g, pan);
+            mix.note(&bus, &Sig::Mono(a), tq, 0.22 * g, pan, one);
+            let sixth = if ctx.composed_on() {
+                self.call(ctx, tq + s16, 9)?
+            } else {
+                r + 9
+            };
+            let (b, _, _) = self.colour(ctx, &self.horn(ctx, sixth, 2.0, 0.9)?, tq, 1.0, &self.colour_args())?;
+            mix.note(&bus, &Sig::Mono(b), tq + s16, 0.20 * g, pan, one);
             let seed = (c.t0 * 100.0) as u64;
             mix.place("fx", &Sig::Mono(whoosh(0.22, seed, 600.0, 4000.0)), tq - 0.1, 0.05, pan);
         }

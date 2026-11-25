@@ -254,9 +254,11 @@ impl BagpipesSound {
             .collect()
     }
 
-    /// `melody_at(t)`: its line (`T.line_at`) at `t`.
+    /// `melody_at(t)`: the note of its line the chanter sounds at `t` (a flight's squeal, a landed flight). Under
+    /// Classic it is the line's note (`T.line_at`); under the Composed arrangement the context keeps what was
+    /// played, and a moving melody style never hands back the note before it (sound upgrade).
     fn melody_at(&self, ctx: &MusicCtx, t: f64) -> Result<f64, MusicError> {
-        match ctx.line_at(self.name(ctx), t)? {
+        match ctx.play_line(self.name(ctx), t)? {
             Some(m) => Ok(f64::from(m)),
             None => Err(MusicError::new(
                 H,
@@ -339,6 +341,10 @@ impl Sound for BagpipesSound {
     /// The drone is the bag's air; the flight squeals; its hits and abilities (#30 `main()`, in its order).
     fn play(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let (k, bus) = (self.k, self.bus(ctx));
+        let name = self.name(ctx);
+        // sound upgrade (M5): under Composed the chanter sounds one note at a time, so a landed flight's note ends
+        // the squeal of the flight it lands in
+        let one = ctx.one_voice(name);
         let grid = &ctx.show.grid;
         let (t_ko, lose) = (ctx.show.t_ko, ctx.show.lose);
         let rad = self.radii(ctx)?;
@@ -405,7 +411,9 @@ impl Sound for BagpipesSound {
             let m0 = self.melody_at(ctx, ctx.q16(c.t_rel))?;
             let s = squeal(d, pp::midi_hz(m0), c.t_rel)?;
             let (sg, gg, _) = self.tone(ctx, &s, c.t_rel, 1.0)?;
-            mix.place(&bus, &Sig::Mono(sg), c.t_rel, 0.24 * gg, -0.15);
+            // (sound upgrade, M3: a top note of the chanter plays softer under Composed; 1 under Classic)
+            let soft = ctx.soften(name, m0 as i32);
+            mix.note(&bus, &Sig::Mono(sg), c.t_rel, 0.24 * gg * soft, -0.15, one);
         }
         for e in &ctx.rec.events {
             let t = e.t;
@@ -420,13 +428,29 @@ impl Sound for BagpipesSound {
                     let ml = self.melody_at(ctx, tq)?;
                     let m = if ml < 72.0 { ml + 12.0 } else { ml };
                     let (sig, gg, _) = self.tone(ctx, &chanter(m, 0.22, 1.0, true), tq, 1.0)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * gg, pan);
+                    let soft = ctx.soften(name, m as i32);
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.34 * gg * soft, pan, one);
                     let th = synth::thud(0.32, 150.0, 55.0, noise_seed(H, t * 7.0)?);
                     mix.place("fx", &Sig::Mono(th), tq, 0.18, 0.0);
                 } else {
                     // a body slam: a drone blat + a stomp
-                    let blat = self.tone(ctx, &chanter(57.0, 0.3, 1.0, false), tq, 1.0)?.0;
-                    mix.place(&bus, &Sig::Mono(synth::lp(&blat, 1800.0, FILTER_O)), tq, 0.30, pan);
+                    // (sound upgrade: under Composed the blat is the written line's note there, brought down by
+                    // octaves to the blat's own depth, the octave around the drones' A3; A3 itself on a rest)
+                    let low = if ctx.composed_on() {
+                        ctx.play_line(name, tq)?.map_or(57.0, |mut m| {
+                            while m > 62 {
+                                m -= 12;
+                            }
+                            while m < 51 {
+                                m += 12;
+                            }
+                            f64::from(m)
+                        })
+                    } else {
+                        57.0
+                    };
+                    let blat = self.tone(ctx, &chanter(low, 0.3, 1.0, false), tq, 1.0)?.0;
+                    mix.note(&bus, &Sig::Mono(synth::lp(&blat, 1800.0, FILTER_O)), tq, 0.30, pan, one);
                     mix.place(STOMP, &Sig::Mono(stomp(1.0, noise_seed(H, t * 3.0)?)), tq, 0.40, 0.0);
                     let th = synth::thud(0.4, 110.0, 40.0, noise_seed(H, t * 5.0)?);
                     mix.place("fx", &Sig::Mono(th), tq, 0.22, 0.0);

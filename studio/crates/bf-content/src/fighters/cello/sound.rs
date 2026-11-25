@@ -164,6 +164,17 @@ impl CelloSound {
         ctx.line_at(name, t)?.ok_or_else(|| rest(name, t))
     }
 
+    /// The note of a stab the kit plays off the chord (a throw, a rope slam) under the Composed arrangement: the
+    /// written line's note at `tq`, in its register (sound upgrade: every pitched fighter plays its line). `None`
+    /// under Classic and on a rest of the line: the kit's own notes then.
+    fn stab(&self, ctx: &MusicCtx, tq: f64) -> Result<Option<i32>, MusicError> {
+        if !ctx.composed_on() {
+            return Ok(None);
+        }
+        let played = ctx.play_line(self.name(ctx), tq)?;
+        Ok(played.map(|m| self.fit_reg(ctx, m, None, None)))
+    }
+
     /// `root_of(t)`: the root of the chord playing at `t`, at or above C3 (48).
     fn root_of(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         ctx.harmony.root_above(ctx.harmony.chord_at(t), 48).map_err(bad)
@@ -362,12 +373,23 @@ impl Sound for CelloSound {
         let holds: Vec<(f64, f64)> = self.mine(ctx, "hold").map(|e| (e.t, e.f(5))).collect();
         let vib: Vec<(f64, f64)> = self.mine(ctx, "vibrato").map(|e| (e.t, e.f(3))).collect();
         let rushes: Vec<f64> = self.mine(ctx, "rush").map(|e| e.t).collect();
+        let name = self.name(ctx);
+        // sound upgrade (M5): under Composed a cello bows one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(name);
         // the singing line
         for (t, m, beats) in self.melody(ctx)? {
             let hp01 = ctx.hp_at(k, t) / 100.0;
             if !th.keep(py::round_half_even(t / s16), hp01) {
                 continue;
             }
+            // sound upgrade: the bow that sounds asks the line for its note (`melody` only read it, to tie the
+            // repeats): in a moving melody style that is never the note of the bow before
+            let m = if ctx.composed_on() {
+                ctx.play_line(name, t)?
+                    .map_or(m, |played| self.fit_reg(ctx, played, None, None))
+            } else {
+                m
+            };
             let beats = beats as f64;
             let dur = beats * beat * 0.97;
             let mut v = if in_spans(&holds, t) { 0.32 } else { 0.18 };
@@ -380,7 +402,7 @@ impl Sound for CelloSound {
                 x = gliss(&x, 4.0, 0.12)?;
             }
             let (sig, g, _) = self.col(ctx, &x, t, 1.0)?;
-            mix.place(&bus, &Sig::Mono(sig), t, 0.34 * g, pan);
+            mix.note(&bus, &Sig::Mono(sig), t, 0.34 * g, pan, one);
         }
         for e in &ctx.rec.events {
             let t = e.t;
@@ -394,7 +416,14 @@ impl Sound for CelloSound {
             match e.kind.as_str() {
                 "grab" if event_int(H, e, 3)? == 1 => {
                     // the embrace: a swelling double stop
-                    let m = self.fit_reg(ctx, self.line(ctx, tq)?, None, None);
+                    // (sound upgrade: under Composed the second string goes under the note the bow is on, which a
+                    // moving style may have moved off the line's; it is a double stop, so it does not end that note)
+                    let on = if ctx.composed_on() {
+                        ctx.hold_line(name, tq)?.ok_or_else(|| rest(name, tq))?
+                    } else {
+                        self.line(ctx, tq)?
+                    };
+                    let m = self.fit_reg(ctx, on, None, None);
                     let low = lo.max(m - 9);
                     let x = self.bow(ctx, low, beat * 0.9, 0.9, 0.3)?;
                     let x = ramp(&x, 0.6, 1.1, 0.0, 1.1);
@@ -404,25 +433,47 @@ impl Sound for CelloSound {
                 }
                 "throw" => {
                     // marcato stab
-                    let r = self.root_of(ctx, tq)?;
-                    let x = self.bow(ctx, r + 12, 0.16, 1.0, 0.0)?;
-                    mix.place(&bus, &Sig::Mono(self.col(ctx, &x, t, 1.0)?.0), tq, 0.36, pan);
+                    let m = match self.stab(ctx, tq)? {
+                        Some(m) => m,
+                        None => self.root_of(ctx, tq)? + 12,
+                    };
+                    let x = self.bow(ctx, m, 0.16, 1.0, 0.0)?;
+                    mix.note(&bus, &Sig::Mono(self.col(ctx, &x, t, 1.0)?.0), tq, 0.36, pan, one);
                     let whoosh = synth::whoosh(0.3, 500.0, 4000.0, WHOOSH_RISE, WHOOSH_SEED);
                     mix.place("fx", &Sig::Mono(whoosh), tq, 0.08, pan);
                 }
                 "ropeslam" => {
                     // a crunching double stop on the band's stop
-                    let r = self.root_of(ctx, tq)?;
-                    for (m, gg) in [(r, 0.36), (r + 7, 0.28), (r + 12, 0.18)] {
-                        let x = self.col(ctx, &self.bow(ctx, m, 0.35, 1.0, 0.0)?, t, 2.0)?.0;
-                        mix.place(&bus, &Sig::Mono(x), tq, gg, pan);
+                    if let Some(top) = self.stab(ctx, tq)? {
+                        // sound upgrade: under Composed the stop is built under the written line's note, which is
+                        // its top and its loudest string: the chord's root below it, and the chord tone between
+                        let chord = ctx.harmony.chord_at(tq);
+                        let root = ctx.harmony.root_above(chord, top - 12).map_err(bad)?;
+                        let mid = ctx.harmony.chord_tones(root + 1, top - 1, chord).map_err(bad)?;
+                        let stop = [Some((top, 0.36)), Some((root, 0.28)), mid.last().map(|&m| (m, 0.18))];
+                        for (m, gg) in stop.into_iter().flatten() {
+                            let x = self.col(ctx, &self.bow(ctx, m, 0.35, 1.0, 0.0)?, t, 2.0)?.0;
+                            mix.note(&bus, &Sig::Mono(x), tq, gg, pan, one);
+                        }
+                    } else {
+                        let r = self.root_of(ctx, tq)?;
+                        for (m, gg) in [(r, 0.36), (r + 7, 0.28), (r + 12, 0.18)] {
+                            let x = self.col(ctx, &self.bow(ctx, m, 0.35, 1.0, 0.0)?, t, 2.0)?.0;
+                            mix.place(&bus, &Sig::Mono(x), tq, gg, pan);
+                        }
                     }
                     let thud = synth::thud(0.5, 140.0, 40.0, noise_seed(H, t * 9.0)?);
                     mix.place("fx", &Sig::Mono(thud), tq, 0.32, 0.0);
                 }
                 "hit" if event_is_str(H, e, 7, "vibrato")? => {
                     // VIBRATO: a bowed tremolo shake on the 16ths
-                    let m = self.fit_reg(ctx, self.line(ctx, tq)?, None, None);
+                    // (sound upgrade: under Composed the shake stays on the note the bow is on)
+                    let on = if ctx.composed_on() {
+                        ctx.hold_line(name, tq)?.ok_or_else(|| rest(name, tq))?
+                    } else {
+                        self.line(ctx, tq)?
+                    };
+                    let m = self.fit_reg(ctx, on, None, None);
                     mix.place(&bus, &Sig::Mono(self.bow(ctx, m, 0.07, 0.75, 0.0)?), tq, 0.12, pan);
                 }
                 "prelude_note" => {

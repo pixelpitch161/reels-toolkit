@@ -159,15 +159,29 @@ impl BassClarinetSound {
         Ok(ctx.harmony.root_above(first, lo).map_err(bad)? + 12)
     }
 
-    /// `line_at(t)`: its line's note at `t` (a rest is an error: Python cannot make a note of `None`).
+    /// `line_at(t)`: the note of its line it sounds at `t` (a rest is an error: Python cannot make a note of
+    /// `None`). Under Classic it is the line's note; under the Composed arrangement the context keeps what was
+    /// played, and a moving melody style never hands back the note before it (sound upgrade).
     fn line_at(&self, ctx: &MusicCtx, t: f64) -> Result<i32, MusicError> {
         let name = self.name(ctx);
-        ctx.line_at(name, t)?.ok_or_else(|| {
+        ctx.play_line(name, t)?.ok_or_else(|| {
             MusicError::new(
                 H,
                 format!("{name}'s line has a rest at {t} s, where the whirl plays a note"),
             )
         })
+    }
+
+    /// The note of a growl the kit plays off the chord (the roll out of its corner, a peg going in, the held
+    /// fifth): `root(t) + up`. Under the Composed arrangement it is the written line's note there instead (sound
+    /// upgrade: every pitched fighter plays its line), the kit's own on a rest of the line.
+    fn step(&self, ctx: &MusicCtx, t: f64, up: i32) -> Result<i32, MusicError> {
+        if ctx.composed_on()
+            && let Some(m) = ctx.play_line(self.name(ctx), t)?
+        {
+            return Ok(m);
+        }
+        Ok(self.root(ctx, t)? + up)
     }
 
     /// `twin_on(t)`: a `twin` event of its own covers `t`.
@@ -197,16 +211,18 @@ impl BassClarinetSound {
             return Ok(());
         }
         let mut dropped = false;
+        // sound upgrade (M5): under Composed a clarinet sounds one note at a time, so a new note ends the one before
+        let one = ctx.one_voice(self.name(ctx));
         // first = min(a[0] for a in ANCH): FIGHT!: it rolls out of its corner, growling
         let first = anch.iter().map(|a| a.t).fold(f64::INFINITY, py_min);
         let x = self.bcl(
-            f64::from(self.root(ctx, grid.t_fight)?),
+            f64::from(self.step(ctx, grid.t_fight, 0)?),
             first - grid.t_fight - 0.05,
             0.75,
             0.2,
         )?;
         let (sig, _, _) = self.col(ctx, &x, grid.t_fight)?;
-        mix.place(&bus, &Sig::Mono(sig), grid.t_fight, 0.26, -0.2);
+        mix.note(&bus, &Sig::Mono(sig), grid.t_fight, 0.26, -0.2, one);
         for a in &anch {
             let (t0, te) = (a.t, a.te);
             if t0 > t_ko + 0.01 {
@@ -214,9 +230,9 @@ impl BassClarinetSound {
             }
             let tq = ctx.q16(t0);
             // the peg goes in: the bar's root, growling
-            let root = self.root(ctx, tq)?;
+            let root = self.step(ctx, tq, 0)?;
             let (sig, g, _) = self.col(ctx, &self.bcl(f64::from(root), 0.9 * beat, 0.95, 0.35)?, t0)?;
-            mix.place(&bus, &Sig::Mono(sig), tq, 0.46 * g, -0.2);
+            mix.note(&bus, &Sig::Mono(sig), tq, 0.46 * g, -0.2, one);
             let clink = clank(84.0, noise_seed(H, t0 * 10.0)?, CLANK_DUR, &CLANK_DECAYS)?;
             mix.place("fx", &Sig::Mono(clink), tq, 0.05, -0.2);
             // it pulls the peg and rolls on: a held growl (the fifth)
@@ -229,13 +245,13 @@ impl BassClarinetSound {
                 .fold(f64::INFINITY, py_min);
             if nxt - tr > 0.3 {
                 let x = self.bcl(
-                    f64::from(self.root(ctx, tr)? + 7),
+                    f64::from(self.step(ctx, tr, 7)?),
                     py_min(nxt - tr, 2.2 * beat) - 0.05,
                     0.7,
                     0.1,
                 )?;
                 let (sig, g, _) = self.col(ctx, &x, tr)?;
-                mix.place(&bus, &Sig::Mono(sig), tr, 0.24 * g, -0.2);
+                mix.note(&bus, &Sig::Mono(sig), tr, 0.24 * g, -0.2, one);
             }
             // the rumble through the whirl, on the 8ths
             let mut e8 = ctx.q16(t0 + beat / 2.0);
@@ -246,16 +262,16 @@ impl BassClarinetSound {
                 if !dropped {
                     let m = f64::from(self.line_at(ctx, e8)?);
                     let (sig, g, lead) = self.col(ctx, &self.bcl(m, 0.42 * beat, 0.8, 0.25)?, e8)?;
-                    mix.place(&bus, &Sig::Mono(sig), e8, 0.42 * g, -0.2);
+                    mix.note(&bus, &Sig::Mono(sig), e8, 0.42 * g, -0.2, one);
                     if self.twin_on(ctx, e8)? {
                         // MULTIPHONICS: the twelfth above at once
                         let (sig, _, _) = self.col(ctx, &self.bcl(m + 19.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
-                        mix.place(&bus, &Sig::Mono(sig), e8, 0.16 * g, -0.1);
+                        mix.note(&bus, &Sig::Mono(sig), e8, 0.16 * g, -0.1, one);
                     }
                     if lead > 0.04 && imod_py(slot as i64, 4) == 0 {
                         // the leader: the octave under (fuller)
                         let (sig, _, _) = self.col(ctx, &self.bcl(m - 12.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
-                        mix.place(&bus, &Sig::Mono(sig), e8, 0.10 * g, 0.0);
+                        mix.note(&bus, &Sig::Mono(sig), e8, 0.10 * g, 0.0, one);
                     }
                 }
                 e8 += beat / 2.0;
@@ -281,7 +297,8 @@ impl BassClarinetSound {
                     let tq = ctx.q16(t);
                     let pop = self.slap(f64::from(self.line_at(ctx, tq)? + 12), 1.0)?;
                     let (sig, _, _) = self.col(ctx, &pop, t)?;
-                    mix.place(&bus, &Sig::Mono(sig), tq, 0.40, -0.15);
+                    let one = ctx.one_voice(self.name(ctx));
+                    mix.note(&bus, &Sig::Mono(sig), tq, 0.40, -0.15, one);
                     let thud = synth::thud(0.3, 150.0, 55.0, noise_seed(H, t * 9.0)?);
                     mix.place("fx", &Sig::Mono(thud), tq, 0.18, 0.0);
                 }
