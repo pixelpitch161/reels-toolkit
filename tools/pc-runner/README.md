@@ -19,7 +19,9 @@ What runs there once it is switched on:
   PC-Tests: -p bf-app --test ui matchup::
   ```
 
-  Each line is what follows `cargo test --release --locked` in `studio/`. The app's own ffmpeg is unpacked first (from
+  Each line is what follows `cargo test --release --locked` in `studio/`, at most 10 lines a push; one line can name
+  several test files (`-p bf-harness --test a --test b`) or several filters (`-p bf-sound --lib -- music:: polish`).
+  The app's own ffmpeg is unpacked first (from
   the archive the PC keeps), so a named test that makes a video really makes it. Or start it by hand: Actions, `pc-tests`,
   Run workflow, with the lines in `tests` separated by `;`. The result is on the run's page.
 

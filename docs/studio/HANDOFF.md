@@ -213,10 +213,11 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
 - **Tests run on this PC, never in a cloud container** (the owner, Nov 23, 2026). A thread that works on this PC
   (Remote Control) runs its tests here as above. A thread in a cloud container builds and tests nothing there: it
   pushes, and names the tests it needs in its last commit's message, one line each, `PC-Tests: -p bf-sim --test
-  violin_quick` (what follows `cargo test --release --locked` in `studio/`). The `pc-tests` workflow runs them on
-  this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface tests run too; the
-  result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what changed, none for a
-  small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
+  violin_quick` (what follows `cargo test --release --locked` in `studio/`), at most 10 lines; one line can name
+  several test files (`-p bf-harness --test a --test b`) or filters (`--lib -- music:: polish`). The `pc-tests`
+  workflow runs them on this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface
+  tests run too; the result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what
+  changed, none for a small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
   (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
   `F:\bf-runner\target` (30 to 95 GB), which counts toward the 150 GB to keep free on F:.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
