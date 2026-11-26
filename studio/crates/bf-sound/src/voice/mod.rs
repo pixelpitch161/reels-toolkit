@@ -163,6 +163,7 @@ pub trait Voice: Send + Sync {
     }
 }
 
+pub mod engine2;
 pub mod pp;
 pub mod real;
 
