@@ -197,12 +197,15 @@ mod tests {
             db_at(&x, 0.29),
             db_at(&x, 0.7)
         );
+        // a top key has no damper: let go at 0.3 s it dies exactly as if held (on its own it falls fast, about
+        // 24 dB from 0.3 s to 0.7 s at C7, as a real top string does)
         let y = note(&set, &PARTS, &Play::plain(96.0, 0.3, 0.8), 48_000, 0);
+        let held = note(&set, &PARTS, &Play::plain(96.0, 4.0, 0.8), 48_000, 0);
         assert!(
-            db_at(&y, 0.29) - db_at(&y, 0.7) < 12.0,
+            (db_at(&y, 0.7) - db_at(&held, 0.7)).abs() < 0.1,
             "{} {}",
-            db_at(&y, 0.29),
-            db_at(&y, 0.7)
+            db_at(&y, 0.7),
+            db_at(&held, 0.7)
         );
     }
 

@@ -271,12 +271,13 @@ mod tests {
     #[test]
     fn the_pipes_stop_quickly() {
         let set = organ();
-        let x = note(&set, &PARTS, &Play::plain(60.0, 0.5, 0.8), 48_000, 0);
+        // a time constant of at most 0.12 s: 0.7 s after the key comes up it is over 40 dB down
+        let x = note(&set, &PARTS, &Play::plain(60.0, 0.5, 0.8), 72_000, 0);
         assert!(
-            db_at(&x, 0.45) - db_at(&x, 0.9) >= 30.0,
+            db_at(&x, 0.45) - db_at(&x, 1.2) >= 40.0,
             "{} {}",
             db_at(&x, 0.45),
-            db_at(&x, 0.9)
+            db_at(&x, 1.2)
         );
     }
 
@@ -307,7 +308,8 @@ mod tests {
             let (re, im) = component(x, f, (t * SRF) as usize, 2400);
             dmath::atan2(im, re)
         };
-        // the phase the 8th overtone gains over 10 ms: 4 cents flat at 2.09 kHz is 4.8 Hz less, 0.30 rad less
+        // the phase the 8th overtone gains over 10 ms against the heterodyne: a chord of six sags 3.2 cents (0.8 a
+        // note past two, at most 4), which at 2.09 kHz is 3.9 Hz lower, so 0.24 rad more against the heterodyne
         let gain = |x: &[f64]| {
             let d = phase(x, 0.31) - phase(x, 0.3);
             (d + 3.0 * dmath::TAU) % dmath::TAU
@@ -318,7 +320,8 @@ mod tests {
         } else if diff < -dmath::PI {
             diff += dmath::TAU;
         }
-        let want = dmath::TAU * f * (dmath::pow(2.0, -4.0 / 1200.0) - 1.0) * 0.01;
+        let sag = PARTS.sag_cents.min(0.8 * 4.0);
+        let want = dmath::TAU * f * (1.0 - dmath::pow(2.0, -sag / 1200.0)) * 0.01;
         assert!((diff - want).abs() < 0.06, "{diff} {want}");
     }
 }
