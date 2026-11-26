@@ -29,8 +29,10 @@ pub mod loud;
 pub mod lows;
 pub mod room;
 
-/// How far over the band a fighter stands to the ear, in dB, and the most a render moves it to get there.
-pub const OVER_BAND: f64 = 5.0;
+/// How far over the band a fighter stands to the ear, in dB, and the most a render moves it to get there. It was
+/// 5 dB at first; with every theme playing its own band (stage 2) the owner found the bands "way too quiet"
+/// (2026-11-26), so a fighter now stands just over its band.
+pub const OVER_BAND: f64 = 1.0;
 pub const TRIM: f64 = 9.0;
 
 /// The shared bus the winner's solo plays on.

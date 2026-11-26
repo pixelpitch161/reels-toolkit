@@ -56,6 +56,9 @@ arrangement, switched on the Music screen:
   levels and the buses that get a phone's overtones. **A new theme needs a groove**: `bf-harness/tests/bands.rs`
   fails a theme that plays the shared patterns or whose band loses more than 5 dB on a phone. Measure and tune it with
   `cargo run --release -p bf-harness --example bands -- <theme>` (it renders, it is not a test run).
+  The Composed master keeps each fighter `polish::OVER_BAND` dB over its band by ear: 1 dB since Nov 26, 2026 (it was
+  5, and Aedan heard the bands as "way too quiet"). After changing it, write the level table again (`ballfight levels
+  fights/dev/bold_<fighter>.toml ...`, one per fighter, `--write crates/bf-content/src/levels_table.rs`).
 - **Classic**: each theme's ported bed with the fighters' kit lines and solos. The series' own match-ups (a kit pair,
   an older episode's pair, and every imported episode) keep Classic, so they sound as they always did. Classic is
   one click away for any other fight.
