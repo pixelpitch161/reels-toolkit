@@ -59,6 +59,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.05,
     stop: 0.045,
+    keep_shape: false,
 };
 
 /// The EUPHONIUM's Pixel Pitch voice.

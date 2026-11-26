@@ -74,9 +74,14 @@ arrangement, switched on the Music screen:
   the table, refining it until the corrected notes match the real ones. A peak can only lift an overtone that is
   there, so overtones a voice barely has (15 dB or more under the real balance) are first added (`real::Fill`,
   `real::fill`: the note's own fundamental as an analytic signal, raised to each harmonic, so the added partials
-  follow its vibrato and bends); the reworked note keeps the voice's own loudness. Parts that make their own notes
-  (piccolo, oboe, clarinet, bass clarinet, the bagpipes' chanter) keep their Classic function and add a `played`
-  (or `ch`) that reworks it under Composed through `real::RealNotes`. A fighter measured against a relative FluidR3
+  follow its vibrato and bends); the reworked note keeps the voice's own loudness. A note still over 5 dB off whose
+  own fundamental is weak (the electric's pickup notch at 63) has the overtones it lacks against its strongest added
+  too, at the real balance beside its fundamental, so a `Fill` level can be over the fundamental. A plucked or
+  struck voice sets `Rework::keep_shape` (`real::follow`: its own loudness moment by moment), because the narrow
+  peaks rebuild its low harmonics over tens of milliseconds and would soften its snap into a swell. Parts that make
+  their own notes (piccolo, oboe, clarinet, bass clarinet, bassoon, marimba, the bagpipes' chanter, the accordion's
+  reeds) keep their Classic function and add a `played` (or `ch`, `bsn`, `chord`) that reworks it under Composed
+  through `real::RealNotes`. A fighter measured against a relative FluidR3
   lacks is aimed at it shaded (`references.rs` `tilt`: cornet 0.5 and flugelhorn 1 dB per harmonic mellower than the
   trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart. Drums (timpani, bass drum) get only the
   repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and

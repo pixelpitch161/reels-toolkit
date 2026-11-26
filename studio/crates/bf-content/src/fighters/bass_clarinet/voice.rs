@@ -132,6 +132,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.06,
     stop: 0.05,
+    keep_shape: false,
 };
 
 /// The BASS CLARINET's Pixel Pitch voice.

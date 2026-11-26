@@ -97,6 +97,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.08,
     stop: 0.0,
+    keep_shape: false,
 };
 
 /// VIOLIN's Pixel Pitch voice.

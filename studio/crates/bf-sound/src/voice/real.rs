@@ -146,17 +146,20 @@ pub const NONE: f64 = -99.0;
 /// How a voice is reworked from its own notes, for a voice whose make-up is not opened up as the saxes' are: the
 /// overtones it barely has added ([`Fill`], empty for none), an overtone [`Correction`], the real instrument's slower
 /// start (`speak`, seconds to full level, 0 to keep the voice's own) and quicker stop (`stop`, an extra time constant
-/// after the held length, 0 to keep the voice's own).
+/// after the held length, 0 to keep the voice's own). A plucked or struck voice keeps its own loudness moment by
+/// moment (`keep_shape`, [`follow`]): the correction's narrow peaks restore its low harmonics over tens of
+/// milliseconds, which would soften its snap into a swell.
 #[derive(Clone, Copy, Debug)]
 pub struct Rework {
     pub fill: &'static Fill,
     pub correction: &'static Correction,
     pub speak: f64,
     pub stop: f64,
+    pub keep_shape: bool,
 }
 
-/// `x` (a note at `f` Hz, `sr` Hz) with partials added at `db` (dB under its fundamental, [`NONE`] for none) for its
-/// second to [`SET`]th harmonics. The note's own fundamental is taken out as an analytic signal (the positive band of
+/// `x` (a note at `f` Hz, `sr` Hz) with partials added at `db` (dB beside its fundamental, under it when negative,
+/// [`NONE`] for none) for its second to [`SET`]th harmonics. The note's own fundamental is taken out as an analytic signal (the positive band of
 /// its spectrum from half to one and a half times `f`, with soft edges), and each added harmonic is that signal's
 /// phase times `k` (plus a fixed offset of its own) at its level, so the partials follow the note's vibrato, bends
 /// and swells.
@@ -293,6 +296,17 @@ pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64)
         }
         y
     };
+    if r.keep_shape {
+        y = follow(&y, x, f, sr);
+        let (a, b) = (
+            x.iter().map(|v| v * v).sum::<f64>(),
+            y.iter().map(|v| v * v).sum::<f64>(),
+        );
+        if a > 0.0 && b > 0.0 {
+            let k = (a / b).sqrt();
+            y.iter_mut().for_each(|v| *v *= k);
+        }
+    }
     for (i, v) in y.iter_mut().enumerate() {
         let t = i as f64 / sr;
         if r.speak > 0.0 && t < r.speak {
@@ -315,6 +329,36 @@ pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64)
             let b = y.get(j + 1).copied().unwrap_or(0.0);
             (a + fr * (b - a)) * level
         })
+        .collect()
+}
+
+/// `y` (a rework of `x`, a note at `f` Hz, `sr` Hz) as loud as `x` moment by moment: both measured over two of the
+/// note's periods (at least 5 ms) centred on each sample, the gain between them held within 24 dB either way (and
+/// where `x` is near silent, `y` is left as it is).
+pub fn follow(y: &[f64], x: &[f64], f: f64, sr: f64) -> Vec<f64> {
+    let w = ((2.0 / f).max(0.005) * sr) as usize;
+    // running sums of squares, so each sample's level costs two lookups
+    let sums = |z: &[f64]| {
+        let mut pre = vec![0.0; z.len() + 1];
+        for (i, v) in z.iter().enumerate() {
+            pre[i + 1] = pre[i] + v * v;
+        }
+        pre
+    };
+    let level = |pre: &[f64], i: usize| {
+        let n = pre.len() - 1;
+        let (a, b) = (i.saturating_sub(w / 2), (i + w - w / 2).min(n));
+        if b <= a {
+            0.0
+        } else {
+            ((pre[b] - pre[a]) / w as f64).max(0.0).sqrt()
+        }
+    };
+    let (px, py) = (sums(x), sums(y));
+    let eps = 1e-3 * (0..x.len()).map(|i| level(&px, i)).fold(0.0, f64::max);
+    y.iter()
+        .enumerate()
+        .map(|(i, v)| v * ((level(&px, i) + eps) / (level(&py, i) + eps)).clamp(1.0 / 16.0, 16.0))
         .collect()
 }
 
@@ -472,12 +516,14 @@ mod tests {
             correction: &[],
             speak: 0.0,
             stop: 0.0,
+            keep_shape: false,
         };
         const SHAPED: Rework = Rework {
             fill: &[],
             correction: &[],
             speak: 0.05,
             stop: 0.02,
+            keep_shape: false,
         };
         let x = even_note(220.0, 24_000);
         assert_eq!(rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 0), x);
@@ -538,6 +584,47 @@ mod tests {
         let tail = &y[43_200..46_800];
         let top = f * 1.122 * (1.0 - 0.1 * 0.122 / 1.122);
         assert!(level_at(tail, 3.0 * top, 48_000.0) - level_at(tail, 3.0 * f, 48_000.0) > 12.0);
+    }
+
+    #[test]
+    fn a_rework_that_keeps_its_shape_keeps_the_plucks_snap() {
+        // a low pluck: every harmonic at once, dying away; the correction cuts everything above the eighth and
+        // lifts the first three back with narrow peaks, which take tens of milliseconds to build up
+        let f = 55.0;
+        let x: Vec<f64> = even_note(f, 24_000)
+            .iter()
+            .enumerate()
+            .map(|(i, v)| v * dmath::exp(-(i as f64) / 48_000.0 / 0.15))
+            .collect();
+        static LOW: [(i32, [f64; SET]); 1] = [(33, [0.0, 0.0, 0.0, -20.0, -20.0, -20.0, -20.0, -20.0])];
+        let soft = Rework {
+            fill: &[],
+            correction: &LOW,
+            speak: 0.0,
+            stop: 0.0,
+            keep_shape: false,
+        };
+        let snap = Rework {
+            keep_shape: true,
+            ..soft
+        };
+        // the level over the first 5 ms against the strongest 5 ms of the first half second, in dB
+        let start = |z: &[f64]| {
+            let w = 240;
+            let rms = |a: usize| (z[a..a + w].iter().map(|v| v * v).sum::<f64>() / w as f64).sqrt();
+            let top = (0..z.len().min(24_000) - w).step_by(w).map(rms).fold(0.0, f64::max);
+            20.0 * dmath::log10(rms(0) / top)
+        };
+        let (own, soft, snap) = (
+            start(&x),
+            start(&rework(&x, 33.0, 0.5, 48_000.0, &soft, 0)),
+            start(&rework(&x, 33.0, 0.5, 48_000.0, &snap, 0)),
+        );
+        assert!(
+            soft < own - 4.0,
+            "the peaks soften the start: {soft:.1} against {own:.1} dB"
+        );
+        assert!((snap - own).abs() < 2.0, "kept: {snap:.1} against {own:.1} dB");
     }
 
     #[test]

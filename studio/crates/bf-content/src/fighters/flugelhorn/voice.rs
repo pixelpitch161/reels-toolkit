@@ -92,6 +92,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.0,
     stop: 0.0,
+    keep_shape: false,
 };
 
 /// FLUGELHORN's voice.

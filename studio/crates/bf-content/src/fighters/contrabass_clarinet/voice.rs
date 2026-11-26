@@ -106,6 +106,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.07,
     stop: 0.05,
+    keep_shape: false,
 };
 
 /// CONTRABASS CLARINET's voice.

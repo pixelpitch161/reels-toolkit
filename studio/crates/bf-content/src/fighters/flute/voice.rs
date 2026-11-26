@@ -98,6 +98,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.05,
     stop: 0.06,
+    keep_shape: false,
 };
 
 /// The FLUTE's Pixel Pitch voice.

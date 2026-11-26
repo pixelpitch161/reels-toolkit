@@ -76,6 +76,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.05,
     stop: 0.094,
+    keep_shape: false,
 };
 
 /// The TROMBONE's Pixel Pitch voice.

@@ -78,6 +78,7 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.08,
     stop: 0.056,
+    keep_shape: false,
 };
 
 /// A plucked note's rework (its notes under 0.5 s): no overtones to set against a bowed reference, so only the small
@@ -87,6 +88,7 @@ pub const PLUCKED: Rework = Rework {
     correction: &[],
     speak: 0.0,
     stop: 0.0,
+    keep_shape: false,
 };
 
 /// CONTRABASS's Pixel Pitch voice.

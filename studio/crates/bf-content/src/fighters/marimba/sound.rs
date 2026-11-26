@@ -13,9 +13,10 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError};
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::real::{self, RealNotes};
 
 use super::state;
-use super::voice::bar;
+use super::voice::{REWORK, bar};
 
 /// The name the part's errors carry.
 const H: &str = "MARIMBA";
@@ -36,6 +37,8 @@ fn bits(x: f64, nd: i32) -> u64 {
 pub struct MarimbaSound {
     k: usize,
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's bars, reworked toward the real marimba (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl MarimbaSound {
@@ -44,6 +47,7 @@ impl MarimbaSound {
         MarimbaSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -63,6 +67,22 @@ impl MarimbaSound {
         let x: Arc<[f64]> = bar(m, vel, dur).into();
         notes.insert(key, Arc::clone(&x));
         Ok(x)
+    }
+
+    /// The bar as the arrangement plays it: [`Self::mar`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) reworked toward the real marimba ([`REWORK`]), its repeats taking turns.
+    ///
+    /// # Errors
+    /// As [`Self::mar`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.mar(m, dur, vel)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = [bits(m, 2), bits(dur, 3), bits(vel, 2)];
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
     }
 
     /// The key's tonic at the top of its register.
@@ -132,8 +152,8 @@ impl Sound for MarimbaSound {
         }
     }
 
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.mar(m, dur, vel)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel)
     }
 
     fn title_blast(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, t: f64) -> Played {
@@ -144,7 +164,7 @@ impl Sound for MarimbaSound {
             None => vec![top - 12, top - 5, top - 24, top],
         };
         for (m, g) in hits.iter().zip([0.50, 0.36, 0.30, 0.26, 0.22]) {
-            let x = self.mar(f64::from(*m), 1.2, 1.0)?;
+            let x = self.played(ctx, f64::from(*m), 1.2, 1.0)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), t, g, 0.15);
         }
         Ok(())
@@ -181,14 +201,14 @@ impl Sound for MarimbaSound {
                 let m = span.get(i).copied().unwrap_or(last);
                 base.insert(w.id, m);
                 five.insert(w.id);
-                self.put(ctx, mix, &self.mar(f64::from(m), 0.25, 0.7)?, w.t, 0.16)?;
+                self.put(ctx, mix, &self.played(ctx, f64::from(m), 0.25, 0.7)?, w.t, 0.16)?;
                 continue;
             }
             let tq = ctx.q16(w.t);
             let m = self.sounded(ctx, tq, last)?;
             last = m;
             base.insert(w.id, m);
-            let x = self.mar(f64::from(m), 0.6 * beat, 0.85)?;
+            let x = self.played(ctx, f64::from(m), 0.6 * beat, 0.85)?;
             self.put(ctx, mix, &x, tq, 0.36 * ctx.soften(name, m))?;
         }
         // the bounces: up the scale, a wall at a time
@@ -208,7 +228,7 @@ impl Sound for MarimbaSound {
             self.put(
                 ctx,
                 mix,
-                &self.mar(f64::from(n), 0.3 * beat, 0.6 + 0.08 * b.b.min(4) as f64)?,
+                &self.played(ctx, f64::from(n), 0.3 * beat, 0.6 + 0.08 * b.b.min(4) as f64)?,
                 tq,
                 0.22 * soft,
             )?;
@@ -238,7 +258,13 @@ impl Sound for MarimbaSound {
                 soft = ctx.soften(name, own);
             }
             if let Some(u) = under {
-                self.put(ctx, mix, &self.mar(f64::from(u), 0.5 * beat, 1.0)?, tq, 0.30 * soft)?;
+                self.put(
+                    ctx,
+                    mix,
+                    &self.played(ctx, f64::from(u), 0.5 * beat, 1.0)?,
+                    tq,
+                    0.30 * soft,
+                )?;
             }
             let knock = synth::thud(0.12, 420.0, 180.0, (e.id.rem_euclid(97) + 3) as u64);
             mix.place("fx", &Sig::Mono(knock), tq, 0.08, 0.0);
@@ -251,8 +277,8 @@ impl Sound for MarimbaSound {
             let tq = ctx.q16(t0);
             let m = self.line(ctx, tq, last)?;
             let n = ((t1.min(t_ko) - tq) / (beat / 8.0)).floor().max(0.0) as usize;
-            let x = self.mar(f64::from(m), 0.05, 0.55)?;
-            let x5 = self.mar(f64::from(m + 7), 0.05, 0.5)?;
+            let x = self.played(ctx, f64::from(m), 0.05, 0.55)?;
+            let x5 = self.played(ctx, f64::from(m + 7), 0.05, 0.5)?;
             for i in 0..n {
                 let ti = tq + i as f64 * beat / 8.0;
                 self.put(ctx, mix, if i % 2 == 0 { &x } else { &x5 }, ti, 0.12)?;
@@ -272,7 +298,7 @@ impl Sound for MarimbaSound {
             }
             let m = f64::from(self.top(ctx) - 24);
             let dead: Vec<f64> = self
-                .mar(m, 0.0, 1.0)?
+                .played(ctx, m, 0.0, 1.0)?
                 .iter()
                 .take((0.09 * 48_000.0) as usize)
                 .copied()
@@ -288,7 +314,7 @@ impl Sound for MarimbaSound {
         let top = self.top(ctx);
         let notes = ctx.harmony.scale_notes(top - 24, top, None).map_err(bad)?;
         for (j, m) in notes.iter().rev().enumerate() {
-            let x = self.mar(f64::from(*m), 0.1, 0.8 - 0.03 * j as f64)?;
+            let x = self.played(ctx, f64::from(*m), 0.1, 0.8 - 0.03 * j as f64)?;
             mix.place(
                 &self.bus(ctx),
                 &Sig::Mono(x.to_vec()),
@@ -303,7 +329,7 @@ impl Sound for MarimbaSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let top = f64::from(self.top(ctx));
         for (j, d) in [-12.0, -8.0, -5.0, 0.0].into_iter().enumerate() {
-            let x = self.mar(top + d, 0.8, 1.0)?;
+            let x = self.played(ctx, top + d, 0.8, 1.0)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), tw + j as f64 * 0.03, 0.34, 0.0);
         }
         Ok(())
@@ -316,13 +342,13 @@ impl Sound for MarimbaSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.mar(f64::from(m), d * grid.beat, 0.95)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat, 0.95)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.50, 0.0);
             if d * grid.beat > 0.3 {
                 // a long note is rolled, as a marimba holds one
                 let n = (d * 4.0) as usize;
                 for i in 1..n {
-                    let xi = self.mar(f64::from(m), 0.05, 0.6)?;
+                    let xi = self.played(ctx, f64::from(m), 0.05, 0.6)?;
                     mix.place(
                         "solo",
                         &Sig::Mono(xi.to_vec()),
@@ -343,7 +369,7 @@ impl Sound for MarimbaSound {
         let run = ctx.harmony.scale_notes(top - 12, top, None).map_err(bad)?;
         for (j, m) in run.iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.mar(f64::from(*m), 0.14, 0.7)?;
+            let x = self.played(ctx, f64::from(*m), 0.14, 0.7)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tj, 0.22, 0.0);
         }
         Ok(())
@@ -358,7 +384,7 @@ impl Sound for MarimbaSound {
             let tb = t30 + f64::from(j) * grid.beat / 2.0;
             let m = self.line(ctx, tb, last)?;
             last = m;
-            let x = self.mar(f64::from(m), 0.4 * grid.beat, 0.8)?;
+            let x = self.played(ctx, f64::from(m), 0.4 * grid.beat, 0.8)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tb, 0.30, 0.15);
         }
         Ok(())

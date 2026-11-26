@@ -23,6 +23,7 @@ pub const REWORK: Rework = Rework {
     correction: &[],
     speak: 0.0,
     stop: 0.0,
+    keep_shape: false,
 };
 
 /// TIMPANI's voice.

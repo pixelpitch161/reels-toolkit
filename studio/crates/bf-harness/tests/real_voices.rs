@@ -226,6 +226,44 @@ fn the_bowed_strings_are_their_own_not_each_other() {
 }
 
 #[test]
+fn the_bassoons_keys_and_bellows_are_their_own_not_each_other() {
+    // FluidR3 has no contrabassoon: it is aimed at the bassoon, an octave down
+    for fighter in ["BASSOON", "CONTRABASSOON"] {
+        reworked_nearer_its_own(fighter, "bassoon", &["bari sax", "clarinet", "tuba", "french horn"]);
+    }
+    reworked_nearer_its_own("PIANO", "piano", &["harp", "marimba", "nylon guitar", "steel guitar"]);
+    reworked_nearer_its_own(
+        "ORGAN",
+        "church organ",
+        &["accordion", "drawbar organ", "flute", "clarinet"],
+    );
+    reworked_nearer_its_own(
+        "ACCORDION",
+        "accordion",
+        &["church organ", "drawbar organ", "oboe", "bagpipe"],
+    );
+}
+
+#[test]
+fn the_plucked_and_struck_are_their_own_not_each_other() {
+    reworked_nearer_its_own(
+        "ACOUSTIC",
+        "steel guitar",
+        &["nylon guitar", "clean guitar", "harp", "piano"],
+    );
+    reworked_nearer_its_own(
+        "ELECTRIC",
+        "overdriven guitar",
+        &["clean guitar", "steel guitar", "trumpet"],
+    );
+    reworked_nearer_its_own("BASS GUITAR", "finger bass", &["contrabass", "tuba", "cello"]);
+    // FluidR3 has no ukulele: it is aimed at the nylon-string guitar
+    reworked_nearer_its_own("UKULELE", "nylon guitar", &["steel guitar", "harp", "marimba"]);
+    reworked_nearer_its_own("HARP", "harp", &["piano", "nylon guitar", "marimba"]);
+    reworked_nearer_its_own("MARIMBA", "marimba", &["piano", "harp", "timpani"]);
+}
+
+#[test]
 fn the_drums_repeats_differ_and_keep_their_length() {
     for fighter in ["TIMPANI", "BASS DRUM"] {
         let v = bf_content::fighters::voice(fighter).expect("a voice");

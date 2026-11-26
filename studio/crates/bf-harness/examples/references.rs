@@ -505,12 +505,14 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
 /// How much brighter (dB per harmonic, positive) or mellower (negative) a fighter is aimed than the real instrument
 /// it is measured against, for one measured against a relative FluidR3 lacks: the cornet and flugelhorn against the
 /// trumpet (a cornet is a little mellower, a flugelhorn more so) and the mellophone against the horn (a little
-/// brighter), so the family stays three voices, not one.
+/// brighter), so the family stays three voices, not one. The bass guitar is aimed a little brighter than FluidR3's
+/// finger bass, whose overtones nearly stop at the fourth harmonic: so its notes still speak on a phone.
 fn tilt(fighter: &str) -> f64 {
     match fighter {
         "CORNET" => -0.5,
         "FLUGELHORN" => -1.0,
         "MELLOPHONE" => 0.5,
+        "BASS GUITAR" => 1.0,
         _ => 0.0,
     }
 }
@@ -540,6 +542,33 @@ fn own_note(fighter: &str, v: &dyn bf_sound::voice::Voice, m: i32) -> Vec<f64> {
         return bf_content::fighters::bagpipes::sound::chanter(f64::from(m), HELD, 0.8, false);
     }
     v.note(&mut PpNoise::start(), f64::from(m), 0.8, HELD)
+}
+
+/// The gains, refined from none, that bring the overtones `measure` gives for them nearest `real` (or stop
+/// improving), with their distance; `before` is the distance with none.
+fn refine(
+    measure: &dyn Fn(&[f64; bf_sound::voice::real::SET]) -> Vec<f64>,
+    real: &[f64],
+    before: f64,
+) -> (f64, [f64; bf_sound::voice::real::SET]) {
+    use bf_sound::voice::real::SET;
+    let mut g = [0.0; SET];
+    let (mut best, mut best_g) = (before, g);
+    for _ in 0..8 {
+        let h = measure(&g);
+        for k in 0..SET {
+            // levels under the floor count as the floor, as the distance has them: a harmonic both real and built
+            // have too weak to hear is left alone (the eighth's gain turns everything above it, the breath between
+            // the harmonics too)
+            let gap = real[k].max(timbre::FLOOR) - h[k].max(timbre::FLOOR);
+            g[k] = (g[k] + 0.85 * gap).clamp(-30.0, 24.0);
+        }
+        let d = timbre::distance(&measure(&g), real);
+        if d < best {
+            (best, best_g) = (d, g);
+        }
+    }
+    (best, best_g)
 }
 
 /// A voice's overtone [`Correction`](bf_sound::voice::real::Correction) toward its real instrument, printed as the
@@ -576,26 +605,32 @@ fn correct(fighter: &str) {
                             add[k] = want;
                         }
                     }
-                    let x = real::fill(&x, f, bf_sound::SRF, &add);
-                    let measure = |g: &[f64; SET]| {
-                        let y = real::correct(&x, f, bf_sound::SRF, g);
-                        timbre::fingerprint(&y, m, HELD, true).harmonics
-                    };
-                    let mut g = [0.0; SET];
                     let before = timbre::distance(&was, real);
-                    let (mut best, mut best_g) = (before, g);
-                    for _ in 0..8 {
-                        let h = measure(&g);
-                        for k in 0..SET {
-                            // levels under the floor count as the floor, as the distance has them: a harmonic
-                            // both real and built have too weak to hear is left alone (the eighth's gain turns
-                            // everything above it, the breath between the harmonics too)
-                            let gap = real[k].max(timbre::FLOOR) - h[k].max(timbre::FLOOR);
-                            g[k] = (g[k] + 0.85 * gap).clamp(-30.0, 24.0);
+                    let attempt = |add: &[f64; SET]| {
+                        let x = real::fill(&x, f, bf_sound::SRF, add);
+                        let measure = |g: &[f64; SET]| {
+                            let y = real::correct(&x, f, bf_sound::SRF, g);
+                            timbre::fingerprint(&y, m, HELD, true).harmonics
+                        };
+                        let (d, g) = refine(&measure, real, before);
+                        (d, g, measure(&g))
+                    };
+                    let (mut best, mut best_g, mut now) = attempt(&add);
+                    if best > 5.0 {
+                        // a note whose own fundamental is weak (a pickup's notch, say) has the overtones it lacks
+                        // against its strongest laid in too, as loud beside its fundamental as the real balance
+                        // has them beside the strongest
+                        let mut more = add;
+                        for k in 1..SET {
+                            if more[k] == real::NONE && real[k] > timbre::FLOOR && was[k] < real[k] - 15.0 {
+                                more[k] = real[k] - was[0];
+                            }
                         }
-                        let d = timbre::distance(&measure(&g), real);
-                        if d < best {
-                            (best, best_g) = (d, g);
+                        if more != add {
+                            let (d, g, n) = attempt(&more);
+                            if d < best {
+                                (best, best_g, now, add) = (d, g, n, more);
+                            }
                         }
                     }
                     if std::env::var_os("BF_SHOW").is_some() {
@@ -604,7 +639,7 @@ fn correct(fighter: &str) {
                             "{m} real {}\n{m} was  {}\n{m} now  {}\n{m} gain {}",
                             show(real),
                             show(&was),
-                            show(&measure(&best_g)),
+                            show(&now),
                             show(&best_g)
                         );
                     }
@@ -658,6 +693,16 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "VIOLIN" => &["viola", "cello", "french horn", "trumpet"],
         "VIOLA" => &["violin", "cello", "french horn", "english horn"],
         "CELLO" => &["viola", "contrabass", "french horn", "bassoon"],
+        "BASSOON" | "CONTRABASSOON" => &["bari sax", "clarinet", "tuba", "french horn"],
+        "PIANO" => &["harp", "marimba", "nylon guitar", "steel guitar"],
+        "ORGAN" => &["accordion", "drawbar organ", "flute", "clarinet"],
+        "ACCORDION" => &["church organ", "drawbar organ", "oboe", "bagpipe"],
+        "ACOUSTIC" => &["nylon guitar", "clean guitar", "harp", "piano"],
+        "ELECTRIC" => &["clean guitar", "steel guitar", "trumpet"],
+        "BASS GUITAR" => &["contrabass", "tuba", "cello"],
+        "UKULELE" => &["steel guitar", "harp", "marimba"],
+        "HARP" => &["piano", "nylon guitar", "marimba"],
+        "MARIMBA" => &["piano", "harp", "timpani"],
         _ => &[],
     }
 }
