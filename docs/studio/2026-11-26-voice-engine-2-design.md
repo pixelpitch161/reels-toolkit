@@ -368,3 +368,24 @@ All through `PC-Tests:` lines, only what changed:
 - The exact rooms, the stereo widths and the home-room levels, tuned on the listening pages and checked on a phone.
 - How slurs find a note's neighbours in today's parts (stage 3).
 - The thresholds of the yardstick, set in stage 1.
+
+## Changed in stage 1
+
+Decided differently while building the pilot (each is a ruling in the stage's ledger; Aedan hears the result on the
+listening page):
+
+- **The organ speaks quickly.** The VSCO organ recordings take 0.3 to 0.9 s to reach full level, because the
+  church's echo builds up around a distant microphone; a pipe speaks in tens of milliseconds (the literature, and the
+  closer VCSL Renaissance organ's 45 to 130 ms). The engine lifts the recipe to full level within 0.06 s (0.12 s two
+  octaves under middle C), so the fights' short organ stabs are not late and weak. It follows Aedan's "less of its
+  own echo" too.
+- **The yardstick compares tone moment by moment against that moment's strongest overtone**, single overtones only in
+  a piano note's first 0.3 s, and the overtones' median after that; the organ by its held tone. Real single overtones
+  beat in and out by up to 33 dB (unison strings, the chorus's ranks), so "each overtone within a few dB at each
+  time" cannot hold even for the recordings themselves. The organ's start is tested in its own unit test, not
+  against the recordings.
+- **Rivals against the recordings.** "Nearer its own instrument than the rivals" takes the real recording as its own
+  instrument and FluidR3 only for the rivals: FluidR3's own piano and church organ were further from the real ones
+  than FluidR3's harp or accordion were.
+- **The piano's strength steps** come from the other pianos, matched by brightness (VCSL evened its strengths out to
+  one loudness): soft -15 dB, medium -5.3 dB, loud 0 (see the PIANO sheet).
