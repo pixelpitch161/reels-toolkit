@@ -219,6 +219,13 @@ fn the_horns_are_horns_not_trumpets_or_trombones() {
 }
 
 #[test]
+fn the_bowed_strings_are_their_own_not_each_other() {
+    reworked_nearer_its_own("VIOLIN", "violin", &["viola", "cello", "french horn", "trumpet"]);
+    reworked_nearer_its_own("VIOLA", "viola", &["violin", "cello", "french horn", "english horn"]);
+    reworked_nearer_its_own("CELLO", "cello", &["viola", "contrabass", "french horn", "bassoon"]);
+}
+
+#[test]
 fn the_drums_repeats_differ_and_keep_their_length() {
     for fighter in ["TIMPANI", "BASS DRUM"] {
         let v = bf_content::fighters::voice(fighter).expect("a voice");

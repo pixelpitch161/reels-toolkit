@@ -655,6 +655,9 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "CORNET" | "FLUGELHORN" => &["french horn", "trombone", "alto sax"],
         "HORN" => &["trombone", "trumpet", "alto sax", "bassoon"],
         "MELLOPHONE" => &["trumpet", "trombone", "alto sax"],
+        "VIOLIN" => &["viola", "cello", "french horn", "trumpet"],
+        "VIOLA" => &["violin", "cello", "french horn", "english horn"],
+        "CELLO" => &["viola", "contrabass", "french horn", "bassoon"],
         _ => &[],
     }
 }
