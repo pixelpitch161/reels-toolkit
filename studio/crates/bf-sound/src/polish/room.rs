@@ -45,7 +45,13 @@ pub fn send(low: bool, piercing: bool) -> f64 {
 
 /// The room's response to one click, left and right (they differ, which is what makes it wide).
 pub fn ir(seed: u64) -> Vec<[f64; 2]> {
-    let n = (LENGTH * SRF) as usize;
+    ir_with(seed, LENGTH, FADE)
+}
+
+/// [`ir`] of a room `length` seconds long whose middle fades by 60 dB in `fade` seconds (a voice's own room,
+/// `crate::voice::engine2::space::home`).
+pub fn ir_with(seed: u64, length: f64, fade: f64) -> Vec<[f64; 2]> {
+    let n = (length * SRF) as usize;
     let mut r = Generator::new(seed);
     let sos = |kind, hz: f64| butter_sos(kind, &[hz], 2, SRF);
     let mut out = vec![[0.0; 2]; n];
@@ -58,7 +64,7 @@ pub fn ir(seed: u64) -> Vec<[f64; 2]> {
         let mut tail: Vec<f64> = (0..n)
             .map(|i| {
                 let t = i as f64 / SRF;
-                let fall = |by: f64| dmath::exp(-6.9 * t / (FADE * by));
+                let fall = |by: f64| dmath::exp(-6.9 * t / (fade * by));
                 let grow = ((t - 0.033) / 0.05).clamp(0.0, 1.0);
                 (lo[i] * fall(0.9) + (z[i] - lo[i] - hi[i]) * fall(1.0) + hi[i] * fall(0.45)) * grow
             })
@@ -93,10 +99,16 @@ fn unit(x: &mut [f64]) {
 
 /// What the room gives back of `send`: `send` through [`ir`], as long as `send`.
 pub fn wet(send: &[[f64; 2]], seed: u64) -> Vec<[f64; 2]> {
+    wet_with(send, seed, LENGTH, FADE)
+}
+
+/// What a room `length` seconds long, fading by 60 dB in `fade` seconds, gives back of `send` ([`ir_with`]), as long
+/// as `send`.
+pub fn wet_with(send: &[[f64; 2]], seed: u64, length: f64, fade: f64) -> Vec<[f64; 2]> {
     if send.is_empty() {
         return Vec::new();
     }
-    let ir = ir(seed);
+    let ir = ir_with(seed, length, fade);
     let channel = |c: usize| -> Vec<f64> {
         let dry: Vec<f64> = send.iter().map(|f| f[c]).collect();
         let room: Vec<f64> = ir.iter().map(|f| f[c]).collect();
@@ -129,6 +141,32 @@ mod tests {
         let half = SR / 2;
         let highs = |x: &[[f64; 2]]| heard::share(x, (3000.0, 24_000.0));
         assert!(highs(&ir[half..2 * half]) < highs(&ir[..half]));
+    }
+
+    /// The shared room is the general room at its own length and fade, bit for bit (Voice Engine 2's own rooms
+    /// share its code; a Composed fight's room must not move).
+    #[test]
+    fn the_shared_room_is_unchanged() {
+        let x: Vec<[f64; 2]> = (0..24_000)
+            .map(|i| {
+                let t = f64::from(i);
+                [
+                    dmath::sin(t * 0.013) * (1.0 - t / 24_000.0),
+                    if i % 4_000 == 0 { 1.0 } else { 0.0 },
+                ]
+            })
+            .collect();
+        let bits = |w: &[[f64; 2]]| w.iter().flat_map(|f| f.map(f64::to_bits)).collect::<Vec<u64>>();
+        assert_eq!(bits(&wet(&x, SEED)), bits(&wet_with(&x, SEED, LENGTH, FADE)));
+        assert_eq!(bits(&ir(SEED)), bits(&ir_with(SEED, LENGTH, FADE)));
+        // a shorter room is shorter, and still starts late
+        let short = ir_with(SEED, 1.8, 0.99);
+        assert_eq!(short.len(), (1.8 * SRF) as usize);
+        assert!(
+            short[..(0.017 * SRF) as usize]
+                .iter()
+                .all(|f| f[0] == 0.0 && f[1] == 0.0)
+        );
     }
 
     /// A click comes back as the room's response; the sends follow the kind of instrument.

@@ -333,7 +333,7 @@ impl<'a> SoundBuild<'a> {
     }
 
     /// What the Composed master is told about this fight (`None` under Classic): the two fighters' buses, their
-    /// saved levels and kinds, the stretch from FIGHT! to the K.O. and the winner. `kinds` gives each fighter's
+    /// saved levels and kinds, a Voice Engine 2 fighter's place in the stereo picture and own room, the stretch from FIGHT! to the K.O. and the winner. `kinds` gives each fighter's
     /// `(low, piercing)` in place of the level table's, with no saved level (the calibration run measures them
     /// itself).
     pub fn plan(&self, kinds: Option<[(bool, bool); 2]>) -> Option<polish::Plan> {
@@ -350,6 +350,7 @@ impl<'a> SoundBuild<'a> {
                 saved: if kinds.is_some() { None } else { saved.map(|s| s.gain) },
                 low,
                 piercing,
+                space: self.ctx.engine2_of(&self.ctx.cfg[k].pp).map(|i| i.space),
             }
         };
         Some(polish::Plan {
