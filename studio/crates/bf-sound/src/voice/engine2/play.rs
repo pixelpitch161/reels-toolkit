@@ -1,7 +1,9 @@
 //! How a note is played: everything a player does with one note besides choosing its pitch and length. Today's parts
 //! play plain notes ([`Play::plain`]); the composition system can ask for any of the rest (see
 //! `docs/studio/voice-engine-2-playing.md`). An instrument takes what it can do and leaves the rest: a piano has no
-//! vibrato, an organ no accent.
+//! vibrato, an organ no accent on its pipes' loudness. Every instrument can play every one of its techniques
+//! (Aedan's rule): what is a single note's business is asked for here; what is notes in a row (trills, runs,
+//! repeated notes, glissandos, clusters) is the composition system's.
 
 /// One note as played.
 #[derive(Clone, Debug, PartialEq)]
@@ -23,12 +25,173 @@ pub struct Play {
     pub swell: Option<Swell>,
     /// A vibrato.
     pub vibrato: Option<Vibrato>,
-    /// A piano's sustain pedal down: the note rings on past the key, with the other strings ringing along.
-    pub pedal: bool,
+    /// The pedals a piano (or a vibraphone) has.
+    pub pedals: Pedals,
     /// A mute or a short stop.
     pub mute: Mute,
     /// How many notes sound together with this one, itself included (an organ's wind sags a hair under a big chord).
     pub together: u8,
+    /// A special way of sounding the note.
+    pub technique: Technique,
+    /// An organ's registration: which stops sound (none asked: the instrument's own, the organ's grand chorus).
+    pub stops: Option<Stops>,
+    /// A volume pedal over the note, 0 (shut) to 1 (open), with no new start: an organ's swell box, quieter and
+    /// darker shut.
+    pub expression: Option<Swell>,
+}
+
+/// A piano's three pedals.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Pedals {
+    /// The sustain (damper) pedal, 0 (up) to 1 (down): down, the dampers leave the strings, the note rings on past
+    /// the key and the other strings ring along; part way (a half pedal) the dampers only touch the strings.
+    pub sustain: f64,
+    /// The sustain and middle pedals come up this many seconds into the note (none: held down as long as it rings).
+    pub lift: Option<f64>,
+    /// The soft pedal (una corda): the hammers shift, striking one string fewer with softer felt.
+    pub soft: bool,
+    /// The middle pedal (sostenuto): this note's dampers stay up, the other strings stay damped.
+    pub sostenuto: bool,
+}
+
+impl Pedals {
+    /// No pedal down.
+    pub const UP: Pedals = Pedals {
+        sustain: 0.0,
+        lift: None,
+        soft: false,
+        sostenuto: false,
+    };
+    /// The sustain pedal all the way down, held.
+    pub const SUSTAIN: Pedals = Pedals {
+        sustain: 1.0,
+        ..Pedals::UP
+    };
+}
+
+/// A special way of sounding a note. Later families add their own (pizzicato, flutter tongue, rimshot...).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Technique {
+    /// As the instrument is usually played.
+    Normal,
+    /// A harmonic: the string touched at 1/n of its length (2 to 6) as it is played, so only every n-th overtone
+    /// rings on (2 sounds an octave up, 3 an octave and a fifth).
+    Harmonic(u8),
+    /// Plucked: a piano's string pulled aside by a finger inside the piano and let go.
+    Plucked,
+}
+
+/// An organ's registration: which stops sound, as bits of [`Stops::MANUAL`] and [`Stops::PEDAL`], and its octave
+/// couplers (the manual's notes also an octave under, or over). Notes under G2 are played on the pedal board.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Stops {
+    pub manual: u16,
+    pub pedal: u8,
+    /// The sub-octave coupler: every manual note also an octave under.
+    pub sub: bool,
+    /// The octave (super) coupler: every manual note also an octave over.
+    pub octave: bool,
+}
+
+impl Stops {
+    /// The manual's stops, bit 0 first.
+    pub const MANUAL: [&'static str; 14] = [
+        "Praestant 16'",
+        "Bourdon 16'",
+        "Principal 8'",
+        "Gedackt 8'",
+        "Salicional 8'",
+        "Voix celeste 8'",
+        "Octave 4'",
+        "Rohrflute 4'",
+        "Quint 2 2/3'",
+        "Superoctave 2'",
+        "Mixture IV",
+        "Cymbal III",
+        "Trumpet 8'",
+        "Oboe 8'",
+    ];
+    /// The pedal board's stops, bit 0 first.
+    pub const PEDAL: [&'static str; 4] = ["Subbass 16'", "Octavebass 8'", "Choralbass 4'", "Posaune 16'"];
+
+    /// The stops named, manual and pedal (a name of neither is left out).
+    pub fn of(manual: &[&str], pedal: &[&str]) -> Stops {
+        let bits = |names: &[&str], all: &[&str]| {
+            names
+                .iter()
+                .filter_map(|n| all.iter().position(|a| a == n))
+                .fold(0u16, |b, i| b | (1 << i))
+        };
+        Stops {
+            manual: bits(manual, &Stops::MANUAL),
+            pedal: bits(pedal, &Stops::PEDAL) as u8,
+            sub: false,
+            octave: false,
+        }
+    }
+
+    /// A quiet stopped flute, the softest the organ has.
+    pub fn soft() -> Stops {
+        Stops::of(&["Gedackt 8'"], &["Subbass 16'"])
+    }
+    /// Flutes at 8' and 4'.
+    pub fn flutes() -> Stops {
+        Stops::of(&["Gedackt 8'", "Rohrflute 4'"], &["Subbass 16'"])
+    }
+    /// The two string stops, one a hair sharp, beating gently.
+    pub fn strings() -> Stops {
+        Stops::of(&["Salicional 8'", "Voix celeste 8'"], &["Subbass 16'"])
+    }
+    /// The principal alone.
+    pub fn principal() -> Stops {
+        Stops::of(&["Principal 8'"], &["Subbass 16'", "Octavebass 8'"])
+    }
+    /// The principal chorus, 8' to the mixture.
+    pub fn chorus() -> Stops {
+        Stops::of(
+            &[
+                "Principal 8'",
+                "Octave 4'",
+                "Quint 2 2/3'",
+                "Superoctave 2'",
+                "Mixture IV",
+            ],
+            &["Subbass 16'", "Octavebass 8'"],
+        )
+    }
+    /// The grand chorus, the 16' stops under the chorus (the organ Aedan picked, O8).
+    pub fn grand() -> Stops {
+        Stops::of(
+            &[
+                "Praestant 16'",
+                "Bourdon 16'",
+                "Principal 8'",
+                "Octave 4'",
+                "Quint 2 2/3'",
+                "Superoctave 2'",
+                "Mixture IV",
+            ],
+            &["Subbass 16'", "Octavebass 8'", "Choralbass 4'"],
+        )
+    }
+    /// The full organ: the grand chorus with the cymbal and the trumpet, the pedal's trombone.
+    pub fn full() -> Stops {
+        let g = Stops::grand();
+        let more = Stops::of(&["Cymbal III", "Trumpet 8'"], &["Posaune 16'"]);
+        Stops {
+            manual: g.manual | more.manual,
+            pedal: g.pedal | more.pedal,
+            ..g
+        }
+    }
+    /// A trumpet solo over a flute.
+    pub fn trumpet() -> Stops {
+        Stops::of(&["Trumpet 8'", "Gedackt 8'"], &["Subbass 16'", "Octavebass 8'"])
+    }
+    /// An oboe solo.
+    pub fn oboe() -> Stops {
+        Stops::of(&["Oboe 8'"], &["Subbass 16'"])
+    }
 }
 
 /// A slide of the pitch: by `cents` (up when positive), starting `at` seconds into the note, taking `over` seconds.
@@ -69,7 +232,8 @@ pub enum Mute {
 }
 
 impl Play {
-    /// A plain note: no accent, slur, slide, swell or vibrato, no pedal, open, on its own.
+    /// A plain note: no accent, slur, slide, swell or vibrato, no pedal, open, on its own, played the usual way on
+    /// the instrument's own stops.
     pub fn plain(midi: f64, dur: f64, vel: f64) -> Play {
         Play {
             midi,
@@ -80,9 +244,12 @@ impl Play {
             bend: None,
             swell: None,
             vibrato: None,
-            pedal: false,
+            pedals: Pedals::UP,
             mute: Mute::Open,
             together: 1,
+            technique: Technique::Normal,
+            stops: None,
+            expression: None,
         }
     }
 
@@ -106,7 +273,32 @@ impl Play {
             Some(x) => k.extend([1, b(x.cents), b(x.hz), b(x.wait)]),
             None => k.push(0),
         }
-        k.extend([u64::from(self.pedal), self.mute as u64, u64::from(self.together)]);
+        let p = &self.pedals;
+        k.extend([b(p.sustain), u64::from(p.soft), u64::from(p.sostenuto)]);
+        match p.lift {
+            Some(x) => k.extend([1, b(x)]),
+            None => k.push(0),
+        }
+        k.extend([self.mute as u64, u64::from(self.together)]);
+        k.push(match self.technique {
+            Technique::Normal => 0,
+            Technique::Harmonic(n) => 0x100 | u64::from(n),
+            Technique::Plucked => 2,
+        });
+        match self.stops {
+            Some(s) => k.extend([
+                1,
+                u64::from(s.manual),
+                u64::from(s.pedal),
+                u64::from(s.sub),
+                u64::from(s.octave),
+            ]),
+            None => k.push(0),
+        }
+        match self.expression {
+            Some(x) => k.extend([1, b(x.from), b(x.to), b(x.over)]),
+            None => k.push(0),
+        }
         k
     }
 }
@@ -134,14 +326,73 @@ mod tests {
             .key(),
             a.key()
         );
-        assert_ne!(
+        for other in [
             Play {
-                pedal: true,
+                pedals: Pedals::SUSTAIN,
                 ..a.clone()
-            }
-            .key(),
-            a.key()
-        );
+            },
+            Play {
+                pedals: Pedals {
+                    sustain: 0.5,
+                    ..Pedals::UP
+                },
+                ..a.clone()
+            },
+            Play {
+                pedals: Pedals {
+                    lift: Some(0.2),
+                    ..Pedals::SUSTAIN
+                },
+                ..a.clone()
+            },
+            Play {
+                pedals: Pedals {
+                    soft: true,
+                    ..Pedals::UP
+                },
+                ..a.clone()
+            },
+            Play {
+                pedals: Pedals {
+                    sostenuto: true,
+                    ..Pedals::UP
+                },
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Harmonic(2),
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Harmonic(3),
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Plucked,
+                ..a.clone()
+            },
+            Play {
+                stops: Some(Stops::grand()),
+                ..a.clone()
+            },
+            Play {
+                stops: Some(Stops {
+                    octave: true,
+                    ..Stops::grand()
+                }),
+                ..a.clone()
+            },
+            Play {
+                expression: Some(Swell {
+                    from: 0.0,
+                    to: 1.0,
+                    over: 1.0,
+                }),
+                ..a.clone()
+            },
+        ] {
+            assert_ne!(other.key(), a.key(), "{other:?}");
+        }
         assert_ne!(
             Play {
                 swell: Some(Swell {
@@ -162,5 +413,26 @@ mod tests {
             .key(),
             a.key()
         );
+    }
+
+    #[test]
+    fn the_named_registrations_are_their_stops() {
+        assert_eq!(Stops::grand().manual.count_ones(), 7);
+        assert_eq!(Stops::grand().pedal, 0b111);
+        assert_eq!(Stops::full().manual, Stops::grand().manual | (1 << 11) | (1 << 12));
+        assert_eq!(Stops::full().pedal, 0b1111);
+        assert_eq!(Stops::soft(), Stops::of(&["Gedackt 8'"], &["Subbass 16'"]));
+        assert_eq!(Stops::of(&["no such stop"], &[]).manual, 0);
+        for s in [
+            Stops::soft(),
+            Stops::flutes(),
+            Stops::strings(),
+            Stops::principal(),
+            Stops::chorus(),
+            Stops::trumpet(),
+            Stops::oboe(),
+        ] {
+            assert!(s.manual != 0 && s.pedal != 0, "{s:?}");
+        }
     }
 }

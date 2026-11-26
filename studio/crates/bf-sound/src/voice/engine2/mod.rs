@@ -1,5 +1,12 @@
-//! Voice Engine 2: notes rebuilt from recordings of the real instrument, with the instrument's working parts
-//! modelled (the Composed arrangement only; design: `docs/studio/2026-11-26-voice-engine-2-design.md`).
+//! Voice Engine 2: each fighter's instrument built from how it works (the Composed arrangement only; design:
+//! `docs/studio/2026-11-26-voice-engine-2-design.md`, with its revision "built engines").
+//!
+//! One engine per family of instruments, each playing every technique its instruments have:
+//!
+//! - [`strings`] (with its soundboard, [`board`]): struck strings, the piano.
+//!
+//! Stage 1 rebuilt notes from recordings instead (the recipe engine below); no fighter plays a recipe now, but the
+//! engine stays for a family that wants a measured part:
 //!
 //! Each recorded note of a free (CC0) recording set is measured once, by the `recipes` tool in `bf-harness`, into a
 //! recipe: how loud each overtone is at each moment, how far off pitch it sits, and how loud the noise between the
@@ -12,34 +19,51 @@
 //! - [`play`]: how a note is played (accents, slurs, swells, the pedal...), for the parts and the composition system.
 //! - [`piano`], [`organ`]: the instruments' working parts.
 //! - [`space`]: where a voice sits in the stereo picture, and its own room.
+//! - [`eq`]: gentle tone controls for a body or a polish.
 //!
 //! A fighter's voice has an [`Instrument`] ([`crate::Voice::engine2`]); [`crate::MusicCtx`] plays it under the
 //! Composed arrangement in place of the voice's own notes. The Classic arrangement never reaches any of this.
 
 use std::sync::OnceLock;
 
+pub mod board;
+pub mod eq;
 pub mod organ;
 pub mod piano;
 pub mod play;
 pub mod player;
 pub mod recipe;
 pub mod space;
+pub mod strings;
 
 use self::organ::OrganParts;
 use self::piano::PianoParts;
 use self::play::Play;
 use self::recipe::RecipeSet;
 use self::space::Space;
+use self::strings::StringsParts;
 use crate::SRF;
 
-/// Which working parts an instrument has.
+/// Which engine an instrument plays on, with its settings.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Parts {
+    /// The recipe piano of stage 1.
     Piano(PianoParts),
+    /// The recipe organ of stage 1.
     Organ(OrganParts),
+    /// The struck-string engine.
+    Strings(StringsParts),
 }
 
-/// An instrument of Voice Engine 2: its recipe (compiled in), its working parts and its place in the mix.
+impl Parts {
+    /// Whether the engine plays from a recipe (else it is built, and has none).
+    pub fn has_recipe(&self) -> bool {
+        matches!(self, Parts::Piano(_) | Parts::Organ(_))
+    }
+}
+
+/// An instrument of Voice Engine 2: its engine and settings, its place in the mix, and for a recipe instrument its
+/// recipe (compiled in).
 #[derive(Debug)]
 pub struct Instrument {
     /// The voice's name (`PIANO`).
@@ -66,6 +90,11 @@ impl Instrument {
         }
     }
 
+    /// A built instrument: no recipe.
+    pub const fn built(name: &'static str, parts: Parts, space: Space) -> Instrument {
+        Instrument::new(name, &[], parts, space)
+    }
+
     /// Its recipe, read once.
     ///
     /// # Panics
@@ -79,6 +108,9 @@ impl Instrument {
     /// isn't stopped, until it has died away, at most [`LONGEST`] seconds.
     fn natural(&self, play: &Play) -> f64 {
         let dur = play.dur.max(0.0);
+        if let Parts::Strings(p) = self.parts {
+            return strings::rings_for(&p, play, LONGEST);
+        }
         let set = self.set();
         let tau = set
             .nearest(play.midi, 1.0)
@@ -87,7 +119,7 @@ impl Instrument {
             .sum::<f64>()
             .max(0.03);
         match self.parts {
-            Parts::Piano(p) if play.pedal || play.midi >= f64::from(p.undamped_from) => (dur + 6.0).min(LONGEST),
+            Parts::Piano(p) if piano::held(play) || play.midi >= f64::from(p.undamped_from) => (dur + 6.0).min(LONGEST),
             _ => (dur + 8.1 * tau).min(LONGEST),
         }
     }
@@ -101,5 +133,6 @@ pub fn play(i: &Instrument, play: &Play, cap: f64, variant: u64) -> Vec<f64> {
     match &i.parts {
         Parts::Piano(p) => piano::note(i.set(), p, play, len, variant),
         Parts::Organ(p) => organ::note(i.set(), p, play, len, variant),
+        Parts::Strings(p) => strings::note(p, play, len, variant, SRF),
     }
 }

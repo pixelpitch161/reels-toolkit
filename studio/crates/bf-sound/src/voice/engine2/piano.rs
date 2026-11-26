@@ -54,6 +54,12 @@ fn damper(set: &RecipeSet, midi: f64, strength: f64) -> f64 {
     if w > 0.0 { t / w } else { DAMPER }
 }
 
+/// Whether the note's dampers stay up: the sustain pedal half way down or more, or the middle pedal (this recipe
+/// piano has no half pedal; the built one does).
+pub fn held(play: &Play) -> bool {
+    play.pedals.sustain >= 0.5 || play.pedals.sostenuto
+}
+
 /// The note `play` on the piano of `set`, `len` samples long.
 pub fn note(set: &RecipeSet, p: &PianoParts, play: &Play, len: usize, variant: u64) -> Vec<f64> {
     let s = strength(play);
@@ -68,7 +74,7 @@ pub fn note(set: &RecipeSet, p: &PianoParts, play: &Play, len: usize, variant: u
         _ => 0.0,
     };
     let (mut level, mut tilt) = (rate * over, OVER_TILT * over * 10.0);
-    if play.mute == Mute::Muted {
+    if play.mute == Mute::Muted || play.pedals.soft {
         // the soft pedal: one string fewer struck, a softer felt
         level -= 3.0;
         tilt -= 1.5;
@@ -82,7 +88,7 @@ pub fn note(set: &RecipeSet, p: &PianoParts, play: &Play, len: usize, variant: u
     let tau = damper(set, play.midi, s);
     let stop = match play.mute {
         Mute::Choked | Mute::Clipped => Some((play.dur.max(0.0), tau * 0.5)),
-        _ if play.pedal || !damped => None,
+        _ if held(play) || !damped => None,
         _ => Some((play.dur.max(0.0), tau)),
     };
     let sh = Shaping {
@@ -96,7 +102,7 @@ pub fn note(set: &RecipeSet, p: &PianoParts, play: &Play, len: usize, variant: u
     };
     let seed = 0x9147_0000 + (play.midi * 100.0).round() as u64;
     let mut x = player::render(set, play.midi, &sh, len, variant, seed);
-    if play.pedal && stop.is_none() {
+    if play.pedals.sustain >= 0.5 && stop.is_none() {
         halo(set, p, play, s, &mut x);
     }
     x
@@ -153,6 +159,7 @@ fn halo(set: &RecipeSet, p: &PianoParts, play: &Play, s: f64, x: &mut [f64]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::voice::engine2::play::Pedals;
 
     fn piano() -> RecipeSet {
         RecipeSet::parse(include_bytes!(concat!(
@@ -216,7 +223,7 @@ mod tests {
             &set,
             &PARTS,
             &Play {
-                pedal: true,
+                pedals: Pedals::SUSTAIN,
                 ..Play::plain(60.0, 0.3, 0.8)
             },
             96_000,

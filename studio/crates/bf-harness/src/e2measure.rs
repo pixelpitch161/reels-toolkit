@@ -669,7 +669,6 @@ impl Yard {
 /// as repeat `variant`.
 pub fn engine2_note(inst: &Instrument, midi: f64, strength: f64, hold: f64, secs: f64, variant: u64) -> Vec<f64> {
     let play = match inst.parts {
-        Parts::Piano(_) => Play::plain(midi, hold, strength),
         Parts::Organ(_) => Play {
             swell: Some(Swell {
                 from: strength,
@@ -678,6 +677,7 @@ pub fn engine2_note(inst: &Instrument, midi: f64, strength: f64, hold: f64, secs
             }),
             ..Play::plain(midi, hold, 0.8)
         },
+        _ => Play::plain(midi, hold, strength),
     };
     engine2::play(inst, &play, secs, variant)
 }
