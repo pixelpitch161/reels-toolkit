@@ -78,6 +78,7 @@ pub static ENGINE2: Instrument = Instrument::new(
         wind_hz: 0.7,
         sag_cents: 4.0,
         release: (0.03, 0.12),
+        speak: 0.06,
     }),
     Space {
         width: 0.45,

@@ -4,6 +4,9 @@
 //!   note starts on the quiet recording and moves to the loud one tone by tone, which is how an organist builds up.
 //! - **Wind**: the pipes speak on wind from one bellows, which wavers a hair, slowly, for every pipe at once; a big
 //!   chord draws enough wind to sag its pitch and level a little.
+//! - **Speech**: a pipe speaks within a few hundredths of a second (a big pedal pipe takes about twice as long). The
+//!   recordings take up to a second to reach their full level because the church's echo builds up under them; the
+//!   note is lifted to its full level within the pipe's own speech, its tone as recorded.
 //! - **Stop**: when the key comes up the pallet closes and the pipes stop within a few hundredths of a second. The
 //!   church's own echo after it is left out; the organ's light room of its own comes after (`space`).
 
@@ -26,6 +29,64 @@ pub struct OrganParts {
     pub sag_cents: f64,
     /// The pipes' stop, its time constant kept between these, seconds.
     pub release: (f64, f64),
+    /// How long a manual pipe takes to speak, seconds: the note is at its full level by then (twice as long two
+    /// octaves under middle C, in between in between).
+    pub speak: f64,
+}
+
+/// How far the speech lifts a note at most, dB.
+const LIFT_MOST: f64 = 30.0;
+
+/// The speech time at `midi` for a manual pipe's `speak`.
+fn speak_at(speak: f64, midi: f64) -> f64 {
+    speak * (1.0 + ((60.0 - midi) / 24.0).clamp(0.0, 1.0))
+}
+
+/// The whole note's level on the recipe's grid, dB (its overtones' powers summed), the corners blended in dB.
+fn level_curve(set: &RecipeSet, midi: f64, strength: f64) -> Vec<f64> {
+    let c = set.nearest(midi, strength);
+    let mut out = vec![0.0; set.grid.len()];
+    for (i, w) in c.iter() {
+        let n = &set.notes[i];
+        for (j, o) in out.iter_mut().enumerate() {
+            let p: f64 = n
+                .partials
+                .iter()
+                .map(|q| f64::from(q.level_at(j)))
+                .filter(|v| v.is_finite())
+                .map(|v| dmath::exp(v * std::f64::consts::LN_10 / 10.0))
+                .sum();
+            *o += w * 10.0 * dmath::log10(p.max(1e-30));
+        }
+    }
+    out
+}
+
+/// The lift that brings the note at `midi` and `strength` to its full level within `speak` seconds, dB on the
+/// recipe's grid: the full level is its mean from 0.5 to 2 s; the lift lasts until the recording gets within 1 dB
+/// of it, and is never more than [`LIFT_MOST`].
+fn lift_curve(set: &RecipeSet, midi: f64, strength: f64, speak: f64) -> Vec<f64> {
+    let l = level_curve(set, midi, strength);
+    let g = &set.grid;
+    let held: Vec<f64> = g
+        .iter()
+        .zip(&l)
+        .filter(|(t, _)| (0.5..=2.0).contains(*t))
+        .map(|(_, v)| *v)
+        .collect();
+    let mut lift = vec![0.0; g.len()];
+    if held.is_empty() {
+        return lift;
+    }
+    let full = held.iter().sum::<f64>() / held.len() as f64;
+    for (j, (&t, &v)) in g.iter().zip(&l).enumerate() {
+        if v >= full - 1.0 {
+            break;
+        }
+        let want = full + 20.0 * dmath::log10((t / speak).clamp(1e-3, 1.0));
+        lift[j] = (want - v).clamp(0.0, LIFT_MOST);
+    }
+    lift
 }
 
 /// The wind's waver at `t` seconds into a note, -1 to 1: three slow sines, the same for every note, so notes that
@@ -60,7 +121,20 @@ pub fn note(set: &RecipeSet, p: &OrganParts, play: &Play, len: usize, variant: u
     let pitch = move |t: f64| wc * waver(t, wh) - sag * smooth(t / 0.06);
     let vel_db = 20.0 * dmath::log10(play.vel.max(0.01));
     let sag_db = if sag > 0.0 { 0.3 } else { 0.0 };
-    let level = move |t: f64| vel_db + wd * waver(t + 0.37, wh) - sag_db * smooth(t / 0.06);
+    let lift = lift_curve(set, play.midi, strength(0.0), speak_at(p.speak, play.midi));
+    let grid = &set.grid;
+    let lifted = move |t: f64| {
+        let j = grid.partition_point(|&v| v <= t);
+        match (j.checked_sub(1), grid.get(j)) {
+            (Some(a), Some(&tb)) => {
+                let ta = grid[a];
+                let f = ((t - ta) / (tb - ta).max(1e-9)).clamp(0.0, 1.0);
+                lift[a] + (lift[j] - lift[a]) * f
+            }
+            _ => 0.0,
+        }
+    };
+    let level = move |t: f64| vel_db + lifted(t) + wd * waver(t + 0.37, wh) - sag_db * smooth(t / 0.06);
     let tilt = |_: f64| 0.0;
     let noise = |_: f64| 0.0;
     let c = set.nearest(play.midi, top);
@@ -102,6 +176,7 @@ mod tests {
         wind_hz: 0.7,
         sag_cents: 4.0,
         release: (0.03, 0.12),
+        speak: 0.06,
     };
 
     fn db_at(x: &[f64], t: f64) -> f64 {
@@ -165,6 +240,32 @@ mod tests {
         let close = |a: &[f64], b: &[f64]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1.5 || *x < -30.0);
         assert!(close(&balance(&x, f0, 0.15), &balance(&quiet, f0, 0.15)));
         assert!(close(&balance(&x, f0, 1.75), &balance(&loud, f0, 1.75)));
+    }
+
+    #[test]
+    fn the_pipes_speak_quickly() {
+        // C3 on the quiet chorus is recorded taking 0.3 s to come within 3 dB of its full level (the church's echo
+        // building up): the pipe speaks in 0.06 s and a half, and a 0.18 s stab sounds at its full level
+        let set = organ();
+        let quiet = Play {
+            swell: Some(Swell {
+                from: 0.5,
+                to: 0.5,
+                over: 0.0,
+            }),
+            ..Play::plain(48.0, 2.0, 0.8)
+        };
+        let x = note(&set, &PARTS, &quiet, 96_000, 0);
+        let full = (0..10).map(|j| db_at(&x, 0.6 + 0.1 * f64::from(j))).sum::<f64>() / 10.0;
+        let speak = speak_at(PARTS.speak, 48.0);
+        assert!((speak - 0.09).abs() < 1e-9, "{speak}");
+        assert!(
+            db_at(&x, speak + 0.02) > full - 3.0,
+            "{} {full}",
+            db_at(&x, speak + 0.02)
+        );
+        // and it still starts from nothing: no click
+        assert!(db_at(&x, 0.012) < full - 6.0, "{} {full}", db_at(&x, 0.012));
     }
 
     #[test]
