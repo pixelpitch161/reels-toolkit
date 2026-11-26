@@ -55,11 +55,12 @@ pub fn response(fs: f64) -> Arc<Vec<f64>> {
     if let Some(r) = made.lock().map_or(None, |m| m.get(&fs.to_bits()).cloned()) {
         return r;
     }
+    // Two callers can miss at once and both make it: the first one kept is everyone's.
     let r = Arc::new(make(fs));
-    if let Ok(mut m) = made.lock() {
-        m.entry(fs.to_bits()).or_insert_with(|| Arc::clone(&r));
+    match made.lock() {
+        Ok(mut m) => Arc::clone(m.entry(fs.to_bits()).or_insert(r)),
+        Err(_) => r,
     }
-    r
 }
 
 /// Each resonance a damped sine, summed, as the sketch's two microphones heard it (each its own share of each
@@ -133,6 +134,26 @@ mod tests {
         let e = |r: std::ops::Range<usize>| a[r].iter().map(|v| v * v).sum::<f64>();
         assert!(a[0].abs() > 0.5);
         assert!(e(1..2400) > 10.0 * e(19_200..24_000));
+    }
+
+    #[test]
+    fn callers_that_miss_together_share_one_board() {
+        // a rate no other test asks for, so every caller here starts with nothing made
+        let fs = 32_000.0;
+        let go = std::sync::Barrier::new(4);
+        let got: Vec<Arc<Vec<f64>>> = std::thread::scope(|s| {
+            let h: Vec<_> = (0..4)
+                .map(|_| {
+                    s.spawn(|| {
+                        go.wait();
+                        response(fs)
+                    })
+                })
+                .collect();
+            h.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        let again = response(fs);
+        assert!(got.iter().all(|r| Arc::ptr_eq(r, &again)));
     }
 
     #[test]
