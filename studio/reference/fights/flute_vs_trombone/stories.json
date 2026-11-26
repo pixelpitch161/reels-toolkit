@@ -1,0 +1,668 @@
+{
+ "about": "flute_vs_trombone: the kit's story.story() and story.score() of every committed recording, under its own rules and episode",
+ "beat_sheet": {
+  "CAP_GAP": 4.0,
+  "CAP_TARGETS": {
+   "FLUTTER TONGUE": 12,
+   "PEDAL TONE": 40,
+   "PICCOLO": 40,
+   "POWER SLIDE": 24,
+   "SAD TROMBONE": 12,
+   "SNAKE DANCE": 24
+  },
+  "LOWS": {
+   "FLUTE": "PICCOLO",
+   "TROMBONE": "PEDAL TONE"
+  },
+  "MAX_GAP": 4.0,
+  "MAX_WINNER_HP": 30.0,
+  "MIN_CAPS": 5,
+  "MIN_LEAD_CHANGES": 2,
+  "T_FIGHT": 3.5882352941176467,
+  "T_KO": [49.0, 53.0]
+ },
+ "episode": "flute_vs_trombone",
+ "format": 1,
+ "notes": {
+  "beat_sheet": "the episode timeline constants score() and captions() read; MIN_CAPS is a literal in score(); LOWS are the fighters' low ability names (story.lows(), base episode order)",
+  "fits_score": "story.score(story): (fits, score); the kit gives no reasons for a miss",
+  "key": "the recording's path relative to studio/reference/fights/flute_vs_trombone/",
+  "overrides": "the rule overrides of the recording (story.rules(**overrides)); empty for the episode's own rules",
+  "story": "story.story(run) as the kit returns it: tuples (firsts and caps entries are (t, who, name)) as lists; who indexes names; max_gap is the int 99 when there is no hit; winner_hp is 100.0 with no K.O."
+ },
+ "source": {
+  "commit": "88a51b9f99b4a8367ab5087da92b1fc79aa595c4",
+  "kind": "python"
+ },
+ "stories": {
+  "ep392.bfrec": {
+   "fits": true,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": 7.78,
+   "story": {
+    "caps": [
+     [11.21324, 0, "FLUTTER TONGUE"],
+     [16.1549, 1, "SAD TROMBONE"],
+     [26.02157, 1, "POWER SLIDE"],
+     [30.0549, 0, "SNAKE DANCE"],
+     [42.61324, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [11.21324, 0, "FLUTTER TONGUE"],
+     [16.1549, 1, "SAD TROMBONE"],
+     [26.02157, 1, "POWER SLIDE"],
+     [30.0549, 0, "SNAKE DANCE"],
+     [42.61324, 0, "PICCOLO"],
+     [43.06324, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [22.47157, 42.8799],
+    "lead_changes": 2,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 1.3499999999999996,
+    "seed": 392,
+    "t_ko": 50.021568627450975,
+    "winner": 1,
+    "winner_hp": 4.080000000000105
+   }
+  },
+  "no_ko.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -151.24,
+   "story": {
+    "caps": [
+     [24.67157, 1, "SAD TROMBONE"],
+     [40.82157, 1, "POWER SLIDE"],
+     [51.58824, 0, "FLUTTER TONGUE"]
+    ],
+    "firsts": [
+     [24.67157, 1, "SAD TROMBONE"],
+     [40.82157, 1, "POWER SLIDE"],
+     [51.58824, 0, "FLUTTER TONGUE"],
+     [52.0299, 0, "PICCOLO"],
+     [53.8299, 0, "SNAKE DANCE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PICCOLO"],
+    "max_gap": 6.316670000000002,
+    "seed": 4,
+    "t_ko": null,
+    "winner": null,
+    "winner_hp": 100.0
+   }
+  },
+  "scenarios/early_ko_s1.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "dmg_scale": 3.0
+   },
+   "score": -86.99,
+   "story": {
+    "caps": [
+     [10.32157, 0, "FLUTTER TONGUE"],
+     [14.8049, 1, "POWER SLIDE"]
+    ],
+    "firsts": [
+     [10.32157, 0, "FLUTTER TONGUE"],
+     [10.77157, 1, "SAD TROMBONE"],
+     [12.11324, 0, "SNAKE DANCE"],
+     [13.46324, 1, "PEDAL TONE"],
+     [14.8049, 1, "POWER SLIDE"]
+    ],
+    "lc_t": [9.98824],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE"],
+    "max_gap": 2.2416600000000004,
+    "seed": 1,
+    "t_ko": 14.879901960784313,
+    "winner": 0,
+    "winner_hp": 46.599999999999994
+   }
+  },
+  "scenarios/early_ko_s2.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "dmg_scale": 3.0
+   },
+   "score": -66.63,
+   "story": {
+    "caps": [
+     [8.0799, 1, "SAD TROMBONE"],
+     [14.3549, 1, "POWER SLIDE"]
+    ],
+    "firsts": [
+     [8.0799, 1, "SAD TROMBONE"],
+     [9.87157, 0, "FLUTTER TONGUE"],
+     [14.3549, 1, "POWER SLIDE"],
+     [16.59657, 0, "PICCOLO"],
+     [17.04657, 0, "SNAKE DANCE"],
+     [17.49657, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [17.19657],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 1.6749999999999998,
+    "seed": 2,
+    "t_ko": 17.99656862745098,
+    "winner": 0,
+    "winner_hp": 8.19999999999996
+   }
+  },
+  "scenarios/early_ko_s3.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "dmg_scale": 3.0
+   },
+   "score": -61.62,
+   "story": {
+    "caps": [
+     [9.87157, 1, "SAD TROMBONE"],
+     [15.2549, 1, "POWER SLIDE"],
+     [21.08824, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [9.87157, 1, "SAD TROMBONE"],
+     [12.11324, 0, "FLUTTER TONGUE"],
+     [15.2549, 1, "POWER SLIDE"],
+     [18.83824, 0, "SNAKE DANCE"],
+     [21.08824, 0, "PICCOLO"],
+     [21.9799, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [21.58824],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.3,
+    "seed": 3,
+    "t_ko": 22.47990196078431,
+    "winner": 0,
+    "winner_hp": 12.399999999999967
+   }
+  },
+  "scenarios/early_levels_s1.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -36.81,
+   "story": {
+    "caps": [
+     [6.2799, 0, "FLUTTER TONGUE"],
+     [10.77157, 1, "POWER SLIDE"],
+     [37.6799, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [6.2799, 0, "FLUTTER TONGUE"],
+     [6.2799, 1, "SAD TROMBONE"],
+     [9.87157, 0, "SNAKE DANCE"],
+     [10.77157, 1, "POWER SLIDE"],
+     [37.6799, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE"],
+    "max_gap": 2.1833300000000007,
+    "seed": 1,
+    "t_ko": 39.28823529411765,
+    "winner": 0,
+    "winner_hp": 33.199999999999875
+   }
+  },
+  "scenarios/early_levels_s2.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -21.22,
+   "story": {
+    "caps": [
+     [6.2799, 1, "SAD TROMBONE"],
+     [34.98824, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [6.2799, 1, "SAD TROMBONE"],
+     [6.7299, 0, "FLUTTER TONGUE"],
+     [8.0799, 1, "POWER SLIDE"],
+     [8.97157, 0, "SNAKE DANCE"],
+     [34.98824, 0, "PICCOLO"],
+     [38.5799, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [27.41324],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 1.549999999999999,
+    "seed": 2,
+    "t_ko": 42.17990196078431,
+    "winner": 1,
+    "winner_hp": 19.20000000000008
+   }
+  },
+  "scenarios/early_levels_s3.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -7.89,
+   "story": {
+    "caps": [
+     [7.1799, 0, "FLUTTER TONGUE"],
+     [16.1549, 0, "SNAKE DANCE"],
+     [41.27157, 0, "PICCOLO"],
+     [49.78824, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [7.1799, 0, "FLUTTER TONGUE"],
+     [7.1799, 1, "SAD TROMBONE"],
+     [7.6299, 1, "POWER SLIDE"],
+     [16.1549, 0, "SNAKE DANCE"],
+     [41.27157, 0, "PICCOLO"],
+     [49.78824, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.3,
+    "seed": 3,
+    "t_ko": 50.688235294117646,
+    "winner": 1,
+    "winner_hp": 23.52000000000008
+   }
+  },
+  "scenarios/early_low_s1.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -28.76,
+   "story": {
+    "caps": [
+     [6.2799, 0, "FLUTTER TONGUE"],
+     [10.77157, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [6.2799, 0, "FLUTTER TONGUE"],
+     [6.2799, 1, "SAD TROMBONE"],
+     [9.87157, 0, "SNAKE DANCE"],
+     [10.77157, 1, "PEDAL TONE"],
+     [11.21324, 1, "POWER SLIDE"],
+     [13.46324, 0, "PICCOLO"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 3.0916599999999974,
+    "seed": 1,
+    "t_ko": 45.79656862745098,
+    "winner": 0,
+    "winner_hp": 35.79999999999989
+   }
+  },
+  "scenarios/early_low_s2.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -16.9,
+   "story": {
+    "caps": [
+     [6.2799, 1, "SAD TROMBONE"]
+    ],
+    "firsts": [
+     [6.2799, 1, "SAD TROMBONE"],
+     [6.7299, 0, "FLUTTER TONGUE"],
+     [8.0799, 1, "POWER SLIDE"],
+     [8.97157, 0, "SNAKE DANCE"],
+     [8.97157, 1, "PEDAL TONE"],
+     [9.87157, 0, "PICCOLO"]
+    ],
+    "lc_t": [10.04657],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.883330000000001,
+    "seed": 2,
+    "t_ko": 45.34656862745098,
+    "winner": 0,
+    "winner_hp": 22.199999999999946
+   }
+  },
+  "scenarios/early_low_s3.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "score": -33.43,
+   "story": {
+    "caps": [
+     [7.1799, 0, "FLUTTER TONGUE"],
+     [16.1549, 0, "SNAKE DANCE"],
+     [25.12157, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [7.1799, 0, "FLUTTER TONGUE"],
+     [7.1799, 1, "SAD TROMBONE"],
+     [7.6299, 1, "POWER SLIDE"],
+     [8.97157, 0, "PICCOLO"],
+     [16.1549, 0, "SNAKE DANCE"],
+     [25.12157, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.3,
+    "seed": 3,
+    "t_ko": 45.41323529411765,
+    "winner": 1,
+    "winner_hp": 61.12000000000006
+   }
+  },
+  "scenarios/plain_s7.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -17.04,
+   "story": {
+    "caps": [
+     [17.94657, 1, "SAD TROMBONE"],
+     [22.4299, 0, "FLUTTER TONGUE"],
+     [28.71324, 1, "POWER SLIDE"],
+     [38.1299, 0, "SNAKE DANCE"],
+     [50.23824, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [17.94657, 1, "SAD TROMBONE"],
+     [22.4299, 0, "FLUTTER TONGUE"],
+     [28.71324, 1, "POWER SLIDE"],
+     [38.1299, 0, "SNAKE DANCE"],
+     [50.23824, 0, "PICCOLO"],
+     [51.13824, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [50.8049],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 3.0333299999999994,
+    "seed": 7,
+    "t_ko": 57.03823529411764,
+    "winner": 0,
+    "winner_hp": 16.59999999999991
+   }
+  },
+  "scenarios/plain_s8.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -141.06,
+   "story": {
+    "caps": [
+     [24.67157, 1, "SAD TROMBONE"],
+     [34.98824, 0, "FLUTTER TONGUE"],
+     [57.86324, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [24.67157, 1, "SAD TROMBONE"],
+     [34.98824, 0, "FLUTTER TONGUE"],
+     [35.88824, 1, "POWER SLIDE"],
+     [57.86324, 0, "PICCOLO"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PICCOLO"],
+    "max_gap": 3.1750000000000007,
+    "seed": 8,
+    "t_ko": null,
+    "winner": null,
+    "winner_hp": 100.0
+   }
+  },
+  "scenarios/plain_s9.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -26.53,
+   "story": {
+    "caps": [
+     [13.46324, 1, "SAD TROMBONE"],
+     [28.26324, 1, "POWER SLIDE"],
+     [33.19657, 0, "FLUTTER TONGUE"],
+     [39.0299, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [13.46324, 1, "SAD TROMBONE"],
+     [28.26324, 1, "POWER SLIDE"],
+     [33.19657, 0, "FLUTTER TONGUE"],
+     [39.0299, 0, "PICCOLO"],
+     [39.47157, 0, "SNAKE DANCE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PICCOLO"],
+    "max_gap": 1.8000000000000007,
+    "seed": 9,
+    "t_ko": 47.213235294117645,
+    "winner": 1,
+    "winner_hp": 49.440000000000055
+   }
+  },
+  "scenarios/swapped_s1.bfrec": {
+   "fits": false,
+   "names": ["TROMBONE", "FLUTE"],
+   "overrides": {},
+   "score": -9.95,
+   "story": {
+    "caps": [
+     [13.9049, 0, "SAD TROMBONE"],
+     [26.02157, 0, "POWER SLIDE"],
+     [31.84657, 1, "SNAKE DANCE"],
+     [42.61324, 0, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [13.9049, 0, "SAD TROMBONE"],
+     [17.04657, 1, "FLUTTER TONGUE"],
+     [26.02157, 0, "POWER SLIDE"],
+     [31.84657, 1, "SNAKE DANCE"],
+     [42.61324, 0, "PEDAL TONE"],
+     [43.51324, 1, "PICCOLO"]
+    ],
+    "lc_t": [42.4299],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.6083299999999996,
+    "seed": 1,
+    "t_ko": 44.47990196078431,
+    "winner": 1,
+    "winner_hp": 13.799999999999887
+   }
+  },
+  "scenarios/swapped_s2.bfrec": {
+   "fits": false,
+   "names": ["TROMBONE", "FLUTE"],
+   "overrides": {},
+   "score": 7.41,
+   "story": {
+    "caps": [
+     [14.3549, 0, "SAD TROMBONE"],
+     [29.1549, 0, "POWER SLIDE"],
+     [44.4049, 1, "PICCOLO"]
+    ],
+    "firsts": [
+     [14.3549, 0, "SAD TROMBONE"],
+     [15.2549, 1, "FLUTTER TONGUE"],
+     [29.1549, 0, "POWER SLIDE"],
+     [30.0549, 1, "SNAKE DANCE"],
+     [44.4049, 1, "PICCOLO"],
+     [45.3049, 0, "PEDAL TONE"]
+    ],
+    "lc_t": [28.76324, 46.02157, 46.2299],
+    "lead_changes": 3,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.5166700000000013,
+    "seed": 2,
+    "t_ko": 51.38823529411764,
+    "winner": 0,
+    "winner_hp": 8.400000000000102
+   }
+  },
+  "scenarios/swapped_s3.bfrec": {
+   "fits": false,
+   "names": ["TROMBONE", "FLUTE"],
+   "overrides": {},
+   "score": -16.99,
+   "story": {
+    "caps": [
+     [17.04657, 0, "SAD TROMBONE"],
+     [26.46324, 0, "POWER SLIDE"],
+     [34.08824, 1, "SNAKE DANCE"],
+     [43.06324, 0, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [17.04657, 0, "SAD TROMBONE"],
+     [26.46324, 0, "POWER SLIDE"],
+     [26.46324, 1, "FLUTTER TONGUE"],
+     [34.08824, 1, "SNAKE DANCE"],
+     [43.06324, 0, "PEDAL TONE"],
+     [43.96324, 1, "PICCOLO"]
+    ],
+    "lc_t": [40.89657],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 3.616670000000001,
+    "seed": 3,
+    "t_ko": 44.588235294117645,
+    "winner": 1,
+    "winner_hp": 24.79999999999989
+   }
+  },
+  "seed1.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -35.59,
+   "story": {
+    "caps": [
+     [14.3549, 0, "FLUTTER TONGUE"],
+     [20.63824, 0, "SNAKE DANCE"],
+     [31.84657, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [14.3549, 0, "FLUTTER TONGUE"],
+     [20.63824, 0, "SNAKE DANCE"],
+     [21.08824, 1, "SAD TROMBONE"],
+     [31.84657, 1, "PEDAL TONE"],
+     [32.74657, 1, "POWER SLIDE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE"],
+    "max_gap": 2.2416600000000004,
+    "seed": 1,
+    "t_ko": 40.63823529411764,
+    "winner": 0,
+    "winner_hp": 43.199999999999875
+   }
+  },
+  "seed2.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -9.16,
+   "story": {
+    "caps": [
+     [14.3549, 1, "SAD TROMBONE"],
+     [24.22157, 1, "POWER SLIDE"],
+     [39.47157, 0, "SNAKE DANCE"],
+     [49.78824, 1, "PEDAL TONE"]
+    ],
+    "firsts": [
+     [14.3549, 1, "SAD TROMBONE"],
+     [24.22157, 1, "POWER SLIDE"],
+     [25.57157, 0, "FLUTTER TONGUE"],
+     [39.47157, 0, "SNAKE DANCE"],
+     [40.37157, 0, "PICCOLO"],
+     [49.78824, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 1.6749999999999998,
+    "seed": 2,
+    "t_ko": 52.871568627450976,
+    "winner": 1,
+    "winner_hp": 14.88000000000008
+   }
+  },
+  "seed3.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": 3.56,
+   "story": {
+    "caps": [
+     [16.1549, 1, "SAD TROMBONE"],
+     [26.91324, 0, "SNAKE DANCE"],
+     [42.61324, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [16.1549, 1, "SAD TROMBONE"],
+     [17.49657, 0, "FLUTTER TONGUE"],
+     [26.91324, 0, "SNAKE DANCE"],
+     [30.0549, 1, "POWER SLIDE"],
+     [42.61324, 0, "PICCOLO"],
+     [43.06324, 1, "PEDAL TONE"]
+    ],
+    "lc_t": [18.88824],
+    "lead_changes": 1,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.3,
+    "seed": 3,
+    "t_ko": 50.95490196078431,
+    "winner": 0,
+    "winner_hp": 2.799999999999904
+   }
+  },
+  "seed500.bfrec": {
+   "fits": false,
+   "names": ["FLUTE", "TROMBONE"],
+   "overrides": {},
+   "score": -16.77,
+   "story": {
+    "caps": [
+     [16.1549, 0, "FLUTTER TONGUE"],
+     [26.91324, 0, "SNAKE DANCE"],
+     [31.84657, 1, "POWER SLIDE"],
+     [47.54657, 1, "PEDAL TONE"],
+     [54.72157, 0, "PICCOLO"]
+    ],
+    "firsts": [
+     [16.1549, 0, "FLUTTER TONGUE"],
+     [16.1549, 1, "SAD TROMBONE"],
+     [26.91324, 0, "SNAKE DANCE"],
+     [31.84657, 1, "POWER SLIDE"],
+     [47.54657, 1, "PEDAL TONE"],
+     [54.72157, 0, "PICCOLO"]
+    ],
+    "lc_t": [],
+    "lead_changes": 0,
+    "lows": ["PEDAL TONE", "PICCOLO"],
+    "max_gap": 2.650000000000002,
+    "seed": 500,
+    "t_ko": 55.88823529411764,
+    "winner": 0,
+    "winner_hp": 16.19999999999991
+   }
+  }
+ },
+ "tool": "stories"
+}

@@ -1,0 +1,160 @@
+//! `ballfight sound <fight.toml> --out audio.wav [--stems DIR] [--seed N | --rec F] [--arrangement A]
+//! [--music-seed N] [--melody-style S] [--played FILE]`: build the soundtrack and save
+//! the master as a 16-bit stereo .wav (48 kHz, 2,928,640 frames, as the video holds it); `--stems` also saves each
+//! bus as `<bus>.wav` in that folder (made if missing; it must be empty); `--played` saves the ordinary notes each
+//! fighter sounded under the Composed arrangement, as JSON (`{"FLUTE": [[seconds, note], ...], ...}`).
+
+use std::path::{Path, PathBuf};
+
+use bf_sound::wav::wav16_bytes;
+use serde_json::json;
+
+use crate::{Ctx, Done, Fail, load_fight, need_ko, new_file, note, say, say_json, stopped, the_fight, write_new};
+
+#[derive(clap::Args)]
+pub struct Args {
+    /// The fight file.
+    fight: PathBuf,
+    /// The .wav to write (a new file).
+    #[arg(long, value_name = "FILE")]
+    out: PathBuf,
+    /// Also save each bus as a .wav in this folder (made if missing; it must be empty).
+    #[arg(long, value_name = "DIR")]
+    stems: Option<PathBuf>,
+    /// The seed to fight (default: the fight file's).
+    #[arg(long, value_name = "N", conflicts_with = "rec")]
+    seed: Option<u64>,
+    /// Read this recording instead of fighting the seed.
+    #[arg(long, value_name = "FILE")]
+    rec: Option<PathBuf>,
+    /// The arrangement to play: classic or composed (default: the fight file's).
+    #[arg(long, value_name = "NAME", value_parser = crate::arrangement)]
+    arrangement: Option<String>,
+    /// The composer's seed (default: the fight file's music seed).
+    #[arg(long, value_name = "N")]
+    music_seed: Option<u64>,
+    /// The melody style of the Composed arrangement: signature, climbing, riff, runs, broken_chords or anchor,
+    /// or auto for the pick the theme and the music seed give (default: the fight file's).
+    #[arg(long, value_name = "NAME", value_parser = melody_style)]
+    melody_style: Option<String>,
+    /// The Band slider of the Composed arrangement: how much louder than the default the band plays against the
+    /// fighters, in dB, from -6 to 6 (default: the fight file's).
+    #[arg(long, value_name = "DB", allow_negative_numbers = true, value_parser = band_level)]
+    band_level: Option<f64>,
+    /// Also save the notes each fighter sounded, as JSON (a new file).
+    #[arg(long, value_name = "FILE")]
+    played: Option<PathBuf>,
+}
+
+/// `--melody-style auto`: the style the theme's list and the music seed pick.
+const AUTO: &str = "auto";
+
+/// `--melody-style <name>`.
+fn melody_style(text: &str) -> Result<String, String> {
+    use bf_sound::music::Style;
+    let t = text.trim();
+    if t == AUTO || Style::from_key(t).is_some() {
+        Ok(t.to_string())
+    } else {
+        let all: Vec<&str> = Style::ALL.iter().map(|s| s.key()).collect();
+        Err(format!(
+            "{text} is not a melody style; give {AUTO} or one of {}",
+            all.join(", ")
+        ))
+    }
+}
+
+/// `--band-level <dB>`.
+fn band_level(text: &str) -> Result<f64, String> {
+    use bf_core::fightfile::BAND_LEVEL;
+    match text.trim().parse::<f64>() {
+        Ok(v) if (-BAND_LEVEL..=BAND_LEVEL).contains(&v) => Ok(v),
+        _ => Err(format!(
+            "{text} is not a band level; give a number of dB from -{BAND_LEVEL} to {BAND_LEVEL}"
+        )),
+    }
+}
+
+pub fn run(a: &Args, ctx: &Ctx) -> Done {
+    let mut ff = load_fight(&a.fight)?;
+    crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
+    if let Some(style) = &a.melody_style {
+        ff.music.melody_style = Some(if style == AUTO {
+            bf_content::composer::pick_style(&ff.music.theme, ff.music.music_seed)
+                .key()
+                .to_string()
+        } else {
+            style.clone()
+        });
+    }
+    if let Some(level) = a.band_level {
+        ff.music.band_level = Some(level);
+    }
+    new_file(&a.out)?;
+    if let Some(path) = &a.played {
+        new_file(path)?;
+    }
+    if let Some(dir) = &a.stems {
+        empty_folder(dir)?;
+    }
+    let rec = the_fight(&ff, &a.fight, a.rec.as_deref(), a.seed, true)?;
+    need_ko(&rec)?;
+    stopped(ctx, "the soundtrack")?;
+    note("sound: building the soundtrack");
+    let (st, played) =
+        bf_content::build_soundtrack_played(&rec, &ff).map_err(|e| Fail(format!("{}: {e}.", a.fight.display())))?;
+    stopped(ctx, "the soundtrack")?;
+    write_new(&a.out, &wav16_bytes(&st.master))?;
+    if let Some(path) = &a.played {
+        write_new(path, json!(played).to_string().as_bytes())?;
+    }
+    let mut stems = Vec::new();
+    if let Some(dir) = &a.stems {
+        std::fs::create_dir_all(dir)
+            .map_err(|e| Fail(format!("the stems folder {} cannot be made ({e}).", dir.display())))?;
+        for (bus, x) in &st.stems {
+            let path = dir.join(format!("{bus}.wav"));
+            write_new(&path, &wav16_bytes(x))?;
+            stems.push(path.display().to_string());
+        }
+    }
+    if ctx.json {
+        say_json(&json!({
+            "seed": rec.seed,
+            "frames": st.master.len(),
+            "out": a.out.display().to_string(),
+            "stems": stems,
+        }));
+    } else {
+        say(&format!("soundtrack of seed {}: saved {}", rec.seed, a.out.display()));
+        for s in &stems {
+            say(&format!("saved {s}"));
+        }
+    }
+    Ok(())
+}
+
+/// Refuses a stems folder that is a file or holds anything.
+fn empty_folder(dir: &Path) -> Done {
+    match std::fs::symlink_metadata(dir) {
+        Err(_) => Ok(()),
+        Ok(m) if !m.is_dir() => Err(Fail(format!(
+            "the stems folder {} is not a folder (a file has that name); choose another.",
+            dir.display()
+        ))),
+        Ok(_) => {
+            let full = std::fs::read_dir(dir)
+                .map_err(|e| Fail(format!("the stems folder {} cannot be read ({e}).", dir.display())))?
+                .next()
+                .is_some();
+            if full {
+                return Err(Fail(format!(
+                    "the stems folder {} is not empty, and ballfight never replaces a file; choose an empty or a \
+                     new folder.",
+                    dir.display()
+                )));
+            }
+            Ok(())
+        }
+    }
+}

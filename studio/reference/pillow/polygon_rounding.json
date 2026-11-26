@@ -1,0 +1,1262 @@
+{
+ "about": "ImageDraw.polygon(xy, fill=...) with an edge that crosses a row at 0.49999997, the largest float below one half: ROUND_UP adds 0.5F as a C float, the sum is 1.0, and the span starts at column 1 (a double sum would start it at column 0)",
+ "cases": [
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad",
+    "mode": "L",
+    "row": 41,
+    "size": [24, 44],
+    "xy": [
+     [0, 0],
+     [1, 82],
+     [19, 82],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "background": [231, 81, 173],
+    "fill": [219, 96, 191],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 41,
+    "size": [24, 44],
+    "xy": [
+     [18, 0],
+     [0, 0],
+     [1, 82],
+     [19, 82]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [88, 247, 93, 103],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 41,
+    "size": [24, 44],
+    "xy": [
+     [0, 0],
+     [1, 82],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c002__in",
+    "out": "c002__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "background": [162, 120, 245],
+    "fill": [142, 117, 211],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 47,
+    "size": [25, 50],
+    "xy": [
+     [19, 0],
+     [0, 0],
+     [1, 94],
+     [20, 94]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.6f6c2970fa4d7p+3",
+    "kind": "triangle",
+    "mode": "F",
+    "row": 47,
+    "size": [25, 50],
+    "xy": [
+     [0, 0],
+     [1, 94],
+     [19, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [26, 22, 232, 193],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 47,
+    "size": [25, 50],
+    "xy": [
+     [0, 0],
+     [1, 94],
+     [20, 94],
+     [19, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c005__in",
+    "out": "c005__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.11f04515cec58p+5",
+    "kind": "triangle",
+    "mode": "F",
+    "row": 55,
+    "size": [26, 58],
+    "xy": [
+     [0, 0],
+     [1, 110],
+     [20, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [8, 106, 63, 17],
+    "kind": "quad",
+    "mode": "RGBA",
+    "row": 55,
+    "size": [26, 58],
+    "xy": [
+     [0, 0],
+     [1, 110],
+     [21, 110],
+     [20, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [143, 82, 163, 146],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 55,
+    "size": [26, 58],
+    "xy": [
+     [20, 0],
+     [0, 0],
+     [1, 110],
+     [21, 110]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c008__in",
+    "out": "c008__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [123, 218, 215, 128],
+    "kind": "quad",
+    "mode": "RGBA",
+    "row": 61,
+    "size": [27, 64],
+    "xy": [
+     [0, 0],
+     [1, 122],
+     [22, 122],
+     [21, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 31,
+    "kind": "quad_rotated",
+    "mode": "L",
+    "row": 61,
+    "size": [27, 64],
+    "xy": [
+     [21, 0],
+     [0, 0],
+     [1, 122],
+     [22, 122]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [250, 6, 239, 157],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 61,
+    "size": [27, 64],
+    "xy": [
+     [0, 0],
+     [1, 122],
+     [21, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c011__in",
+    "out": "c011__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad_rotated",
+    "mode": "L",
+    "row": 82,
+    "size": [28, 85],
+    "xy": [
+     [22, 0],
+     [0, 0],
+     [1, 164],
+     [23, 164]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "background": [182, 143, 193],
+    "fill": [3, 65, 66],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 82,
+    "size": [28, 85],
+    "xy": [
+     [0, 0],
+     [1, 164],
+     [22, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [209, 25, 76, 62],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 82,
+    "size": [28, 85],
+    "xy": [
+     [0, 0],
+     [1, 164],
+     [23, 164],
+     [22, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c014__in",
+    "out": "c014__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "background": [81, 9, 206],
+    "fill": [185, 75, 4],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 41,
+    "size": [29, 44],
+    "xy": [
+     [0, 0],
+     [2, 164],
+     [23, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c015__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.2b751432578a1p+5",
+    "kind": "quad",
+    "mode": "F",
+    "row": 41,
+    "size": [29, 44],
+    "xy": [
+     [0, 0],
+     [2, 164],
+     [25, 164],
+     [23, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c016__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [214, 46, 159, 103],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 41,
+    "size": [29, 44],
+    "xy": [
+     [23, 0],
+     [0, 0],
+     [2, 164],
+     [25, 164]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c017__in",
+    "out": "c017__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.55038a3d8c5a0p+15",
+    "kind": "quad",
+    "mode": "F",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [0, 0],
+     [1, 166],
+     [25, 166],
+     [24, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c018__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [26, 103, 110, 235],
+    "kind": "quad_rotated",
+    "mode": "RGBA",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [24, 0],
+     [0, 0],
+     [1, 166],
+     [25, 166]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c019__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [207, 13, 22, 70],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [0, 0],
+     [1, 166],
+     [24, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c020__in",
+    "out": "c020__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [44, 208, 11, 34],
+    "kind": "quad_rotated",
+    "mode": "RGBA",
+    "row": 47,
+    "size": [31, 50],
+    "xy": [
+     [25, 0],
+     [0, 0],
+     [2, 188],
+     [27, 188]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c021__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 225,
+    "kind": "triangle",
+    "mode": "L",
+    "row": 47,
+    "size": [31, 50],
+    "xy": [
+     [0, 0],
+     [2, 188],
+     [25, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c022__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [138, 125, 128, 210],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 47,
+    "size": [31, 50],
+    "xy": [
+     [0, 0],
+     [2, 188],
+     [27, 188],
+     [25, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c023__in",
+    "out": "c023__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "triangle",
+    "mode": "L",
+    "row": 55,
+    "size": [32, 58],
+    "xy": [
+     [0, 0],
+     [2, 220],
+     [26, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c024__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "background": [19, 71, 238],
+    "fill": [87, 55, 55],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 55,
+    "size": [32, 58],
+    "xy": [
+     [0, 0],
+     [2, 220],
+     [28, 220],
+     [26, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c025__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [17, 248, 36, 243],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 55,
+    "size": [32, 58],
+    "xy": [
+     [26, 0],
+     [0, 0],
+     [2, 220],
+     [28, 220]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c026__in",
+    "out": "c026__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "background": [229, 97, 174],
+    "fill": [4, 167, 161],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 61,
+    "size": [24, 64],
+    "xy": [
+     [0, 0],
+     [2, 244],
+     [20, 244],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c027__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.069f85d6bf0d9p+15",
+    "kind": "quad_rotated",
+    "mode": "F",
+    "row": 61,
+    "size": [24, 64],
+    "xy": [
+     [18, 0],
+     [0, 0],
+     [2, 244],
+     [20, 244]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c028__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [165, 108, 53, 139],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 61,
+    "size": [24, 64],
+    "xy": [
+     [0, 0],
+     [2, 244],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c029__in",
+    "out": "c029__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.226cd11df407cp+5",
+    "kind": "quad_rotated",
+    "mode": "F",
+    "row": 41,
+    "size": [25, 44],
+    "xy": [
+     [19, 0],
+     [0, 0],
+     [3, 246],
+     [22, 246]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c030__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [235, 88, 169, 170],
+    "kind": "triangle",
+    "mode": "RGBA",
+    "row": 41,
+    "size": [25, 44],
+    "xy": [
+     [0, 0],
+     [3, 246],
+     [19, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [51, 113, 221, 83],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 41,
+    "size": [25, 44],
+    "xy": [
+     [0, 0],
+     [3, 246],
+     [22, 246],
+     [19, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c032__in",
+    "out": "c032__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [215, 160, 17, 16],
+    "kind": "triangle",
+    "mode": "RGBA",
+    "row": 47,
+    "size": [26, 50],
+    "xy": [
+     [0, 0],
+     [3, 282],
+     [20, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 68,
+    "kind": "quad",
+    "mode": "L",
+    "row": 47,
+    "size": [26, 50],
+    "xy": [
+     [0, 0],
+     [3, 282],
+     [23, 282],
+     [20, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [131, 196, 51, 100],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 47,
+    "size": [26, 50],
+    "xy": [
+     [20, 0],
+     [0, 0],
+     [3, 282],
+     [23, 282]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c035__in",
+    "out": "c035__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad",
+    "mode": "L",
+    "row": 82,
+    "size": [27, 85],
+    "xy": [
+     [0, 0],
+     [2, 328],
+     [23, 328],
+     [21, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "background": [178, 107, 202],
+    "fill": [74, 76, 18],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 82,
+    "size": [27, 85],
+    "xy": [
+     [21, 0],
+     [0, 0],
+     [2, 328],
+     [23, 328]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [8, 101, 232, 159],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 82,
+    "size": [27, 85],
+    "xy": [
+     [0, 0],
+     [2, 328],
+     [21, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c038__in",
+    "out": "c038__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "background": [159, 196, 155],
+    "fill": [58, 221, 126],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 41,
+    "size": [28, 44],
+    "xy": [
+     [22, 0],
+     [0, 0],
+     [4, 328],
+     [26, 328]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.865712442244ap+4",
+    "kind": "triangle",
+    "mode": "F",
+    "row": 41,
+    "size": [28, 44],
+    "xy": [
+     [0, 0],
+     [4, 328],
+     [22, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [31, 159, 159, 137],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 41,
+    "size": [28, 44],
+    "xy": [
+     [0, 0],
+     [4, 328],
+     [26, 328],
+     [22, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c041__in",
+    "out": "c041__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.b44f9dfb302a7p+4",
+    "kind": "triangle",
+    "mode": "F",
+    "row": 55,
+    "size": [29, 58],
+    "xy": [
+     [0, 0],
+     [3, 330],
+     [23, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [20, 81, 114, 163],
+    "kind": "quad",
+    "mode": "RGBA",
+    "row": 55,
+    "size": [29, 58],
+    "xy": [
+     [0, 0],
+     [3, 330],
+     [26, 330],
+     [23, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [109, 197, 211, 155],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 55,
+    "size": [29, 58],
+    "xy": [
+     [23, 0],
+     [0, 0],
+     [3, 330],
+     [26, 330]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c044__in",
+    "out": "c044__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [171, 244, 32, 196],
+    "kind": "quad",
+    "mode": "RGBA",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [0, 0],
+     [2, 332],
+     [26, 332],
+     [24, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 249,
+    "kind": "quad_rotated",
+    "mode": "L",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [24, 0],
+     [0, 0],
+     [2, 332],
+     [26, 332]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [105, 226, 71, 227],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 83,
+    "size": [30, 86],
+    "xy": [
+     [0, 0],
+     [2, 332],
+     [24, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c047__in",
+    "out": "c047__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "background": 0,
+    "fill": 255,
+    "kind": "quad_rotated",
+    "mode": "L",
+    "row": 61,
+    "size": [31, 64],
+    "xy": [
+     [25, 0],
+     [0, 0],
+     [3, 366],
+     [28, 366]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "background": [216, 80, 197],
+    "fill": [172, 204, 144],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 61,
+    "size": [31, 64],
+    "xy": [
+     [0, 0],
+     [3, 366],
+     [25, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [60, 39, 93, 252],
+    "kind": "quad",
+    "mode": "RGB",
+    "row": 61,
+    "size": [31, 64],
+    "xy": [
+     [0, 0],
+     [3, 366],
+     [28, 366],
+     [25, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c050__in",
+    "out": "c050__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "background": [25, 117, 70],
+    "fill": [92, 225, 3],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 47,
+    "size": [32, 50],
+    "xy": [
+     [0, 0],
+     [4, 376],
+     [26, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.0b3d94559785ap+3",
+    "kind": "quad",
+    "mode": "F",
+    "row": 47,
+    "size": [32, 50],
+    "xy": [
+     [0, 0],
+     [4, 376],
+     [30, 376],
+     [26, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [65, 179, 140, 133],
+    "kind": "quad_rotated",
+    "mode": "RGB",
+    "row": 47,
+    "size": [32, 50],
+    "xy": [
+     [26, 0],
+     [0, 0],
+     [4, 376],
+     [30, 376]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c053__in",
+    "out": "c053__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "background": "0x1.e848000000000p+19",
+    "fill": "0x1.31dbd96da0763p+15",
+    "kind": "quad",
+    "mode": "F",
+    "row": 1,
+    "size": [24, 8],
+    "xy": [
+     [0, 0],
+     [16777215, 33554432],
+     [16777233, 33554432],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "background": [0, 0, 0, 0],
+    "fill": [7, 159, 177, 145],
+    "kind": "quad_rotated",
+    "mode": "RGBA",
+    "row": 1,
+    "size": [24, 8],
+    "xy": [
+     [18, 0],
+     [0, 0],
+     [16777215, 33554432],
+     [16777233, 33554432]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "ImageDraw.Draw(im).polygon(xy, fill=fill)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [226, 192, 3, 65],
+    "kind": "triangle",
+    "mode": "RGB",
+    "row": 1,
+    "size": [24, 8],
+    "xy": [
+     [0, 0],
+     [16777215, 33554432],
+     [18, 0]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c056__in",
+    "out": "c056__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').polygon(xy, fill=fill)",
+   "id": "c056"
+  }
+ ],
+ "note": "args: mode and size (width, height) of the image, background (its one colour before the call) or the array \"in\", xy as passed (xy_form \"pairs\": a list of (x, y) tuples; \"flat\": one list x0, y0, x1, y1, ...), then the keyword arguments of the call exactly as passed (a keyword that is absent was not passed). Floats are float.hex() strings. Arrays are (height, width) for L and F, (height, width, 3) for RGB, (height, width, 4) for RGBA; F is float32. Pillow truncates every coordinate toward zero to a C int before drawing, and an F ink to float32. args.row is the row on which the left edge sits at 0.49999997: the picture has that row's column 0 untouched and its column 1 drawn.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

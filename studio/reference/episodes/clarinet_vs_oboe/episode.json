@@ -1,0 +1,75 @@
+{
+ "about": "examples/clarinet_vs_oboe: the kit config's values, which studio/fights/clarinet_vs_oboe.toml must hold, and its recording",
+ "bpm": 140,
+ "chords": ["Dm", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Gm", "A"],
+ "config": "examples/clarinet_vs_oboe",
+ "dmg_scale": 0.55,
+ "fighters": ["CLARINET", "OBOE"],
+ "format": 1,
+ "fx_seed": 37,
+ "handicap": [1.0, 1.0],
+ "intro": ["Dm", "A"],
+ "key": "D",
+ "lines": {
+  "CLARINET": [62, 57, 53, 57, 58, 55, 50, 55, 60, 55, 52, 55, 57, 53, 48, 53, 58, 53, 50, 53, 55, 58, 62, 58, 57, 61, 64, 61, 57, 52, 49, 52],
+  "OBOE": [74, 77, 81, 77, 74, 76, 77, 81, 79, 82, 86, 82, 79, 77, 74, 77, 76, 79, 84, 79, 76, 77, 79, 76, 77, 81, 84, 81, 77, 79, 81, 77, 77, 82, 86, 82, 77, 81, 82, 86, 79, 82, 86, 84, 82, 81, 79, 77, 76, 81, 85, 81, 76, 79, 81, 85, 81, 79, 77, 76, 73, 76, 79, 81]
+ },
+ "loop": ["Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A"],
+ "loop_bpm": "0x1.1b47582192e2ap+7",
+ "mix": {},
+ "mood": "baroque_storm",
+ "music_seed": null,
+ "n_bars": 36,
+ "pair": "clarinet_vs_oboe",
+ "rec_hash": "d3e772c421ab268e",
+ "recording": {
+  "cache": "themes/baroque_storm/clarinet_vs_oboe.bfrec",
+  "sha256": "2ad4559e11883fc5bca2c066e8f21180f322248d1bdd7f760b5e556fe511936a"
+ },
+ "roles": {
+  "CLARINET": "line",
+  "OBOE": "line"
+ },
+ "rules": {},
+ "scale": "minor",
+ "seed": 654,
+ "series": "BALLFIGHT #11",
+ "shard_seed": 371,
+ "solos": {
+  "CLARINET": [
+   [0.0, 50, 0.5],
+   [0.5, 53, 0.5],
+   [1.0, 57, 0.5],
+   [1.5, 62, 0.5],
+   [2.0, 74, 1.0],
+   [3.0, 72, 0.25],
+   [3.25, 70, 0.25],
+   [3.5, 69, 0.25],
+   [3.75, 67, 0.25],
+   [4.0, 65, 0.5],
+   [4.5, 64, 0.5],
+   [5.0, 61, 0.5],
+   [5.5, 64, 0.5],
+   [6.0, 62, 2.0]
+  ],
+  "OBOE": [
+   [0.0, 81, 1.0],
+   [1.0, 82, 0.5],
+   [1.5, 81, 0.5],
+   [2.0, 79, 0.5],
+   [2.5, 77, 0.5],
+   [3.0, 76, 0.5],
+   [3.5, 77, 0.5],
+   [4.0, 74, 0.5],
+   [4.5, 76, 0.5],
+   [5.0, 73, 0.5],
+   [5.5, 76, 0.5],
+   [6.0, 74, 2.0]
+  ]
+ },
+ "t_ko": 52.53055555555555,
+ "tail": ["Gm", "A"],
+ "title_hits": {},
+ "tool": "tools.studio_export.episode_clarinet_vs_oboe",
+ "winner": 0
+}

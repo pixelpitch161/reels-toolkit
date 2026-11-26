@@ -2,7 +2,7 @@
 
 **Goal (user):** "take what we've designed so far and … create a program that can simulate and render battles with more
 user flexibility", running **on the user's own Windows computer**. Fights between existing fighters with existing
-moods then cost no Claude tokens; Claude is only needed for new fighters, new moods and new features.
+moods then need no build session; a build session is only needed for new fighters, new moods and new features.
 
 **Built on the episode kit** (`projects/ballfight/README.md`, "Making an episode"): config -> honest sim -> seed search ->
 render -> loop-clean mp4. The Studio is a front end + packaging on top of it. Fights stay honest: the same simulation;
@@ -57,6 +57,6 @@ the user picks a seed, never edits a fight.
    launcher (sets `PYTHONHASHSEED=0`, starts the server, opens the browser), **updates** (a button or `Update.bat`:
    `git pull` + reinstall requirements; the repo is private, so the guide covers signing in to GitHub once, e.g. with
    GitHub Desktop or `gh auth login`), and `docs/studio/GUIDE.md`: install, make a fight, where files go, what needs
-   Claude (new fighters / moods / features: ask in the ideas chat).
+   a build session (new fighters / moods / features: ask in the ideas chat).
 
 Each session: log in `docs/log/ballfight_studio.md`; keep every finished episode replaying identically.

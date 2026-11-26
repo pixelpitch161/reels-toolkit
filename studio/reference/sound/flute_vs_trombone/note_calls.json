@@ -1,0 +1,6498 @@
+{
+ "about": "flute_vs_trombone: every first-time kit.music.note(name, midi, dur, cap, vel) call while kit.music.score() builds the soundtrack, in order. A note is synthesised once and cached by (name, int(midi), round(dur, 3), cap, round(vel, 2)); later calls with the same key reuse it and draw nothing",
+ "tool": "voices",
+ "episode": "flute_vs_trombone",
+ "seed": 392,
+ "names": ["FLUTE", "TROMBONE"],
+ "generator": {
+  "bit_generator": "PCG64",
+  "seed": 77,
+  "inc": "336983293413220778415499640756163231851",
+  "where": "series/instrument-history/drums60_lowpoly.py: _rng = np.random.default_rng(77); nz(n) = _rng.normal(0, 1, n)"
+ },
+ "start": "289533129354323354318955456298181112347",
+ "end": "73170599938919076745874442011986827357",
+ "note_calls": 674,
+ "first_time": 174,
+ "normals": 1342402,
+ "notes": {
+  "order": "the order is the order kit.music.score() first asks for each note: the bed and the fighters in the order score() calls them. The Studio must synthesise first-time notes in this order",
+  "args": "dur, cap and vel are the values passed (floats; `hex` has their float.hex()); the voice is called as pp_bridge.voice(name, int(midi), vel, dur), then cut or padded to int(cap * 48000) samples with a fade (kit.music.fit) and multiplied by the instrument's gain",
+  "voice_calls": "the pp_bridge.voice calls made inside the note, in order. \"why\": \"note\" is the note itself; \"inst_gain\" is the level-matching note kit.music.inst_gain synthesises the first time an instrument plays: voice(name, (lo + hi) // 2, 0.8, 0.2). It comes AFTER the note's own voice call, because Python evaluates fit(voice(...)) before inst_gain(name)",
+  "draws": "the n of each nz(n) call inside the voice call (the FLUTE draws one block per note; the TROMBONE draws none)",
+  "noise": "noise_before / noise_after: the generator's `state` as a decimal string (its `inc` never changes: generator.inc). noise_after of one row is noise_before of the next",
+  "gain": "kit.music.inst_gain(name) as float.hex()",
+  "uses": "how many times score() asked for this note in all",
+  "sha256": "SHA-256 of the note's float64 samples (little-endian); voice_calls[].sha256 of the voice output at 48 kHz before fit and gain"
+ },
+ "calls": [
+  {
+   "i": 0,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "289533129354323354318955456298181112347",
+   "noise_after": "169395537675194986783228261993923430909",
+   "normals": 27342,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "289533129354323354318955456298181112347",
+     "samples": 50090,
+     "sha256": "04d5253a319fffe12c40a55bc8ce74f8b5d4aaa8eb038f82e8fe12ddcb43bc41"
+    },
+    {
+     "why": "inst_gain",
+     "name": "FLUTE",
+     "midi": 82,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "323955001306269649495024757816427550609",
+     "samples": 56810,
+     "sha256": "2ddba8a6042aff5b073f1aa420654c43ef76aaf0dfcd1602525fabf318945543"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "6b287ce92eeb2aa8910e373ac48262fdffa916aa8e083f4b61e384d4fbc327df"
+  },
+  {
+   "i": 1,
+   "name": "FLUTE",
+   "midi": 79,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "169395537675194986783228261993923430909",
+   "noise_after": "144226717308906622863498338299887207314",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 79,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "169395537675194986783228261993923430909",
+     "samples": 50090,
+     "sha256": "5b814a8a8367a7865425f59b8c002bb99c55e539b34a31c9a289c7db54d99dbb"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "8a763272fc0648b623dc09c05797dae4f74c37be950397b975142e535200926f"
+  },
+  {
+   "i": 2,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "144226717308906622863498338299887207314",
+   "noise_after": "146752722303888225491123205519571004417",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "144226717308906622863498338299887207314",
+     "samples": 50090,
+     "sha256": "2006707db167146455ea8c54e139d7e2dfb1458f747f6686a050da33e96b786b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "64db3b4fb09d6170e6ad2f16b1cd8b527da72c269f5cf3ec33e436ee405a5767"
+  },
+  {
+   "i": 3,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "146752722303888225491123205519571004417",
+   "noise_after": "65244312135423157977245133640953653763",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "146752722303888225491123205519571004417",
+     "samples": 50090,
+     "sha256": "b54f300713533afec6a128fc099fe9e395bdbf8897f0159dd5d7b44bc62464d8"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "5eb47c6585eb551e0926dbcacd403b12e7ceb12a7734cd7319bd039592a7dd1c"
+  },
+  {
+   "i": 4,
+   "name": "FLUTE",
+   "midi": 86,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "65244312135423157977245133640953653763",
+   "noise_after": "175552559351001732307095784956440337198",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 86,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "65244312135423157977245133640953653763",
+     "samples": 50090,
+     "sha256": "a1adb01b697a31a65170c9d4bf1e27e470203aa10b9a9c10826592fe35b09c33"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "11a412a8e799320b127220949b5e11b1057ec8e32d60d95a95735e0aaeff91d5"
+  },
+  {
+   "i": 5,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "175552559351001732307095784956440337198",
+   "noise_after": "272656951390177522256788438822431651323",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "175552559351001732307095784956440337198",
+     "samples": 50090,
+     "sha256": "78087e0e792e45ffecfe6e49ac4928d6356be6f42ed3449266553e7c6a582797"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "b6492837b11ea40d8026693adbcf75becb9cdceba838b06f11cebab75fb0fe4e"
+  },
+  {
+   "i": 6,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.06,
+   "cap": 0.24,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-5",
+    "cap": "0x1.eb851eb851eb8p-3",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "272656951390177522256788438822431651323",
+   "noise_after": "128145089642930673803642421365691192111",
+   "normals": 10584,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 1.0,
+     "dur": 0.06,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.eb851eb851eb8p-5"
+     },
+     "draws": [10584],
+     "noise_before": "272656951390177522256788438822431651323",
+     "samples": 50090,
+     "sha256": "1570adc06971f76bb0d209b5c255ac83a26f84eb91ac28acc143b5479a9c8f2f"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 11520,
+   "sha256": "eec5a1d9832d7c19778c6b042d4027ceb15d6e3d907b28340cbb691d7f9628c7"
+  },
+  {
+   "i": 7,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.5,
+   "cap": 0.68,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p-1",
+    "cap": "0x1.5c28f5c28f5c3p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "128145089642930673803642421365691192111",
+   "noise_after": "40634206920767850620652982474579601871",
+   "normals": 29987,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 1.0,
+     "dur": 0.5,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p-1"
+     },
+     "draws": [29987],
+     "noise_before": "128145089642930673803642421365691192111",
+     "samples": 71209,
+     "sha256": "6c7d7cdb31130c8297ede24d3f7f69994b5e713274f150ff28313922b60cf70b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 32640,
+   "sha256": "2d83f701634d619e894eba75451d4fde293660121a9cfa1c05422d85ba455422"
+  },
+  {
+   "i": 8,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.7,
+   "cap": 1.0,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.6666666666666p-1",
+    "cap": "0x1.0000000000000p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "40634206920767850620652982474579601871",
+   "noise_after": "40634206920767850620652982474579601871",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 1.0,
+     "dur": 0.7,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.6666666666666p-1"
+     },
+     "draws": [],
+     "noise_before": "40634206920767850620652982474579601871",
+     "samples": 40320,
+     "sha256": "90137a7f282f6ea0a0db789311bd075a022d41c21492e99a85bf82ddd9ec040c"
+    },
+    {
+     "why": "inst_gain",
+     "name": "TROMBONE",
+     "midi": 56,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [],
+     "noise_before": "40634206920767850620652982474579601871",
+     "samples": 16320,
+     "sha256": "243085c985a3adf08352389c01aa5e95a4be82db5eaa31da5f2038b20478072f"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 48000,
+   "sha256": "84793d903c025f013036ba588c52f2884a77742a38321a7d370e32d0e2fb6dad"
+  },
+  {
+   "i": 9,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.6,
+   "cap": 0.95,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.3333333333333p-1",
+    "cap": "0x1.e666666666666p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "40634206920767850620652982474579601871",
+   "noise_after": "40634206920767850620652982474579601871",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 1.0,
+     "dur": 0.6,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.3333333333333p-1"
+     },
+     "draws": [],
+     "noise_before": "40634206920767850620652982474579601871",
+     "samples": 35520,
+     "sha256": "2f0dbf5c2bfc7a93ecb128f482f796d5f1d2def21e5fcc4a99462138b3dc1291"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 45600,
+   "sha256": "3d16962a95c56e9b5ff54ba4ef2d4ef9340a015a6c2f5d090fa5d7b7f3fddf50"
+  },
+  {
+   "i": 10,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.12,
+   "cap": 0.3,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "cap": "0x1.3333333333333p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "40634206920767850620652982474579601871",
+   "noise_after": "140586130438614071653861815706663827664",
+   "normals": 13230,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 0.9,
+     "dur": 0.12,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.eb851eb851eb8p-4"
+     },
+     "draws": [13230],
+     "noise_before": "40634206920767850620652982474579601871",
+     "samples": 52970,
+     "sha256": "85b200d34fb3838b1a0ea5409b379df0f9bc6b51d01aaf4f3de7403ef3d5f3df"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 14400,
+   "sha256": "b3a337b0c7b9063888e59a19ddebc020d9671fbe68712850c1d59e2db59a3dd8"
+  },
+  {
+   "i": 11,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.12,
+   "cap": 0.3,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "cap": "0x1.3333333333333p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "140586130438614071653861815706663827664",
+   "noise_after": "175753167956281136269438898679547390136",
+   "normals": 13230,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 0.9,
+     "dur": 0.12,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.eb851eb851eb8p-4"
+     },
+     "draws": [13230],
+     "noise_before": "140586130438614071653861815706663827664",
+     "samples": 52970,
+     "sha256": "7344b40a109f205140c6b274a1849ba09d57966a1f5d0053f73077ec3d4c54bb"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 14400,
+   "sha256": "30f1687d606b94407f90766a0498bca319feec9f9e67910b5c9fff2d7761b773"
+  },
+  {
+   "i": 12,
+   "name": "FLUTE",
+   "midi": 90,
+   "dur": 0.12,
+   "cap": 0.3,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.eb851eb851eb8p-4",
+    "cap": "0x1.3333333333333p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "175753167956281136269438898679547390136",
+   "noise_after": "338084503418477763164336467170895977041",
+   "normals": 13230,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 90,
+     "vel": 0.9,
+     "dur": 0.12,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.eb851eb851eb8p-4"
+     },
+     "draws": [13230],
+     "noise_before": "175753167956281136269438898679547390136",
+     "samples": 52970,
+     "sha256": "3f6f77bc29d5dcce8ae897d780e14048e012a4257eb4acc821dc170c407dd162"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 14400,
+   "sha256": "90b796dc38c42fbc4cfdd0c54185ff4de0645a9ccd268ae3efc824fde0b7f892"
+  },
+  {
+   "i": 13,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.25,
+   "cap": 0.43,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.0000000000000p-2",
+    "cap": "0x1.b851eb851eb85p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "338084503418477763164336467170895977041",
+   "noise_after": "160441279169375817486265175597154420759",
+   "normals": 18963,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 0.9,
+     "dur": 0.25,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.0000000000000p-2"
+     },
+     "draws": [18963],
+     "noise_before": "338084503418477763164336467170895977041",
+     "samples": 59210,
+     "sha256": "676b5d047d8b21e7667e1a067ad7a50dbf16a26614ff66045cee8af4b4e0ff17"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 20640,
+   "sha256": "375a8e94721078a1e5c82365427f2c6df76668f6eaaf8a827d9308919e8119d5"
+  },
+  {
+   "i": 14,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.25,
+   "cap": 0.55,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.0000000000000p-2",
+    "cap": "0x1.199999999999ap-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 2,
+   "noise_before": "160441279169375817486265175597154420759",
+   "noise_after": "160441279169375817486265175597154420759",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.9,
+     "dur": 0.25,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.0000000000000p-2"
+     },
+     "draws": [],
+     "noise_before": "160441279169375817486265175597154420759",
+     "samples": 18720,
+     "sha256": "9ddc2260a14a3236eb7622de1d847423fa88bb3f31a1f1da6dd9b60da36ee9a3"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 26400,
+   "sha256": "e78eeaf9f503fbe244fc482171d42fdc7b439e4437911a12ca37268d816aebd1"
+  },
+  {
+   "i": 15,
+   "name": "TROMBONE",
+   "midi": 42,
+   "dur": 0.25,
+   "cap": 0.55,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.0000000000000p-2",
+    "cap": "0x1.199999999999ap-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "160441279169375817486265175597154420759",
+   "noise_after": "160441279169375817486265175597154420759",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 42,
+     "vel": 0.9,
+     "dur": 0.25,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.0000000000000p-2"
+     },
+     "draws": [],
+     "noise_before": "160441279169375817486265175597154420759",
+     "samples": 18720,
+     "sha256": "d81295db6690b7eb0226de454e34cd805d53c70d651f00901e0eb31990df00bf"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 26400,
+   "sha256": "baf82f0b9f617a246901793a29a7bb67a3554fe0ebef405f84b75bad9498b6c7"
+  },
+  {
+   "i": 16,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.4,
+   "cap": 0.7,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.999999999999ap-2",
+    "cap": "0x1.6666666666666p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "160441279169375817486265175597154420759",
+   "noise_after": "160441279169375817486265175597154420759",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 1.0,
+     "dur": 0.4,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.999999999999ap-2"
+     },
+     "draws": [],
+     "noise_before": "160441279169375817486265175597154420759",
+     "samples": 25920,
+     "sha256": "7a42b61b952e263470a379e8cb6b7dd2676c6a65dfdb66025d7a884999f426c5"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 33600,
+   "sha256": "db0ea6a8d9687d4687dbda3d65a506b87266b224385a3f4674aa05ad8e274f43"
+  },
+  {
+   "i": 17,
+   "name": "FLUTE",
+   "midi": 79,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 13,
+   "noise_before": "160441279169375817486265175597154420759",
+   "noise_after": "10546578172015179489256312883639870008",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 79,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "160441279169375817486265175597154420759",
+     "samples": 56810,
+     "sha256": "492af30fb62e875fc4db154c36b1a76f4b242cf1bac7c7c7b52d44ce58bfa38e"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "bbc0c0c034b51df5c96acc0d1f0e4c265a2794fe153736d72461f2848493c0c7"
+  },
+  {
+   "i": 18,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 15,
+   "noise_before": "10546578172015179489256312883639870008",
+   "noise_after": "308075138161163929532407676533486960952",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "10546578172015179489256312883639870008",
+     "samples": 56810,
+     "sha256": "1cd6c072e5842f649ee53c9308f8e3de464ecd325cf3294005479c5209cd6cec"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "d5b953c01145866f5fe6c260b0784b91b004ad7f57444811941ce2622bb3544e"
+  },
+  {
+   "i": 19,
+   "name": "FLUTE",
+   "midi": 75,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 13,
+   "noise_before": "308075138161163929532407676533486960952",
+   "noise_after": "188828675435519651731128553056065966488",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 75,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "308075138161163929532407676533486960952",
+     "samples": 56810,
+     "sha256": "1f1b109cd7e40d038381f93708a627aa86d4f93707e3f5b19e807c725362f033"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "bad9a4da4e113a4e3c747de56698880bfaae2728d2151e57e70b1cd9fda1c41f"
+  },
+  {
+   "i": 20,
+   "name": "FLUTE",
+   "midi": 71,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 7,
+   "noise_before": "188828675435519651731128553056065966488",
+   "noise_after": "201241752101941089096709463839101343523",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 71,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "188828675435519651731128553056065966488",
+     "samples": 56810,
+     "sha256": "fc462a44c3d51d4ab5e9f65bdb615f7840434643c565192a8f9185f7cc68ba15"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "1518d11a6459dda9a337dd311ed3a445338b2f306ed5c95f44b14dbf99b36c3d"
+  },
+  {
+   "i": 21,
+   "name": "FLUTE",
+   "midi": 81,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 10,
+   "noise_before": "201241752101941089096709463839101343523",
+   "noise_after": "167743846750438475670427786987964584851",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 81,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "201241752101941089096709463839101343523",
+     "samples": 56810,
+     "sha256": "ff44142a61b7bdf28a364f2d1c986aa4e1969809ec615da00dd64c4bd2490567"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "5213f43f21185eb1c15dfdb0a313914e73d052494e311c862b717304d8a7b43c"
+  },
+  {
+   "i": 22,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 7,
+   "noise_before": "167743846750438475670427786987964584851",
+   "noise_after": "252321171703370029762251182524198029616",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "167743846750438475670427786987964584851",
+     "samples": 56810,
+     "sha256": "6adf6ebadab0bffddcf7470d23071ab91a8950b269697925e819944ca0255a37"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "c73dd1d5df88b2e51ce0012889156bc95ba90089fa9818a6cfcb5778dd7a7896"
+  },
+  {
+   "i": 23,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 17,
+   "noise_before": "252321171703370029762251182524198029616",
+   "noise_after": "307391915880507086178528730052244633751",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "252321171703370029762251182524198029616",
+     "samples": 56810,
+     "sha256": "11cfdf2a90148af5e2bcb727f1e49aab01298ec5ff37d97c0a16e633b3adb3b6"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "2efe6e8bd015b4b97faaf42354e2ee81c3b0aaed699735891d4ddf9705d74120"
+  },
+  {
+   "i": 24,
+   "name": "FLUTE",
+   "midi": 77,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "307391915880507086178528730052244633751",
+   "noise_after": "179525468443995173300684892060634927787",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 77,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "307391915880507086178528730052244633751",
+     "samples": 56810,
+     "sha256": "49c7b68585ef2f4c91b24f635420ae72e9278184e756f0d570cdb143a089ec8a"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "40cd2ede980e268892cf5d9d9ec26c50f0178758747ddd7f6870e5a8e0baddff"
+  },
+  {
+   "i": 25,
+   "name": "FLUTE",
+   "midi": 78,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 8,
+   "noise_before": "179525468443995173300684892060634927787",
+   "noise_after": "206525675628133438446380889408725866857",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 78,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "179525468443995173300684892060634927787",
+     "samples": 56810,
+     "sha256": "e5905dd7143828b0d99600619fb59b483cfd7651566d3625214e5989b35528bd"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "4911315a0e031b827775fd56f6582912e17a859c1796af40c7b6241080c80a9f"
+  },
+  {
+   "i": 26,
+   "name": "FLUTE",
+   "midi": 59,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "206525675628133438446380889408725866857",
+   "noise_after": "61534512304807163831950763310291348168",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 59,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "206525675628133438446380889408725866857",
+     "samples": 56810,
+     "sha256": "02f57c3005a8ba3e83bb0a1c7acf8faea68cc0ac534e5713e55bd74c83c05ba7"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "9bbd2f06d4a760db48c2500ed9020b7c26219bd64c000e501dc5e12e7486cc95"
+  },
+  {
+   "i": 27,
+   "name": "FLUTE",
+   "midi": 64,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "61534512304807163831950763310291348168",
+   "noise_after": "106713329942120201084654166913973531044",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 64,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "61534512304807163831950763310291348168",
+     "samples": 56810,
+     "sha256": "b60531f5808942710374913332662d418d6140a1ac52a7d6e6374f1133f523e4"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "5c2ec69a9e5281383ed13195d9aa0614b6f80f591ac1842fe57ccca4455c9f8c"
+  },
+  {
+   "i": 28,
+   "name": "FLUTE",
+   "midi": 67,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 4,
+   "noise_before": "106713329942120201084654166913973531044",
+   "noise_after": "55997306801793789254884832665529460265",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 67,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "106713329942120201084654166913973531044",
+     "samples": 56810,
+     "sha256": "71075176edf0f36fe73c61d3d838d19b331604c8e13c22b63d67418877988c9a"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "537d21a6ebbcbeedc3f75fe976f415578600cbbee5443658045d9546696b8dd4"
+  },
+  {
+   "i": 29,
+   "name": "FLUTE",
+   "midi": 71,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 6,
+   "noise_before": "55997306801793789254884832665529460265",
+   "noise_after": "24836360424231220213527088945685552750",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 71,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "55997306801793789254884832665529460265",
+     "samples": 56810,
+     "sha256": "9b66a5ee65e798cca4f00952ffffed6887f366b37806e1be23b9f0a6d991b341"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "e3ce6c46acc1c60de17c74511615d613d44ee32129c7173817118acb00cf50b7"
+  },
+  {
+   "i": 30,
+   "name": "FLUTE",
+   "midi": 72,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "24836360424231220213527088945685552750",
+   "noise_after": "6230556915444712575178366145970845702",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 72,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "24836360424231220213527088945685552750",
+     "samples": 56810,
+     "sha256": "c0f00d7efbcca5817ce49ae9fe44899c630528041b0b1b0adad2fdef8c725a83"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "84160d83599116996a2702a8eaa2618e174e6a293e0486615a96e92a75b53b08"
+  },
+  {
+   "i": 31,
+   "name": "FLUTE",
+   "midi": 79,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 9,
+   "noise_before": "6230556915444712575178366145970845702",
+   "noise_after": "141289962919616343627002522146916703295",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 79,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "6230556915444712575178366145970845702",
+     "samples": 52490,
+     "sha256": "b766b12d161da8d1efed851da33a31c77b79fce354e4a2aadb24d966ca8695dd"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "80a4fc4fea5c344e0779a77490e3686b0253c41ff393f339bde87d06fe855a7d"
+  },
+  {
+   "i": 32,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 12,
+   "noise_before": "141289962919616343627002522146916703295",
+   "noise_after": "28478177763585238096440020680912013173",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "141289962919616343627002522146916703295",
+     "samples": 52010,
+     "sha256": "494e27d36ddc96bb20b40b1bfb4404321a10c8e135699ec83f20490dc23f4006"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "dc47e5cfe3f6adafb507b3d48d33d2ee45705d0a778df4f7640cedbe64bb8135"
+  },
+  {
+   "i": 33,
+   "name": "FLUTE",
+   "midi": 67,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "28478177763585238096440020680912013173",
+   "noise_after": "15233965183696044538955850915867381528",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 67,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "28478177763585238096440020680912013173",
+     "samples": 52490,
+     "sha256": "52d708f8c8057e5735cb837e418dc0e449819721bbc81dc4b393f388e941b960"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "11f37dcae8bf4fed2075002d89f933e2270a87e62ccfa2006b9ad32eb69b51d6"
+  },
+  {
+   "i": 34,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 20,
+   "noise_before": "15233965183696044538955850915867381528",
+   "noise_after": "3935393988922845342440997462850195100",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "15233965183696044538955850915867381528",
+     "samples": 52490,
+     "sha256": "64971e1b89b4b82ae14a8ac29b94a349b7b6b22a535d53075618f19b55bdf919"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "a0dd4796d79ea73c8ba7357182d5079885cd1d3e593f595a71653cff5e1f3971"
+  },
+  {
+   "i": 35,
+   "name": "FLUTE",
+   "midi": 72,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 4,
+   "noise_before": "3935393988922845342440997462850195100",
+   "noise_after": "257818976554171956520889429024116414536",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 72,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "3935393988922845342440997462850195100",
+     "samples": 52010,
+     "sha256": "1f183ccebf17ef8f3a26f5ad70cbd479a2aa34dc307292626b8671802d15ce3d"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "a5049487e36350467fdbed04421899499125c8be52f790bfeafe81da5ca5df35"
+  },
+  {
+   "i": 36,
+   "name": "FLUTE",
+   "midi": 64,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 4,
+   "noise_before": "257818976554171956520889429024116414536",
+   "noise_after": "174635907550256663032805019899556915874",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 64,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "257818976554171956520889429024116414536",
+     "samples": 52490,
+     "sha256": "94bf3fdb08cd58e40923262b583d40af520dbb4c49a5667d48d86b61aff2d20b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "b867c731f218b8eebb20997dfa8a85c41d75a6420da48430658cc463f4af6a52"
+  },
+  {
+   "i": 37,
+   "name": "FLUTE",
+   "midi": 72,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 5,
+   "noise_before": "174635907550256663032805019899556915874",
+   "noise_after": "134112981877383029004277151983424755826",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 72,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "174635907550256663032805019899556915874",
+     "samples": 52490,
+     "sha256": "468ac3b4b1fddaa65f16feedafe944a1196ae266a18cd984deefccc267dacd49"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "bddfa59bc4ac82998607f18af13d923e6b6ded5268eadc55c69d5070df038f7a"
+  },
+  {
+   "i": 38,
+   "name": "FLUTE",
+   "midi": 60,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "134112981877383029004277151983424755826",
+   "noise_after": "126263051766707013541616901801211950219",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 60,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "134112981877383029004277151983424755826",
+     "samples": 52490,
+     "sha256": "90f28f11f3809fbd93aeb3af598948c71201982a2b5522c587bcddd46f573e8b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "2bbb236abb649d1f57e2506f30e9a5c852af8c3a29cfebd62634cd675ad282f8"
+  },
+  {
+   "i": 39,
+   "name": "FLUTE",
+   "midi": 79,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 4,
+   "noise_before": "126263051766707013541616901801211950219",
+   "noise_after": "252815014076862133868667982555806177791",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 79,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "126263051766707013541616901801211950219",
+     "samples": 52010,
+     "sha256": "c3130247ac940a5c50b88d44af1273983e5379c248076945844bbea19e5ee8d4"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "4abe04511d3dcdb642f070b236c68e829ad337bae7e596e2a2e8152f400934d0"
+  },
+  {
+   "i": 40,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 9,
+   "noise_before": "252815014076862133868667982555806177791",
+   "noise_after": "336767578075555933567460740001220921806",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "252815014076862133868667982555806177791",
+     "samples": 52010,
+     "sha256": "2e8ce3b30077a0d389791efb4ab62bea6fdc11e1887400eab321e44fb3ddade1"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "83fb91ac7c1616b5bc940547a75696b61ed1d3f50a260421c0604e555ce6d75b"
+  },
+  {
+   "i": 41,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 11,
+   "noise_before": "336767578075555933567460740001220921806",
+   "noise_after": "305926676638332612923243833762197791363",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "336767578075555933567460740001220921806",
+     "samples": 52490,
+     "sha256": "161d393da0843dc934ff953a433ea59e397bf32034bf6bbd6dbfc5e9faf21b27"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "e344778599aa456b0db4efef6f10945e34c74827c7b76b16f2127bbd0a674f7e"
+  },
+  {
+   "i": 42,
+   "name": "FLUTE",
+   "midi": 81,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 12,
+   "noise_before": "305926676638332612923243833762197791363",
+   "noise_after": "94483715277560082448126281660419437256",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 81,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "305926676638332612923243833762197791363",
+     "samples": 52010,
+     "sha256": "944031174d4b3263d88f7e110cfce950f96030784befae830f4d0a4a346fc72d"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "f767ca0ed68a6bea3cae1ea9b47efa10652612c3ad71da2c3ab84fa55109b661"
+  },
+  {
+   "i": 43,
+   "name": "FLUTE",
+   "midi": 72,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "94483715277560082448126281660419437256",
+   "noise_after": "66935025915509713968736671481005512042",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 72,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "94483715277560082448126281660419437256",
+     "samples": 52490,
+     "sha256": "53d18d41fc1f875d896586e669bd9f30599e15277933acc8bd046fef148201de"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "77336118d4088e7cc9507fa18e26e29458a99837beb6e583698e9150eeb42849"
+  },
+  {
+   "i": 44,
+   "name": "FLUTE",
+   "midi": 81,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 11,
+   "noise_before": "66935025915509713968736671481005512042",
+   "noise_after": "268867914829777422023737760172777302832",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 81,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "66935025915509713968736671481005512042",
+     "samples": 52490,
+     "sha256": "5e88506645bb9568fd10a7000adefd18a142aa481d1f2401082ff75ff74e879a"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "a282aa7a06d24d4dbc92ee94d4a55d5552fe2d4fcd669d732d1664f466eb6ea0"
+  },
+  {
+   "i": 45,
+   "name": "FLUTE",
+   "midi": 69,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "268867914829777422023737760172777302832",
+   "noise_after": "50483958282895138735589051147807032980",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 69,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "268867914829777422023737760172777302832",
+     "samples": 52490,
+     "sha256": "18ec747fb007a3a91fef3760e09a3ec757bc1a28dd14c48efc289ce635459a4e"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "740186207500f9bf5c4e82f67068e598cf07d0e932a0a4f9f6000b14dc3f77d9"
+  },
+  {
+   "i": 46,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "50483958282895138735589051147807032980",
+   "noise_after": "192047621107514482079859345295648651775",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "50483958282895138735589051147807032980",
+     "samples": 52010,
+     "sha256": "859ecbf732234d3a00e51d41e4f679b860543686e94276c140b7e0e67b19c938"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "d4f33bdcc39d8def2e216f285e8d477a6756a7eb1a737e27241be7ec0a4be403"
+  },
+  {
+   "i": 47,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "192047621107514482079859345295648651775",
+   "noise_after": "179680429414086343238334881420185494433",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "192047621107514482079859345295648651775",
+     "samples": 52490,
+     "sha256": "b5205528ff6d2e707ec5f9f029586f9fbc20118ddc702a2580aa67136d935526"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "c781a7678cdb9e20626ce3b7bc93b376d8da24b6bccb8b754f09f3724145644b"
+  },
+  {
+   "i": 48,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "179680429414086343238334881420185494433",
+   "noise_after": "131758522997825004458957070849617144858",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "179680429414086343238334881420185494433",
+     "samples": 52490,
+     "sha256": "c6adabef77cda060ce51868aca4003090b4e7736f6f8add0716115d5dbbf265e"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "d80b8b20852b0f1fa1307edf1795c7b2e1f2c0083877dd23f6e8766e2b44510c"
+  },
+  {
+   "i": 49,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 8,
+   "noise_before": "131758522997825004458957070849617144858",
+   "noise_after": "161886952542927541792870811397408355418",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "131758522997825004458957070849617144858",
+     "samples": 52010,
+     "sha256": "55ffa9a8429a981cd08cb428663256dc995e5e2e86d2dd2cb8495c034b9b1301"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "226b0bce398ebb29e1a14714648785a782bb14519ba3f2943bc588d37bd46bb2"
+  },
+  {
+   "i": 50,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 10,
+   "noise_before": "161886952542927541792870811397408355418",
+   "noise_after": "46795719315482513550474061423240784829",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "161886952542927541792870811397408355418",
+     "samples": 52490,
+     "sha256": "e57537a7315857917295962282bfa4dee4899dd33e1e56761fc67632f7861a62"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "6deef82a49517688113bd3f84aca08db1a9433f3c2d9e89a33ec9fa0d8f626ab"
+  },
+  {
+   "i": 51,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 8,
+   "noise_before": "46795719315482513550474061423240784829",
+   "noise_after": "165175442143893057306783680191117436590",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "46795719315482513550474061423240784829",
+     "samples": 52010,
+     "sha256": "b537ec94192a6fe6a3397dd6a69b7f49bbb3627c18495e955e414939fac37074"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "a590769f128cfd4e08ef0b499471de08490af59d57837a8da3859ab1d8a1bf9e"
+  },
+  {
+   "i": 52,
+   "name": "FLUTE",
+   "midi": 71,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "165175442143893057306783680191117436590",
+   "noise_after": "120003211128811838640427756336224976233",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 71,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "165175442143893057306783680191117436590",
+     "samples": 52490,
+     "sha256": "6768c6d04dbad855f60dbb31eb117bf362028700168cbc6556ef97c11e934270"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "172e6eb7b7bc40afa2759fa5bd2c671770cb3768996630841d3595d93f600594"
+  },
+  {
+   "i": 53,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 4,
+   "noise_before": "120003211128811838640427756336224976233",
+   "noise_after": "8647711678511930851999528637169084720",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "120003211128811838640427756336224976233",
+     "samples": 52490,
+     "sha256": "8866258905b85aa2604ba187c1608c95dc716f663c59eceddeac85f32386e15b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "62c8e8f1755df9a84683bf879135a80f7347a2026df8806c4241ac1ad905c1ce"
+  },
+  {
+   "i": 54,
+   "name": "FLUTE",
+   "midi": 86,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "8647711678511930851999528637169084720",
+   "noise_after": "311569494009895602753924141499415188071",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 86,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "8647711678511930851999528637169084720",
+     "samples": 52010,
+     "sha256": "782f926b2621063f8036c6b98daca80f76ed352b73290ec12cf571a3513f811b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "66259b3001ea4223f1465b70d117b2ea1ec48436a68753b04db985eb83f02751"
+  },
+  {
+   "i": 55,
+   "name": "FLUTE",
+   "midi": 75,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "311569494009895602753924141499415188071",
+   "noise_after": "317313914320781282862467196489578880517",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 75,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "311569494009895602753924141499415188071",
+     "samples": 52490,
+     "sha256": "e35d9f841ab23af9f463960e5122a99989dce5f8c85da54cb1dff8ee3a0d5555"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "501b4e93965426bbe00c1e50d90ba9db6c0031bc03bb489f62844543d838d85b"
+  },
+  {
+   "i": 56,
+   "name": "FLUTE",
+   "midi": 86,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "317313914320781282862467196489578880517",
+   "noise_after": "194958447961115017892825670321193292037",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 86,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "317313914320781282862467196489578880517",
+     "samples": 52490,
+     "sha256": "89ff4c053f4135115f5e82542bf04dff409c4e48e27efdf205e7afd7c65bd8ea"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "77c6a89f7c59f90045762a86e578dea347474b9abf5036ca13943e6c554a7eaa"
+  },
+  {
+   "i": 57,
+   "name": "FLUTE",
+   "midi": 74,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "194958447961115017892825670321193292037",
+   "noise_after": "254186975575745485703316545703838019084",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 74,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "194958447961115017892825670321193292037",
+     "samples": 52490,
+     "sha256": "a2894973e4a6e49e3877e14ad6745c38350d3cd51320df09995c940da40e912e"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "19778ca05011817d6da856ff8e1381a63a6e3b6e9a62140da585b6b459e7b4ae"
+  },
+  {
+   "i": 58,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "254186975575745485703316545703838019084",
+   "noise_after": "335847096181262551203525884028723152224",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "254186975575745485703316545703838019084",
+     "samples": 56810,
+     "sha256": "3c2e35fb0c166cdd886f4f92d00eb731e257fca865b57384772c581dc73a8f70"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "386676886f3346f764d20bb8f136c246740256ccd2f92018f0914c5aa61f3e99"
+  },
+  {
+   "i": 59,
+   "name": "FLUTE",
+   "midi": 75,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "335847096181262551203525884028723152224",
+   "noise_after": "69623672488352512909836635131800977275",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 75,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "335847096181262551203525884028723152224",
+     "samples": 56810,
+     "sha256": "4b517fc25c112b6e08effe28d34f6a748714ad05944a7037b4ce5a5a885244c0"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "205cad2b43debd0799f157151fc7440cb08ffadbee4655f06fe9ce00ecdbf574"
+  },
+  {
+   "i": 60,
+   "name": "FLUTE",
+   "midi": 90,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "69623672488352512909836635131800977275",
+   "noise_after": "168026898806073381489092101203863798710",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 90,
+     "vel": 0.8,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "69623672488352512909836635131800977275",
+     "samples": 56810,
+     "sha256": "eae192840262ed1eb16f3f40c8c98313ef4b54f53cd90b3665bf3aedffa0818d"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "cbacac091e7f2f95ffd1f57d8a8ceb6f0f3d755f2884ee64a525370d495d2f6d"
+  },
+  {
+   "i": 61,
+   "name": "FLUTE",
+   "midi": 78,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "168026898806073381489092101203863798710",
+   "noise_after": "44432624880474695598129282607981283629",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 78,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "168026898806073381489092101203863798710",
+     "samples": 56810,
+     "sha256": "646ee49fa9b8276272c8edbeca287a22adcbf3dcf763abb062b50dcf2553d9d9"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "6b293b61b5b02af60f08b32e3a197078cf2a0b86d7339418036bc7bb70fdd4e9"
+  },
+  {
+   "i": 62,
+   "name": "FLUTE",
+   "midi": 69,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "44432624880474695598129282607981283629",
+   "noise_after": "287630492579199285332373150288746894406",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 69,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "44432624880474695598129282607981283629",
+     "samples": 56810,
+     "sha256": "dca8e4f331924e96fb5902e6371ceba7edff84b99a895f01381b340383866c29"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "50c4f0b82d057888884615f0277b7cad2e0c03b0cb929301eeeef087f9dc7b1a"
+  },
+  {
+   "i": 63,
+   "name": "FLUTE",
+   "midi": 66,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 2,
+   "noise_before": "287630492579199285332373150288746894406",
+   "noise_after": "59048393113784892551950585275570133785",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 66,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "287630492579199285332373150288746894406",
+     "samples": 56810,
+     "sha256": "8273d08a09b208f1c795ac944ffa45bdab832a9cf307efe7c3983cceb7432734"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "1a4b9d5f3122a74d1c701d7f95387899180d8426932d96922c2626d06cee8f97"
+  },
+  {
+   "i": 64,
+   "name": "FLUTE",
+   "midi": 63,
+   "dur": 0.2,
+   "cap": 0.38,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.999999999999ap-3",
+    "cap": "0x1.851eb851eb852p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 4,
+   "noise_before": "59048393113784892551950585275570133785",
+   "noise_after": "212476829633417649900908330385435020652",
+   "normals": 16758,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 63,
+     "vel": 0.6,
+     "dur": 0.2,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.999999999999ap-3"
+     },
+     "draws": [16758],
+     "noise_before": "59048393113784892551950585275570133785",
+     "samples": 56810,
+     "sha256": "dc7fc4faaf9874e7e5844b3ec99c455c1ec1765416b67402823fe8c7f60acbdd"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 18240,
+   "sha256": "6f4a1dffa727e782fe40dba49870583901448c9770768dc248d11237a887a6bb"
+  },
+  {
+   "i": 65,
+   "name": "FLUTE",
+   "midi": 75,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 9,
+   "noise_before": "212476829633417649900908330385435020652",
+   "noise_after": "37089199224493123233579310171874253125",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 75,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "212476829633417649900908330385435020652",
+     "samples": 52010,
+     "sha256": "dd0c883c22fa9f9e26ef23ec7fa0a1284724639218ffa89416a413f18fae88b5"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "87edb002b4acc97658da3c3d746402424385f139108cc152f46afe9b73d26beb"
+  },
+  {
+   "i": 66,
+   "name": "FLUTE",
+   "midi": 75,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 5,
+   "noise_before": "37089199224493123233579310171874253125",
+   "noise_after": "191612936866553099169039048426428015444",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 75,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "37089199224493123233579310171874253125",
+     "samples": 52490,
+     "sha256": "80de523970f3c2d90bf79fd7cd23e71d636d15d39129793bb26736b25c32e5b3"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "41c4f03f2866048257f35fa90a859eed67000c39e295321ed0264bf5caf1c83e"
+  },
+  {
+   "i": 67,
+   "name": "FLUTE",
+   "midi": 71,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "191612936866553099169039048426428015444",
+   "noise_after": "178670719440592578639266385986499962225",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 71,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "191612936866553099169039048426428015444",
+     "samples": 52010,
+     "sha256": "465a064022cac56212180b177cded1eab5efa1db3c9c55c9dc73aa6e113353ef"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "8e7886867189a0ecea2dfcf79d8363fbd95b992c3c4a3972dd23593ef4b0dc59"
+  },
+  {
+   "i": 68,
+   "name": "FLUTE",
+   "midi": 71,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 2,
+   "noise_before": "178670719440592578639266385986499962225",
+   "noise_after": "297636481288137539509950121060378618562",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 71,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "178670719440592578639266385986499962225",
+     "samples": 52490,
+     "sha256": "9424d88be4fe253bb69e4306f8d502f70c59a742b62d94948bdda9981123b9fb"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "516698393dcc6930cc7b9a1ab8d486ae99827978f8955b780ffaebbb149e2655"
+  },
+  {
+   "i": 69,
+   "name": "FLUTE",
+   "midi": 77,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "297636481288137539509950121060378618562",
+   "noise_after": "92347780965462135470464177987626303230",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 77,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "297636481288137539509950121060378618562",
+     "samples": 52010,
+     "sha256": "cbb160e3588a851eee89d7c96ac44a79217d90af2ed87ec2d1eacc5f9b5fa1e4"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "33216523f18fc4891a632909df5faf4e3b059595410a1c3bba3e3b917b7724e5"
+  },
+  {
+   "i": 70,
+   "name": "FLUTE",
+   "midi": 77,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "92347780965462135470464177987626303230",
+   "noise_after": "150316259047702036003341731357151568498",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 77,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "92347780965462135470464177987626303230",
+     "samples": 52490,
+     "sha256": "aa84dba50fc4f5342255088d38f3f977e1b2614f44584d74664b27630e84181c"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "faa333c196f3aee3f5c3eb53e3ec75cae66172a4a2fe7c04451dddeb7f94ecdb"
+  },
+  {
+   "i": 71,
+   "name": "FLUTE",
+   "midi": 78,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 8,
+   "noise_before": "150316259047702036003341731357151568498",
+   "noise_after": "41330962083510914231729460472327329850",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 78,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "150316259047702036003341731357151568498",
+     "samples": 52010,
+     "sha256": "6e8c50096685366f59ff087d7f0132d76eaace2ecc21d38009718d95f7fc2cce"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "e7a9db3588850775526a49912410e1aca6f339f47e741e600ac25ff3cb98e1ef"
+  },
+  {
+   "i": 72,
+   "name": "FLUTE",
+   "midi": 78,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 5,
+   "noise_before": "41330962083510914231729460472327329850",
+   "noise_after": "33803125875059436269097029215546238267",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 78,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "41330962083510914231729460472327329850",
+     "samples": 52490,
+     "sha256": "3aa43800884a15a0febc3e6496f3ff2007964209e284f5ec27c25fd55b5cb23c"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "c7591f3dca160a97a70f9cac1a3b7dd7014ee4c8b43ce925d6c59c606e7b3ac7"
+  },
+  {
+   "i": 73,
+   "name": "FLUTE",
+   "midi": 90,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "33803125875059436269097029215546238267",
+   "noise_after": "24635811621923117035680592396711363866",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 90,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "33803125875059436269097029215546238267",
+     "samples": 52010,
+     "sha256": "00ba4375b15eaf6e76c649a678676efb7144fa36ca3dbb60e7060c7ad89773ab"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "044ea6d4086a4aae77d86b7270877ecf41fc6fbc09f9f1bf46e01394caeb37df"
+  },
+  {
+   "i": 74,
+   "name": "FLUTE",
+   "midi": 90,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 2,
+   "noise_before": "24635811621923117035680592396711363866",
+   "noise_after": "66819633470920274946942969477867447272",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 90,
+     "vel": 0.8,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "24635811621923117035680592396711363866",
+     "samples": 52490,
+     "sha256": "44e4d059a7967653e61eab479406250a00061e7a4f046cfb19daf38a7b5da57f"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "7a58a98884e7e11b94c4892315fcd27316d469982143ee9bbaace4342980c050"
+  },
+  {
+   "i": 75,
+   "name": "FLUTE",
+   "midi": 80,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "66819633470920274946942969477867447272",
+   "noise_after": "146962918210230197436897929782325722288",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 80,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "66819633470920274946942969477867447272",
+     "samples": 52010,
+     "sha256": "07d6a9021738d016a88831ed16a39b8d2d16f24610d9deed35dca3e5614e9fbf"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "3e268bdc2d277ccdcaba50530e5a8ce8c5f3064bff9ed868d95901c42869d332"
+  },
+  {
+   "i": 76,
+   "name": "FLUTE",
+   "midi": 74,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "146962918210230197436897929782325722288",
+   "noise_after": "210934589917707627953397591024980520135",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 74,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "146962918210230197436897929782325722288",
+     "samples": 52010,
+     "sha256": "434c09b65d875a4b17919e883026c52139770d3b8018527c7b195ba6daeddcd5"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "88ab23d61cf089769b1994970c9bc3e17ab9424e19988efbe8f0223977313ecd"
+  },
+  {
+   "i": 77,
+   "name": "FLUTE",
+   "midi": 82,
+   "dur": 0.1,
+   "cap": 0.28,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.999999999999ap-4",
+    "cap": "0x1.1eb851eb851ecp-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "210934589917707627953397591024980520135",
+   "noise_after": "322309675025199161440125094635017278446",
+   "normals": 12348,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 82,
+     "vel": 0.7,
+     "dur": 0.1,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.999999999999ap-4"
+     },
+     "draws": [12348],
+     "noise_before": "210934589917707627953397591024980520135",
+     "samples": 52010,
+     "sha256": "263f3d3a3ac3771bd508ee8b0ef852eed356007c5cad3f84f02fb2c343e69014"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13440,
+   "sha256": "b81fa504e467d5b3ba7a2a80b3be76fd581d0c6945d88a50b22b9d724494c8a1"
+  },
+  {
+   "i": 78,
+   "name": "FLUTE",
+   "midi": 78,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "322309675025199161440125094635017278446",
+   "noise_after": "112826426401869374499858635848407635881",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 78,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "322309675025199161440125094635017278446",
+     "samples": 52490,
+     "sha256": "a3c4fd5f5e3fa0f9cd2f3f50e98973e3c78439108407a2cc021b0b752b56dde2"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "cac3bfa3dd3a6845e047b67e6feefc6307008b7caa70dcd9d10d8918cbc54161"
+  },
+  {
+   "i": 79,
+   "name": "FLUTE",
+   "midi": 66,
+   "dur": 0.11,
+   "cap": 0.29,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-4",
+    "cap": "0x1.28f5c28f5c28fp-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "112826426401869374499858635848407635881",
+   "noise_after": "4129800604468911386867615008011555222",
+   "normals": 12789,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 66,
+     "vel": 0.6,
+     "dur": 0.11,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.c28f5c28f5c29p-4"
+     },
+     "draws": [12789],
+     "noise_before": "112826426401869374499858635848407635881",
+     "samples": 52490,
+     "sha256": "8b53b2f05f2a3404fea0d9360f91e4a94e9c51ee2a00c782b17823aa02b6cfe0"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 13919,
+   "sha256": "0d14980b59acdc5f7bbf8f4bfea0b2ceda856b020330af54c639dba654fd5417"
+  },
+  {
+   "i": 80,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 8,
+   "noise_before": "4129800604468911386867615008011555222",
+   "noise_after": "308731953992085389569376290066751534067",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "4129800604468911386867615008011555222",
+     "samples": 50570,
+     "sha256": "80524cf9b45f1271b39b48bbcc707cb57ceb9edbf7d20f6b8365a2fb67c8c146"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "189f3ccce9046fc0a962112784444976090c53f500130383295a3a3dc0804104"
+  },
+  {
+   "i": 81,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 10,
+   "noise_before": "308731953992085389569376290066751534067",
+   "noise_after": "60185832647153791109402858147334870300",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "308731953992085389569376290066751534067",
+     "samples": 50570,
+     "sha256": "1dbd7dc28bee4af6470d8129d944f466a4381a3d4db918aa5ba8eaf4b0bb0835"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "a3a2ff25e1aa550283e706834a40a59ef313d42088c40c2e6a769dee7ff0da1e"
+  },
+  {
+   "i": 82,
+   "name": "FLUTE",
+   "midi": 90,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "60185832647153791109402858147334870300",
+   "noise_after": "127790387304638187507205731307920265354",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 90,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "60185832647153791109402858147334870300",
+     "samples": 50570,
+     "sha256": "7d323bc27845014202f0ef38aff50404a896ffdbab3a9fd32ddd9eabeca766a2"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "4daacc33d50f704858700fb81ba554f5df20610779e60ba27788543bc9cdf329"
+  },
+  {
+   "i": 83,
+   "name": "FLUTE",
+   "midi": 93,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 10,
+   "noise_before": "127790387304638187507205731307920265354",
+   "noise_after": "271306499641131527920168125321006661732",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 93,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "127790387304638187507205731307920265354",
+     "samples": 50570,
+     "sha256": "440aa834580d396806b5544cfe317a55a95873c66a40fa745d2ea1c5401b576b"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "d060ff7d23752efc820f0a3d239f8809e0b30dc92d42f2190f70e9b7ef503a8d"
+  },
+  {
+   "i": 84,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.5,
+   "cap": 0.68,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.0000000000000p-1",
+    "cap": "0x1.5c28f5c28f5c3p-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 6,
+   "noise_before": "271306499641131527920168125321006661732",
+   "noise_after": "234882297207383130394579940813572218500",
+   "normals": 29987,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 0.9,
+     "dur": 0.5,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.0000000000000p-1"
+     },
+     "draws": [29987],
+     "noise_before": "271306499641131527920168125321006661732",
+     "samples": 71209,
+     "sha256": "2188a0857dfdcdaca95d3ae3ecd054ceb2786a68f8e6b43a80d25953868d8de1"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 32640,
+   "sha256": "935b236c3952fd263b61188a4feadf4a554f7bc03b75f8f38adada3b82457a84"
+  },
+  {
+   "i": 85,
+   "name": "FLUTE",
+   "midi": 87,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 2,
+   "noise_before": "234882297207383130394579940813572218500",
+   "noise_after": "32390571829598177249070891511913623466",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 87,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "234882297207383130394579940813572218500",
+     "samples": 50570,
+     "sha256": "34ec045b2d8ca2dccd67b76f2a0f53387269d0dd60e1ef55825812e8322258db"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "e01bcd85ec0877fc5f93c99e2234e60aac05b8bedaaeb0e65eb517b8edcf4738"
+  },
+  {
+   "i": 86,
+   "name": "FLUTE",
+   "midi": 91,
+   "dur": 0.07,
+   "cap": 0.25,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.1eb851eb851ecp-4",
+    "cap": "0x1.0000000000000p-2",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 6,
+   "noise_before": "32390571829598177249070891511913623466",
+   "noise_after": "150824657096809192398763585178546282813",
+   "normals": 11025,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 91,
+     "vel": 1.0,
+     "dur": 0.07,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.1eb851eb851ecp-4"
+     },
+     "draws": [11025],
+     "noise_before": "32390571829598177249070891511913623466",
+     "samples": 50570,
+     "sha256": "76ab80699a885a2b3171ccb8c0fa5eb0527e8ee939a705c805fadabf3281d8e1"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12000,
+   "sha256": "aa593dd1532d35b0c1141d09fd8aa3b4150b7209ba1cc6d2c3dd1187012ea032"
+  },
+  {
+   "i": 87,
+   "name": "FLUTE",
+   "midi": 93,
+   "dur": 0.9,
+   "cap": 1.08,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.ccccccccccccdp-1",
+    "cap": "0x1.147ae147ae148p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "150824657096809192398763585178546282813",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 47628,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 93,
+     "vel": 1.0,
+     "dur": 0.9,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.ccccccccccccdp-1"
+     },
+     "draws": [47628],
+     "noise_before": "150824657096809192398763585178546282813",
+     "samples": 90410,
+     "sha256": "5562191951e4213362caa56380b4a453ba17e55c3f7e1756eb26c8c8840206fd"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 51840,
+   "sha256": "334ac12b303c93512338f7c3471445c5c6f06d5dc741e0b8a9d4e2085e7c7d60"
+  },
+  {
+   "i": 88,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 14,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "6f23d641b48f64999e506b26ccf0c094790fdc831969f0f7d3ee3914529704a1"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "fb1e33865b358a29f6cc0513bf51f2fbd5bf557aba13a46d884cf0e6fd083455"
+  },
+  {
+   "i": 89,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 32,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "ef10cae9efee7ecad34b06cd92ce4ba71cd5ad39876d93b4f47bc0f0fdff5819"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "aa744b82e18b8ea4b4c9bb8b0a5fd0dc07ff3f712acc800452d86626bc82e91f"
+  },
+  {
+   "i": 90,
+   "name": "TROMBONE",
+   "midi": 45,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 9,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 45,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "9aa4e972d5678dec49042d603f73ac112111b553a1a40fb1bac9c1ff487e1670"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "cd48b82859607671543e012edda4f4dd631d2300603ad42aec81c84c6b492018"
+  },
+  {
+   "i": 91,
+   "name": "TROMBONE",
+   "midi": 42,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 17,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 42,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "e0ee4986c3b1182f8163937ed8d5cbed6d4a42698ae856f0ff891dc779ae8aa5"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "efc2eb70ccf81d32900ba12091302d292260ffb43eccbb6233ede41233ebcfb7"
+  },
+  {
+   "i": 92,
+   "name": "TROMBONE",
+   "midi": 48,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 48,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "7666870b9899d2d42137241d1124c9a1e2a566dce6d10eb3f170f80f1e14bf58"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "3faa10e65770e14c15cdc42768094ce4b3dc404c2a85700bcda8370d59964deb"
+  },
+  {
+   "i": 93,
+   "name": "TROMBONE",
+   "midi": 43,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 4,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 43,
+     "vel": 0.8,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "91e68a0e456921ab5954fb0ac3ba867d938f933948e922a090dbfd3fcb10a32b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "575a117762d9f6de0bb8099ffe630f33ce486ee2bece632edf57369cc2d8ddc9"
+  },
+  {
+   "i": 94,
+   "name": "TROMBONE",
+   "midi": 59,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 6,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 59,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "5996fe894f55006a79bfddb125d0dd4eb09c90e919ebd23e61e8fad56feb00c0"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "08558c2ed98b0ff1cdb3aa252f98597d5ea2438849650753676d0f3f8113ee87"
+  },
+  {
+   "i": 95,
+   "name": "TROMBONE",
+   "midi": 54,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 5,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 54,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "a6e001733ac949b7c2584503b14fe0876c228783f96c42fa9276331969bd2b37"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "98b100f8be3e5461ee7c4d287ba889552b8a661931a3e1a6646bc6c5dee7896f"
+  },
+  {
+   "i": 96,
+   "name": "TROMBONE",
+   "midi": 60,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 60,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "365bf2a9fe031f9f773033892d4afda0711e5578c175c4cf094dd52c67f6b43c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "accf3f4f1d72268e9dcecb9b1649c47e3668509036ea64cd0182750789ffe6d6"
+  },
+  {
+   "i": 97,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "a9f20a98b7e3bc4cf94ed1dba28962717d31e9ce5b33767de27f75d35899c3b4"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "7efd33db93c1608ac329fe349ac9d0c3efcc0dfc965ff8bf3089006135a6d07a"
+  },
+  {
+   "i": 98,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "29f4b91ec780e7fb5f68e95237320d8fc62dbd97c233b0f47ac4b8261107a62c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "cc2f833ee1c7c967ca579cc8c4e810ba20817506b93b99e800fac3680974e222"
+  },
+  {
+   "i": 99,
+   "name": "TROMBONE",
+   "midi": 67,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 67,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "a70276f87ef240484fb2d48642705bccfefdb167cb007ce1b0570ec811de2a5e"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "7d9c023302400ba8cdd4a1ec582c418cbe61ce1ec4a48dbf66714520c51b4505"
+  },
+  {
+   "i": 100,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "5e25defd1f5b75773726a40bc1b06167e3ca7577ae8c56f6e04ba7d0dad60b0c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "094f2a9dd8d65084f2cf2de2acf264a1ea47f56a573126e1014dd4427a9c2dee"
+  },
+  {
+   "i": 101,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "59c28c8ba15a13064427bdcc42d37df38f2ce8f2a56db412785ad1d8aaafac99"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "4221d864148c72bfd59e527290d3096b0c373d21adb09ef5b28ce4a0aad3d00b"
+  },
+  {
+   "i": 102,
+   "name": "TROMBONE",
+   "midi": 59,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 59,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "e0dd1c62b9bc79e114ad118f6623177b7142d70ceaa57ec71529f2333505f683"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "ea3044ef160d1f15ca25b25f2400707a2ad5d5417726f88e20d47265576383ca"
+  },
+  {
+   "i": 103,
+   "name": "TROMBONE",
+   "midi": 46,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 46,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "2ae57b8232e695d6465e4a6aed1792d7de404c623fc07c1cf6b9c56ae3071ba6"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "7b331121e6293f1f9944344b26684268cfa3997e1cf8d993d8570042a4386621"
+  },
+  {
+   "i": 104,
+   "name": "TROMBONE",
+   "midi": 45,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 45,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "8d11f58ca5eec890af8061aae0ee5b7c038fb5001baa5faec16496067c689f38"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "78f70e5734c4cd59feec7d84986873215ce486d4267ccba2d4034d707def084c"
+  },
+  {
+   "i": 105,
+   "name": "TROMBONE",
+   "midi": 57,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 57,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "c60d0a5edd34baffb46882d41941f420c15da822392a4c45d73efd9e568a51dc"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "b2d94cca749869edc860f86227336c640a1fe7ce2beb57147b2bbcead667be35"
+  },
+  {
+   "i": 106,
+   "name": "TROMBONE",
+   "midi": 45,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 45,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "e0bb0e00c7958cff8376b8762622f047fde0d04d872483265d8d0f8d7f1ffd61"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "1f77d1425de8ebdc09452f9d03e74a8fbb0ffdf05ac69a14fc4125c228423a8a"
+  },
+  {
+   "i": 107,
+   "name": "TROMBONE",
+   "midi": 48,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 48,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "9fb76a2ea3fa4f259acff8c804fa712579e236452ed5a3aada34cf06d990f56e"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "f0b847c89535c82c941ab302f6f1daf75c60c974214ae618ab80c6f67f15a366"
+  },
+  {
+   "i": 108,
+   "name": "TROMBONE",
+   "midi": 60,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 60,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "eda2291e3cfd0099ba9c6fe19733e697f7e3d7e5119d69303d6a77f9a4b62cde"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "781b7cbc7637ad79748b5b6c9c400af930054fdd9baa5e0ceb1015abff26a631"
+  },
+  {
+   "i": 109,
+   "name": "TROMBONE",
+   "midi": 48,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 48,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "be047831f4e263d5a58dea57375724860d85cd308ebb991888acc6d949054763"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "ee6cad4051966350b361f3b66b8bf30d24c64954c42ba8689899fa926e23b65f"
+  },
+  {
+   "i": 110,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "315224878948216e4c7824702b1d87bf7e7fa77a776ead86835c110a588e672f"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "3329e49946815b2c64653e772c16e58f9b6978645071c1dbf4f9e8e603ed75a3"
+  },
+  {
+   "i": 111,
+   "name": "TROMBONE",
+   "midi": 64,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 64,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "b744a6b616bc48fcffaa62f7451606cbf3afc3d28d734d7610d94f0d9743c008"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "75fd45c61d7e154bd8cd1a4f020a4c1199afc856779a1b8b6376073e884bef52"
+  },
+  {
+   "i": 112,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "67411eba85dc8e3328e3db51711f1faec99d9e8fa8b3479a918740cf66d6384b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "d9e4c1890c7536cdbd4b03332f659eecd7f0ff298c14deea9b5b66f2a73b38e3"
+  },
+  {
+   "i": 113,
+   "name": "TROMBONE",
+   "midi": 49,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 49,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "d46a5f65262355e8e335815c817910230311406090d6cd383fc2e1e215c63a56"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "495753ead784992f72a5b9ddb60df5d4c42ccd344710f44c4b4530a4630fa9b4"
+  },
+  {
+   "i": 114,
+   "name": "TROMBONE",
+   "midi": 61,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 61,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "774f19216acf2d527746b558c6628ff669fba547c1a8354065c8879830d5270b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "4a9fa4cc39ee460e5859e1e69e47d6273fc61143bf53e70f7063efce6c5687fc"
+  },
+  {
+   "i": 115,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "1d7205ae7c6a6b0344dc4e30271b32f9347a59422b1082a9c5f4525b34fa52a8"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "d5e9ec51420d7c6083ba99506b1bb2d5699340e4d27d4d94b0821746b583d03f"
+  },
+  {
+   "i": 116,
+   "name": "TROMBONE",
+   "midi": 51,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 51,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "9fb640a1d5256a61285cb2b5fa53ce7280ba02828284f1c0d540a914c13ab15c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "67ad2e45d9f24c917e4b24e1140ab9c7c7df67ddeb1af2e21c3c3d1b5a142e31"
+  },
+  {
+   "i": 117,
+   "name": "TROMBONE",
+   "midi": 63,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 63,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "b5c1084954d75fa299d42dc246ce1b68d407f131d25ca7f178d97e325c726659"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "26cbd3d571b9570f169f80520ae017b279ce034f5a4800630426f560e6e076f3"
+  },
+  {
+   "i": 118,
+   "name": "TROMBONE",
+   "midi": 51,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 51,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "2eb24226759beb4244cd5e6b6ba1dbb8f7318942a78c0f3c729a10cd67bf0456"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "fbeba060b39ff1412193c1075855e97b4db1089ed9cb91865325ebb8c3b0fe19"
+  },
+  {
+   "i": 119,
+   "name": "TROMBONE",
+   "midi": 54,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 54,
+     "vel": 0.8,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "c7e11e40562028291a7c03aaa9fb59cdeb41b713ce82a6c76630f8e4ce87c980"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "6805f7913c2ff28060d09ba288a658e137b822267e76d8b3f8f1ca1b6ed2c3d7"
+  },
+  {
+   "i": 120,
+   "name": "TROMBONE",
+   "midi": 66,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 66,
+     "vel": 0.6,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "31c5261b24bc93ff8c13d551e463ab38b90c6a0013064fdb583eac864c2750c2"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "ff16eb4d930140c46ff76870a5ee4ac17bf60181320c4fb29ba7274f92544a8d"
+  },
+  {
+   "i": 121,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "28d4ab45022271f05a562f94006a38c3970cb7ea775e92cf9bb9d81be0535d2d"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "8e134a82b741b1f85ab37b24d31a6d0d5502fd0ecb0dd4f417dc7a926bcbb22b"
+  },
+  {
+   "i": 122,
+   "name": "TROMBONE",
+   "midi": 57,
+   "dur": 0.3,
+   "cap": 0.6,
+   "vel": 0.6,
+   "hex": {
+    "dur": "0x1.3333333333333p-2",
+    "cap": "0x1.3333333333333p-1",
+    "vel": "0x1.3333333333333p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 57,
+     "vel": 0.6,
+     "dur": 0.3,
+     "hex": {
+      "vel": "0x1.3333333333333p-1",
+      "dur": "0x1.3333333333333p-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 21120,
+     "sha256": "e807315a394e4a34e405ce2b46985d083c6143ad299a2cb4505be9bb0edc4f77"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 28800,
+   "sha256": "10cf4d536397715d562bd1bd9a4adbb8376c03c1b091ae43c5c05102e81baeca"
+  },
+  {
+   "i": 123,
+   "name": "TROMBONE",
+   "midi": 41,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 41,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "5fc228422c764cf72bab7960e2d53a7a6bcb21cd29e6a6cf5bec8d1236109933"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "ee6d7e8ab58f405c20faf3668c2d09323c908f526a4716a9099618adaa0a0070"
+  },
+  {
+   "i": 124,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "b1d45d7091ccbbc348a1995d50bdeb297929ee6dbce39d85cb2ddc7672f4135e"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "2b2f1f7e72af00ab5e6177fdebe353f063a7410ad6aaed4d270341599b52d56d"
+  },
+  {
+   "i": 125,
+   "name": "TROMBONE",
+   "midi": 43,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 43,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "77a644a77031cb1282f357053fb35d96a6c758f26b1e5a2d69bc6abb0ec748c7"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "20ad2a053e7d9bffeccf68797a818ea1a1aa6b1f1bd296620416a86c45e8b79d"
+  },
+  {
+   "i": 126,
+   "name": "TROMBONE",
+   "midi": 49,
+   "dur": 0.17,
+   "cap": 0.47,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.5c28f5c28f5c3p-3",
+    "cap": "0x1.e147ae147ae14p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 49,
+     "vel": 0.7,
+     "dur": 0.17,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.5c28f5c28f5c3p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 14880,
+     "sha256": "39107836ef92df7bbb8d89f8fa30340d6e6ab678cde8a59a453c9290434c95a8"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22560,
+   "sha256": "8dd4da41549eb89c76f79b694c0a0d170e85c436c5a80d924c16939c961e6101"
+  },
+  {
+   "i": 127,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "c9364e4265be979bb8c90584b3984123cf32505446b04f8475c15337eed1f2f5"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "25e5d793725ae9630c2d646bd902eb31395b82f5f0747897325cd54b70f5d6fc"
+  },
+  {
+   "i": 128,
+   "name": "TROMBONE",
+   "midi": 60,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 25,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 60,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "efa8e2d8fb04483871ba08022c4d9f262192a255dd8fc5ee514718058b285636"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "c3894ef02ca142399efb55b6fe14552f2c78e7044a1dff7a488b0c630531475e"
+  },
+  {
+   "i": 129,
+   "name": "TROMBONE",
+   "midi": 54,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 4,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 54,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "e5355e010bdbed69157fcebdb9974ef48f254b7730ba74cd38f7eba08585d309"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "f8bc2be298efed45873f01863a6934f041ffaf2187f273fb75e3c5909a8cd43f"
+  },
+  {
+   "i": 130,
+   "name": "TROMBONE",
+   "midi": 57,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 4,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 57,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "ffafba3d34164469bb747f6bd5f677ea64d48be76500545d5267697f9d610c3c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "505cf1b186b20650b82d23ecbada887e1390d6804adb6e597af8e999b4b23346"
+  },
+  {
+   "i": 131,
+   "name": "TROMBONE",
+   "midi": 59,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 32,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 59,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "71c7a6cbc4e46d05c48659577116fab8384569f92aa13f8c370ca49d11280cd2"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "711fee836ed453caa76e88a1990a107bd3daa67ebed8c37c2332ce940c3354f9"
+  },
+  {
+   "i": 132,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.22,
+   "cap": 0.52,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.c28f5c28f5c29p-3",
+    "cap": "0x1.0a3d70a3d70a4p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 2,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 1.0,
+     "dur": 0.22,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.c28f5c28f5c29p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17280,
+     "sha256": "782a326d7cae6b37be88e455f66eac843c2c8042c9639167b239cdc5a706dcf5"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 24960,
+   "sha256": "c8e6824a7cbd1c0502418f5f10275f228ea661e3c681e77cdde2261619ce20ea"
+  },
+  {
+   "i": 133,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.224,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.cac083126e979p-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 5,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.9,
+     "dur": 0.224,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.cac083126e979p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17472,
+     "sha256": "e229acbf3c6d6a2da93031490f65c3e6739573c2c9c512eaab88a02f37f65bd6"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "398cb12ad353a4f2e8c9e6ef3a0083c8dc5663570e868134b3ab4b4196f62f18"
+  },
+  {
+   "i": 134,
+   "name": "TROMBONE",
+   "midi": 54,
+   "dur": 0.224,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.cac083126e979p-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 5,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 54,
+     "vel": 0.9,
+     "dur": 0.224,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.cac083126e979p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17472,
+     "sha256": "219b4fc7bc10c73eb48c0945f35b9cf9a304b790b33c733edf804861b4b2e5b4"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "3b2ed06fc81839e372359b78250134590718a675927a3462f4ea83c9d5d4d10e"
+  },
+  {
+   "i": 135,
+   "name": "TROMBONE",
+   "midi": 53,
+   "dur": 0.224,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.cac083126e979p-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 5,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 53,
+     "vel": 0.9,
+     "dur": 0.224,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.cac083126e979p-3"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 17472,
+     "sha256": "7c21c8ab7b0c23d9ca685f01223db63172f210c72f585eec6b84b8a320254b69"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "b031b324fbd62f917a4b3d5d33509419a47e42fff20bdcf6140398604984d2ba"
+  },
+  {
+   "i": 136,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.718,
+   "cap": 1.07,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.6f9db22d0e560p-1",
+    "cap": "0x1.11eb851eb851fp+0",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 5,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.9,
+     "dur": 0.718,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.6f9db22d0e560p-1"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 41184,
+     "sha256": "df30f73366340202bf92fff6eb63c4ffa7f25e5ba912aeb811ae897a8a109b27"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 51360,
+   "sha256": "e1563d08881e62e09622b36a56a55c5413d2bb637446b97dc8f4d6bcea99465b"
+  },
+  {
+   "i": 137,
+   "name": "TROMBONE",
+   "midi": 64,
+   "dur": 0.45,
+   "cap": 0.75,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.ccccccccccccdp-2",
+    "cap": "0x1.8000000000000p-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 3,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 64,
+     "vel": 1.0,
+     "dur": 0.45,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.ccccccccccccdp-2"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 28320,
+     "sha256": "1161d649ba59d1f10d8fb59ee0131e45b83e356220b6e8603c98d303bb4a9196"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 36000,
+   "sha256": "92538ab9800dd0fa6f21d1b58c0e251500f803a7fb3c46253e321e0040f123e8"
+  },
+  {
+   "i": 138,
+   "name": "TROMBONE",
+   "midi": 28,
+   "dur": 0.897,
+   "cap": 1.2,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.cb4395810624ep-1",
+    "cap": "0x1.3333333333333p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 28,
+     "vel": 1.0,
+     "dur": 0.897,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.cb4395810624ep-1"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 49776,
+     "sha256": "1a53937da03065572e1e6911981f8cc247d70b24d5a2cd0c8ee7489ff5b4082b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 57600,
+   "sha256": "bb2f70d79897fbb73a2a05feaea3595ca8cbe1e22c47c1b8a5aa547c8eeb3552"
+  },
+  {
+   "i": 139,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.897,
+   "cap": 1.2,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.cb4395810624ep-1",
+    "cap": "0x1.3333333333333p+0",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 0.9,
+     "dur": 0.897,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.cb4395810624ep-1"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 49776,
+     "sha256": "645c51c1cbe2e5923b2e18786a2173c9e5cb147a12353fe9849f004cb9a1d896"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 57600,
+   "sha256": "7657fa11298c2c21a46de1f6355ba82fdbb5d72ba66640750872ef120075971e"
+  },
+  {
+   "i": 140,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.5,
+   "cap": 0.8,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p-1",
+    "cap": "0x1.999999999999ap-1",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "78723601561071950021957841269481562545",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 1.0,
+     "dur": 0.5,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p-1"
+     },
+     "draws": [],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 30720,
+     "sha256": "7ce4298618fb81a76d1b23fc61d2e8ff0416f4e95704b1130c4ee8dbe101276e"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 38400,
+   "sha256": "3f701e7e94df5ba7cfa67ff46c5b71ff18aacba2b72df2bd0c9bd4a32d3e73ef"
+  },
+  {
+   "i": 141,
+   "name": "FLUTE",
+   "midi": 93,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "78723601561071950021957841269481562545",
+   "noise_after": "67084471577600021796766594053466337139",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 93,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "78723601561071950021957841269481562545",
+     "samples": 51050,
+     "sha256": "f9f2a065163d662f91c4db54db28c5c485100bfe2fc8449000447e3f5fca4328"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "dd9c6abf54bfc481694a29db80d79b89186f6b07b0f0f8fd25efa9320a1d6d66"
+  },
+  {
+   "i": 142,
+   "name": "FLUTE",
+   "midi": 89,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "67084471577600021796766594053466337139",
+   "noise_after": "130566575715877239057232223645861228707",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 89,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "67084471577600021796766594053466337139",
+     "samples": 51050,
+     "sha256": "99f52f8c537e58d16bf39c36078059183b31f9e5a6dc336b9416b326f10fae62"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "9f9b4f359d4ab5e5c2df54546b481821544207802e58377b32f57d97faef9d06"
+  },
+  {
+   "i": 143,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "130566575715877239057232223645861228707",
+   "noise_after": "331515126042062543702826510425424687380",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "130566575715877239057232223645861228707",
+     "samples": 51050,
+     "sha256": "5fedbd6f334281607f5506652d30a4cde86f47f79552dbd4b0f9e18af52af0f6"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "a4bec22374f09caaa6766a979a1ae7f31be7c5922be44277d5f74993668a9304"
+  },
+  {
+   "i": 144,
+   "name": "FLUTE",
+   "midi": 80,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "331515126042062543702826510425424687380",
+   "noise_after": "83781431901603378922902980641641558394",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 80,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "331515126042062543702826510425424687380",
+     "samples": 51050,
+     "sha256": "a4529191b9713888d2e2fae1c29f15e5c1591c1055a05402f98afc123956f00a"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "c1d4b84bb028a5c22f656c73b0cca601c798451c170750b6096f2da71b187d9a"
+  },
+  {
+   "i": 145,
+   "name": "FLUTE",
+   "midi": 77,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "83781431901603378922902980641641558394",
+   "noise_after": "9504052986723270849068890224735263220",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 77,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "83781431901603378922902980641641558394",
+     "samples": 51050,
+     "sha256": "f883a8a76c2e2e26941578496ea5933aac4a2dcbb2fb57a8c78ab264711918c3"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "655f5a02ae19e3430f6797658e814faa49d72466882c463bb56bc0eb9b26616d"
+  },
+  {
+   "i": 146,
+   "name": "FLUTE",
+   "midi": 74,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.8,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "uses": 1,
+   "noise_before": "9504052986723270849068890224735263220",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 74,
+     "vel": 0.8,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.999999999999ap-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "9504052986723270849068890224735263220",
+     "samples": 51050,
+     "sha256": "93541a2ab811d9b75055f9887b8c8d4600159c4f5324320a118d2622ce3f8875"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "737874f7e60098d03fc767a9c9a4d2b44455826881bc40158241e69a3a04a2e5"
+  },
+  {
+   "i": 147,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 1.0,
+   "cap": 1.5,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p+0",
+    "cap": "0x1.8000000000000p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 1.0,
+     "dur": 1.0,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p+0"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 54720,
+     "sha256": "19d16530f5e3689fd9c48bc674cfd006c84a9f781415ece395d0577f32853768"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 72000,
+   "sha256": "6221d6330859c89c139f15d326dcf09ede78dc95125e9774d1c7e827cfdb5fcd"
+  },
+  {
+   "i": 148,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 1.0,
+   "cap": 1.5,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p+0",
+    "cap": "0x1.8000000000000p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 1.0,
+     "dur": 1.0,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p+0"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 54720,
+     "sha256": "23d2edd0e98b0556c674a927f71de32b1ce74dc379fa67a607ada2049acf1ffc"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 72000,
+   "sha256": "b747109e3824d3fd46d4d3c1eb5c7f2a1c8f312081c26337f78f142eb05ebc2e"
+  },
+  {
+   "i": 149,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 1.0,
+   "cap": 1.5,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p+0",
+    "cap": "0x1.8000000000000p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 1.0,
+     "dur": 1.0,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p+0"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 54720,
+     "sha256": "d6552ed0e8d25c7b800d3180daa157d75c3595e6ea996df672e62211b94ec2d8"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 72000,
+   "sha256": "6846baa1c5937e49972511ac57ae3c918463a5e8396a05348b686b3e045a162f"
+  },
+  {
+   "i": 150,
+   "name": "TROMBONE",
+   "midi": 59,
+   "dur": 1.0,
+   "cap": 1.5,
+   "vel": 1.0,
+   "hex": {
+    "dur": "0x1.0000000000000p+0",
+    "cap": "0x1.8000000000000p+0",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 59,
+     "vel": 1.0,
+     "dur": 1.0,
+     "hex": {
+      "vel": "0x1.0000000000000p+0",
+      "dur": "0x1.0000000000000p+0"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 54720,
+     "sha256": "d1fd385016b85f0819b9c044c41aeacf55de7672ad99695f7a7f1d3d68586e95"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 72000,
+   "sha256": "da8e37fd76ad8172f1fe8f874057afe9cf36cbb25af7392177509f4153b2f961"
+  },
+  {
+   "i": 151,
+   "name": "TROMBONE",
+   "midi": 40,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 40,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "bceac1b4c11a47a82260f4f3800e457415a41b5d1b04c6ecaad52de16a5d4138"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "5747300f516af13ad13fec1402ca4b7574e7267cfa5a37ec9a67c27b48883694"
+  },
+  {
+   "i": 152,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 3,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "785c3c1d9d1a11d8cfec18ecec5bdbc6b0bc3f6e14a0b390ac67ba1c65e08692"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "f3cd88d1e6ba61923e6ff59d4f15f67016b42801106fde1458bed51d81da3872"
+  },
+  {
+   "i": 153,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.426,
+   "cap": 0.8,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-2",
+    "cap": "0x1.999999999999ap-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.9,
+     "dur": 0.426,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-2"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 27168,
+     "sha256": "689f1d35167032cccf3d187cffb468dae092e0904df41a16045df02f5dc95684"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 38400,
+   "sha256": "2c0637cf7402ca9fba7ae3ba4fc5a2b9b765b7cc0a36bc5e8b190fd852f84e13"
+  },
+  {
+   "i": 154,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 3,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "b557407d1b7286e5ee26cecd9c3704d090857e7657947cb382f295428322b8a0"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "fcf2c5aa2aae85eddf0234116aa8f0f6775b9cb643b08fa2e1b7b88ecac12ce5"
+  },
+  {
+   "i": 155,
+   "name": "TROMBONE",
+   "midi": 52,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 4,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 52,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "0439d5ee42e51c73f9a75f0c37d9219274af0c989cf986dc611bc26735938b3c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "a24311a79e1ea457b56dfc1c204cca5c5bc090863af7309c142e9b2e8612f6df"
+  },
+  {
+   "i": 156,
+   "name": "TROMBONE",
+   "midi": 51,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 51,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "534c6ca43f17a163710fcb721a7b4c8a6f2bec8df0c4a9c740561fcd25f11fef"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "0802b5a08c497bdf4cbfad8cfa957621251b10f228eca7fb28c44961f6d25df1"
+  },
+  {
+   "i": 157,
+   "name": "TROMBONE",
+   "midi": 48,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 3,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 48,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "c261ea7219104036becb996b44834472aa00b0a48133fb8ab1b653ef98125083"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "e1ff94b21d6d24795d28c44c0df3dff97e2e429b5cfe191087ae1d1597d487d8"
+  },
+  {
+   "i": 158,
+   "name": "TROMBONE",
+   "midi": 60,
+   "dur": 0.32,
+   "cap": 0.69,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-2",
+    "cap": "0x1.6147ae147ae14p-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 60,
+     "vel": 0.9,
+     "dur": 0.32,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.47ae147ae147bp-2"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 22080,
+     "sha256": "26edb5687f00bff084727540ba3b26701be4f8bd694e4d13684e5cf2c57e4f26"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 33120,
+   "sha256": "7253b453f79ce62aa084a86187072fa5b9f4d7be2a2b7f85af9d11dde7667771"
+  },
+  {
+   "i": 159,
+   "name": "TROMBONE",
+   "midi": 59,
+   "dur": 0.107,
+   "cap": 0.46,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b645a1cac0831p-4",
+    "cap": "0x1.d70a3d70a3d71p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 59,
+     "vel": 0.9,
+     "dur": 0.107,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b645a1cac0831p-4"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 11856,
+     "sha256": "fb95774b4cd22ee2c14ae9bd570d7fc967dac7d08eecc830c769e2eb81a9f3bf"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22080,
+   "sha256": "67be1c7ed89094f3f3b3007edec94b8ed52fcf0a2d6452af19077a1d1e3538fe"
+  },
+  {
+   "i": 160,
+   "name": "TROMBONE",
+   "midi": 45,
+   "dur": 0.213,
+   "cap": 0.57,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-3",
+    "cap": "0x1.23d70a3d70a3dp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 45,
+     "vel": 0.9,
+     "dur": 0.213,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-3"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 16944,
+     "sha256": "cb7e8afa38f00ec283d3624e72d156860ed9b250b148de1933a4d0437b57378a"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 27359,
+   "sha256": "ec240ba892bd2e0be1de453e1c22a1bc43d615e75ac59bab7cb5e424d07ef50b"
+  },
+  {
+   "i": 161,
+   "name": "TROMBONE",
+   "midi": 57,
+   "dur": 0.32,
+   "cap": 0.69,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-2",
+    "cap": "0x1.6147ae147ae14p-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 57,
+     "vel": 0.9,
+     "dur": 0.32,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.47ae147ae147bp-2"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 22080,
+     "sha256": "d96b14d4f57a1d38b63e3693f1632c16e6081f03d5b0f132f96a05dacf6fb76c"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 33120,
+   "sha256": "9bf9c67d5777c8a9f6edd4df1b9a5299af2db789e2a02ea2b1b3bee2e77b1c28"
+  },
+  {
+   "i": 162,
+   "name": "TROMBONE",
+   "midi": 55,
+   "dur": 0.107,
+   "cap": 0.46,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b645a1cac0831p-4",
+    "cap": "0x1.d70a3d70a3d71p-2",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 55,
+     "vel": 0.9,
+     "dur": 0.107,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b645a1cac0831p-4"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 11856,
+     "sha256": "406325c8e6004f8278733710eec24c2310c65bef647925111ca5fc2a2a98ae9d"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 22080,
+   "sha256": "5943de6689bc5271a2a0dea0f88fccebdd5e4ec5bed22adf3ec29cc8ab8aeeab"
+  },
+  {
+   "i": 163,
+   "name": "TROMBONE",
+   "midi": 45,
+   "dur": 0.426,
+   "cap": 0.8,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.b4395810624ddp-2",
+    "cap": "0x1.999999999999ap-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "296304353172178114217118863046666001457",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 45,
+     "vel": 0.9,
+     "dur": 0.426,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.b4395810624ddp-2"
+     },
+     "draws": [],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 27168,
+     "sha256": "0c2fe6d8b7faaa46890c7b75f8208cd76a9daaa35b0c170f8b263e9a6891a528"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 38400,
+   "sha256": "5e2c7e7906cd901db54181400bf90a53c2e7b19bcd30acdab6c3d13eba82ad68"
+  },
+  {
+   "i": 164,
+   "name": "FLUTE",
+   "midi": 76,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "296304353172178114217118863046666001457",
+   "noise_after": "117959746572951041851339317445037740495",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 76,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "296304353172178114217118863046666001457",
+     "samples": 51050,
+     "sha256": "882de53f68569a5412adf13ee6fab41e1025c9be92769debd433aab89b210db9"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "6355a80f7764fafc2888b9ce4c6f2ab9c1500aa6697416578ec0e8e2d3e5121e"
+  },
+  {
+   "i": 165,
+   "name": "FLUTE",
+   "midi": 79,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "117959746572951041851339317445037740495",
+   "noise_after": "105874229462007072363127930247146308903",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 79,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "117959746572951041851339317445037740495",
+     "samples": 51050,
+     "sha256": "70772f644964d0a90ee32cacbd13cbdb962b1a21bcdeb422fab38947798de2bc"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "4ab41c4c1597afd8b67ec25879ceb776ab9b800a7bd792295e2dc501ac8a7a9d"
+  },
+  {
+   "i": 166,
+   "name": "FLUTE",
+   "midi": 83,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "105874229462007072363127930247146308903",
+   "noise_after": "112727997349258374619598353499846761556",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 83,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "105874229462007072363127930247146308903",
+     "samples": 51050,
+     "sha256": "ac3749f8dd55c0285c4983ecd39248de3d865655997d0715720a9dd94974ede3"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "218dc639880cbcd4e40c30eead9f86550655e8f8affd492b5b71fe4096a85e59"
+  },
+  {
+   "i": 167,
+   "name": "FLUTE",
+   "midi": 84,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "112727997349258374619598353499846761556",
+   "noise_after": "133464733576560045094218656576221774075",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 84,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "112727997349258374619598353499846761556",
+     "samples": 51050,
+     "sha256": "3e9b3adabc2247798d30745629e915c8434d9b8b853199326de928f1905dffd4"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "8b04a55784c0fe5d03abe4f74167f8586a70c2c310865f73119b46926e1b0cc1"
+  },
+  {
+   "i": 168,
+   "name": "FLUTE",
+   "midi": 88,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "133464733576560045094218656576221774075",
+   "noise_after": "215539558786893665058487090504442766523",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 88,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "133464733576560045094218656576221774075",
+     "samples": 51050,
+     "sha256": "7c63eae4edee5b9dae5d1afb5ba7583b405fbd325c1090143248510a3fdb0500"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "719992b5ce8293e9247157566897baebfbb76b115e0e54fcb54c9d4cf313240b"
+  },
+  {
+   "i": 169,
+   "name": "FLUTE",
+   "midi": 91,
+   "dur": 0.08,
+   "cap": 0.26,
+   "vel": 0.7,
+   "hex": {
+    "dur": "0x1.47ae147ae147bp-4",
+    "cap": "0x1.0a3d70a3d70a4p-2",
+    "vel": "0x1.6666666666666p-1"
+   },
+   "uses": 1,
+   "noise_before": "215539558786893665058487090504442766523",
+   "noise_after": "73170599938919076745874442011986827357",
+   "normals": 11466,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "FLUTE",
+     "midi": 91,
+     "vel": 0.7,
+     "dur": 0.08,
+     "hex": {
+      "vel": "0x1.6666666666666p-1",
+      "dur": "0x1.47ae147ae147bp-4"
+     },
+     "draws": [11466],
+     "noise_before": "215539558786893665058487090504442766523",
+     "samples": 51050,
+     "sha256": "7c85b38f9f9235289772ab20947242d9abbe87c91101b29a62c539170c37c439"
+    }
+   ],
+   "gain": "0x1.5edc40a6ff101p-1",
+   "samples": 12480,
+   "sha256": "a36d64c274b0537e4cdecbfb2c969eea43ea5a835583c37279f3675cbda95a9c"
+  },
+  {
+   "i": 170,
+   "name": "TROMBONE",
+   "midi": 47,
+   "dur": 0.35,
+   "cap": 0.65,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.6666666666666p-2",
+    "cap": "0x1.4cccccccccccdp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "73170599938919076745874442011986827357",
+   "noise_after": "73170599938919076745874442011986827357",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 47,
+     "vel": 0.9,
+     "dur": 0.35,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.6666666666666p-2"
+     },
+     "draws": [],
+     "noise_before": "73170599938919076745874442011986827357",
+     "samples": 23520,
+     "sha256": "7f746cdf2d7d08fd9e8edeb2abc3e969e0cefa7078001bcaaaec193d1ad0121b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 31200,
+   "sha256": "5cfcdf3093378c6ff245612aca01392a0305a15de85f455d8fc06aaf76da33b6"
+  },
+  {
+   "i": 171,
+   "name": "TROMBONE",
+   "midi": 51,
+   "dur": 0.35,
+   "cap": 0.65,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.6666666666666p-2",
+    "cap": "0x1.4cccccccccccdp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "73170599938919076745874442011986827357",
+   "noise_after": "73170599938919076745874442011986827357",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 51,
+     "vel": 0.9,
+     "dur": 0.35,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.6666666666666p-2"
+     },
+     "draws": [],
+     "noise_before": "73170599938919076745874442011986827357",
+     "samples": 23520,
+     "sha256": "beab9848671d6d5a3ea2be3f599a0440e658d2396a86420fe055422163199437"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 31200,
+   "sha256": "09cc76dce38a217ce24be65d9d41dae4d279a48f2de830ba2491ee2c6a60794c"
+  },
+  {
+   "i": 172,
+   "name": "TROMBONE",
+   "midi": 54,
+   "dur": 0.35,
+   "cap": 0.65,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.6666666666666p-2",
+    "cap": "0x1.4cccccccccccdp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "73170599938919076745874442011986827357",
+   "noise_after": "73170599938919076745874442011986827357",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 54,
+     "vel": 0.9,
+     "dur": 0.35,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.6666666666666p-2"
+     },
+     "draws": [],
+     "noise_before": "73170599938919076745874442011986827357",
+     "samples": 23520,
+     "sha256": "5b95bc4d2847435c9985dc0e3e20c056c022f1ac8ea13c169f7c240777a9f548"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 31200,
+   "sha256": "4cdcb74522a83f6b4d3c34f659a0fb62a594cb20fe11df23bd8552eacc764e9d"
+  },
+  {
+   "i": 173,
+   "name": "TROMBONE",
+   "midi": 57,
+   "dur": 0.35,
+   "cap": 0.65,
+   "vel": 0.9,
+   "hex": {
+    "dur": "0x1.6666666666666p-2",
+    "cap": "0x1.4cccccccccccdp-1",
+    "vel": "0x1.ccccccccccccdp-1"
+   },
+   "uses": 1,
+   "noise_before": "73170599938919076745874442011986827357",
+   "noise_after": "73170599938919076745874442011986827357",
+   "normals": 0,
+   "voice_calls": [
+    {
+     "why": "note",
+     "name": "TROMBONE",
+     "midi": 57,
+     "vel": 0.9,
+     "dur": 0.35,
+     "hex": {
+      "vel": "0x1.ccccccccccccdp-1",
+      "dur": "0x1.6666666666666p-2"
+     },
+     "draws": [],
+     "noise_before": "73170599938919076745874442011986827357",
+     "samples": 23520,
+     "sha256": "7ec75894eeb8d698b9ced642c606e8240db24b62c5e6b3b63a5da25745477f3b"
+    }
+   ],
+   "gain": "0x1.a1206dba7baf8p-1",
+   "samples": 31200,
+   "sha256": "ad0a145d42df36fc10f212ee12b226c491e825c40e080497b220ff0d967fcbcc"
+  }
+ ]
+}

@@ -1,0 +1,1366 @@
+{
+ "about": "scipy.ndimage.gaussian_filter (mode reflect, truncate 4.0, the input's dtype) and its kernel weights: synthetic pictures (shared_vectors.synthetic / 255), the full-frame mask of synthetic_mask by its SHA-256, and every call TRUMPET's look made (its input is the mask_of case in reeds.npz with that SHA-256)",
+ "cases": [
+  {
+   "args": {
+    "radius": 2,
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [0, 5]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "radius": 4,
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [5, 9]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "radius": 4,
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [14, 9]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "radius": 6,
+    "sigma": "0x1.8000000000000p+0"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [23, 13]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "radius": 10,
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [36, 21]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "radius": 12,
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [57, 25]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "radius": 18,
+    "sigma": "0x1.2000000000000p+2"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [82, 37]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "radius": 24,
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [119, 49]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "radius": 1,
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [168, 3]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "radius": 0,
+    "sigma": "0x1.eb851eb851eb8p-4"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [171, 1]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "radius": 1,
+    "sigma": "0x1.3333333333333p-2"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [172, 3]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "radius": 0,
+    "sigma": "0x1.0624dd2f1a9fcp-10"
+   },
+   "arrays": {
+    "weights": "gaussian_kernel1d_sigma_0_in.weights.f8"
+   },
+   "at": {
+    "weights": [175, 1]
+   },
+   "call": "_gaussian_kernel1d(sigma, 0, int(4.0 * sigma + 0.5))[::-1]",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [0, 1, 1],
+    "x": [0, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [1, 1, 1],
+    "x": [1, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [2, 1, 1],
+    "x": [2, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [3, 1, 1],
+    "x": [3, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [0, 1, 1],
+    "x": [0, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [1, 1, 1],
+    "x": [1, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [2, 1, 1],
+    "x": [2, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [3, 1, 1],
+    "x": [3, 1, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [4, 1, 7],
+    "x": [4, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [11, 1, 7],
+    "x": [11, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [18, 1, 7],
+    "x": [18, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [4, 1, 7],
+    "x": [4, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [11, 1, 7],
+    "x": [11, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [18, 1, 7],
+    "x": [18, 1, 7]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [25, 7, 1],
+    "x": [25, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [32, 7, 1],
+    "x": [32, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [39, 7, 1],
+    "x": [39, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [46, 7, 1],
+    "x": [46, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [25, 7, 1],
+    "x": [25, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [32, 7, 1],
+    "x": [32, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [39, 7, 1],
+    "x": [39, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [46, 7, 1],
+    "x": [46, 7, 1]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [53, 5, 3],
+    "x": [53, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [68, 5, 3],
+    "x": [68, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [83, 5, 3],
+    "x": [83, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [53, 5, 3],
+    "x": [53, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [68, 5, 3],
+    "x": [68, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [83, 5, 3],
+    "x": [83, 5, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [98, 6, 4],
+    "x": [98, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [122, 6, 4],
+    "x": [122, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [146, 6, 4],
+    "x": [146, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [170, 6, 4],
+    "x": [170, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [98, 6, 4],
+    "x": [98, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [122, 6, 4],
+    "x": [122, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [146, 6, 4],
+    "x": [146, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [170, 6, 4],
+    "x": [170, 6, 4]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [194, 13, 9],
+    "x": [194, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [311, 13, 9],
+    "x": [311, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [428, 13, 9],
+    "x": [428, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [194, 13, 9],
+    "x": [194, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [311, 13, 9],
+    "x": [311, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [428, 13, 9],
+    "x": [428, 13, 9]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [545, 2, 40],
+    "x": [545, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [625, 2, 40],
+    "x": [625, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [705, 2, 40],
+    "x": [705, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [785, 2, 40],
+    "x": [785, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [545, 2, 40],
+    "x": [545, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [625, 2, 40],
+    "x": [625, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [705, 2, 40],
+    "x": [705, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [785, 2, 40],
+    "x": [785, 2, 40]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [865, 31, 2],
+    "x": [865, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [927, 31, 2],
+    "x": [927, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [989, 31, 2],
+    "x": [989, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [865, 31, 2],
+    "x": [865, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [927, 31, 2],
+    "x": [927, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0000000000000p-3"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [989, 31, 2],
+    "x": [989, 31, 2]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [1051, 4, 5],
+    "x": [1051, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.cd2b297d889bcp-54"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [1071, 4, 5],
+    "x": [1071, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sigma": "0x1.0624dd2f1a9fcp-10"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f4",
+    "x": "scipy_ndimage_gaussian_filte.x.f4"
+   },
+   "at": {
+    "out": [1091, 4, 5],
+    "x": [1091, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x0.0p+0"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [1051, 4, 5],
+    "x": [1051, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.cd2b297d889bcp-54"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [1071, 4, 5],
+    "x": [1071, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sigma": "0x1.0624dd2f1a9fcp-10"
+   },
+   "arrays": {
+    "out": "scipy_ndimage_gaussian_filte.out.f8",
+    "x": "scipy_ndimage_gaussian_filte.x.f8"
+   },
+   "at": {
+    "out": [1091, 4, 5],
+    "x": [1091, 4, 5]
+   },
+   "call": "scipy.ndimage.gaussian_filter(x, sigma)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sha256": "247bc3082f3bc8f926f1b97d167aa2a1abd72cb0a053892bf716a7a675cce3a4",
+    "shape": [640, 360],
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f4"
+   },
+   "at": {
+    "corner": [0, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sha256": "7bffa8defb0fdce252cdad137df04d8a41c217ca4e771edfe90863f9072721f6",
+    "shape": [640, 360],
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f4"
+   },
+   "at": {
+    "corner": [9, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sha256": "e5ad8d8e4534c925b7d3886cd66929501e26f418ec7cd013683f4c78e9bf64cb",
+    "shape": [640, 360],
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f4"
+   },
+   "at": {
+    "corner": [18, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "sha256": "1489fce91be8f2ca5e49ea2015940c736285c33b86db9d5400276e846d709926",
+    "shape": [640, 360],
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f4"
+   },
+   "at": {
+    "corner": [27, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sha256": "48d32e9afd52524c9e07f1fd500f6682720cdbba59a6622efbb9ecdcc1dfdde9",
+    "shape": [640, 360],
+    "sigma": "0x1.3333333333333p+1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f8"
+   },
+   "at": {
+    "corner": [0, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sha256": "ef14f7d2b09620e305c9b72ba8164a02ee207df7b5d7cb393394ba7403dffea2",
+    "shape": [640, 360],
+    "sigma": "0x1.ccccccccccccdp-1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f8"
+   },
+   "at": {
+    "corner": [9, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sha256": "6e9772db5fc4118269b9bf0c2a39fe6478aa09c85eb0f6687baed620f25c6ecb",
+    "shape": [640, 360],
+    "sigma": "0x1.0000000000000p-1"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f8"
+   },
+   "at": {
+    "corner": [18, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "dtype": "float64",
+    "sha256": "f1fd1b5ea0f4e52bd2a856343dcce79bb2e9aedc9911487469b4975132ed18a6",
+    "shape": [640, 360],
+    "sigma": "0x1.8000000000000p+2"
+   },
+   "arrays": {
+    "corner": "scipy_ndimage_gaussian_filte.corner.f8"
+   },
+   "at": {
+    "corner": [27, 3, 3]
+   },
+   "call": "scipy.ndimage.gaussian_filter(synthetic_mask, sigma)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "extra": 0,
+    "mask": "mask_of",
+    "shape": [640, 360],
+    "sigma": "0x1.3333333333333p+1",
+    "width": null
+   },
+   "arrays": {
+    "lens": "gaussian_filter.lens.i8",
+    "pts": "gaussian_filter.pts.f8"
+   },
+   "at": {
+    "lens": [0, 2],
+    "pts": [0, 41, 2]
+   },
+   "call": "gaussian_filter",
+   "fighter": "TRUMPET",
+   "id": "c082",
+   "input_sha256": "d9cb609dd7a003fc3e59f00308bf8320da001ae6776a200c86200809f69756e7",
+   "out_dtype": "float32",
+   "sha256": "ec1e6353e81dae9503122a071e5b50967ebe6959ceef0c7e8aa5bd14cdc4f9b0"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "extra": 0,
+    "mask": "mask_of",
+    "shape": [640, 360],
+    "sigma": "0x1.ccccccccccccdp-1",
+    "width": null
+   },
+   "arrays": {
+    "lens": "gaussian_filter.lens.i8",
+    "pts": "gaussian_filter.pts.f8"
+   },
+   "at": {
+    "lens": [2, 2],
+    "pts": [82, 41, 2]
+   },
+   "call": "gaussian_filter",
+   "fighter": "TRUMPET",
+   "id": "c083",
+   "input_sha256": "5cde7a4513fbdf9289b70e0ef00ceca9691b7da5582cbdfe128bcd6d6b330b4d",
+   "out_dtype": "float32",
+   "sha256": "0b098892f9aca30feca121c6abbb75da2c98de4fe2b5ace1bad0e8db68c00870"
+  },
+  {
+   "args": {
+    "dtype": "float32",
+    "extra": 0,
+    "mask": "mask_of",
+    "shape": [640, 360],
+    "sigma": "0x1.0000000000000p-1",
+    "width": null
+   },
+   "arrays": {
+    "lens": "gaussian_filter.lens.i8",
+    "pts": "gaussian_filter.pts.f8"
+   },
+   "at": {
+    "lens": [4, 2],
+    "pts": [164, 41, 2]
+   },
+   "call": "gaussian_filter",
+   "fighter": "TRUMPET",
+   "id": "c084",
+   "input_sha256": "9e8728db40edce02c20af387ee2df580241acaf15456f4704e2a64439ee202de",
+   "out_dtype": "float32",
+   "sha256": "716a25a133efeb74cb9003f02d9d98c4cdc175eba616e22b49ab8f51d858e53f"
+  }
+ ],
+ "tool": "shared"
+}

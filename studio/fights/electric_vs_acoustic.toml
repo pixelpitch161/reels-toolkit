@@ -1,0 +1,79 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["ELECTRIC", "ACOUSTIC"]
+arena = "ring"
+handicap = [0.92, 1.33]
+dmg_scale = 1.0
+tempo_bpm = 126.0
+seed = 418
+
+[pair_rules]
+
+[music]
+theme = "stadium_rock"
+arrangement = "classic"
+key = "E"
+scale = "minor"
+chords_intro = ["Em", "B7"]
+chord_loop = ["Em", "C", "G", "D", "Em", "C", "Am", "B7"]
+chords_tail = ["Em", "C", "G", "D", "Am", "B7"]
+music_seed = 1
+
+[music.roles]
+ACOUSTIC = "rhythm"
+ELECTRIC = "riff"
+
+[music.lines]
+ELECTRIC = [
+    64, 64, 67, 64, 69, 67, 64, 62,
+    64, 64, 67, 64, 72, 71, 67, 64,
+    67, 67, 71, 67, 74, 71, 67, 66,
+    66, 66, 69, 66, 74, 72, 69, 66,
+    64, 64, 67, 64, 71, 69, 67, 64,
+    67, 67, 72, 67, 76, 74, 72, 71,
+    69, 69, 72, 69, 76, 74, 72, 69,
+    71, 71, 75, 71, 74, 75, 66, 63,
+]
+
+[music.solos]
+ACOUSTIC = [
+    [0.0, 40, 0.5], [0.5, 55, 0.5], [1.0, 59, 0.5], [1.5, 64, 0.5],
+    [2.0, 52, 0.5], [2.5, 59, 0.5], [3.0, [40, 47, 52, 55, 59, 64], 1.0], [4.0, 48, 0.5],
+    [4.5, 55, 0.5], [5.0, 60, 0.5], [5.5, 64, 0.5], [6.0, [48, 52, 55, 60, 64], 0.5],
+    [6.5, 67, 0.5], [7.0, 64, 0.5], [7.5, 60, 0.5], [8.0, 43, 0.5],
+    [8.5, 55, 0.5], [9.0, 59, 0.5], [9.5, 67, 0.5], [10.0, [50, 57, 62, 66], 0.5],
+    [10.5, 66, 0.5], [11.0, 62, 0.5], [11.5, 57, 0.5], [12.0, [40, 47, 52, 55, 59, 64], 2.0],
+]
+ELECTRIC = [
+    [0.0, 76, 0.25], [0.25, 74, 0.25], [0.5, 71, 0.25], [0.75, 69, 0.25],
+    [1.0, 67, 0.25], [1.25, 69, 0.25], [1.5, 71, 0.25], [1.75, 74, 0.25],
+    [2.0, 76, 1.0], [3.0, 79, 0.25], [3.25, 76, 0.25], [3.5, 74, 0.25],
+    [3.75, 71, 0.25], [4.0, 72, 0.25], [4.25, 76, 0.25], [4.5, 79, 0.25],
+    [4.75, 84, 0.25], [5.0, 79, 0.25], [5.25, 76, 0.25], [5.5, 72, 0.25],
+    [5.75, 76, 0.25], [6.0, 74, 0.25], [6.25, 78, 0.25], [6.5, 81, 0.25],
+    [6.75, 78, 0.25], [7.0, 75, 0.5], [7.5, 71, 0.5], [8.0, 76, 2.0],
+]
+
+[music.title_hits]
+ACOUSTIC = [40, 47, 52, 55, 59, 64]
+ELECTRIC = [40, 64, 67, 71, 76]
+
+[music.mix]
+
+[music.theme_options]
+plugged = "ELECTRIC"
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "Plugged or unplugged? Pick a side 🎸⚡ Comment the next match-up 👇"
+instagram = "#ballfight #electricguitar #acousticguitar #guitar #guitarist #rockmusic #musicmemes #pixelart #lowpoly #gamedev #satisfying #music"
+tiktok = "#fyp #ballfight #electricguitar #acousticguitar #guitartok #rock #pixelart #satisfying #musictok #guitar"
+shorts = [
+    "Electric vs Acoustic: plugged or unplugged?",
+    "Lightning riffs vs a six-string rake, every hit in key. Which guitar wins the family feud?",
+    "#shorts #ballfight #electricguitar #acousticguitar #guitar #rock #pixelart",
+]

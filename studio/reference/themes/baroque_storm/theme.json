@@ -1,0 +1,83 @@
+{
+ "about": "baroque_storm: its reference configs, each with the kit's own recording of it and the bed alone (both fighters replaced at run time by kit/fighters/base.py Sound, which is silent): the SHA-256 of the 16-bit master's samples (little-endian int16, interleaved: what A.write writes after its header), the buses in the order the score made them, and the bed's class levels",
+ "cache_files": "cache files are under studio/reference/.cache/m3/ and pinned in pins.json",
+ "configs": [
+  {
+   "bed_alone": {
+    "bed": {
+     "buses": {
+      "drums": [1.0, 0.15],
+      "harpsi": [1.3, 0.3],
+      "strings": [1.6, 0.45]
+     },
+     "comp": [0.2, 0.5],
+     "reverb": [2.2, 0.5, 0.22]
+    },
+    "buses": ["harpsi", "strings", "drums", "fx"],
+    "master_sha256": "019628658bfc5f88a5548bf82967e7ddd5b16bbd551bed07e39875199fc32814",
+    "stems": ["harpsi", "strings", "drums", "fx"]
+   },
+   "bpm": 140,
+   "chords": ["Dm", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A", "Gm", "A"],
+   "config": "examples/clarinet_vs_oboe",
+   "fighters": ["CLARINET", "OBOE"],
+   "intro": ["Dm", "A"],
+   "key": "D",
+   "lines": {
+    "CLARINET": [62, 57, 53, 57, 58, 55, 50, 55, 60, 55, 52, 55, 57, 53, 48, 53, 58, 53, 50, 53, 55, 58, 62, 58, 57, 61, 64, 61, 57, 52, 49, 52],
+    "OBOE": [74, 77, 81, 77, 74, 76, 77, 81, 79, 82, 86, 82, 79, 77, 74, 77, 76, 79, 84, 79, 76, 77, 79, 76, 77, 81, 84, 81, 77, 79, 81, 77, 77, 82, 86, 82, 77, 81, 82, 86, 79, 82, 86, 84, 82, 81, 79, 77, 76, 81, 85, 81, 76, 79, 81, 85, 81, 79, 77, 76, 73, 76, 79, 81]
+   },
+   "loop": ["Dm", "Gm", "C", "F", "Bb", "Gm", "A", "A"],
+   "loop_bpm": "0x1.1b47582192e2ap+7",
+   "mood": "baroque_storm",
+   "n_bars": 36,
+   "recording": {
+    "cache": "themes/baroque_storm/clarinet_vs_oboe.bfrec",
+    "sha256": "2ad4559e11883fc5bca2c066e8f21180f322248d1bdd7f760b5e556fe511936a"
+   },
+   "roles": {
+    "CLARINET": "line",
+    "OBOE": "line"
+   },
+   "scale": "minor",
+   "seed": 654,
+   "solos": {
+    "CLARINET": [
+     [0.0, 50, 0.5],
+     [0.5, 53, 0.5],
+     [1.0, 57, 0.5],
+     [1.5, 62, 0.5],
+     [2.0, 74, 1.0],
+     [3.0, 72, 0.25],
+     [3.25, 70, 0.25],
+     [3.5, 69, 0.25],
+     [3.75, 67, 0.25],
+     [4.0, 65, 0.5],
+     [4.5, 64, 0.5],
+     [5.0, 61, 0.5],
+     [5.5, 64, 0.5],
+     [6.0, 62, 2.0]
+    ],
+    "OBOE": [
+     [0.0, 81, 1.0],
+     [1.0, 82, 0.5],
+     [1.5, 81, 0.5],
+     [2.0, 79, 0.5],
+     [2.5, 77, 0.5],
+     [3.0, 76, 0.5],
+     [3.5, 77, 0.5],
+     [4.0, 74, 0.5],
+     [4.5, 76, 0.5],
+     [5.0, 73, 0.5],
+     [5.5, 76, 0.5],
+     [6.0, 74, 2.0]
+    ]
+   },
+   "t_ko": 52.53055555555555,
+   "tail": ["Gm", "A"],
+   "winner": 0
+  }
+ ],
+ "theme": "baroque_storm",
+ "voicing_methods": ["harp_rh", "vln"]
+}

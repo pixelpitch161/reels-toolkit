@@ -1,0 +1,620 @@
+{
+ "about": "ballfight_bassdrum_vs_tuba: the golden frames (milestone 1's rules of frames.py for any pair) with both real looks: each frame's SHA-256, its draw log and its hull calls; and the VS card alone on milestone 1's noise image at 16 times",
+ "absent": [],
+ "cards": [
+  [0, "db352ea04c50c0de418c4e548ea1da38f51fdfac31471ec81353200921558582"],
+  [4, "42bbf7f2bb9f0e59bb1e5d9d2eefc5387f6f46c0fabac0999bd05b84d91a65d0"],
+  [9, "8c7a5c393514543787db89f15cf4e2c2262192eabe477edbdd75ebf33d77bddf"],
+  [13, "08255f6383e210933930d1d84325dcc3a8ac82703af51d82a26147cc79fce05d"],
+  [17, "e1ed52f5f06b1740a78688e7b879ae66459ee58898d443f97c9a75abf9927be6"],
+  [21, "44f66f588ab10c69f67e5af64eec9a315873fae450f7cfc17647062f03bac6ce"],
+  [26, "af657fee6edb1353403730cecd4df369d10f7d95dd7242c247cdf9db2efa8e12"],
+  [30, "a3fb8318c0e1ba4abd5626edbbe872f15313d55d44c8d39abfd7795f1e3748bc"],
+  [34, "1b3697f1a2f9b1bbc862eac9fefc9ed063f9ea8e091aaecd163579e6b6bab0c1"],
+  [38, "19c7b7cbd987895a20f46867f6c94cd13df6ed53caf45ea24edfdcaaf7cab8cf"],
+  [43, "c2d8961a48db5e44429bd73ad224a6e8236eab2cb8a69fcba08290ca97771484"],
+  [47, "ca5a9388dd6fdcb955fd66a734d04b731a4980eda96c451ba5919bd9b0d44820"],
+  [51, "163726aba5cb35a908049f4ed125ad9c828170a950fb63bd7d51253dc13fa549"],
+  [55, "cff0224db953c66e943a7193c8ece233e739ce21f61b51b4c183327c001e703b"],
+  [1825, "ecaa176f9c34e266dcbcb7601ef5ac506fb0f8e9c1a332a35c2ebac52b6199d4"],
+  [1829, "60edca58ee5cc427c3189a0d0865cae77477f3ee4e8e5f8d20db72559a671a59"]
+ ],
+ "fighters": ["BASS DRUM", "TUBA"],
+ "format": 1,
+ "frames": [
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 0,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d9b81d4p+12",
+     "0x1.2a48ab7bd62c6p+13"
+    ]
+   ],
+   "rules": ["frame_0"],
+   "sha256": "d4db6bd8b76508cb971deb5b8be5ee7c1c4f3c8b564a2707bc3aedc961818c2b"
+  },
+  {
+   "boxes": [1, "ac65fc738d7859baecaa331f5c3caf83e7c152316085ad8b7fe5a18d9e9c3000"],
+   "frame": 13,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53ce57bbf3ep+12",
+     "0x1.2a48ab9a12537p+13"
+    ]
+   ],
+   "rules": ["frame_13"],
+   "sha256": "e6edec184fee405149cc4ba13b45b96002972433b381a6cccece8ac333b9d935"
+  },
+  {
+   "boxes": [2, "a549956e18024be04305ce692da7e280f80b9e2266ef3d008078d803387d4b76"],
+   "frame": 27,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53bc62566dap+12",
+     "0x1.2a48ac735b3cdp+13"
+    ]
+   ],
+   "rules": ["frame_27"],
+   "sha256": "18908704f0db387cc3f923c1f026ad22a8c98969cc0c973a8566b90048bea212"
+  },
+  {
+   "boxes": [3, "5d90a916aff07649bae0e7ea5562f93ba76edd1ebff5313d14f12715b87de76f"],
+   "frame": 45,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a537d637ba29p+12",
+     "0x1.2a48af783587cp+13"
+    ]
+   ],
+   "rules": ["doors_last_closed"],
+   "sha256": "88640f8a1bd765e71e09db820e775eac5e97327fd1a416dbcbbde6d2720ff209"
+  },
+  {
+   "boxes": [22, "4f3ac3fc54bb62aa737fa9d0275f7fc690ec6820727f898de739ac7f0d8285f4"],
+   "frame": 51,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a535c9aff5cep+12",
+     "0x1.2a48b110fec29p+13"
+    ]
+   ],
+   "rules": ["doors_mid"],
+   "sha256": "e296829eade546278c11dabc00fa3a3a5a5b1f1eedbb9ba1bde4be0f993da8b4"
+  },
+  {
+   "boxes": [23, "94b55f03aec86c0274c0bbb055d225aef4e41152cdac03ea3ac02d1a8c3af31c"],
+   "frame": 58,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a532eaa00f0dp+12",
+     "0x1.2a48b3557d549p+13"
+    ]
+   ],
+   "rules": ["count_3"],
+   "sha256": "ba585c8f75cb42d91e83de92575d7834957471f75bf2481f81e5036c96814032"
+  },
+  {
+   "boxes": [23, "f495bc9ce1109eb88773b290d6e9a38248000e867bfa31331060cd64d7d04eb2"],
+   "frame": 72,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a52badf3ffdfp+12",
+     "0x1.2a48b93469d2ep+13"
+    ]
+   ],
+   "rules": ["count_2"],
+   "sha256": "f30141636b8002cdfe670e0f25c38fd0182872a0b147456c748c10a737d40387"
+  },
+  {
+   "boxes": [23, "38d8664bd23a5bc3c8eee1c13feea0b8825764d4ecd701229115c24010e8f23a"],
+   "frame": 86,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a522af579e92p+12",
+     "0x1.2a48c0d0cb587p+13"
+    ]
+   ],
+   "rules": ["count_1"],
+   "sha256": "8efb5fa927e420431711460dc7e132efeac9062191cfe1f6468c5fa25d884a27"
+  },
+  {
+   "boxes": [21, "fb850b1c802770f61db6e1ee493463064b9f4d73314ba395e23d6c2caf2b6b76"],
+   "frame": 115,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a8c78985034ep+12",
+     "0x1.2a54e51859a46p+13"
+    ]
+   ],
+   "rules": ["count_fight"],
+   "sha256": "679e9ede8d6f125815591fb880ee8e5f415d2be21ad34ccde2d7b403535ef685"
+  },
+  {
+   "boxes": [21, "b59ceeac85011700b64c051257b551ca4c5aaab500804eb5ea7dad9e9c0ff540"],
+   "frame": 135,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4fc7864fdccp+12",
+     "0x1.29b646ffba3efp+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_weapon_hit"],
+   "sha256": "615e36231434bcf1449beaf230b0b0fdfb64416bf5c030465d0d8ceea7f69cdd"
+  },
+  {
+   "boxes": [22, "ebeb1975e65e908bd8f2252fc0811919192c200c16ff15de0db08197fb722b54"],
+   "frame": 297,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6898a40b8efaep+12",
+     "0x1.2acb22854b180p+13"
+    ]
+   ],
+   "rules": ["TUBA_weapon_hit"],
+   "sha256": "5547f27dbe7613f430fa0074d8b05bb4ff7549a8c06e8513fa013117f08b8cc5"
+  },
+  {
+   "boxes": [21, "face691368c97ab3824ce06d1eb9be8bbb593bf01f758ce3efafd356b98729d3"],
+   "frame": 300,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4dbb0d97cc4p+12",
+     "0x1.2a7df446e7d01p+13"
+    ]
+   ],
+   "rules": ["extra_level_BASS DRUM"],
+   "sha256": "5040350a372418f5f96ecb0c14120dc8e8a52291de8eda0133a45dc80b31050a"
+  },
+  {
+   "boxes": [23, "5a4165973bb927e4331cf9a79f5a306a8e4a0f7c5533add8e1d56bb64713bbfd"],
+   "frame": 304,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a6ca6bc9b039p+12",
+     "0x1.2a5ac251eaa6ap+13"
+    ]
+   ],
+   "rules": ["extra_caption_punch"],
+   "sha256": "11d0d67390324e3ad8ab03743453818a87c492cbb2d9972cf45fbbc2d68b12c5"
+  },
+  {
+   "boxes": [23, "259b1e090b650b12f9095ddd59cf654ef4cff36f872bae56b3fa735059a5cbe6"],
+   "frame": 307,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a606aa3991dap+12",
+     "0x1.2a49e6b6d6f1ep+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_unlock1_0.2s"],
+   "sha256": "c8eaa61c5f3503fbcae13ba46f72271dfe2867bea1e32a7f99004405f3b20e94"
+  },
+  {
+   "boxes": [23, "c8d1eb3c11739ea864208c90ffcc1aafca0ffbdbc2cd48ebb32e3f5bd96503f6"],
+   "frame": 319,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a1637c597fb3p+12",
+     "0x1.2a28be6707627p+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_unlock1_0.6s"],
+   "sha256": "1a9a52101451b0cfc419dfebf44acd8f7bc1cba011ab65fbda7b4701ef5c4708"
+  },
+  {
+   "boxes": [22, "9abc65513a804ccfc04c8bbf756ab3e7551c7dd72ff14726479e127e7a6a21f9"],
+   "frame": 569,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b6b043bdff01p+12",
+     "0x1.2aa61c9aab086p+13"
+    ]
+   ],
+   "rules": ["extra_level_TUBA"],
+   "sha256": "bb765df9d912e67be54481214648d88845a509b3ccc5a03b676c67a7a1ccc9e7"
+  },
+  {
+   "boxes": [24, "2795ce1f071ab555042beaa29a054186f7f50874b86d1e79f76cd1813a7b5a7b"],
+   "frame": 578,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a60194d312c7p+12",
+     "0x1.2a475552dba1ap+13"
+    ]
+   ],
+   "rules": ["TUBA_unlock1_0.2s"],
+   "sha256": "b0715b343231850d871c67b00d9d039e27c82c390c789bb42cd712a446bcc45e"
+  },
+  {
+   "boxes": [24, "62496c81946da2d373c47b0e88ec2e92d5abd490ead3326dc9b86d904ad4ea22"],
+   "frame": 590,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a58cf826919ep+12",
+     "0x1.2a47b0f3510d0p+13"
+    ]
+   ],
+   "rules": ["TUBA_unlock1_0.6s"],
+   "sha256": "9b3b7cde7a46d284a95e36ccca2979f9dd26c3a6afb979e8c8cf77b89f832bbd"
+  },
+  {
+   "boxes": [24, "c91fe1a00a681d75d9baced534fb245fdb571d9bb860c9d7d0c4390e72fff73c"],
+   "frame": 707,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a6009a4a4b72p+12",
+     "0x1.2a3975e218195p+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_unlock2_0.2s"],
+   "sha256": "a3f7b078f116a1cf1904c829c7a007cad2919ccb4e07e625c8b50b2a8196993f"
+  },
+  {
+   "boxes": [22, "2cc426d47d7c33400f5e5e513af64d46a37a86f78b1e3a5066537e3e11184c50"],
+   "frame": 719,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b500c2b5f209p+12",
+     "0x1.2a9f421892378p+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_unlock2_0.6s"],
+   "sha256": "4efc5635ae4c9ae678d9a5e9e738af280a756cfacf537a2fa5abd11764c940cc"
+  },
+  {
+   "boxes": [25, "805009461658b02c5accb114bd1cbbf90546dc074d54fc2c110bb3a853f4061e"],
+   "frame": 1050,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a4474efc4a02p+12",
+     "0x1.2a4fa97f3aa1ap+13"
+    ]
+   ],
+   "rules": ["TUBA_unlock2_0.2s"],
+   "sha256": "cebdd12c355fb28fa33e979e5d41b5a8c1a7852270642a126c1c50d26be3de6e"
+  },
+  {
+   "boxes": [25, "61180d3037b549f60576c4ba65bfa7e31e4d87f89d8a4fe6c286dab7f20aa30c"],
+   "frame": 1062,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ad262b2bfc44p+12",
+     "0x1.2a25907946c97p+13"
+    ]
+   ],
+   "rules": ["TUBA_unlock2_0.6s"],
+   "sha256": "7d97bc7718ecf9173e6e46ec83fca2c0c56989f6c80524086ec16db16f51edf7"
+  },
+  {
+   "boxes": [22, "760a6cb33c5d75fb54e6b19eaef34beb0b3b7aa535918df8b83cfee7f61f129f"],
+   "frame": 1208,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a2c0f837c519p+12",
+     "0x1.2a5b492f84b4dp+13"
+    ]
+   ],
+   "rules": ["TUBA_low_hp"],
+   "sha256": "7963a25e9149e996eccbe7cb8023d1d5b2e92bc7b5306c85c680ffbb6af2bbc0"
+  },
+  {
+   "boxes": [24, "8435326ad1c701bad07000b6c4030f03a34adba6ecb243bd752e4019cfba4d89"],
+   "frame": 1222,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a12db620c172p+12",
+     "0x1.2a5b7294b2c93p+13"
+    ]
+   ],
+   "rules": ["TUBA_low_0.2s"],
+   "sha256": "df100afd3b6e25321f048081675d6c853ac91545122cb109dd06c4cd810e1d8e"
+  },
+  {
+   "boxes": [24, "2ea53cd29bfdebf251ddbe9c1a0a935d6ec474bbc68275ab1e79658d2d1fe9c7"],
+   "frame": 1234,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a5bda5c2b49fp+12",
+     "0x1.2a7d2e5c24328p+13"
+    ]
+   ],
+   "rules": ["TUBA_low_0.6s"],
+   "sha256": "e4bbaaa2f1408a0166ff395cfd6e5df50b84ebeb6523c728e057ea68bf45ceb6"
+  },
+  {
+   "boxes": [24, "e3143272e70dc1fe9a254827cd9b13ceb62cebfc2751ee61f20d8a40a490e1f5"],
+   "frame": 1245,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a22cb4746e2fp+12",
+     "0x1.2987a0755402bp+13"
+    ]
+   ],
+   "rules": ["extra_slam"],
+   "sha256": "9c16adf8ba9a225ee4af338de57af3155ff8dde2117d075778cc58286612e4ae"
+  },
+  {
+   "boxes": [23, "28afcab412db61a63185aff5c8bbedd8527147dce7aaa178b0109918e9b58087"],
+   "frame": 1496,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6980138c987fdp+12",
+     "0x1.2ab6c56994e63p+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_low_hp"],
+   "sha256": "4a7bf558dd20001189ded8f268c4790ffa6945b9fd1ffe8d91462d9fa6412a1a"
+  },
+  {
+   "boxes": [24, "6c9d926ce88436a2b1985e45801a9737c4b93fe634f2c78da84d1e8309df3623"],
+   "frame": 1508,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a18422f4f649p+12",
+     "0x1.2a60a080d1268p+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_low_0.2s"],
+   "sha256": "cb58056b51c6f0eb0d14e4713451e545de4ddacaa8f9dfbbc02c52364a15a1e1"
+  },
+  {
+   "boxes": [24, "85cb0bcec90a9fc8bf63febeb86bdc12fa245deac2693753657df7c1c2becd3d"],
+   "frame": 1520,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a8c69f461e49p+12",
+     "0x1.2a48aa436764bp+13"
+    ]
+   ],
+   "rules": ["BASS DRUM_low_0.6s"],
+   "sha256": "537e07d4c70da888e623da78940fd57abd35d7b24c7d3f463877c6e1d36126c4"
+  },
+  {
+   "boxes": [25, "da890804d815ee7ba3c016a34315181b22445878e44ad7b30f7e31fb2d8aa6f2"],
+   "frame": 1556,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6841130a6716bp+12",
+     "0x1.2b6dfa8f39373p+13"
+    ]
+   ],
+   "rules": ["ko"],
+   "sha256": "f03a50c5428044e2c4e85665b21b99b3100da9a40080b2ce15fbcd2f1f30cfb8"
+  },
+  {
+   "boxes": [25, "d7429e00f0f2c2504ae39d1eb2d699718a81ccddd82d5f3f7a42d63043bc8edd"],
+   "frame": 1559,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6b8c81c22bc03p+12",
+     "0x1.2ae25ef6aae19p+13"
+    ]
+   ],
+   "rules": ["extra_ko_caption_punch"],
+   "sha256": "b0a197f76369af7f9e5d42feec57d3961c06a7f08b5dfe08325147ba899bb43d"
+  },
+  {
+   "boxes": [25, "ba2554e47e4f842804f70b214a50257d159f96a10d35afcd82b34c623fff20e8"],
+   "frame": 1562,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.69fac28928fffp+12",
+     "0x1.2a888bc1d61fap+13"
+    ]
+   ],
+   "rules": ["ko_0.2s"],
+   "sha256": "3038076bc917b75c8f6cd660fc08b5963603d02f686306c0e9e83ca9e8aa9b34"
+  },
+  {
+   "boxes": [23, "bb397e7801b3e41560f2d9fa8226d1408241515ffeb5b3ed7731e9dcf578e7f6"],
+   "frame": 1574,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.62174cd643472p+12",
+     "0x1.2afa5ba15291dp+13"
+    ]
+   ],
+   "rules": ["ko_0.6s"],
+   "sha256": "4f72805405a6fe747157f9d1877746180fcbd33d99b435f2218bb52cbb0a1bb8"
+  },
+  {
+   "boxes": [23, "a7d24d70c3b90f6e8d5d6fc3d956a42afa4000a49b71a265161ac06b1b5baeaf"],
+   "frame": 1601,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.5d066d387d2f4p+12",
+     "0x1.2b82166a4f65ap+13"
+    ]
+   ],
+   "rules": ["ko_1.5s"],
+   "sha256": "9977721d34799ea358f3a55f8a1f22aa912bedc81add3a7a9507f6657eb4ff34"
+  },
+  {
+   "boxes": [24, "1704476610017714bfe1253322d7d2831d8d644e4312133910e6529d916a5240"],
+   "frame": 1605,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.63d7f2ecb3ec4p+12",
+     "0x1.2af9904c87b32p+13"
+    ]
+   ],
+   "rules": ["extra_wins_second_line"],
+   "sha256": "1624760ec58fca6fb9c10ece6240e395459d1f909806371197b98a17c32185a0"
+  },
+  {
+   "boxes": [23, "d8d7f1463a727ce9e7a7e36e8f6dd351eaaff97e6a4d3c1b70b926eb24c6f2cd"],
+   "frame": 1684,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6af09418a70fcp+12",
+     "0x1.2a41c31f4bbbcp+13"
+    ]
+   ],
+   "rules": ["comment"],
+   "sha256": "693b31bc3a3bb745ece6dbca83ee600931a3513b1495cae9d83fdcaa1398febc"
+  },
+  {
+   "boxes": [23, "d8d7f1463a727ce9e7a7e36e8f6dd351eaaff97e6a4d3c1b70b926eb24c6f2cd"],
+   "frame": 1688,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6ba4379cde2eep+12",
+     "0x1.2a4278369e881p+13"
+    ]
+   ],
+   "rules": ["solo_mid"],
+   "sha256": "95504618f3dc0c0885d9233f5a8cd07da009aa0717d2f316c41fb0e656bded02"
+  },
+  {
+   "boxes": [21, "6ec6068feee2ddcec038dee0815018355d3764ebfedcc02eea93f0157b7dec19"],
+   "frame": 1745,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6900ce5319647p+12",
+     "0x1.2a436c71deb1fp+13"
+    ]
+   ],
+   "rules": ["reassembly_mid"],
+   "sha256": "97a73ddce92ad98075d97e464dd11a910ae5921b8c3515176ebd1a8526b0869c"
+  },
+  {
+   "boxes": [22, "0c61c0d48329944aaeaf0207dc5109b1118f1512fdb9663ab5d8c768759ffc10"],
+   "frame": 1789,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.4fe98596b71a8p+12",
+     "0x1.3461b2241c095p+13"
+    ]
+   ],
+   "rules": ["glide_mid"],
+   "sha256": "25fd0eab2ed618eb71d5e393ff0f8bd4a645a799b9248425dccea62cbd270106"
+  },
+  {
+   "boxes": [22, "4f3ac3fc54bb62aa737fa9d0275f7fc690ec6820727f898de739ac7f0d8285f4"],
+   "frame": 1824,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53cdb4056cap+12",
+     "0x1.2a48a84460f10p+13"
+    ]
+   ],
+   "rules": ["extra_doors_closing"],
+   "sha256": "2419c6b5ae5d3d989a4467e6e6e41132bce5d2a2234bf5cfe2c19881e388d6aa"
+  },
+  {
+   "boxes": [22, "8fd30ec9030f7b748cdbbf89a989b1a7069d78ef2e61f7550ed47f2acc84db74"],
+   "frame": 1828,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0b9c0beap+12",
+     "0x1.2a48ab5b2ab22p+13"
+    ]
+   ],
+   "rules": ["frame_last_but_one"],
+   "sha256": "6ae7e6c438408d1c1e40375e50749b5b7919d083ac073f7d073c89d6b0ffca96"
+  },
+  {
+   "boxes": [0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+   "frame": 1829,
+   "hull": [
+    [
+     33,
+     [19, 0, 31, 32, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+     "0x1.6a53d0d5a7cc1p+12",
+     "0x1.2a48ab77aef5fp+13"
+    ]
+   ],
+   "rules": ["frame_last"],
+   "sha256": "bc10e4aadc2d71f4e6d7e4fad18e0a4dbe0508a28820b2b2fc1d80bf25dad3c4"
+  }
+ ],
+ "recording": {
+  "hash": "a9ca9a2e45e86ef8",
+  "seed": 132,
+  "winner": 0
+ },
+ "tool": "tools.studio_export.episode_bassdrum_vs_tuba"
+}

@@ -1,0 +1,689 @@
+{
+ "about": "scipy.fft.rfftn / irfftn and scipy.signal.fftconvolve as reelkit.lens.dof uses them",
+ "cases": [
+  {
+   "args": {
+    "s": [8, 8]
+   },
+   "arrays": {
+    "out": "c000__out",
+    "x": "c000__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "s": [8, 8]
+   },
+   "arrays": {
+    "out": "c001__out",
+    "x": "c001__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "s": [8, 8]
+   },
+   "arrays": {
+    "X": "c002__X",
+    "out": "c002__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "s": [12, 10]
+   },
+   "arrays": {
+    "out": "c003__out",
+    "x": "c003__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "s": [12, 10]
+   },
+   "arrays": {
+    "out": "c004__out",
+    "x": "c004__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "s": [12, 10]
+   },
+   "arrays": {
+    "X": "c005__X",
+    "out": "c005__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "s": [16, 9]
+   },
+   "arrays": {
+    "out": "c006__out",
+    "x": "c006__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "s": [16, 9]
+   },
+   "arrays": {
+    "out": "c007__out",
+    "x": "c007__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "s": [16, 9]
+   },
+   "arrays": {
+    "X": "c008__X",
+    "out": "c008__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "s": [25, 25]
+   },
+   "arrays": {
+    "out": "c009__out",
+    "x": "c009__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "s": [25, 25]
+   },
+   "arrays": {
+    "out": "c010__out",
+    "x": "c010__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "s": [25, 25]
+   },
+   "arrays": {
+    "X": "c011__X",
+    "out": "c011__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "s": [30, 16]
+   },
+   "arrays": {
+    "out": "c012__out",
+    "x": "c012__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "s": [30, 16]
+   },
+   "arrays": {
+    "out": "c013__out",
+    "x": "c013__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "s": [30, 16]
+   },
+   "arrays": {
+    "X": "c014__X",
+    "out": "c014__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "s": [36, 45]
+   },
+   "arrays": {
+    "out": "c015__out",
+    "x": "c015__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "s": [48, 50]
+   },
+   "arrays": {
+    "out": "c016__out",
+    "x": "c016__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "s": [64, 60]
+   },
+   "arrays": {
+    "out": "c017__out",
+    "x": "c017__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "s": [72, 20]
+   },
+   "arrays": {
+    "out": "c018__out",
+    "x": "c018__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "s": [72, 20]
+   },
+   "arrays": {
+    "out": "c019__out",
+    "x": "c019__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "s": [72, 20]
+   },
+   "arrays": {
+    "X": "c020__X",
+    "out": "c020__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "s": [81, 8]
+   },
+   "arrays": {
+    "out": "c021__out",
+    "x": "c021__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "s": [81, 8]
+   },
+   "arrays": {
+    "out": "c022__out",
+    "x": "c022__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "s": [81, 8]
+   },
+   "arrays": {
+    "X": "c023__X",
+    "out": "c023__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "s": [100, 32]
+   },
+   "arrays": {
+    "out": "c024__out",
+    "x": "c024__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "s": [40, 125]
+   },
+   "arrays": {
+    "out": "c025__out",
+    "x": "c025__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "s": [2, 3]
+   },
+   "arrays": {
+    "out": "c026__out",
+    "x": "c026__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "s": [2, 3]
+   },
+   "arrays": {
+    "out": "c027__out",
+    "x": "c027__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "s": [2, 3]
+   },
+   "arrays": {
+    "X": "c028__X",
+    "out": "c028__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "s": [5, 4]
+   },
+   "arrays": {
+    "out": "c029__out",
+    "x": "c029__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "s": [5, 4]
+   },
+   "arrays": {
+    "out": "c030__out",
+    "x": "c030__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "s": [5, 4]
+   },
+   "arrays": {
+    "X": "c031__X",
+    "out": "c031__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "s": [300, 10]
+   },
+   "arrays": {
+    "out": "c032__out",
+    "x": "c032__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "s": [320, 10]
+   },
+   "arrays": {
+    "out": "c033__out",
+    "x": "c033__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "s": [360, 4]
+   },
+   "arrays": {
+    "out": "c034__out",
+    "x": "c034__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "s": [360, 4]
+   },
+   "arrays": {
+    "out": "c035__out",
+    "x": "c035__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "s": [360, 4]
+   },
+   "arrays": {
+    "X": "c036__X",
+    "out": "c036__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "s": [648, 10]
+   },
+   "arrays": {
+    "out": "c037__out",
+    "x": "c037__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "s": [648, 2]
+   },
+   "arrays": {
+    "out": "c038__out",
+    "x": "c038__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "s": [648, 2]
+   },
+   "arrays": {
+    "out": "c039__out",
+    "x": "c039__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "s": [648, 2]
+   },
+   "arrays": {
+    "X": "c040__X",
+    "out": "c040__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "s": [648, 4]
+   },
+   "arrays": {
+    "out": "c041__out",
+    "x": "c041__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "s": [648, 4]
+   },
+   "arrays": {
+    "out": "c042__out",
+    "x": "c042__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "s": [648, 4]
+   },
+   "arrays": {
+    "X": "c043__X",
+    "out": "c043__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "s": [675, 6]
+   },
+   "arrays": {
+    "out": "c044__out",
+    "x": "c044__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "s": [675, 2]
+   },
+   "arrays": {
+    "out": "c045__out",
+    "x": "c045__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "s": [675, 2]
+   },
+   "arrays": {
+    "out": "c046__out",
+    "x": "c046__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "s": [675, 2]
+   },
+   "arrays": {
+    "X": "c047__X",
+    "out": "c047__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "s": [3, 375]
+   },
+   "arrays": {
+    "out": "c048__out",
+    "x": "c048__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "s": [3, 375]
+   },
+   "arrays": {
+    "out": "c049__out",
+    "x": "c049__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "s": [3, 375]
+   },
+   "arrays": {
+    "X": "c050__X",
+    "out": "c050__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "s": [4, 384]
+   },
+   "arrays": {
+    "out": "c051__out",
+    "x": "c051__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "s": [4, 384]
+   },
+   "arrays": {
+    "out": "c052__out",
+    "x": "c052__x"
+   },
+   "call": "scipy.fft.rfftn(x, s)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "s": [4, 384]
+   },
+   "arrays": {
+    "X": "c053__X",
+    "out": "c053__out"
+   },
+   "call": "scipy.fft.irfftn(X, s)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "r": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "a": "c054__a",
+    "out": "c054__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "r": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "a": "c055__a",
+    "out": "c055__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "r": "0x1.b333333333333p+1"
+   },
+   "arrays": {
+    "a": "c056__a",
+    "out": "c056__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "r": "0x1.4cccccccccccdp+2"
+   },
+   "arrays": {
+    "a": "c057__a",
+    "out": "c057__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "r": "0x1.e666666666666p+2"
+   },
+   "arrays": {
+    "a": "c058__a",
+    "out": "c058__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "r": "0x1.5000000000000p+3"
+   },
+   "arrays": {
+    "a": "c059__a",
+    "out": "c059__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "r": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "a": "c060__a",
+    "out": "c060__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "r": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "a": "c061__a",
+    "out": "c061__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, reelkit.lens.kernel(r), mode='same')",
+   "id": "c061"
+  }
+ ],
+ "note": "Complex arrays are stored with a last axis [real, imaginary]. rfftn: x is float32 or float64 (the dtype of the case), s = args.s the padded shape, out complex64 or complex128 as pairs. irfftn: X complex128 as pairs, s = args.s, out float64. Every s is a product of 2, 3 and 5 only, as fftconvolve pads to (scipy.fft.next_fast_len(n, True)). fftconvolve: a float32 mask or picture plane and a float64 lens kernel (reelkit.lens.kernel(args.r)), out float64.",
+ "tool": "kit"
+}

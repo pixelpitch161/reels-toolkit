@@ -1,0 +1,3583 @@
+{
+ "about": "ImageDraw.Draw(rgb, 'RGBA').ellipse(xy, fill=rgba) and ellipse(xy, outline=rgba): particle heads, halos and rings",
+ "cases": [
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [156, 207, 86, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [43, 24],
+    "xy": ["0x1.d688772fc9394p+1", "-0x1.cb4f8cbc62c68p+1", "0x1.779bff87be19ep+4", "0x1.0360ff0a3899fp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c000__in",
+    "out": "c000__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [159, 185, 65, 157],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["-0x1.3d42fdef7fd3cp+1", "0x1.924ccd64d9b87p+3", "0x1.aa1f9d786d73ap+3", "0x1.0d95a3be1f392p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c001__in",
+    "out": "c001__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tall",
+    "mode": "RGB",
+    "outline": [69, 209, 22, 128],
+    "size": [9, 22],
+    "xy": ["0x1.40ee7dacf62c4p+2", "-0x1.3fc159de92033p+1", "0x1.21658a2072063p+3", "0x1.355b9e46fffbap+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c002__in",
+    "out": "c002__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [216, 232, 110, 39],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [28, 37],
+    "xy": ["0x1.e8c482c640dd6p+3", "0x1.ba66e2770f67cp+4", "0x1.00a067d098d46p+4", "0x1.bda8dfa6d0c6bp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c003__in",
+    "out": "c003__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [219, 53, 58, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.117400fb2491cp+5", "0x1.ca1e955972bd4p+2", "0x1.117400fb2491cp+5", "0x1.775cdebe1fd2ap+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c004__in",
+    "out": "c004__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_h",
+    "mode": "RGB",
+    "outline": [215, 221, 177, 198],
+    "size": [30, 20],
+    "xy": ["0x1.285a9bf115ba9p+4", "0x1.68550a51fd6c0p+1", "0x1.b0f49c79e4b99p+4", "0x1.68550a51fd6c0p+1"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c005__in",
+    "out": "c005__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [124, 117, 173, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.c7fb07b8873a2p+4", "0x1.0edbb656dcc4cp+4", "0x1.c7fb07b8873a2p+4", "0x1.0edbb656dcc4cp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c006__in",
+    "out": "c006__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [120, 100, 244, 169],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.60f0c875c8424p+4", "-0x1.fdec6d6c86a78p+3", "0x1.27c3cde28def7p+6", "0x1.41872792877bap+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c007__in",
+    "out": "c007__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_all",
+    "mode": "RGB",
+    "outline": [136, 246, 110, 1],
+    "size": [32, 32],
+    "xy": ["0x1.ba93989c0be24p+4", "-0x1.2d2a30e91af4cp+6", "0x1.b65770388e7ecp+5", "-0x1.9f15d53e9deeap+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c008__in",
+    "out": "c008__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [75, 20, 110, 27],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.9a4bb0e39cfdcp+1", "-0x1.40b315e8330aep+3", "0x1.e39b6e5939796p+5", "0x1.318ab128b4279p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c009__in",
+    "out": "c009__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [195, 235, 0, 68],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [11, 4, 11, 10],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c010__in",
+    "out": "c010__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "outline": [86, 213, 185, 0],
+    "size": [28, 86],
+    "xy": ["-0x1.d11f9f9513b22p-1", "-0x1.b210227d4df1fp-1", "0x1.f49c4fdee9cdcp+2", "0x1.82f11182239d8p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c011__in",
+    "out": "c011__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [149, 214, 254, 146],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [25, 37],
+    "xy": ["0x1.27b11b71861acp+1", "0x1.f8b2d2c478976p+2", "0x1.8d52207fc5542p+2", "0x1.791632c5bd6f1p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c012__in",
+    "out": "c012__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [184, 30, 44, 244],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.ad7ca5b484e8fp+2", "0x1.298a86fe384a4p+3", "0x1.b460064d3baf8p+3", "0x1.ccd9411d0ae18p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c013__in",
+    "out": "c013__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "bulb",
+    "mode": "RGB",
+    "outline": [122, 32, 9, 209],
+    "size": [96, 96],
+    "xy": ["0x1.45d66d795d81dp+3", "0x1.970f639179348p+4", "0x1.ac3cd3dfc3e83p+3", "0x1.ca4296c4ac67cp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c014__in",
+    "out": "c014__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [187, 60, 168, 80],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [55, 38],
+    "xy": [
+     ["0x1.45bd198e11fdbp+5", "0x1.eb6262000dd96p+0"],
+     ["0x1.752f596c25e40p+5", "0x1.0616b7f8088cep+1"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c015__in",
+    "out": "c015__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [142, 160, 230, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.07b65831f5de6p+3", "0x1.6edd393e284cbp+5", "0x1.3e2adad371454p+4", "0x1.cc05109b6377bp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c016__in",
+    "out": "c016__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "wide",
+    "mode": "RGB",
+    "outline": [36, 203, 202, 154],
+    "size": [48, 64],
+    "xy": ["0x1.1f26f54065e16p+3", "0x1.6a6b1d2188b6ap+1", "0x1.3757775c9fd14p+5", "0x1.902ff6793762dp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c017__in",
+    "out": "c017__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [132, 109, 88, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [77, 32],
+    "xy": ["0x1.1eaf37213f510p+4", "-0x1.2f5e8dd21ab00p-1", "0x1.639f9895edaadp+4", "0x1.1b6dfd7a34cafp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c018__in",
+    "out": "c018__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [69, 202, 97, 60],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.96c0eeb510f6ap+3", "0x1.fe5678fbbf716p+3", "0x1.f5b54809895d9p+3", "0x1.25cd7e962142ap+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c019__in",
+    "out": "c019__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_w",
+    "mode": "RGB",
+    "outline": [247, 155, 113, 254],
+    "size": [92, 9],
+    "xy": ["0x1.ea5cace395dbap+5", "0x1.6ed208da55ce4p+2", "0x1.ea5cace395dbap+5", "0x1.12cd7507a7650p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c020__in",
+    "out": "c020__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [113, 246, 70, 114],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [60, 14],
+    "xy": ["0x1.2c0ad91ba7e40p+4", "0x1.7f5c020959dadp+1", "0x1.2dd71a670bb28p+5", "0x1.7f5c020959dadp+1"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c021__in",
+    "out": "c021__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [71, 204, 28, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [88, 88],
+    "xy": ["0x1.e8767d05877dap+5", "0x1.1152b82732846p+6", "0x1.e8767d05877dap+5", "0x1.1152b82732846p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c022__in",
+    "out": "c022__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "outline": [255, 31, 8, 167],
+    "size": [48, 64],
+    "xy": ["0x1.548c6b8fa9604p+5", "-0x1.695d82ee135a8p+2", "0x1.ab739470569fcp+5", "0x1.9d9b677a1e77fp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c023__in",
+    "out": "c023__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [185, 11, 108, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.c2ef0762814bfp+4", "0x1.2ce2011c39da9p+6", "0x1.5c32a455a5fbep+5", "0x1.a73a3701974ebp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c024__in",
+    "out": "c024__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [139, 1, 195, 199],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [66, 10],
+    "xy": ["-0x1.afdc38b0ee9ccp+4", "-0x1.5423fc9c12cbcp+2", "0x1.d0aaa010ef500p+6", "0x1.f1d6da6b6e57ap+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c025__in",
+    "out": "c025__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "int",
+    "mode": "RGB",
+    "outline": [149, 221, 236, 123],
+    "size": [32, 32],
+    "xy": [10, 1, 33, 1],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c026__in",
+    "out": "c026__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [17, 33, 86, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [39, 89],
+    "xy": ["-0x1.334a356238efbp-2", "-0x1.168f1f344e564p-3", "0x1.8266b9b00f322p+4", "0x1.65f6741f9a397p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c027__in",
+    "out": "c027__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [140, 89, 238, 214],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.191283afda7e8p+4", "0x1.07dcc471fd4aep+3", "0x1.6f04c92e3e704p+4", "0x1.b3c14f6ec52e8p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c028__in",
+    "out": "c028__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "body",
+    "mode": "RGB",
+    "outline": [176, 39, 35, 78],
+    "size": [48, 64],
+    "xy": ["0x1.2289871714df4p+0", "0x1.cfe6565dc1471p+4", "0x1.76a95eed557a8p+3", "0x1.2646c7dff5cc9p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c029__in",
+    "out": "c029__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [41, 238, 25, 111],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [23, 66],
+    "xy": ["0x1.25003984c7fe8p+1", "0x1.f9265288c936cp+0", "0x1.5f4ce98f30cc1p+2", "0x1.4b16616eff1a8p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c030__in",
+    "out": "c030__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [252, 224, 240, 96],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [20, 18],
+    "xy": [
+     ["0x1.9082cfe773368p+2", "0x1.14257dc86af62p+2"],
+     ["0x1.59a6529af091ep+3", "0x1.83647c1e11f5cp+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c031__in",
+    "out": "c031__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "round",
+    "mode": "RGB",
+    "outline": [154, 251, 50, 255],
+    "size": [24, 40],
+    "xy": ["0x1.6de3ed8149d00p-5", "0x1.e571ec18d8340p+4", "0x1.6d4b35b325a0fp+3", "0x1.4db04a7dd52fcp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c032__in",
+    "out": "c032__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [182, 57, 173, 215],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.011043e2f59a6p+2", "0x1.9684f153701d5p+5", "0x1.ecc6eb11fd90ap+4", "0x1.ea4b6a29069d3p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c033__in",
+    "out": "c033__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [5, 219, 71, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.b8d062fa68d5cp+2", "-0x1.2ade1078f73e4p+1", "0x1.200d228788602p+4", "0x1.f53a8e1ebd86ap+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c034__in",
+    "out": "c034__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tiny",
+    "mode": "RGB",
+    "outline": [173, 118, 188, 69],
+    "size": [32, 32],
+    "xy": ["0x1.be5865a8cfc81p+4", "0x1.17ae9b943c21cp+4", "0x1.ea07d14c7e5e0p+4", "0x1.1d513db5a2e61p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c035__in",
+    "out": "c035__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [140, 53, 79, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [67, 72],
+    "xy": ["0x1.1edbd0b3281acp+1", "0x1.6638384a7f2b5p+5", "0x1.1edbd0b3281acp+1", "0x1.d8f5cd5be1cbfp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c036__in",
+    "out": "c036__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [149, 108, 36, 82],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [40, 68],
+    "xy": ["0x1.bbbfb267b7f9ep+3", "0x1.f4a5525058ea3p+5", "0x1.47ec81bc47932p+4", "0x1.f4a5525058ea3p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c037__in",
+    "out": "c037__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "point",
+    "mode": "RGB",
+    "outline": [212, 98, 98, 127],
+    "size": [32, 32],
+    "xy": ["0x1.beadf078eb8c7p+4", "0x1.46b307f89f922p+1", "0x1.beadf078eb8c7p+4", "0x1.46b307f89f922p+1"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c038__in",
+    "out": "c038__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [251, 173, 120, 47],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [72, 21],
+    "xy": ["0x1.578505ede5460p+0", "-0x1.856c875d03ba6p+3", "0x1.6e3ee0959a1a1p+5", "0x1.856c875d03ba6p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c039__in",
+    "out": "c039__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [252, 196, 28, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.1ce0b1f251cabp+6", "-0x1.a67e84fec49c6p+7", "0x1.258dafbd7c1e2p+6", "-0x1.098d98e227eb5p+7"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c040__in",
+    "out": "c040__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "cover",
+    "mode": "RGB",
+    "outline": [65, 146, 162, 52],
+    "size": [47, 24],
+    "xy": ["-0x1.8a038a2195addp+4", "-0x1.5f5f62f22a0b8p+5", "0x1.9e7527db57384p+6", "0x1.40a9f15fa7654p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c041__in",
+    "out": "c041__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [161, 94, 224, 77],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [9, 17, 31, 33],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c042__in",
+    "out": "c042__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [220, 231, 67, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["-0x1.ecd6792d6c007p-1", "-0x1.da18c1271e51ap-1", "0x1.d9c32fd6ab1ebp-1", "0x1.d70e40c4f8c67p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c043__in",
+    "out": "c043__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "head",
+    "mode": "RGB",
+    "outline": [242, 136, 115, 98],
+    "size": [64, 48],
+    "xy": ["0x1.8f2ca4ef64990p+5", "0x1.37cccc7795a7ap+4", "0x1.c50e1e5a132cep+5", "0x1.a38fbf4cf2cf4p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c044__in",
+    "out": "c044__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [56, 243, 152, 48],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.b8a2e92b553c9p+3", "0x1.eaeea28cd688cp+2", "0x1.4651ee3889c44p+4", "0x1.91ade994c1974p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c045__in",
+    "out": "c045__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [54, 118, 179, 228],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [55, 40],
+    "xy": ["0x1.500bf9262cedcp+2", "0x1.3f09073059b9cp+4", "0x1.0e6c62f97cdd4p+3", "0x1.723c3a638ced0p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c046__in",
+    "out": "c046__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "outline": [177, 239, 90, 149],
+    "size": [26, 16],
+    "xy": [
+     ["0x1.8c70ed3110f72p+3", "0x1.880696dd76f36p+2"],
+     ["0x1.ff8b71760bcedp+3", "0x1.ff46989f05c92p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c047__in",
+    "out": "c047__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [106, 168, 96, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.416b7418b6c70p+6", "0x1.460e6a6f0eb1dp+5", "0x1.9cbb1784c76b0p+6", "0x1.fcadb1472ff9fp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c048__in",
+    "out": "c048__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [202, 137, 32, 43],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [80, 11],
+    "xy": ["0x1.08e4b08fc098fp+6", "0x1.444c680efb34bp+2", "0x1.288a453b5a56dp+6", "0x1.bc59f8601c09ap+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c049__in",
+    "out": "c049__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tall",
+    "mode": "RGB",
+    "outline": [29, 153, 118, 128],
+    "size": [96, 96],
+    "xy": ["0x1.0abd13e4bf22bp+6", "0x1.fa80a202cb358p+4", "0x1.44e9ee2091328p+6", "0x1.1e525fcce7eadp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c050__in",
+    "out": "c050__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [61, 123, 23, 40],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [76, 61],
+    "xy": ["0x1.1525379080b14p+6", "0x1.08c8813031734p+3", "0x1.161bd76134c91p+6", "0x1.1ee108d5e5d4fp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c051__in",
+    "out": "c051__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [240, 241, 166, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [64, 31],
+    "xy": ["0x1.3ae5b5c9032c7p+3", "0x1.ebd4d16757867p+3", "0x1.3ae5b5c9032c7p+3", "0x1.06f4eb50e9599p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c052__in",
+    "out": "c052__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_h",
+    "mode": "RGB",
+    "outline": [40, 182, 209, 85],
+    "size": [28, 15],
+    "xy": ["0x1.883ca2cd59094p+4", "0x1.fc3d4fe39211bp+2", "0x1.5ea1e672bbdcep+5", "0x1.fc3d4fe39211bp+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c053__in",
+    "out": "c053__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [215, 123, 141, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [19, 34],
+    "xy": ["0x1.fdd1d960c4487p+3", "0x1.21ead8be7ef14p+4", "0x1.fdd1d960c4487p+3", "0x1.21ead8be7ef14p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c054__in",
+    "out": "c054__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [12, 16, 52, 68],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [92, 30],
+    "xy": ["0x1.70aebbba6437ap+5", "0x1.3fd8995b0c4eep+3", "0x1.13d4511166f22p+7", "0x1.043fb639de7fdp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c055__in",
+    "out": "c055__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_all",
+    "mode": "RGB",
+    "outline": [164, 74, 163, 1],
+    "size": [48, 64],
+    "xy": ["0x1.063693548ca48p+7", "0x1.9ea909554781ap+5", "0x1.6488f4c1df459p+7", "0x1.9fba9da3fe5d2p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c056__in",
+    "out": "c056__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [65, 84, 65, 172],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.d6deabb4e4dbap+2", "-0x1.5b73a032f29ecp+0", "0x1.136312897a2aep+6", "0x1.0b034cbcb8b5bp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c057__in",
+    "out": "c057__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [158, 26, 102, 56],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [3, 23, 19, 34],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c058__in",
+    "out": "c058__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "outline": [207, 193, 239, 0],
+    "size": [44, 43],
+    "xy": ["-0x1.c922381f8ca14p-1", "-0x1.ba56d60d26ef5p-1", "0x1.d7ab742541dedp+4", "0x1.f38e8718e9424p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c059__in",
+    "out": "c059__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [157, 163, 242, 83],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [23, 30],
+    "xy": ["0x1.2a32e4f3b115ap-1", "0x1.75b86940c9f1bp+4", "0x1.0c343286ac696p+2", "0x1.af73debad7835p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c060__in",
+    "out": "c060__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [206, 2, 231, 25],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [26, 90],
+    "xy": ["0x1.e7b40817a1b48p+3", "0x1.65ae70ab665cdp+6", "0x1.da5c832b124acp+4", "0x1.9024cb7486a0bp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c061__in",
+    "out": "c061__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "bulb",
+    "mode": "RGB",
+    "outline": [11, 41, 138, 169],
+    "size": [24, 40],
+    "xy": ["0x1.659549690ba2ap+2", "0x1.5ac818dc98dabp+4", "0x1.19310b1aec37bp+3", "0x1.8dfb4c0fcc0dfp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c062__in",
+    "out": "c062__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [132, 101, 247, 191],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.00e561739b98dp+4", "0x1.56b20c128db93p+4"],
+     ["0x1.c945a12ee3f18p+5", "0x1.17518687e359ap+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c063__in",
+    "out": "c063__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [76, 55, 189, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["-0x1.687fdb24cb1cep+2", "0x1.5df13cfda05d0p+5", "0x1.f0042d378e2a6p+4", "0x1.4181a77f006afp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c064__in",
+    "out": "c064__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "wide",
+    "mode": "RGB",
+    "outline": [241, 48, 196, 75],
+    "size": [13, 15],
+    "xy": ["-0x1.b3ccb48ebe150p-1", "0x1.ad4d8e8b9c647p+0", "0x1.59463eef5ee49p+3", "0x1.5500dbe337346p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c065__in",
+    "out": "c065__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [73, 79, 182, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.4e3460e71c7aap+3", "0x1.4fb7417043b4cp+4", "0x1.25e8076c1f74ep+4", "0x1.483701331c913p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c066__in",
+    "out": "c066__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [181, 84, 195, 200],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.368d9588e2efep+6", "0x1.04049e78cbfa4p+6", "0x1.3a58cc2e480f1p+6", "0x1.058434a83d4e3p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c067__in",
+    "out": "c067__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_w",
+    "mode": "RGB",
+    "outline": [246, 202, 78, 254],
+    "size": [12, 30],
+    "xy": ["0x1.0bf8170fd0962p+2", "0x1.f90e44023f498p+2", "0x1.0bf8170fd0962p+2", "0x1.7a6c985cb6e98p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c068__in",
+    "out": "c068__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [28, 69, 76, 74],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [42, 40],
+    "xy": ["0x1.203d4170cca81p+5", "0x1.5d6cc71ad4fcbp+3", "0x1.4f42b8ef0994cp+5", "0x1.5d6cc71ad4fcbp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c069__in",
+    "out": "c069__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [41, 128, 41, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.1691eaf786a7bp+4", "0x1.51c2d77bcf1bbp+3", "0x1.1691eaf786a7bp+4", "0x1.51c2d77bcf1bbp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c070__in",
+    "out": "c070__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "outline": [142, 94, 167, 202],
+    "size": [32, 32],
+    "xy": ["-0x1.2ead2ebfec261p+4", "-0x1.9b087cbf6506dp+3", "0x1.2ead2ebfec261p+4", "0x1.2b6c0bb3e92abp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c071__in",
+    "out": "c071__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [232, 114, 153, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.8efcf37a7330bp+1", "0x1.69a0c77ff0cddp+6", "0x1.4936f02e2a206p+4", "0x1.d8754b7fd8395p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c072__in",
+    "out": "c072__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [209, 108, 82, 42],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["-0x1.e4001301da890p+4", "-0x1.19edcc810ff16p+1", "0x1.19e60ac866450p+5", "0x1.616a084c895dcp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c073__in",
+    "out": "c073__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "int",
+    "mode": "RGB",
+    "outline": [226, 33, 229, 89],
+    "size": [24, 40],
+    "xy": [13, 17, 14, 33],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c074__in",
+    "out": "c074__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [134, 222, 170, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["-0x1.e8d0a479c732ap-4", "-0x1.7450efb377d36p-1", "0x1.4b335fcd0dcdcp+4", "0x1.48d66614f2994p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c075__in",
+    "out": "c075__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [83, 127, 27, 152],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.0934a3422ea6cp+6", "0x1.f26676de0f3f7p+5", "0x1.1d0ad2020706ap+6", "0x1.0d096a2edfff9p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c076__in",
+    "out": "c076__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "body",
+    "mode": "RGB",
+    "outline": [45, 78, 204, 225],
+    "size": [96, 96],
+    "xy": ["0x1.1147d501be339p+6", "0x1.2e8341efb679dp+5", "0x1.501d25795b385p+6", "0x1.8b1bee6a17228p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c077__in",
+    "out": "c077__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [153, 105, 255, 135],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.00b27e457390dp+4", "0x1.dbfe195e67c64p+4", "0x1.33e5b178a6c41p+4", "0x1.0798a648cd7ccp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c078__in",
+    "out": "c078__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [127, 135, 147, 106],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.190a01434a344p+3", "0x1.5ea8518618dd6p+5"],
+     ["0x1.6a48c30953389p+6", "0x1.04a8d0965fe2fp+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c079__in",
+    "out": "c079__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "round",
+    "mode": "RGB",
+    "outline": [99, 58, 153, 255],
+    "size": [38, 18],
+    "xy": ["0x1.2cfd1d6d037f4p+3", "0x1.3e20f3b29c1e6p+2", "0x1.2fc895740c5f0p+4", "0x1.d1a48754634dfp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c080__in",
+    "out": "c080__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [242, 193, 0, 136],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.c5f618d27e20bp+2", "0x1.db79c63298deap+4", "0x1.5b650fc40347ap+4", "0x1.fa40c4c3b54e8p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c081__in",
+    "out": "c081__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [58, 195, 20, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["-0x1.ef43ca9171a40p-2", "-0x1.254d3068abeccp+4", "0x1.6543a996864e6p+3", "0x1.c0c5171239e84p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c082__in",
+    "out": "c082__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tiny",
+    "mode": "RGB",
+    "outline": [74, 167, 232, 173],
+    "size": [29, 32],
+    "xy": ["0x1.9ad1e93edbf6fp+4", "0x1.21431cf318f13p+3", "0x1.b7e421c3f1e1cp+4", "0x1.51c4ae34ebb1cp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c083__in",
+    "out": "c083__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [229, 130, 68, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.75102f794e297p+5", "0x1.f49d82d781174p+2", "0x1.75102f794e297p+5", "0x1.a67f7250b1538p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c084__in",
+    "out": "c084__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [120, 72, 157, 210],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.82668db875b29p+5", "0x1.16c9e27e2cbcdp+4", "0x1.a3ee0373789ecp+5", "0x1.16c9e27e2cbcdp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c085__in",
+    "out": "c085__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "point",
+    "mode": "RGB",
+    "outline": [119, 198, 222, 127],
+    "size": [85, 89],
+    "xy": ["0x1.1d705b9bf04c3p+6", "0x1.1d081b8dcdb6cp+5", "0x1.1d705b9bf04c3p+6", "0x1.1d081b8dcdb6cp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c086__in",
+    "out": "c086__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [141, 77, 50, 234],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [39, 70],
+    "xy": ["-0x1.53d77c2f08144p+3", "0x1.cf27892b444bap+5", "0x1.80e91ebf3b6cap+4", "0x1.486c3b6a5dda3p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c087__in",
+    "out": "c087__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [245, 253, 179, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [28, 34],
+    "xy": ["0x1.bb0a081c91c4ap+3", "0x1.1a078d6979fa3p+6", "0x1.3a6f21bd52795p+4", "0x1.96a9450e69ab0p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c088__in",
+    "out": "c088__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "cover",
+    "mode": "RGB",
+    "outline": [16, 152, 52, 29],
+    "size": [24, 40],
+    "xy": ["-0x1.5db43a4a05fc2p+5", "-0x1.91545bb38904cp+4", "0x1.03232e1c3634bp+5", "0x1.571f2a79fac92p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c089__in",
+    "out": "c089__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [75, 132, 239, 198],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [37, 30],
+    "xy": [17, 22, 26, 30],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c090__in",
+    "out": "c090__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [182, 32, 99, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["-0x1.eb07c75b96f49p-3", "-0x1.5ed1fdef31617p-1", "0x1.406d03607656ap+4", "0x1.ce9e57d46eab5p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c091__in",
+    "out": "c091__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "head",
+    "mode": "RGB",
+    "outline": [48, 87, 170, 133],
+    "size": [48, 64],
+    "xy": ["0x1.52ab65b24ff98p+2", "0x1.1605a116c9596p+5", "0x1.ee49fb6f7c830p+2", "0x1.297973ce6eeaap+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c092__in",
+    "out": "c092__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [133, 140, 168, 39],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.702a25b09014ap+4", "0x1.f85556e200762p+3", "0x1.1c045d098ce0ep+5", "0x1.8f705c2565ad2p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c093__in",
+    "out": "c093__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [40, 134, 71, 87],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.67b6864bd6bc6p+5", "0x1.e6a3e8623016ap+4", "0x1.81501fe570560p+5", "0x1.0ceb8dcab1a4fp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c094__in",
+    "out": "c094__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "outline": [240, 168, 241, 125],
+    "size": [31, 27],
+    "xy": [
+     ["0x1.dde0aca5ddb81p+3", "0x1.cc8bdd4d48156p+0"],
+     ["0x1.18297a077ff34p+4", "0x1.152b20aa942d9p+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c095__in",
+    "out": "c095__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [3, 118, 9, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [10, 8],
+    "xy": ["0x1.108caa853c000p-6", "0x1.cb893394f6cdcp-1", "0x1.5609f87ec40d8p+2", "0x1.8e6a9246ddab4p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c096__in",
+    "out": "c096__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c096"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [92, 90, 35, 210],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [61, 33],
+    "xy": ["0x1.d76857f7d3cf6p+3", "0x1.57af5e433c8f4p+3", "0x1.2df05cb987d9fp+6", "0x1.93d553f6cf8b6p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c097__in",
+    "out": "c097__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c097"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tall",
+    "mode": "RGB",
+    "outline": [31, 200, 181, 128],
+    "size": [48, 64],
+    "xy": ["0x1.1b595941b1284p+4", "-0x1.5944be32bc516p+4", "0x1.cc3b9907fa762p+4", "0x1.fa90434e2e1fcp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c098__in",
+    "out": "c098__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c098"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [207, 18, 71, 198],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [88, 25],
+    "xy": ["0x1.2e21cd94566b4p+6", "0x1.ca96016175648p+2", "0x1.390a74c05b1dep+6", "0x1.dde8db004bbc4p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c099__in",
+    "out": "c099__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c099"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [27, 247, 218, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.afa954c2a6c0ap+5", "0x1.c05748b8d311cp+2", "0x1.afa954c2a6c0ap+5", "0x1.0625e0853ddb4p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c100__in",
+    "out": "c100__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c100"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_h",
+    "mode": "RGB",
+    "outline": [85, 154, 252, 178],
+    "size": [32, 32],
+    "xy": ["0x1.99a07b265cd68p+3", "0x1.5afb767b39570p+3", "0x1.099cfff6a35dap+4", "0x1.5afb767b39570p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c101__in",
+    "out": "c101__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c101"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [73, 89, 180, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [69, 21],
+    "xy": ["0x1.fc17e9d7e6b01p+5", "0x1.16952e9fc4243p+4", "0x1.fc17e9d7e6b01p+5", "0x1.16952e9fc4243p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c102__in",
+    "out": "c102__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c102"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [239, 241, 25, 165],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.c7d878939d9bdp+2", "0x1.9faffa3341802p+3", "0x1.8666374a3edcap+3", "0x1.981401732fa00p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c103__in",
+    "out": "c103__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c103"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_all",
+    "mode": "RGB",
+    "outline": [203, 8, 62, 1],
+    "size": [72, 68],
+    "xy": ["0x1.5236c693d2e1ap+5", "-0x1.292b5c16ccbfcp+7", "0x1.a7f8d2d1dc9a1p+6", "-0x1.0509036f6216cp+7"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c104__in",
+    "out": "c104__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c104"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [60, 116, 214, 155],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["-0x1.fef36223f6a51p+3", "-0x1.d4c5bebfee149p+5", "0x1.a1edb4bf3a513p+6", "0x1.9df894aa10ad9p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c105__in",
+    "out": "c105__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c105"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [21, 37, 56, 10],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [20, 30, 34, 52],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c106__in",
+    "out": "c106__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c106"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "outline": [33, 66, 244, 0],
+    "size": [86, 29],
+    "xy": ["-0x1.a4b5380dfcc51p-1", "-0x1.9a492cd3dbf53p-1", "0x1.4c985d82a1f81p+3", "0x1.81e402aac4b32p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c107__in",
+    "out": "c107__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c107"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [135, 84, 80, 112],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.582b9f8aa85d9p+4", "0x1.828cb0407c9acp+4", "0x1.8371f95624711p+4", "0x1.add30a0bf8ae4p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c108__in",
+    "out": "c108__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c108"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [127, 22, 4, 174],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [72, 16],
+    "xy": ["0x1.a6e137b8b352dp+5", "0x1.d517f8ce90f14p+2", "0x1.0b49e916bd23ep+6", "0x1.19e1688ee461ep+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c109__in",
+    "out": "c109__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c109"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "bulb",
+    "mode": "RGB",
+    "outline": [78, 250, 201, 242],
+    "size": [32, 32],
+    "xy": ["0x1.24dc300fb12c7p+1", "0x1.93986542ad87dp+4", "0x1.5f3ae4d4a5630p+2", "0x1.c6cb9875e0bb1p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c110__in",
+    "out": "c110__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c110"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [56, 10, 229, 229],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [55, 45],
+    "xy": [
+     ["0x1.402949d5e776dp+4", "0x1.089b2396c4a8ep+1"],
+     ["0x1.6c9cb61d7d5e2p+5", "0x1.35087a718c4b4p+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c111__in",
+    "out": "c111__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c111"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [40, 171, 195, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.16c04c5074673p+5", "0x1.8cc7ec53777bep+4", "0x1.15c3af60ffa86p+6", "0x1.db2b089b46a79p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c112__in",
+    "out": "c112__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c112"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "wide",
+    "mode": "RGB",
+    "outline": [64, 149, 255, 184],
+    "size": [24, 40],
+    "xy": ["0x1.fb9ffd71e19d0p-1", "0x1.61c72587673fbp+3", "0x1.6f0e8479ae764p+4", "0x1.de56642cd2f6ap+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c113__in",
+    "out": "c113__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c113"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [216, 15, 61, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [19, 76],
+    "xy": ["0x1.012879f945277p+3", "0x1.b1c5ae7b135a5p+5", "0x1.389d7985c94bep+3", "0x1.e47ab4e206d07p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c114__in",
+    "out": "c114__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c114"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [53, 97, 212, 140],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.0cc68f15736e4p+6", "0x1.d1eabb35f7aa3p+4", "0x1.0e8a2e3feaf44p+6", "0x1.fd7eaecf60e23p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c115__in",
+    "out": "c115__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c115"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_w",
+    "mode": "RGB",
+    "outline": [200, 170, 107, 254],
+    "size": [32, 32],
+    "xy": ["0x1.ad9668852e0f2p+4", "0x1.a48a160e566fdp+3", "0x1.ad9668852e0f2p+4", "0x1.bd7d3b451ea5bp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c116__in",
+    "out": "c116__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c116"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [215, 3, 204, 45],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.162db1ebb24e8p+5", "0x1.cd0de963909aap+4", "0x1.31428526ecddep+5", "0x1.cd0de963909aap+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c117__in",
+    "out": "c117__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c117"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [189, 161, 5, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.4380f341ad1fep+4", "0x1.48a191c9639fap+4", "0x1.4380f341ad1fep+4", "0x1.48a191c9639fap+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c118__in",
+    "out": "c118__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c118"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "outline": [23, 234, 219, 44],
+    "size": [8, 33],
+    "xy": ["-0x1.00b3673707112p+2", "0x1.2eed5e3874c30p+0", "0x1.00b3673707112p+2", "0x1.0444b6f288008p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c119__in",
+    "out": "c119__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c119"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [44, 52, 176, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [38, 46],
+    "xy": ["0x1.27fb57279735bp+3", "0x1.0ffff959f109bp+7", "0x1.e677ec07cc450p+3", "0x1.54f530414c80ap+7"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c120__in",
+    "out": "c120__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c120"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [205, 62, 40, 166],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.5c096c3effe2dp+4", "-0x1.9122d38290d2ep+3", "0x1.53be6aeeb0244p+5", "0x1.209fae40c8590p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c121__in",
+    "out": "c121__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c121"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "int",
+    "mode": "RGB",
+    "outline": [155, 152, 210, 47],
+    "size": [30, 36],
+    "xy": [0, -1, 17, 4],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c122__in",
+    "out": "c122__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c122"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 94, 14, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["-0x1.11d6ad5c5d44bp-1", "-0x1.4c12204bb37f6p-2", "0x1.a1323f50df717p+3", "0x1.036adb555f3c4p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c123__in",
+    "out": "c123__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c123"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [98, 220, 248, 182],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [30, 73],
+    "xy": ["0x1.9ee32e4f7c1fcp+3", "0x1.6f8b647b8cb6ep+3", "0x1.33a91903daec2p+4", "0x1.1bfd3419e337bp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c124__in",
+    "out": "c124__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c124"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "body",
+    "mode": "RGB",
+    "outline": [247, 203, 112, 45],
+    "size": [64, 48],
+    "xy": ["0x1.9728f8d6eda88p+2", "0x1.234841feca8b3p+5", "0x1.df53c88f2a850p+3", "0x1.5613eaf7e4e86p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c125__in",
+    "out": "c125__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c125"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [201, 226, 31, 9],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [16, 39],
+    "xy": ["0x1.a1c9b00370e82p+2", "0x1.0c1a6f05b966ep+4", "0x1.374b3e681eda7p+3", "0x1.3f4da238ec9a2p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c126__in",
+    "out": "c126__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c126"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [11, 22, 96, 38],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": [
+     ["0x1.61146a5589010p+2", "0x1.f22af78ebc506p+5"],
+     ["0x1.8134b0771c6c6p+5", "0x1.636a600215032p+6"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c127__in",
+    "out": "c127__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c127"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "round",
+    "mode": "RGB",
+    "outline": [15, 89, 201, 255],
+    "size": [67, 91],
+    "xy": ["0x1.97448714bcbdcp+3", "0x1.091b30e2ecf3cp+4", "0x1.fba2002845a29p+5", "0x1.0d2f3b6a46768p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c128__in",
+    "out": "c128__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c128"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [187, 47, 30, 87],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [54, 79],
+    "xy": ["-0x1.d6eabbd610ed4p+0", "0x1.d4336e3140848p+3", "0x1.4e97bd85c6d48p+3", "0x1.31827e2732a6ep+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c129__in",
+    "out": "c129__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c129"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [131, 100, 71, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [22, 13],
+    "xy": ["0x1.d9f08d84ade6cp+3", "0x1.3596f017750a8p+2", "0x1.0c6128968e9dcp+4", "0x1.7b33b8c3831acp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c130__in",
+    "out": "c130__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c130"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tiny",
+    "mode": "RGB",
+    "outline": [173, 71, 134, 168],
+    "size": [24, 40],
+    "xy": ["0x1.a6aa2a9e164acp+2", "0x1.f105f9de8ac8fp+4", "0x1.c9f94be699689p+2", "0x1.04055d3766b77p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c131__in",
+    "out": "c131__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c131"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [5, 3, 78, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.14c10c725a8bbp+4", "0x1.e55830afb8c64p+5", "0x1.14c10c725a8bbp+4", "0x1.083dd4eaf494ap+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c132__in",
+    "out": "c132__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c132"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [244, 5, 32, 31],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [21, 12],
+    "xy": ["0x1.f45423cf1fff6p+3", "0x1.85e148f4cf0adp+2", "0x1.625a806a62e2ep+4", "0x1.85e148f4cf0adp+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c133__in",
+    "out": "c133__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c133"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "point",
+    "mode": "RGB",
+    "outline": [194, 86, 100, 127],
+    "size": [77, 60],
+    "xy": ["0x1.18dec9d1fdffep+4", "0x1.0638543b836c8p+2", "0x1.18dec9d1fdffep+4", "0x1.0638543b836c8p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c134__in",
+    "out": "c134__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c134"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [242, 105, 42, 78],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [86, 61],
+    "xy": ["0x1.f546e13e53425p+5", "0x1.51a6a7143ff09p+5", "0x1.a34cfd16d4aa6p+6", "0x1.3f2cac75e007cp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c135__in",
+    "out": "c135__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c135"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [200, 249, 46, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [55, 73],
+    "xy": ["0x1.9a17f3c00ac65p+4", "-0x1.32d4856b71a13p+7", "0x1.29bcf7ccf9d7fp+6", "-0x1.66f7b8fdc0950p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c136__in",
+    "out": "c136__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c136"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "cover",
+    "mode": "RGB",
+    "outline": [156, 224, 35, 206],
+    "size": [48, 64],
+    "xy": ["-0x1.26eb025189f03p+4", "-0x1.6b7c687401ffep+5", "0x1.335da1c7104e3p+6", "0x1.509f7b0c21e33p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c137__in",
+    "out": "c137__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c137"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [229, 91, 8, 11],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [17, 69],
+    "xy": [3, 26, 9, 70],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c138__in",
+    "out": "c138__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c138"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [52, 103, 222, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [40, 25],
+    "xy": ["-0x1.e03d39aa70f30p-1", "-0x1.c4b9862ac39aap-1", "0x1.048ec4dcc474ep+5", "0x1.800e24b62b10ep+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c139__in",
+    "out": "c139__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c139"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "head",
+    "mode": "RGB",
+    "outline": [101, 94, 127, 244],
+    "size": [64, 48],
+    "xy": ["0x1.809915f5e964cp+5", "0x1.e06a198f9c964p+0", "0x1.c3c07a5ce9ed8p+5", "0x1.48aad4cdf5b5ep+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c140__in",
+    "out": "c140__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c140"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [232, 31, 38, 227],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [32, 21],
+    "xy": ["0x1.4c654d1be34a8p+4", "0x1.949b87701ba76p+3", "0x1.884a89c8a05b4p+4", "0x1.ecdfe0da75a51p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c141__in",
+    "out": "c141__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c141"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [166, 128, 145, 198],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [85, 59],
+    "xy": ["0x1.b9005c089898ep+5", "0x1.0630d92471ff0p+4", "0x1.d299f5a232328p+5", "0x1.39640c57a5324p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c142__in",
+    "out": "c142__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c142"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "outline": [160, 187, 166, 202],
+    "size": [32, 32],
+    "xy": [
+     ["0x1.79078aa8ccc00p+0", "0x1.22bb7de4e8a68p+3"],
+     ["0x1.abe9af253f15dp+4", "0x1.de64d35655d7ap+3"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c143__in",
+    "out": "c143__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c143"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [171, 125, 227, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.5c381b12412aap+3", "0x1.341572abfc9ffp+4", "0x1.6d23c791d9349p+4", "0x1.f31d2cb4b53f3p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c144__in",
+    "out": "c144__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c144"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [50, 231, 106, 53],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["-0x1.3b49c59dfbd15p+2", "-0x1.9bfee0d021458p+0", "0x1.d7b6177abe2b6p+3", "0x1.93eb18686c680p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c145__in",
+    "out": "c145__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c145"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tall",
+    "mode": "RGB",
+    "outline": [22, 131, 91, 128],
+    "size": [64, 48],
+    "xy": ["0x1.31a92d11e9e0cp+2", "0x1.24ba2cc6951e4p+3", "0x1.cd4aaf22c70e4p+2", "0x1.68ed985a5fe34p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c146__in",
+    "out": "c146__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c146"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [37, 161, 178, 155],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.00fb777708b3dp+5", "0x1.e9e376207d35bp+5", "0x1.173062ba90000p+5", "0x1.f5e036cf4a6a5p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c147__in",
+    "out": "c147__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c147"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [156, 126, 139, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.e9d1ae82642c3p+5", "0x1.eb082c2eb2608p+4", "0x1.e9d1ae82642c3p+5", "0x1.5fc47960ccf2ep+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c148__in",
+    "out": "c148__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c148"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_h",
+    "mode": "RGB",
+    "outline": [18, 172, 77, 26],
+    "size": [96, 96],
+    "xy": ["0x1.3f963dd5d5da6p+3", "0x1.8ff9ec872a36dp+5", "0x1.6bddd651234d0p+4", "0x1.8ff9ec872a36dp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c149__in",
+    "out": "c149__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c149"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [37, 214, 106, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [28, 14],
+    "xy": ["0x1.2a3d5c53fc64dp+2", "0x1.a770d47852a90p+2", "0x1.2a3d5c53fc64dp+2", "0x1.a770d47852a90p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c150__in",
+    "out": "c150__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c150"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [150, 62, 38, 191],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.6e5153fee7e9bp+2", "-0x1.0f84b73b92227p+3", "0x1.135ff5069c20fp+4", "0x1.0f84b73b92227p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c151__in",
+    "out": "c151__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c151"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_all",
+    "mode": "RGB",
+    "outline": [255, 219, 135, 1],
+    "size": [14, 26],
+    "xy": ["0x1.06bcb723d3fc6p+3", "0x1.2bde515ea53b2p+6", "0x1.aed860dee40e5p+3", "0x1.4c321ec993622p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c152__in",
+    "out": "c152__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c152"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [166, 88, 172, 104],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["-0x1.14a221209d23cp+4", "-0x1.e10855d4097ddp+4", "0x1.39a0e02797ddcp+6", "0x1.780c9f61addc4p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c153__in",
+    "out": "c153__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c153"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [162, 93, 212, 53],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [69, 62],
+    "xy": [11, 1, 68, 28],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c154__in",
+    "out": "c154__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c154"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "outline": [173, 179, 151, 0],
+    "size": [21, 21],
+    "xy": ["-0x1.4b124b948dcbbp-2", "-0x1.c23c7e249c00dp-2", "0x1.c71fc8eb67e4bp+3", "0x1.4d4810f483235p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c155__in",
+    "out": "c155__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c155"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [43, 172, 24, 118],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [95, 15],
+    "xy": ["0x1.6ed211d94eecap+5", "0x1.4af9c7e02aed0p-1", "0x1.84c8991f91eecp+5", "0x1.b226e65c3add8p+1"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c156__in",
+    "out": "c156__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c156"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [251, 168, 86, 180],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [86, 66],
+    "xy": ["0x1.09d4d7e578ac3p+4", "0x1.47a5117b7f81cp+3", "0x1.50a076039cf59p+4", "0x1.aff98eb56423ep+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c157__in",
+    "out": "c157__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c157"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "bulb",
+    "mode": "RGB",
+    "outline": [60, 249, 17, 40],
+    "size": [18, 39],
+    "xy": ["0x1.d60a7edbc767ap+2", "0x1.6387528e7ca8cp+2", "0x1.516ba5d44a1a3p+3", "0x1.182a0fada4bacp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c158__in",
+    "out": "c158__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c158"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [210, 43, 25, 148],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [
+     ["0x1.46afecaf1e67ep+3", "0x1.511fad62f11f4p+3"],
+     ["0x1.3f22b8ec073f3p+5", "0x1.5e2b63161e93fp+5"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c159__in",
+    "out": "c159__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c159"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [105, 254, 82, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [73, 14],
+    "xy": ["0x1.0d3b7ae6bfd50p+5", "-0x1.9abf6da696f00p-2", "0x1.578dfbd7f5c36p+5", "0x1.1c740857a3020p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c160__in",
+    "out": "c160__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c160"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "wide",
+    "mode": "RGB",
+    "outline": [129, 235, 154, 205],
+    "size": [96, 96],
+    "xy": ["0x1.fecd0c0feb89cp+4", "0x1.7b43c7c7533c8p+4", "0x1.ef31cb0d42429p+6", "0x1.eed7f9edaba64p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c161__in",
+    "out": "c161__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c161"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [65, 89, 208, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.e0d80b7f749a6p+1", "0x1.f9065c94f9d28p+1", "0x1.791d908501690p+3", "0x1.aa26996e8656cp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c162__in",
+    "out": "c162__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c162"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [96, 163, 8, 14],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.40b5df4f5a395p+5", "0x1.57d2e06d5141ap+6", "0x1.4aa76ff11ca07p+5", "0x1.65ad74533dc4bp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c163__in",
+    "out": "c163__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c163"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_w",
+    "mode": "RGB",
+    "outline": [193, 175, 53, 254],
+    "size": [89, 94],
+    "xy": ["0x1.57a3fe1c6307fp+4", "0x1.892932bbe0a95p+5", "0x1.57a3fe1c6307fp+4", "0x1.032087d7e5155p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c164__in",
+    "out": "c164__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c164"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [185, 14, 40, 145],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.dd1e036fdb12ap+3", "0x1.db31dbe98dae7p+4", "0x1.b5a93f03fcedap+4", "0x1.db31dbe98dae7p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c165__in",
+    "out": "c165__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c165"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [126, 119, 243, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": ["0x1.8658b65b98aa0p+4", "0x1.62078d7401d22p+1", "0x1.8658b65b98aa0p+4", "0x1.62078d7401d22p+1"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c166__in",
+    "out": "c166__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c166"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "outline": [102, 178, 28, 188],
+    "size": [23, 26],
+    "xy": ["-0x1.a8d76280dd85dp+2", "0x1.974a9c15aa322p+1", "0x1.a8d76280dd85dp+2", "0x1.5ad87ed00d8b6p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c167__in",
+    "out": "c167__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c167"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [0, 68, 217, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [21, 18],
+    "xy": ["-0x1.ca63c25ccbf92p+5", "0x1.dd290d81c3454p+3", "-0x1.675b0b4f1856cp+5", "0x1.0e4edda367242p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c168__in",
+    "out": "c168__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c168"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [249, 12, 69, 14],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["-0x1.5cc808a2572fap+5", "-0x1.d58099e2a2f63p+5", "0x1.0fd7541ee4a24p+6", "0x1.a5b926bb57dbbp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c169__in",
+    "out": "c169__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c169"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "int",
+    "mode": "RGB",
+    "outline": [253, 12, 163, 5],
+    "size": [48, 64],
+    "xy": [32, 11, 34, 52],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c170__in",
+    "out": "c170__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c170"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [229, 17, 216, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["-0x1.882e301f2c488p-1", "-0x1.835333099d365p-3", "0x1.561189288324ap+5", "0x1.67a1138c2f3bcp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c171__in",
+    "out": "c171__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c171"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [38, 144, 250, 120],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [35, 21],
+    "xy": ["0x1.1151ca895edcep+3", "-0x1.cf33056fc1ae0p-1", "0x1.cf38c9232e322p+3", "0x1.41e79c85a674ep+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c172__in",
+    "out": "c172__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c172"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "body",
+    "mode": "RGB",
+    "outline": [39, 189, 47, 201],
+    "size": [48, 64],
+    "xy": ["0x1.c0e207927359dp+2", "0x1.d57913d58daacp+5", "0x1.af8d1fa4cb29cp+3", "0x1.fb9ff08b794f3p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c173__in",
+    "out": "c173__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c173"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [154, 26, 217, 248],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.e7d587edda754p-1", "0x1.74091d973284bp+1", "0x1.09c77dca881b8p+2", "0x1.86d15b98660f2p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c174__in",
+    "out": "c174__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c174"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [227, 25, 202, 211],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [32, 32],
+    "xy": [
+     ["0x1.9112c1fc80020p-1", "0x1.d47229dfc18c8p+2"],
+     ["0x1.169e71e58392ep+3", "0x1.f7d5609538910p+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c175__in",
+    "out": "c175__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c175"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "round",
+    "mode": "RGB",
+    "outline": [59, 196, 234, 255],
+    "size": [22, 18],
+    "xy": ["-0x1.204d5a7882a38p+0", "-0x1.01a443b3003ecp+1", "0x1.d436133d1d5a5p+3", "0x1.b7d6ad9f6d9f1p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c176__in",
+    "out": "c176__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c176"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [235, 123, 179, 131],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [87, 83],
+    "xy": ["-0x1.51fc0cd014c30p+4", "0x1.8c00091ac1fb3p+3", "0x1.506c04ffde3c4p+5", "0x1.1b97dca798905p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c177__in",
+    "out": "c177__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c177"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [55, 203, 22, 128],
+    "kind": "tall",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.189f5c6dd5dd5p+4", "-0x1.1729e1cd3e0b8p+1", "0x1.719b0983f972ap+4", "0x1.0f4925d93335dp+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c178__in",
+    "out": "c178__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c178"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tiny",
+    "mode": "RGB",
+    "outline": [108, 6, 159, 11],
+    "size": [61, 50],
+    "xy": ["0x1.825fd94fd679ap+4", "0x1.c8ccd5c8a61f9p+3", "0x1.b272fe1b0a384p+4", "0x1.e1984c168205bp+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c179__in",
+    "out": "c179__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c179"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [249, 53, 164, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.7fc33e8611b3ap+2", "0x1.8865248853658p+4", "0x1.7fc33e8611b3ap+2", "0x1.eb21586c28621p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c180__in",
+    "out": "c180__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c180"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [51, 164, 195, 154],
+    "kind": "zero_h",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.a4aca78822adfp+5", "0x1.125291680a3ccp+5", "0x1.f5b402e48646ep+5", "0x1.125291680a3ccp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c181__in",
+    "out": "c181__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c181"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "point",
+    "mode": "RGB",
+    "outline": [202, 105, 191, 127],
+    "size": [32, 32],
+    "xy": ["0x1.6e75c23f71bb9p+4", "0x1.9e37d576e83b1p+4", "0x1.6e75c23f71bb9p+4", "0x1.9e37d576e83b1p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c182__in",
+    "out": "c182__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c182"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [36, 59, 227, 43],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["-0x1.6f8eb0d17559ap+3", "-0x1.7a74bdd9565e7p+2", "0x1.6f8eb0d17559ap+3", "0x1.7d37c4a11df74p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c183__in",
+    "out": "c183__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c183"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [187, 34, 17, 1],
+    "kind": "outside_all",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["-0x1.6fa57928b3b05p+7", "0x1.ba5ee49cad23dp+2", "-0x1.206838b72dbe8p+7", "0x1.676546e813524p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c184__in",
+    "out": "c184__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c184"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "cover",
+    "mode": "RGB",
+    "outline": [1, 11, 39, 185],
+    "size": [48, 64],
+    "xy": ["-0x1.a0dec8fa13bebp+4", "-0x1.5f63aa9997029p+5", "0x1.8f951dd9c6238p+6", "0x1.a34aebc1dd832p+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c185__in",
+    "out": "c185__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c185"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [246, 87, 76, 214],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": [34, 5, 62, 42],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c186__in",
+    "out": "c186__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c186"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [126, 71, 211, 0],
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["-0x1.e0b25b865ffd6p-1", "-0x1.c7faa68ae24cap-2", "0x1.cf25d81c4a79bp+5", "0x1.08a338563b6a6p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c187__in",
+    "out": "c187__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c187"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "head",
+    "mode": "RGB",
+    "outline": [86, 239, 100, 146],
+    "size": [18, 28],
+    "xy": ["-0x1.4a22765155b28p-1", "0x1.48c677917a25cp+4", "0x1.a33e10cee2d0fp+2", "0x1.bbe70f77bd878p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c188__in",
+    "out": "c188__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c188"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [144, 5, 156, 221],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.694db6de6196ap+5", "0x1.b3e437aa68e9bp+3", "0x1.db3926b161f6ap+5", "0x1.81d3ce19a0cc6p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c189__in",
+    "out": "c189__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c189"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [2, 158, 95, 136],
+    "kind": "bulb",
+    "mode": "RGB",
+    "size": [78, 77],
+    "xy": ["0x1.1b32b8695f0cep+5", "0x1.5a27097e3f84bp+1", "0x1.34cc5202f8a68p+5", "0x1.79e0518bec8f2p+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c190__in",
+    "out": "c190__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c190"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "outline": [31, 233, 49, 213],
+    "size": [64, 40],
+    "xy": [
+     ["0x1.c4d52c79b4edep+5", "0x1.d62272fd255e6p+4"],
+     ["0x1.c8c41f1bbf599p+5", "0x1.eacb63be5135fp+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c191__in",
+    "out": "c191__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c191"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [206, 91, 123, 255],
+    "kind": "round",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.ce3f2344274fcp+5", "0x1.39f3b76e3e6e6p+5", "0x1.0303e5c24e018p+6", "0x1.71bc5faeb321ap+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c192__in",
+    "out": "c192__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c192"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [25, 135, 16, 76],
+    "kind": "wide",
+    "mode": "RGB",
+    "size": [38, 76],
+    "xy": ["-0x1.492ebf6076de2p+2", "0x1.0bfa17204f1e1p+5", "0x1.7e9664dd27a28p+4", "0x1.3cbc67a8cb939p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c193__in",
+    "out": "c193__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c193"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "tall",
+    "mode": "RGB",
+    "outline": [56, 85, 135, 128],
+    "size": [96, 96],
+    "xy": ["-0x1.4780004519f20p+2", "0x1.50ea254d83ef0p+4", "0x1.4b523aa4434b3p+4", "0x1.7cfc233dd5bbdp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c194__in",
+    "out": "c194__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c194"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [243, 253, 49, 73],
+    "kind": "tiny",
+    "mode": "RGB",
+    "size": [64, 48],
+    "xy": ["0x1.c078aafe3a67ap+3", "0x1.3c297cb967ed1p+5", "0x1.fc185b5fa3bbcp+3", "0x1.52f8f17c42a60p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c195__in",
+    "out": "c195__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c195"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [186, 63, 229, 254],
+    "kind": "zero_w",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": ["0x1.00d5294a3a214p+5", "0x1.443515b5da063p+5", "0x1.00d5294a3a214p+5", "0x1.593709220ad27p+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c196__in",
+    "out": "c196__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c196"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "zero_h",
+    "mode": "RGB",
+    "outline": [39, 142, 112, 112],
+    "size": [24, 40],
+    "xy": ["0x1.31c71909303a1p+3", "0x1.1bf70c361cc02p+4", "0x1.7bf2a5a9ba6fdp+4", "0x1.1bf70c361cc02p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c197__in",
+    "out": "c197__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c197"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [107, 47, 216, 127],
+    "kind": "point",
+    "mode": "RGB",
+    "size": [14, 26],
+    "xy": ["0x1.7bee63291d717p+3", "0x1.9dbd6cf30fd2cp+2", "0x1.7bee63291d717p+3", "0x1.9dbd6cf30fd2cp+2"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c198__in",
+    "out": "c198__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c198"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [195, 200, 88, 235],
+    "kind": "outside_partly",
+    "mode": "RGB",
+    "size": [24, 40],
+    "xy": ["0x1.1812e6154bdc8p+1", "-0x1.3cd290ac35ea2p+4", "0x1.ec33124b5afedp+4", "0x1.3cd290ac35ea2p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c199__in",
+    "out": "c199__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c199"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "outside_all",
+    "mode": "RGB",
+    "outline": [97, 252, 157, 1],
+    "size": [96, 96],
+    "xy": ["0x1.b8b4bbe065ea2p+5", "-0x1.fcbf61d9cf312p+7", "0x1.d5a67ceb96f67p+6", "-0x1.e79c850823282p+7"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c200__in",
+    "out": "c200__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c200"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [42, 125, 45, 55],
+    "kind": "cover",
+    "mode": "RGB",
+    "size": [39, 49],
+    "xy": ["-0x1.6a2c94ac8ee37p+3", "-0x1.a2995e5ac7d82p+5", "0x1.21efa34b17f11p+6", "0x1.91ac2fae0276cp+6"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c201__in",
+    "out": "c201__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c201"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [183, 62, 126, 123],
+    "kind": "int",
+    "mode": "RGB",
+    "size": [48, 64],
+    "xy": [-2, 49, 18, 50],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c202__in",
+    "out": "c202__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c202"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "negative_fraction",
+    "mode": "RGB",
+    "outline": [6, 62, 123, 0],
+    "size": [52, 14],
+    "xy": ["-0x1.4fa7eb322f454p-4", "-0x1.c41dbca8f2494p-1", "0x1.0e5adbfd25999p+3", "0x1.17cb9d1f72390p+3"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c203__in",
+    "out": "c203__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c203"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [243, 214, 35, 154],
+    "kind": "head",
+    "mode": "RGB",
+    "size": [96, 96],
+    "xy": ["0x1.d4c248b7f70a1p+4", "0x1.750e0db1d6749p+5", "0x1.0d64a63967ae7p+5", "0x1.98118f8f429dfp+5"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c204__in",
+    "out": "c204__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c204"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [54, 160, 133, 224],
+    "kind": "body",
+    "mode": "RGB",
+    "size": [90, 36],
+    "xy": ["0x1.1167ccd47e324p+3", "0x1.a42d903bfd8c0p+3", "0x1.f9f4c8dd07de0p+3", "0x1.27c3fc8cee204p+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c205__in",
+    "out": "c205__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c205"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "kind": "bulb",
+    "mode": "RGB",
+    "outline": [255, 188, 41, 213],
+    "size": [24, 40],
+    "xy": ["0x1.05b03960ff9c2p+0", "0x1.f82c5bb2ca6b5p+3", "0x1.0e38db250cb3ep+2", "0x1.2f49610c9868ep+4"],
+    "xy_form": "flat"
+   },
+   "arrays": {
+    "in": "c206__in",
+    "out": "c206__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, outline=outline)",
+   "id": "c206"
+  },
+  {
+   "args": {
+    "draw_mode": "RGBA",
+    "fill": [25, 76, 35, 129],
+    "kind": "pairs_form",
+    "mode": "RGB",
+    "size": [15, 43],
+    "xy": [
+     ["0x1.4e97fe4780d49p+3", "0x1.156d2a7539cb3p+4"],
+     ["0x1.8a9c7a6f70094p+3", "0x1.e6fee85ec57eep+4"]
+    ],
+    "xy_form": "pairs"
+   },
+   "arrays": {
+    "in": "c207__in",
+    "out": "c207__out"
+   },
+   "call": "ImageDraw.Draw(im, 'RGBA').ellipse(xy, fill=fill)",
+   "id": "c207"
+  }
+ ],
+ "note": "args: mode and size (width, height) of the image, background (its one colour before the call) or the array \"in\", xy as passed (xy_form \"pairs\": a list of (x, y) tuples; \"flat\": one list x0, y0, x1, y1, ...), then the keyword arguments of the call exactly as passed (a keyword that is absent was not passed). Floats are float.hex() strings. Arrays are (height, width) for L and F, (height, width, 3) for RGB, (height, width, 4) for RGBA; F is float32. Pillow truncates every coordinate toward zero to a C int before drawing, and an F ink to float32. Here the image is RGB and the drawing mode is \"RGBA\": every pixel the shape covers becomes the blend of the pixel and the ink by the ink's alpha, once per time it is drawn. \"in\" is the image before the call.",
+ "pillow": "12.3.0",
+ "tool": "pillow"
+}

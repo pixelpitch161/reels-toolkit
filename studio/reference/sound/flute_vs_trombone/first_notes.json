@@ -1,0 +1,122 @@
+{
+ "about": "flute_vs_trombone: the first 3 notes kit.music.score() synthesises, as arrays (float64, 48,000 Hz), for a replay from the recorded start state",
+ "cases": [
+  {
+   "args": {
+    "cap": "0x1.eb851eb851eb8p-3",
+    "dur": "0x1.eb851eb851eb8p-5",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "gain_voice": "c000__gain_voice",
+    "out": "c000__out",
+    "voice": "c000__voice"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=76, dur=0.06, cap=0.24, vel=1.0)",
+   "gain": "0x1.5edc40a6ff101p-1",
+   "id": "c000",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "169395537675194986783228261993923430909",
+   "voice_calls": [
+    {
+     "call": "pp_bridge.voice(name='FLUTE', midi=76, vel=1.0, dur=0.06)",
+     "draws": [10584],
+     "noise": {
+      "inc": "336983293413220778415499640756163231851",
+      "state": "289533129354323354318955456298181112347"
+     },
+     "why": "note"
+    },
+    {
+     "call": "pp_bridge.voice(name='FLUTE', midi=82, vel=0.8, dur=0.2)",
+     "draws": [16758],
+     "noise": {
+      "inc": "336983293413220778415499640756163231851",
+      "state": "323955001306269649495024757816427550609"
+     },
+     "why": "inst_gain"
+    }
+   ]
+  },
+  {
+   "args": {
+    "cap": "0x1.eb851eb851eb8p-3",
+    "dur": "0x1.eb851eb851eb8p-5",
+    "midi": 79,
+    "name": "FLUTE",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c001__out",
+    "voice": "c001__voice"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=79, dur=0.06, cap=0.24, vel=1.0)",
+   "gain": "0x1.5edc40a6ff101p-1",
+   "id": "c001",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "169395537675194986783228261993923430909"
+   },
+   "noise_after": "144226717308906622863498338299887207314",
+   "voice_calls": [
+    {
+     "call": "pp_bridge.voice(name='FLUTE', midi=79, vel=1.0, dur=0.06)",
+     "draws": [10584],
+     "noise": {
+      "inc": "336983293413220778415499640756163231851",
+      "state": "169395537675194986783228261993923430909"
+     },
+     "why": "note"
+    }
+   ]
+  },
+  {
+   "args": {
+    "cap": "0x1.eb851eb851eb8p-3",
+    "dur": "0x1.eb851eb851eb8p-5",
+    "midi": 83,
+    "name": "FLUTE",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c002__out",
+    "voice": "c002__voice"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=83, dur=0.06, cap=0.24, vel=1.0)",
+   "gain": "0x1.5edc40a6ff101p-1",
+   "id": "c002",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "144226717308906622863498338299887207314"
+   },
+   "noise_after": "146752722303888225491123205519571004417",
+   "voice_calls": [
+    {
+     "call": "pp_bridge.voice(name='FLUTE', midi=83, vel=1.0, dur=0.06)",
+     "draws": [10584],
+     "noise": {
+      "inc": "336983293413220778415499640756163231851",
+      "state": "144226717308906622863498338299887207314"
+     },
+     "why": "note"
+    }
+   ]
+  }
+ ],
+ "notes": {
+  "gain_voice": "(first case only) pp_bridge.voice(name, (lo + hi) // 2, 0.8, 0.2): the note kit.music.inst_gain synthesises, after `voice`, to measure the instrument's level",
+  "noise": "the generator's state and inc (decimal strings) just before the call; noise_after is the state the call left",
+  "out": "kit.music.note(name, midi, dur, cap, vel): fit(voice, cap) * inst_gain(name)",
+  "voice": "pp_bridge.voice(name, midi, vel, dur): the note before fit and gain"
+ },
+ "start": {
+  "inc": "336983293413220778415499640756163231851",
+  "state": "289533129354323354318955456298181112347"
+ },
+ "tool": "voices"
+}

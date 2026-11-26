@@ -1,0 +1,257 @@
+{
+ "about": "ballfight_electric_vs_acoustic: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "riff", 0, 0, 2],
+   "index": 1,
+   "item": "riff",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "bolt", 0, 0, 2, 3.0, -3.0, 2.2742640687119287, -2.2742640687119287, 1, 0, 0, 0],
+   "index": 2,
+   "item": "bolt",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "hit", 0, 1, 1.3800000000000001, 2.2742640687119287, -2.2742640687119287, "bolt", 3],
+   "index": 3,
+   "item": "hit/bolt",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.9583300000000001,
+   "event": [4.77083, "fork", 0, 8.583333333333332],
+   "index": 10,
+   "item": "fork",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 4.77083
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "tapping", 0, 8.585416666666667],
+   "index": 27,
+   "item": "tapping",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "rake", 1, 1, 1.2, 1.85, -1.85, 2.105764187703126, 1.0, 0.6, 0.16],
+   "index": 0,
+   "item": "rake",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 1.9083300000000003,
+   "event": [5.72083, "hit", 1, 0, 2.793, 0.28069867347216393, -1.9383362678521994, "rake", 1],
+   "index": 15,
+   "item": "hit/rake",
+   "scenario": "plain",
+   "seed": 2,
+   "t": 5.72083
+  },
+  {
+   "after_fight": 2.3916700000000004,
+   "event": [6.20417, "whip", 1, 0, 2.2623172391443434, 2.6],
+   "index": 28,
+   "item": "whip",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 6.20417
+  },
+  {
+   "after_fight": 2.4000000000000004,
+   "event": [6.2125, "hit", 1, 0, 1.729, 1.2208549301043674, -1.4556316651440746, "whip", 0],
+   "index": 29,
+   "item": "hit/whip",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 6.2125
+  },
+  {
+   "after_fight": 3.3416699999999997,
+   "event": [7.15417, "sweep", 1, 1.9596337751843709, -2.005543308573614, 2.332214633420526, 9.0, 0.953125],
+   "index": 62,
+   "item": "sweep",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.15417
+  },
+  {
+   "after_fight": 3.86667,
+   "event": [7.67917, "hit", 1, 0, 14.63, -0.8004896332103092, 1.2076011579620953, "sweep", 0],
+   "index": 83,
+   "item": "hit/sweep",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.67917
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "smash", 0, -0.26472558628574067, 0.32813817495155023, 3.6, 0.4765625, 10],
+   "index": 46,
+   "item": "smash",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "splinter", 0, 0, -0.9287286502339867, 5.0],
+   "index": 47,
+   "item": "splinter",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 3.375,
+   "event": [7.1875, "splinter_end", 0, 0, 1.4632892920941714, -1.5935307518423856, 1],
+   "index": 65,
+   "item": "splinter_end",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.1875
+  },
+  {
+   "after_fight": 3.08333,
+   "event": [6.89583, "hit", 0, 1, 7.36, 1.119115757386246, -0.9310791050818099, "smash", 0],
+   "index": 57,
+   "item": "hit/smash",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 6.89583
+  },
+  {
+   "after_fight": 3.375,
+   "event": [7.1875, "hit", 0, 1, 1.104, 1.4632892920941714, -1.5935307518423856, "splinter", 0],
+   "index": 64,
+   "item": "hit/splinter",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.1875
+  },
+  {
+   "after_fight": 3.3499999999999996,
+   "event": [7.1625, "rebuild", 0],
+   "index": 63,
+   "item": "rebuild",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.1625
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/electric_vs_acoustic/scenarios/plain_s1.bfrec", "episodes/electric_vs_acoustic/scenarios/plain_s2.bfrec", "episodes/electric_vs_acoustic/scenarios/plain_s3.bfrec"],
+   "fighters": ["ELECTRIC", "ACOUSTIC"],
+   "handicap": [0.92, 1.33],
+   "hashes": ["f624627150b4de5b", "40172ddfef55d8e5", "deeb9622a2d2ad30"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.92, 1.33],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/electric_vs_acoustic/scenarios/swapped_s1.bfrec", "episodes/electric_vs_acoustic/scenarios/swapped_s2.bfrec", "episodes/electric_vs_acoustic/scenarios/swapped_s3.bfrec"],
+   "fighters": ["ACOUSTIC", "ELECTRIC"],
+   "handicap": [1.33, 0.92],
+   "hashes": ["82c86bc42e6750d9", "644b15241b4ccda9", "0d1d55a3822d1496"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 1.0,
+    "dmg_side": [1.33, 0.92],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/electric_vs_acoustic/scenarios/early_low_s1.bfrec", "episodes/electric_vs_acoustic/scenarios/early_low_s2.bfrec", "episodes/electric_vs_acoustic/scenarios/early_low_s3.bfrec"],
+   "fighters": ["ELECTRIC", "ACOUSTIC"],
+   "handicap": [0.92, 1.33],
+   "hashes": ["e55a19e2428db004", "73635575c03c3bd6", "89eced442d1479b6"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 1.0,
+    "dmg_side": [0.92, 1.33],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  }
+ ],
+ "t_fight": 3.8125,
+ "tool": "tools.studio_export.episode_electric_vs_acoustic",
+ "window": 20.0
+}

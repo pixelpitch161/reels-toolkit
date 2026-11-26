@@ -1,0 +1,1704 @@
+{
+ "about": "The numbers of the kit fighters and the ten older fighters from projects/ballfight/fighters.py, in its order: \"name\", then the entry as written there (ints stay ints, floats keep their bits, tuples are lists). The app offers only the fighters it has ported. Made by tools/studio_export/roster.py; do not edit by hand.",
+ "format": 1,
+ "fighters": [
+  {
+   "name": "PIANO",
+   "color": [84, 156, 255],
+   "dark": [30, 60, 150],
+   "corner": "blue",
+   "view": [225, 20, 0],
+   "weapon": {
+    "kind": "roll",
+    "style": "roll",
+    "name": "PIANO ROLL",
+    "n0": 1,
+    "grow": 0.25,
+    "n_max": 4,
+    "speed": 5.2,
+    "aim": 0.55,
+    "dmg": 0.5,
+    "margin": 0.45,
+    "reg": [48, 84]
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SUSTAIN",
+     "kind": "sustain",
+     "dur_beats": 4,
+     "out16": 2,
+     "step16": 1,
+     "hang_beats": 1,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "GLISSANDO",
+     "kind": "arc",
+     "n": 15,
+     "sweep": 150.0,
+     "beats": 1,
+     "speed": 5.6,
+     "dmg": 0.25,
+     "every_bars": 4
+    },
+    "low": {
+     "name": "88 KEYS",
+     "kind": "runoff",
+     "n": 40,
+     "speed": 5.0,
+     "dmg": 0.45,
+     "margin": 0.25,
+     "reload_beats": 4
+    }
+   },
+   "pp": "PIANO",
+   "register": [48, 84],
+   "idiom": "roll"
+  },
+  {
+   "name": "DRUMS",
+   "color": [255, 146, 40],
+   "dark": [160, 84, 16],
+   "corner": "red",
+   "view": [12, 30, 0],
+   "weapon": {
+    "kind": "pulse",
+    "style": "drumhead",
+    "every": 1,
+    "base": 0.9,
+    "grow": 0.07,
+    "max_reach": 2.3,
+    "speed": 9.0,
+    "dmg": 2.5,
+    "sub_dmg": 0.45,
+    "knock": 0.75,
+    "clears": true
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "DRUM ROLL",
+     "kind": "haste",
+     "mult": 4.0,
+     "dur_beats": 4,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "CRASH CYMBAL",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "DOUBLE KICK",
+     "kind": "slam",
+     "tele": 2,
+     "radius": 1.35,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "DRUMS",
+   "register": [36, 50],
+   "idiom": "kit"
+  },
+  {
+   "name": "VIOLIN",
+   "color": [176, 98, 255],
+   "dark": [96, 48, 168],
+   "corner": "blue",
+   "view": [12, 26, 28],
+   "weapon": {
+    "kind": "blade",
+    "style": "bow",
+    "base": 1.8,
+    "grow": 0.0,
+    "max_len": 1.8,
+    "frets0": 0,
+    "spin": 2.4,
+    "spin_grow": 0.7,
+    "spin_max": 14.0,
+    "dmg": 1.8,
+    "cooldown": 0.18,
+    "parry": false,
+    "knock": 0.55
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "PIZZICATO",
+     "kind": "arc",
+     "n": 5,
+     "sweep": 64.0,
+     "beats": 1,
+     "speed": 6.0,
+     "dmg": 1.4,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "TREMOLO",
+     "kind": "haste",
+     "mult": 2.5,
+     "dur": 3.0,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "SCREECH",
+     "kind": "wave",
+     "speed": 4.5,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "VIOLIN",
+   "register": [62, 88],
+   "idiom": "bowed"
+  },
+  {
+   "name": "BAGPIPES",
+   "color": [64, 196, 88],
+   "dark": [26, 104, 42],
+   "corner": "red",
+   "view": [42, 22, 0],
+   "weapon": {
+    "kind": "inflate",
+    "style": "balloon",
+    "every": 4,
+    "inflate_beats": 2,
+    "scale0": 1.4,
+    "grow": 0.015,
+    "scale_max": 1.65,
+    "mass_k": 1.0,
+    "slow": 0.55,
+    "fly_beats": 1.25,
+    "fly_grow": 0.06,
+    "fly_max": 1.75,
+    "fly_speed": 2.6,
+    "fly_fade": 0.35,
+    "zig": [0.1, 0.17],
+    "zig_turn": [35.0, 70.0],
+    "home": 0.35,
+    "aim_wobble": 20.0,
+    "slam_dmg": 5.0,
+    "slam_min": 0.3,
+    "fly_dmg": 6.8,
+    "cool": 0.3,
+    "knock": 1.2,
+    "rest_beats": 0.25
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "WAR CRY",
+     "kind": "shockwave",
+     "speed": 7.5,
+     "radius": 3.4,
+     "dmg": 3.0,
+     "knock": 1.2,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "HIGHLAND FLING",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "BAG BURST",
+     "kind": "wave",
+     "speed": 4.5,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "BAGPIPES",
+   "register": [67, 81],
+   "idiom": "drone"
+  },
+  {
+   "name": "ACCORDION",
+   "color": [236, 82, 214],
+   "dark": [140, 34, 124],
+   "corner": "blue",
+   "view": [72, 22, 0],
+   "weapon": {
+    "kind": "bite",
+    "style": "jaws",
+    "every": 2,
+    "base": 0.9,
+    "grow": 0.07,
+    "max_reach": 2.0,
+    "half": 38.0,
+    "open16": 2,
+    "lead": 0.6,
+    "dmg": 2.6,
+    "sub_dmg": 0.6,
+    "knock": 0.9
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "POLKA",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "SQUEEZEBOX",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "FULL BELLOWS",
+     "kind": "clamp",
+     "tele": 1,
+     "dmg": 9.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "ACCORDION",
+   "register": [55, 79],
+   "idiom": "reeds"
+  },
+  {
+   "name": "TUBA",
+   "color": [104, 92, 236],
+   "dark": [52, 44, 140],
+   "corner": "red",
+   "view": [0, 32, 0],
+   "weapon": {
+    "kind": "swallow",
+    "style": "bell",
+    "every": 4,
+    "inhale": 1.0,
+    "pah": 2.0,
+    "base": 1.8,
+    "grow": 0.12,
+    "max_reach": 3.0,
+    "suck": 26.0,
+    "catch": 0.12,
+    "aim_rate": 6.0,
+    "dmg": 3.0,
+    "dmg_spit": 5.0,
+    "dmg_rope": 5.0,
+    "spit_boost": 2.2,
+    "spit_t": 0.9,
+    "jitter": 25.0
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "OOMPAH",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "BRASS WALL",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "SUBSONIC",
+     "kind": "slam",
+     "tele": 2,
+     "radius": 1.5,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "TUBA",
+   "register": [33, 55],
+   "idiom": "oompah"
+  },
+  {
+   "name": "FLUTE",
+   "color": [222, 232, 246],
+   "dark": [120, 134, 162],
+   "corner": "blue",
+   "view": [0, 18, 32],
+   "weapon": {
+    "kind": "striker",
+    "style": "cobra",
+    "every": 1,
+    "drop_every": 4,
+    "max_baskets": 2,
+    "rise": 1.0,
+    "base": 1.4,
+    "grow": 0.07,
+    "max_reach": 2.4,
+    "slack": 0.25,
+    "t_strike": 0.12,
+    "t_min": 0.07,
+    "speed_grow": 0.003,
+    "head_r": 0.14,
+    "dmg": 1.08,
+    "knock": 0.5,
+    "slither": 2.2
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "FLUTTER TONGUE",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "SNAKE DANCE",
+     "kind": "dance",
+     "dur_beats": 4,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "PICCOLO",
+     "kind": "wave",
+     "speed": 6.0,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "FLUTE",
+   "register": [72, 93],
+   "idiom": "charmer"
+  },
+  {
+   "name": "TROMBONE",
+   "color": [120, 240, 184],
+   "dark": [44, 150, 104],
+   "corner": "red",
+   "view": [205, 18, 30],
+   "weapon": {
+    "kind": "blade",
+    "mode": "thrust",
+    "style": "slide",
+    "every": 1,
+    "rest": 0.3,
+    "base": 0.95,
+    "grow": 0.08,
+    "max_len": 2.5,
+    "frets0": 1,
+    "t_out": 0.08,
+    "t_hold": 0.06,
+    "t_back": 0.18,
+    "aim_rate": 7.0,
+    "dmg": 3.5,
+    "knock": 0.9,
+    "parry": true
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SAD TROMBONE",
+     "kind": "shockwave",
+     "speed": 6.0,
+     "radius": 3.4,
+     "dmg": 3.0,
+     "knock": 1.0,
+     "slow": {
+      "mult": 0.6,
+      "dur": 1.0
+     },
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "POWER SLIDE",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "PEDAL TONE",
+     "kind": "slam",
+     "tele": 2,
+     "radius": 1.35,
+     "dmg": 24.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "TROMBONE",
+   "register": [40, 65],
+   "idiom": "slide"
+  },
+  {
+   "name": "HORN",
+   "color": [200, 112, 64],
+   "dark": [120, 58, 30],
+   "corner": "blue",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "echo",
+    "style": "echo_call",
+    "every": 1,
+    "base": 0.9,
+    "speed": 7.0,
+    "dmg": 4.3,
+    "knock": 0.5,
+    "n0": 0,
+    "n_max": 4,
+    "grow": 1.0,
+    "decay": 0.85,
+    "echo_reach": 0.85
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "STOPPED HORN",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "HORN RIP",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "FINAL FLICK",
+     "kind": "flick",
+     "wind_beats": 1,
+     "reach": 2.4,
+     "glove_r": 0.4,
+     "dmg": 14.0,
+     "boost": 2.6,
+     "rope_t": 0.9,
+     "dmg_rope": 10.0
+    }
+   },
+   "pp": "HORN",
+   "register": [53, 77],
+   "idiom": "horn_call"
+  },
+  {
+   "name": "ORGAN",
+   "color": [196, 52, 104],
+   "dark": [112, 24, 58],
+   "corner": "red",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "line",
+    "style": "pipes",
+    "every": 2,
+    "base": 1.6,
+    "grow": 0.06,
+    "max_len": 5.6,
+    "speed": 6.0,
+    "linger": 0.55,
+    "width": 0.3,
+    "dmg": 4.0,
+    "knock": 0.8
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "CATHEDRAL",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "PULL ALL STOPS",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "TOCCATA",
+     "kind": "slam",
+     "tele": 2,
+     "radius": 1.5,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "ORGAN",
+   "register": [36, 84],
+   "idiom": "organ"
+  },
+  {
+   "name": "HARP",
+   "color": [244, 228, 190],
+   "dark": [166, 146, 104],
+   "corner": "blue",
+   "view": [8, 26, 0],
+   "weapon": {
+    "kind": "trap",
+    "style": "strings",
+    "every": 2,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 7,
+    "dmg": 1.8,
+    "cool": 0.4,
+    "at": 0.5,
+    "knock": 0.25
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "PLUCK",
+     "kind": "arc",
+     "n": 7,
+     "sweep": 70.0,
+     "beats": 1,
+     "speed": 6.0,
+     "dmg": 1.2,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "ANGEL WINGS",
+     "kind": "shield",
+     "dur_beats": 6,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "47 STRINGS",
+     "kind": "wave",
+     "speed": 4.5,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "HARP",
+   "register": [50, 84],
+   "idiom": "harp"
+  },
+  {
+   "name": "UKULELE",
+   "color": [255, 138, 178],
+   "dark": [160, 62, 104],
+   "corner": "red",
+   "view": [10, 22, 28],
+   "weapon": {
+    "kind": "surf",
+    "style": "surf",
+    "every": 2,
+    "base": 0.5,
+    "grow": 0.03,
+    "max_h": 1.6,
+    "p0": 0.8,
+    "p_h": 0.5,
+    "w0": 0.35,
+    "w_h": 0.35,
+    "life": 1.1,
+    "aim_k": 0.55,
+    "dmg": 5.0,
+    "sub_dmg": 0.6,
+    "sub_power": 0.8,
+    "knock": 1.0
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "CHUNK",
+     "kind": "shockwave",
+     "speed": 7.5,
+     "radius": 3.0,
+     "dmg": 3.0,
+     "knock": 1.2,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "SPEED STRUM",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "UKE-NADO",
+     "kind": "spout",
+     "speed": 2.3,
+     "turn": 2.6,
+     "life": 3.2,
+     "radius": 0.5,
+     "tick": 0.28,
+     "dmg": 2.4,
+     "max_ticks": 4,
+     "knock": 0.7
+    }
+   },
+   "pp": "UKULELE",
+   "register": [60, 81],
+   "idiom": "uke_strum"
+  },
+  {
+   "name": "ACOUSTIC",
+   "color": [214, 160, 100],
+   "dark": [128, 84, 42],
+   "corner": "blue",
+   "view": [14, 22, 330],
+   "weapon": {
+    "kind": "rake",
+    "style": "rake",
+    "every": 1,
+    "base": 1.2,
+    "grow": 0.03,
+    "max_len": 3.0,
+    "sweep": 0.6,
+    "gap": 0.085,
+    "stroke": 0.16,
+    "aim_k": 0.47,
+    "dmg": 2.1,
+    "sub_dmg": 0.5,
+    "knock": 0.7
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "CAPO",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "FINGERPICK",
+     "kind": "whip",
+     "n": 6,
+     "beats": 1,
+     "len": 2.6,
+     "dmg": 1.3,
+     "knock": 0.35,
+     "t_ext": 0.07,
+     "every_bars": 3
+    },
+    "low": {
+     "name": "BIG STRUM",
+     "kind": "sweep",
+     "beats": 2,
+     "reach": 9.0,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "ACOUSTIC",
+   "register": [40, 76],
+   "idiom": "open_strum"
+  },
+  {
+   "name": "TRUMPET",
+   "color": [255, 214, 60],
+   "dark": [168, 124, 18],
+   "corner": "red",
+   "view": [0, 16, 0],
+   "weapon": {
+    "kind": "combo",
+    "style": "pistons",
+    "every": 2,
+    "punches": 3,
+    "gap": 0.5,
+    "spread": 0.15,
+    "aim_rate": 8.0,
+    "head_r": 0.1,
+    "base": 0.6,
+    "grow": 0.05,
+    "max_len": 1.7,
+    "t_out": 0.05,
+    "t_hold": 0.04,
+    "t_back": 0.09,
+    "dmg": 1.2,
+    "dmg3": 2.0,
+    "knock": 0.35,
+    "knock3": 1.0
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "FANFARE",
+     "kind": "shockwave",
+     "speed": 7.5,
+     "radius": 3.4,
+     "dmg": 3.0,
+     "knock": 1.2,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "DOUBLE TONGUE",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "HIGH C",
+     "kind": "beam",
+     "charge_beats": 1,
+     "lead": 1.0,
+     "len": 7.0,
+     "width": 1.1,
+     "dmg": 9.0,
+     "knock": 1.6,
+     "hold": 0.3
+    }
+   },
+   "pp": "TRUMPET",
+   "register": [60, 84],
+   "idiom": "combo"
+  },
+  {
+   "name": "TURNTABLES",
+   "color": [190, 245, 60],
+   "dark": [96, 140, 20],
+   "corner": "red",
+   "view": [20, 22, 0],
+   "pitch": 45,
+   "weapon": {
+    "kind": "scratch_floor",
+    "style": "record",
+    "every": 4,
+    "dur_beats": 1,
+    "base": 1.3,
+    "grow": 0.06,
+    "max": 2.2,
+    "out": 0.4,
+    "window": 0.8,
+    "dmg": 1.6,
+    "cap": 1.6
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SCRATCH",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "REWIND",
+     "kind": "rewind",
+     "window": 2.0,
+     "zip_beats": 1,
+     "min_undo": 5.0,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "BASS DROP",
+     "kind": "slam",
+     "tele": 2,
+     "radius": 1.35,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "TURNTABLES",
+   "register": [50, 74],
+   "idiom": "scratch"
+  },
+  {
+   "name": "SYNTH",
+   "color": [70, 228, 255],
+   "dark": [20, 120, 150],
+   "corner": "blue",
+   "view": [10, 20, 0],
+   "pitch": 28,
+   "weapon": {
+    "kind": "tether",
+    "style": "cables",
+    "every": 2,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 4,
+    "plug_speed": 6.0,
+    "plug_r": 0.14,
+    "plug_dmg": 1.0,
+    "life_beats": 8,
+    "volt16": 2,
+    "volt_speed": 9.0,
+    "volt_dmg": 0.17,
+    "length": 2.4,
+    "snap": 0.15
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "LFO",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur": 3.0,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "SAWTOOTH",
+     "kind": "lash",
+     "beats": 4,
+     "n_min": 2,
+     "len": 2.2,
+     "spread": 24,
+     "sweep": 70,
+     "period_beats": 0.5,
+     "lag": 0.15,
+     "dmg": 1.6,
+     "knock": 0.5,
+     "cool": 0.3,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "WHITE NOISE",
+     "kind": "wave",
+     "speed": 4.5,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5
+    }
+   },
+   "pp": "SYNTH",
+   "register": [57, 81],
+   "idiom": "arp"
+  },
+  {
+   "name": "CLARINET",
+   "color": [190, 168, 255],
+   "dark": [98, 80, 170],
+   "corner": "red",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "jump",
+    "style": "zip",
+    "every": 1,
+    "base": 2.6,
+    "grow": 0.06,
+    "max_reach": 4.2,
+    "land": 1.5,
+    "jitter": 40.0,
+    "lock16": 2,
+    "lead": 0.0,
+    "cut": 0.0,
+    "dmg": 3.6,
+    "knock": 0.6
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SQUEAK",
+     "kind": "stun",
+     "speed": 9.0,
+     "radius": 2.4,
+     "dmg": 2.0,
+     "knock": 0.4,
+     "stun": 0.5,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "CLARION",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "RHAPSODY",
+     "kind": "rhapsody",
+     "n": 5,
+     "step16": 2,
+     "zig": 35.0,
+     "land": 1.4,
+     "reach": 5.5,
+     "dmg": 3.2,
+     "knock": 0.8,
+     "cut": 0.25
+    }
+   },
+   "pp": "CLARINET",
+   "register": [50, 74],
+   "idiom": "twelfth"
+  },
+  {
+   "name": "OBOE",
+   "color": [156, 176, 52],
+   "dark": [84, 98, 22],
+   "corner": "blue",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "tune",
+    "style": "a_beam",
+    "every": 4,
+    "off16": 3,
+    "lock16": 3,
+    "lead": 0.0,
+    "len": 6.0,
+    "width": 0.12,
+    "hold": 0.18,
+    "dmg": 2.0,
+    "knock": 0.35,
+    "dur_beats": 8,
+    "depth0": 0.4,
+    "grow": 0.1,
+    "depth_max": 1.0,
+    "weak": 0.6,
+    "sting": 0.75,
+    "sting16": 2,
+    "track": 4.0
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "DOUBLE REED",
+     "kind": "snip",
+     "ready": 1.1,
+     "reach": 1.2,
+     "half": 55.0,
+     "open16": 2,
+     "track": 6.0,
+     "dmg": 6.0,
+     "knock": 1.2,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "ENDLESS NOTE",
+     "kind": "endless",
+     "dur_beats": 4,
+     "len": 6.0,
+     "width": 0.3,
+     "track": 1.4,
+     "dmg": 0.9,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "ILL WIND",
+     "kind": "wave",
+     "speed": 4.5,
+     "radius": 9.0,
+     "dmg": 8.0,
+     "knock": 1.5,
+     "detune": {
+      "depth": 1.0,
+      "dur_beats": 8,
+      "weak": 0.45
+     }
+    }
+   },
+   "pp": "OBOE",
+   "register": [62, 86],
+   "idiom": "nasal"
+  },
+  {
+   "name": "BASS CLARINET",
+   "color": [110, 132, 170],
+   "dark": [52, 66, 100],
+   "corner": "red",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "anchor",
+    "style": "endpin",
+    "name": "ENDPIN ANCHOR",
+    "every": 4,
+    "whirl_beats": 2,
+    "turns": 1.5,
+    "base": 0.95,
+    "grow": 0.06,
+    "max_orbit": 1.8,
+    "lead": 0.5,
+    "settle": 0.12,
+    "dmg": 4.5,
+    "knock": 1.1,
+    "cool": 0.8,
+    "release": 0.8,
+    "twin_dmg": 0.6
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SLAP TONGUE",
+     "kind": "snip",
+     "ready": 0.5,
+     "reach": 0.9,
+     "half": 60.0,
+     "open16": 1,
+     "track": 8.0,
+     "dmg": 6.5,
+     "knock": 1.8,
+     "every_bars": 3
+    },
+    "unlock2": {
+     "name": "MULTIPHONICS",
+     "kind": "twin",
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "LIGHTS OUT",
+     "kind": "lights_out",
+     "dur_beats": 4,
+     "home": 1.25,
+     "turn": 2.5,
+     "radius": 1.5,
+     "dmg": 12.0,
+     "knock": 1.8
+    }
+   },
+   "pp": "BASS CLARINET",
+   "register": [34, 62],
+   "idiom": "chalumeau"
+  },
+  {
+   "name": "EUPHONIUM",
+   "color": [240, 172, 32],
+   "dark": [150, 96, 10],
+   "corner": "blue",
+   "view": [0, 24, 0],
+   "weapon": {
+    "kind": "mortar",
+    "style": "shells",
+    "name": "BELL MORTAR",
+    "every": 2,
+    "flight_beats": 2,
+    "n0": 1,
+    "grow": 0.5,
+    "n_max": 6,
+    "spread": 0.75,
+    "lead": 1.0,
+    "splash": 0.6,
+    "dmg": 2.6,
+    "knock": 0.7
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "MARCHING ORDERS",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "IDENTITY CRISIS",
+     "kind": "copy",
+     "every_bars": 5
+    },
+    "low": {
+     "name": "NOT A TUBA",
+     "kind": "barrage",
+     "n": 14,
+     "beats": 2,
+     "flight_beats": 2,
+     "aimed": 3,
+     "lead": 0.8,
+     "splash": 0.55,
+     "dmg": 4.0,
+     "knock": 0.9
+    }
+   },
+   "pp": "EUPHONIUM",
+   "register": [50, 74],
+   "idiom": "tenor"
+  },
+  {
+   "name": "BASSOON",
+   "color": [30, 130, 76],
+   "dark": [14, 70, 40],
+   "corner": "red",
+   "view": [8, 20, 0],
+   "weapon": {
+    "kind": "tiptoe",
+    "style": "hop",
+    "name": "TIPTOE",
+    "every": 1,
+    "air16": 2,
+    "base": 1.6,
+    "grow": 0.04,
+    "max_reach": 3.0,
+    "stomp": 0.2,
+    "stomp_grow": 0.008,
+    "stomp_max": 0.5,
+    "gap": 0.12,
+    "lead": 0.6,
+    "jitter": 30.0,
+    "dmg": 1.2,
+    "back": 2.5,
+    "back_half": 55.0,
+    "knock": 0.45,
+    "stagger": 0.45
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "STACCATO",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "unlock2": {
+     "name": "BOCAL HOOK",
+     "kind": "hook",
+     "ready": 1.0,
+     "reach": 1.1,
+     "half": 60.0,
+     "open16": 2,
+     "track": 6.0,
+     "dmg": 4.0,
+     "knock": 0.4,
+     "every_bars": 4
+    },
+    "low": {
+     "name": "MOUNTAIN KING",
+     "kind": "mountain",
+     "seq16": [3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+     "step": 75.0,
+     "gap": 0.1,
+     "reach": 3.5,
+     "dmg": 0.4,
+     "knock": 0.3
+    }
+   },
+   "pp": "BASSOON",
+   "register": [40, 76],
+   "idiom": "staccato"
+  },
+  {
+   "name": "BARI SAX",
+   "color": [255, 118, 92],
+   "dark": [150, 56, 40],
+   "corner": "blue",
+   "view": [0, 22, 0],
+   "weapon": {
+    "kind": "wrecking",
+    "style": "swing",
+    "name": "WRECKING BALL",
+    "every": 8,
+    "off16": 0,
+    "drop16": 4,
+    "lift16": 1,
+    "swing16": 6,
+    "base": 2.1,
+    "grow": 0.16,
+    "max_reach": 2.66,
+    "theta": 43.0,
+    "lead": 1.0,
+    "short": 1.28,
+    "skank_off16": 2,
+    "skank_short": 1.33,
+    "jitter": 20.0,
+    "hit_r": 0.1,
+    "air_edge": 0.1,
+    "dmg": 16.0,
+    "dmg_min": 0.28,
+    "len_pow": 2.5,
+    "knock": 1.6,
+    "overhang": 1.3,
+    "back16": 3,
+    "back_in": 0.25,
+    "steer": 90.0
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "GROWL",
+     "kind": "shockwave",
+     "speed": 9.0,
+     "radius": 2.4,
+     "dmg": 7.0,
+     "knock": 1.2,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "SKANK",
+     "kind": "offbeat",
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "CABLE SNAP",
+     "kind": "snap",
+     "tele16": 12,
+     "hoist": 0.6,
+     "height": 3.0,
+     "radius": 0.5,
+     "dmg": 22.0,
+     "knock": 2.5,
+     "lead": 1.0
+    }
+   },
+   "pp": "BARI SAX",
+   "register": [36, 60],
+   "idiom": "honk"
+  },
+  {
+   "name": "VIOLA",
+   "color": [36, 200, 176],
+   "dark": [14, 108, 94],
+   "corner": "red",
+   "view": [34, 16, 24],
+   "weapon": {
+    "kind": "rests",
+    "style": "wholenote",
+    "name": "COUNTING RESTS",
+    "every": 4,
+    "guard": 0.5,
+    "base": 0.45,
+    "grow": 0.04,
+    "max_reach": 0.8,
+    "roll": 2.0,
+    "hold": 4,
+    "lead": 0.5,
+    "jitter": 12.0,
+    "dmg": 3.0,
+    "dmg_grow": 0.04,
+    "dmg_max": 3.4,
+    "knock": 1.4
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "DOUBLE STOP",
+     "kind": "double_stop",
+     "lead2": 1.6,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "MELODY AT LAST",
+     "kind": "melody",
+     "dur_beats": 8,
+     "rest": 1,
+     "every_bars": 8
+    },
+    "low": {
+     "name": "VIOLA JOKE",
+     "kind": "joke",
+     "stun_beats": 1.0,
+     "tele": 1,
+     "size": 1.6,
+     "dmg": 12.0,
+     "knock": 1.8
+    }
+   },
+   "pp": "VIOLA",
+   "register": [48, 79],
+   "idiom": "bowed"
+  },
+  {
+   "name": "ELECTRIC",
+   "color": [100, 255, 120],
+   "dark": [40, 150, 60],
+   "corner": "red",
+   "view": [12, 24, 30],
+   "weapon": {
+    "kind": "lightning",
+    "style": "bolt",
+    "name": "LIGHTNING RIFF",
+    "every": 4,
+    "n0": 2,
+    "grow": 0.5,
+    "n_max": 8,
+    "slots": [0, 6, 12, 3, 10, 8, 14, 4],
+    "reach": 1.1,
+    "post_r": 1.7,
+    "dmg": 1.5,
+    "knock": 0.15
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "DISTORTION",
+     "kind": "fork",
+     "dur_beats": 8,
+     "reach_k": 1.4,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "TAPPING",
+     "kind": "tapping",
+     "beats": 4,
+     "dmg_k": 0.7,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "GUITAR SMASH",
+     "kind": "smash",
+     "speed": 7.5,
+     "radius": 3.6,
+     "dmg": 8.0,
+     "knock": 1.6,
+     "n": 10,
+     "splinter_speed": 5.0,
+     "splinter_dmg": 1.2,
+     "splinter_knock": 0.4,
+     "rebuild_beats": 1
+    }
+   },
+   "pp": "GUITAR",
+   "register": [52, 76],
+   "idiom": "riff"
+  },
+  {
+   "name": "CELLO",
+   "color": [196, 84, 40],
+   "dark": [112, 44, 18],
+   "corner": "red",
+   "view": [20, 16, 22],
+   "weapon": {
+    "kind": "grapple",
+    "style": "embrace",
+    "name": "THE EMBRACE",
+    "every": 4,
+    "off16": 0,
+    "rush16": 2,
+    "rush_speed": 2.6,
+    "track": 6.0,
+    "lead": 0.5,
+    "base": 0.22,
+    "grow": 0.03,
+    "max_reach": 0.65,
+    "hold_beats": 1.0,
+    "turns": 0.6,
+    "jitter": 15.0,
+    "dmg": 1.0,
+    "dmg_throw": 1.0,
+    "dmg_rope": 2.2,
+    "rope_t": 0.9,
+    "power": 1.6,
+    "power_grow": 0.06,
+    "power_max": 2.4
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "VIBRATO",
+     "kind": "vibrato",
+     "dur_beats": 8,
+     "dmg": 0.5,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "PRELUDE",
+     "kind": "prelude",
+     "beats": 4,
+     "speed": 6.0,
+     "pattern": [1.7, 1.0, 0.55, 0.7, 0.55, 1.0, 0.55, 1.0],
+     "dmg": 0.7,
+     "knock": 0.25,
+     "every_bars": 5
+    },
+    "low": {
+     "name": "SWAN SONG",
+     "kind": "swan",
+     "rise_beats": 1,
+     "glide_beats": 2,
+     "dive_beats": 0.5,
+     "bow": 1.4,
+     "lead": 1.0,
+     "height": 1.6,
+     "radius": 1.4,
+     "dmg": 11.0,
+     "knock": 1.6
+    }
+   },
+   "pp": "CELLO",
+   "register": [36, 69],
+   "idiom": "embrace"
+  },
+  {
+   "name": "CONTRABASS",
+   "color": [70, 110, 200],
+   "dark": [30, 52, 120],
+   "corner": "blue",
+   "view": [16, 14, 14],
+   "weapon": {
+    "kind": "walk",
+    "style": "steps",
+    "name": "WALKING BASS",
+    "every": 1,
+    "step16": 2,
+    "stride": 0.75,
+    "gap": 0.04,
+    "lead": 0.6,
+    "jitter": 8.0,
+    "stagger": 0.6,
+    "base": 0.66,
+    "grow": 0.05,
+    "max_reach": 1.5,
+    "speed": 9.0,
+    "dmg": 3.2,
+    "knock": 0.2
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "SLAP BASS",
+     "kind": "slap",
+     "ready": 0.5,
+     "speed": 10.0,
+     "radius": 2.0,
+     "dmg": 3.0,
+     "knock": 1.6,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "DOUBLE TIME",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "THE ELEPHANT",
+     "kind": "stampede",
+     "beats": 6,
+     "speed": 1.5,
+     "turn": 2.2,
+     "dmg": 4.0,
+     "knock": 1.8,
+     "cool": 0.5,
+     "stomp16": 2,
+     "stomp_r": 1.1,
+     "stomp_dmg": 0.8,
+     "stomp_knock": 0.4
+    }
+   },
+   "pp": "CONTRABASS",
+   "register": [28, 60],
+   "idiom": "walking"
+  },
+  {
+   "name": "ALTO SAX",
+   "color": [200, 80, 240],
+   "dark": [110, 36, 140],
+   "corner": "red",
+   "view": [10, 18, 0],
+   "weapon": {
+    "kind": "spotlight",
+    "style": "spotlight",
+    "name": "SPOTLIGHT SOLO",
+    "every": 4,
+    "off16": 0,
+    "sweep16": 6,
+    "span": 2.6,
+    "lead": 1.0,
+    "jitter": 15.0,
+    "base": 0.42,
+    "grow": 0.03,
+    "max_r": 0.75,
+    "dmg": 1.3,
+    "dmg_grow": 0.06,
+    "dmg_max": 2.1,
+    "knock": 0.12
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "OCTAVE KEY",
+     "kind": "octave",
+     "dur_beats": 8,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "ALTISSIMO",
+     "kind": "altissimo",
+     "dur_beats": 8,
+     "narrow": 0.5,
+     "hot": 2.5,
+     "span_k": 0.75,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "ENCORE",
+     "kind": "encore",
+     "beats": 8,
+     "speed": 0.8,
+     "dmg": 0.9,
+     "r_k": 1.0,
+     "n_phone": 6,
+     "spread": 1.4,
+     "phone_r": 0.45,
+     "phone_dmg": 0.6
+    }
+   },
+   "pp": "ALTO SAX",
+   "register": [49, 81],
+   "idiom": "lead"
+  },
+  {
+   "name": "TENOR SAX",
+   "color": [230, 110, 30],
+   "dark": [130, 56, 12],
+   "corner": "blue",
+   "view": [10, 18, 0],
+   "weapon": {
+    "kind": "crowd",
+    "style": "crowd",
+    "name": "CROWD PLEASER",
+    "every": 4,
+    "off16": 0,
+    "pose16": 2,
+    "pose_v": 0.15,
+    "n0": 3,
+    "grow": 0.34,
+    "n_max": 5,
+    "stagger16": 1,
+    "flight16": 6,
+    "lead": 0.8,
+    "scatter": 0.25,
+    "stand": 0.9,
+    "stand_spread": 0.8,
+    "reach": 1.9,
+    "reach_grow": 0.06,
+    "reach_max": 2.7,
+    "splash": 0.32,
+    "dmg": 1.9,
+    "dmg_grow": 0.1,
+    "dmg_max": 2.4,
+    "knock": 0.5
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "WALK THE BAR",
+     "kind": "runway",
+     "beats": 4,
+     "dmg": 4.0,
+     "knock": 1.4,
+     "cool": 0.4,
+     "honk_r": 0.9,
+     "honk_dmg": 1.0,
+     "honk_knock": 0.5,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "SUBTONE",
+     "kind": "subtone",
+     "hush_beats": 2,
+     "n_k": 2.0,
+     "mult": 2.0,
+     "reach_k": 1.3,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "STAGE DIVE",
+     "kind": "stagedive",
+     "leap_beats": 1,
+     "surf_beats": 1,
+     "speed": 3.0,
+     "lead": 0.6,
+     "hit_r": 0.15,
+     "dmg": 10.0,
+     "knock": 2.0,
+     "radius": 1.4,
+     "ring_dmg": 5.0,
+     "ring_knock": 1.4
+    }
+   },
+   "pp": "TENOR SAX",
+   "register": [44, 76],
+   "idiom": "honk"
+  },
+  {
+   "name": "SOUSAPHONE",
+   "color": [210, 30, 60],
+   "dark": [120, 14, 32],
+   "corner": "blue",
+   "view": [20, 14, 0],
+   "weapon": {
+    "kind": "drill",
+    "style": "drill",
+    "name": "DRILL SET",
+    "every": 8,
+    "off16": 0,
+    "steps": 8,
+    "step16": 2,
+    "halt16": 2,
+    "lead": 0.6,
+    "jitter": 6.0,
+    "span": 5.0,
+    "stop": 1.3,
+    "min_len": 1.6,
+    "trample_dmg": 3.6,
+    "trample_knock": 1.3,
+    "trample_fwd": 0.85,
+    "cool": 0.5,
+    "basket_r": 0.2,
+    "base": 2.0,
+    "grow": 0.12,
+    "max_len": 3.6,
+    "width": 0.5,
+    "spread": 1.6,
+    "hold": 0.25,
+    "dmg": 12.0,
+    "knock": 1.3
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "HORN FLASH",
+     "kind": "flash_spin",
+     "beats": 1,
+     "len_k": 1.0,
+     "width": 0.5,
+     "dmg": 5.0,
+     "knock": 1.2,
+     "every_bars": 5
+    },
+    "unlock2": {
+     "name": "DOUBLE TIME",
+     "kind": "haste",
+     "mult": 2.0,
+     "dur_beats": 8,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "COMPANY FRONT",
+     "kind": "company_front",
+     "beats": 8,
+     "thick": 0.35,
+     "dmg": 14.0,
+     "knock": 1.8
+    }
+   },
+   "pp": "SOUSAPHONE",
+   "register": [28, 58],
+   "idiom": "march"
+  },
+  {
+   "name": "BASS DRUM",
+   "color": [128, 128, 140],
+   "dark": [64, 64, 76],
+   "corner": "red",
+   "view": [0, 16, 0],
+   "weapon": {
+    "kind": "roll_charge",
+    "style": "roll",
+    "name": "STEAMROLLER",
+    "every": 4,
+    "off16": 0,
+    "tip16": 2,
+    "lead": 0.5,
+    "jitter": 8.0,
+    "span": 5.2,
+    "min_len": 0.6,
+    "speed": 2.4,
+    "speed_grow": 0.06,
+    "speed_max": 3.4,
+    "size0": 0.0,
+    "size_grow": 0.025,
+    "size_max": 0.25,
+    "dmg": 7.0,
+    "knock": 1.8,
+    "fwd": 0.35
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "HEARTBEAT",
+     "kind": "heartbeat",
+     "gap16": 2,
+     "radius": 2.0,
+     "speed": 7.0,
+     "dmg": 4.0,
+     "knock": 1.2,
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "DRUM ROLL",
+     "kind": "drum_roll",
+     "beats": 4,
+     "leg16": 3,
+     "zig": 35.0,
+     "speed_k": 1.1,
+     "cool": 0.3,
+     "dmg": 3.0,
+     "knock": 1.0,
+     "every_bars": 6
+    },
+    "low": {
+     "name": "1812 OVERTURE",
+     "kind": "cannons",
+     "n": 5,
+     "gap_beats": 1,
+     "tele": 1,
+     "radius": 1.0,
+     "dmg": 4.0,
+     "knock": 1.4
+    }
+   },
+   "pp": "BASS DRUM",
+   "register": [28, 50],
+   "idiom": "drum"
+  }
+ ]
+}

@@ -1,0 +1,308 @@
+{
+ "about": "plan Task 59's crossover starters as the kit plays them: every kit fighter's home config (its newest kit config by episode number, an example only when it has no other), and for six pairs with no kit config the kit config bf_content::starter's rule makes, the kit's first fit of it (its own search from seed 1 to 5000; with no fit, `fit` false and the lowest seed with a K.O.; the recording pinned in the cache), the 16-bit master's SHA-256 and 8 frames' SHA-256",
+ "can_play_bass": ["BASS CLARINET", "CONTRABASS", "ORGAN", "SOUSAPHONE", "TROMBONE", "TUBA"],
+ "crossovers": [
+  {
+   "bpm": 132,
+   "buses": ["drums", "bass", "fx", "piano", "tuba", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["PIANO", "TUBA"],
+   "fit": true,
+   "frames": [
+    [0, "a7058ed7d854d895ab1c480199c5339a0bb802e7a3b53f7e3566672303ca7c32"],
+    [108, "a127ae7e750f058e8870b684cf3f44d79e42a3ab27f38c2d9bac1e7e6d9e7f58"],
+    [457, "4864ea9e18f1c2433e244ad1edf98124af87160ff17a9e05e638920de4dc84c4"],
+    [806, "da069b517995690ee99cff4918fc95d5df62d2b8851af56d1321663fc1016da6"],
+    [1155, "989f4a1705bda4dbd86a9d52181ee2abb10558d182148f4cdbcd311f347510ee"],
+    [1504, "dbec664ce169b59eb273cccddb716decdbfedf30d91c2449ce99217dc206ba7c"],
+    [1522, "59bb6a246b91e72012c41a85525c2a7c851a3ff6f4dffdecffb017bf73afd7a6"],
+    [1642, "8caea09d878272a37c0c1b9d96ecd5580b1422712fcfab08c4a118629757e5ae"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_piano_vs_organ",
+   "intro": ["Am", "E7"],
+   "key": "A",
+   "loop": ["Am", "F", "G", "E7", "Am", "F", "Dm", "E7"],
+   "master_sha256": "a1c69ab98b85e04713c118a2b18979f1ba34d1950babee6e905947ed4dae8826",
+   "mood": "prog_duel",
+   "n_bars": 34,
+   "rec_hash": "8f3855b87a7f9caf",
+   "recording": {
+    "cache": "episodes/crossovers/piano_vs_tuba.bfrec",
+    "sha256": "6135ab720d7b0e95b53774686cb9e96036df7701c776f3ca2bde701e108514e8"
+   },
+   "roles": {
+    "PIANO": "melody",
+    "TUBA": "bass"
+   },
+   "rules": {},
+   "scale": "minor",
+   "searched": 3696,
+   "seed": 3652,
+   "t_ko": 50.12990196078431,
+   "tail": [],
+   "theme_from": "left",
+   "theme_options": {},
+   "winner": 0
+  },
+  {
+   "bpm": 118,
+   "buses": ["bandoneon", "guitar", "perc", "fx", "cello", "flute", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["CELLO", "FLUTE"],
+   "fit": false,
+   "frames": [
+    [0, "d4814e03086d34f1a1be3cc145d60f2705b6b8bc43f72f78b6e3b8621a46b522"],
+    [122, "ea5433748203f2ae34a5cfa09a58293e18c82e77ae3251478a5e47d5d1f386f2"],
+    [383, "22f7285ead8d699d95f288e8ac0543fad9a935dbb720f36214ba961c18e66e51"],
+    [645, "2f283cb72b69748c242eda4371e41099a3fd9d3430ae7fec387b6d3faf809ffb"],
+    [907, "5e7642aebf2ce36ca0d7bc6db2563cbd7569cfc1d36cfedd2adbe2e5ab475ec5"],
+    [1169, "35270f145425983dda325a8f5806d772c3766b1032e56f675ae3dd6242af071d"],
+    [1187, "c724ce9cfd722b1a38fee9868720a53e69af0ae46a3b8276e280ee0f606ac011"],
+    [1464, "b02250e5207df97228042563552e1aca0bd70a7545ab90f98dd2603b8468edae"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_cello_vs_contrabass",
+   "intro": ["Dm", "A7"],
+   "key": "D",
+   "loop": ["Dm", "A7", "A7", "Dm", "Gm", "Dm", "E7", "A7"],
+   "master_sha256": "a7c1ca11ba627ef6784d84a649356a5d3d85c580d95647360cd48d2a201e666e",
+   "mood": "dark_tango",
+   "n_bars": 30,
+   "rec_hash": "fcc0c8df06b5c473",
+   "recording": {
+    "cache": "episodes/crossovers/cello_vs_flute.bfrec",
+    "sha256": "2b710452f37852795f5cb313dd5059884ae4b99d9778bff72746450fc03bea53"
+   },
+   "roles": {
+    "CELLO": "melody",
+    "FLUTE": "line"
+   },
+   "rules": {},
+   "scale": "harmonic minor",
+   "searched": 5000,
+   "seed": 1,
+   "t_ko": 38.93333333333334,
+   "tail": ["Gm", "Dm", "E7", "A7"],
+   "theme_from": "left",
+   "theme_options": {},
+   "winner": 1
+  },
+  {
+   "bpm": 126,
+   "buses": ["drums", "pit", "fx", "bass drum", "horn", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["BASS DRUM", "HORN"],
+   "fit": false,
+   "frames": [
+    [0, "3928ec21ffed7db14ee2d952ef659e631b86456e1c30d1ef28a96df24008b29c"],
+    [115, "650827b1fa6720576332f4d04e8f02a5fe506933771ad3145081a25e855e7c0d"],
+    [177, "f554dcdfb7bbfdc304fdb63b727295ae1d70e1eebcf0357ff4bcf9e4b0123f9a"],
+    [240, "62588bafa07b8021cb0e6cf2644580fad6f8ff2a0e71bd18a2ba68708d8c1269"],
+    [303, "f1e7707dff8b796d2199c47536d5e69f7e3b9688b0b3cc865f28bddc4a43689c"],
+    [366, "e936a7497b2cdc28cf06e0718c02141966c4e2234b01b4ba371ec6e2fff02947"],
+    [384, "9b15c587dd44e0a1d4a5083fb7a395a288455e4c115651d90574c3d130902707"],
+    [1087, "4cda1b304e66c1a8b79e90292623ec0182f80d2e105c31bd3bd4cb92afa10151"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_bassdrum_vs_tuba",
+   "intro": ["Cm", "G"],
+   "key": "C",
+   "loop": ["Cm", "Ab", "Fm", "G"],
+   "master_sha256": "634d2f8215b6f33365615b830ba28844b6f9c09370f7e367c1b959c50606ce1d",
+   "mood": "dark_drumline",
+   "n_bars": 32,
+   "rec_hash": "1b4dc8386739b4bb",
+   "recording": {
+    "cache": "episodes/crossovers/bassdrum_vs_horn.bfrec",
+    "sha256": "52dafa5c53abbb2a1837493eabd2d4e798c3ea437d93e010d79d7d44ba218d4d"
+   },
+   "roles": {
+    "BASS DRUM": "drums",
+    "HORN": "melody"
+   },
+   "rules": {},
+   "scale": "minor",
+   "searched": 5000,
+   "seed": 1,
+   "t_ko": 12.1875,
+   "tail": ["Ab", "G"],
+   "theme_from": "left",
+   "theme_options": {
+    "after_ko": true,
+    "bass_drums": false
+   },
+   "winner": 1
+  },
+  {
+   "bpm": 118,
+   "buses": ["drums", "bass", "fx", "alto sax", "organ", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["ALTO SAX", "ORGAN"],
+   "fit": true,
+   "frames": [
+    [0, "132d94ebd9626e695e18734fcb67ead0fa617901e18ed1e8ac008803fffac335"],
+    [122, "6fcfee7c241e53ffe18233ff523ebdea52c7dafec5ff815a9e377cfebd43aafb"],
+    [459, "b4808589e8ff234299579f85e951bdf49825e07f1feb7609ef754cf9e2f31ba4"],
+    [797, "2037a625c6fca4c8cef6b8da06f606aa4c27ec9c9077c3c3aaec907d6f29c23d"],
+    [1134, "0bc85d41421f70ee69621a054ee322e0dc496a62eb10a08dc1639798ac13d63e"],
+    [1472, "9fce852e1fb4d21772551a63a41a5160a293a71f794dc87d70a4f87ff2c1a534"],
+    [1490, "4dee15c073bbf15f2a63f14f216e68dc01ae6c68f8f1c682a460c2b66a4b4b96"],
+    [1617, "50c7fdba5e859ed02591b5ce7ab977d8ace2f321d3f9cb727180112e4079d91d"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_altosax_vs_tenorsax",
+   "intro": ["Am", "E7"],
+   "key": "A",
+   "loop": ["Am", "F", "Dm", "E7", "Am", "F", "G", "E7"],
+   "master_sha256": "9fda2498146efc5a2b9e885179d20c58f8d7efb976c836a1fde14685aad4a024",
+   "mood": "prog_duel",
+   "n_bars": 30,
+   "rec_hash": "d37cffdde8226e01",
+   "recording": {
+    "cache": "episodes/crossovers/altosax_vs_organ.bfrec",
+    "sha256": "e50d3a45ff2121288bfb7e77188d3874ca208af1f92b5e097c09dc4c3fa92540"
+   },
+   "roles": {
+    "ALTO SAX": "melody",
+    "ORGAN": "bass"
+   },
+   "rules": {},
+   "scale": "minor",
+   "searched": 3696,
+   "seed": 3656,
+   "t_ko": 49.05833333333334,
+   "tail": ["F", "G", "E7", "E7"],
+   "theme_from": "right",
+   "theme_options": {},
+   "winner": 0
+  },
+  {
+   "bpm": 122,
+   "buses": ["sousa", "drums", "fx", "euphonium", "clarinet", "perc", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["EUPHONIUM", "CLARINET"],
+   "fit": false,
+   "frames": [
+    [0, "acc754bb54fe4186d0a17223f2f7025b87c33ae800535174999b63223873133c"],
+    [119, "34fc6a47f4fca07a06d05842f5aa1d09f0c13bc7cf63f26bc806f979e97687c2"],
+    [274, "6dc50f6a7bfa806bcf3992f1c3a97e4db2a4f521efcab6061e135e02c3a76245"],
+    [429, "cccbd7bb4a3e1d0069f567f518078c4e3104cba936a545de3ffd115f28ac73cb"],
+    [584, "8294f9088500c7f930ce03b56756bf20099a901f91c3dbb7f71e5d88edaf865e"],
+    [739, "3a14fb6802bc0bf4496fcfd1e6961ed9bc6c11d432abff4362c189e5c10fa7f4"],
+    [757, "0dc704cd305b88729f8eb2c8f2b5afcbf86a2f6e1bcb629f378336e4dd02b273"],
+    [1270, "f1cd35ad2b9e332e8b70be17447ecf2bb4a8c6d70199f9501a95f1ee4ee52b6a"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_euphonium_vs_trombone",
+   "intro": ["Em", "B7"],
+   "key": "E",
+   "loop": ["Em", "Am", "Em", "C7", "B7", "Em", "Am", "B7"],
+   "master_sha256": "737c37aab8817678534978f22c5bd2e27d56a393f1d5faa75a42af6966b049ef",
+   "mood": "second_line",
+   "n_bars": 31,
+   "rec_hash": "ff73681751d18bda",
+   "recording": {
+    "cache": "episodes/crossovers/euphonium_vs_clarinet.bfrec",
+    "sha256": "f3098f58334720bbe92f103831376a796e3d7cd84c5726abebb231c3ee0c4cdf"
+   },
+   "roles": {
+    "CLARINET": "line",
+    "EUPHONIUM": "melody"
+   },
+   "rules": {},
+   "scale": "harmonic minor",
+   "searched": 5000,
+   "seed": 1,
+   "t_ko": 24.602150537634408,
+   "tail": ["Em", "Am", "Em", "C7", "B7"],
+   "theme_from": "left",
+   "theme_options": {},
+   "winner": 1
+  },
+  {
+   "bpm": 126,
+   "buses": ["kick", "p_gtr", "p_bass", "p_drums", "u_gtr", "u_bass", "u_perc", "fx", "electric", "bassoon", "solo"],
+   "dmg_scale": 1.0,
+   "fighters": ["ELECTRIC", "BASSOON"],
+   "fit": false,
+   "frames": [
+    [0, "284af4bf41d4eaa44d0fae137b4dd7ee43b9f844186295b6f1069802c1008eb8"],
+    [115, "6b4e56e7df0f345dcfe8746803415a4f9371677128b6df7c8cf532f6b6b13a64"],
+    [251, "8ec78186d5e47f7cf546524b0dd5426b56b59bcc00d54680c3dbc1f95bd007bc"],
+    [388, "2c97a76f427dabacc1b699dc8970187ddbd5131bd8b8517f537c8d3d848bf2f5"],
+    [525, "4be87a5d78dc448fd9b8c8fab86235a9dee75b065751fcc2674ba547ed6f9aec"],
+    [662, "73167021204acdb496d495d6147ca88836dcecdd88b9276b5140220aa48ec463"],
+    [680, "14779b4fb7bb7dd710e947d98e03a53626ed20f4dbcc69efd545a68d913574ab"],
+    [1230, "2ae5329f8d6c563e5d9c04cf48a8e8be6aa20f1bae27a91c2f7615f1e848e8e2"]
+   ],
+   "handicap": [1.0, 1.0],
+   "home": "ballfight_electric_vs_acoustic",
+   "intro": ["Em", "B7"],
+   "key": "E",
+   "loop": ["Em", "C", "G", "D", "Em", "C", "Am", "B7"],
+   "master_sha256": "47a102027f7df8d6843b96d6edd9c469b89cbfa6a075112f9ebed3d1a8175305",
+   "mood": "stadium_rock",
+   "n_bars": 32,
+   "rec_hash": "c59f6854f703fad4",
+   "recording": {
+    "cache": "episodes/crossovers/electric_vs_bassoon.bfrec",
+    "sha256": "8718d2766a8fd8920c8b8cf83ac88a9c0935155a2e38e446c8afc3fd1900e50a"
+   },
+   "roles": {
+    "BASSOON": "line",
+    "ELECTRIC": "riff"
+   },
+   "rules": {},
+   "scale": "minor",
+   "searched": 5000,
+   "seed": 1,
+   "t_ko": 22.045833333333334,
+   "tail": ["Em", "C", "G", "D", "Am", "B7"],
+   "theme_from": "left",
+   "theme_options": {
+    "plugged": "ELECTRIC"
+   },
+   "winner": 1
+  }
+ ],
+ "episodes": {
+  "ballfight_altosax_vs_tenorsax": 51,
+  "ballfight_bassclarinet_vs_bassoon": 55,
+  "ballfight_bassdrum_vs_tuba": 56,
+  "ballfight_cello_vs_contrabass": 47,
+  "ballfight_electric_vs_acoustic": 44,
+  "ballfight_euphonium_vs_trombone": 48,
+  "ballfight_flute_vs_clarinet": 49,
+  "ballfight_flute_vs_sousaphone": 53,
+  "ballfight_horn_vs_trombone_rematch": 54,
+  "ballfight_oboe_vs_bassoon": 52,
+  "ballfight_piano_vs_organ": 45,
+  "ballfight_trumpet_vs_trombone": 50
+ },
+ "fighters": ["ACOUSTIC", "ALTO SAX", "BASS CLARINET", "BASS DRUM", "BASSOON", "CELLO", "CLARINET", "CONTRABASS", "ELECTRIC", "EUPHONIUM", "FLUTE", "HORN", "OBOE", "ORGAN", "PIANO", "SOUSAPHONE", "TENOR SAX", "TROMBONE", "TRUMPET", "TUBA"],
+ "format": 1,
+ "homes": {
+  "ACOUSTIC": "ballfight_electric_vs_acoustic",
+  "ALTO SAX": "ballfight_altosax_vs_tenorsax",
+  "BASS CLARINET": "ballfight_bassclarinet_vs_bassoon",
+  "BASS DRUM": "ballfight_bassdrum_vs_tuba",
+  "BASSOON": "ballfight_bassclarinet_vs_bassoon",
+  "CELLO": "ballfight_cello_vs_contrabass",
+  "CLARINET": "ballfight_flute_vs_clarinet",
+  "CONTRABASS": "ballfight_cello_vs_contrabass",
+  "ELECTRIC": "ballfight_electric_vs_acoustic",
+  "EUPHONIUM": "ballfight_euphonium_vs_trombone",
+  "FLUTE": "ballfight_flute_vs_sousaphone",
+  "HORN": "ballfight_horn_vs_trombone_rematch",
+  "OBOE": "ballfight_oboe_vs_bassoon",
+  "ORGAN": "ballfight_piano_vs_organ",
+  "PIANO": "ballfight_piano_vs_organ",
+  "SOUSAPHONE": "ballfight_flute_vs_sousaphone",
+  "TENOR SAX": "ballfight_altosax_vs_tenorsax",
+  "TROMBONE": "ballfight_horn_vs_trombone_rematch",
+  "TRUMPET": "ballfight_trumpet_vs_trombone",
+  "TUBA": "ballfight_bassdrum_vs_tuba"
+ },
+ "tool": "tools.studio_export.crossovers"
+}

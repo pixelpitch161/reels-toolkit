@@ -1,0 +1,4 @@
+format = 1
+output_folder = 'D:\Vidéos du studio\BALLFIGHT'
+workers = 3
+encode = "best"

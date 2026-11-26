@@ -1,0 +1,95 @@
+{
+ "about": "scipy.signal.resample_poly(x, 160, 147): how pp_bridge.voice brings a 44,100 Hz Pixel Pitch note to 48,000 Hz (scipy's defaults: a Kaiser 5.0 window, zero padding)",
+ "cases": [
+  {
+   "args": {
+    "down": 147,
+    "n_in": 4410,
+    "n_out": 4800,
+    "n_pre_pad": 17,
+    "n_pre_remove": 11,
+    "up": 160,
+    "upfirdn_len": 4821
+   },
+   "arrays": {
+    "firwin": "firwin",
+    "h": "h",
+    "out": "c000__out",
+    "x": "c000__x"
+   },
+   "call": "scipy.signal.resample_poly(x, 160, 147)",
+   "id": "c000",
+   "input": "noise",
+   "what": "np.random.default_rng(4410).normal(0, 1, 4410)"
+  },
+  {
+   "args": {
+    "down": 147,
+    "n_in": 1001,
+    "n_out": 1090,
+    "n_pre_pad": 17,
+    "n_pre_remove": 11,
+    "up": 160,
+    "upfirdn_len": 1111
+   },
+   "arrays": {
+    "firwin": "firwin",
+    "h": "h",
+    "out": "c001__out",
+    "x": "c001__x"
+   },
+   "call": "scipy.signal.resample_poly(x, 160, 147)",
+   "id": "c001",
+   "input": "spike",
+   "what": "zeros(1001) with x[500] = 1: the filter itself, every 147th tap"
+  },
+  {
+   "args": {
+    "down": 147,
+    "n_in": 11466,
+    "n_out": 12480,
+    "n_pre_pad": 17,
+    "n_pre_remove": 11,
+    "up": 160,
+    "upfirdn_len": 12501
+   },
+   "arrays": {
+    "firwin": "firwin",
+    "h": "h",
+    "out": "c002__out",
+    "x": "c002__x"
+   },
+   "call": "scipy.signal.resample_poly(x, 160, 147)",
+   "id": "c002",
+   "input": "trombone",
+   "what": "the 44,100 Hz note behind pp_bridge.voice('TROMBONE', 52, 0.9, 0.12) (trombone60_lowpoly.synth), before it is resampled"
+  },
+  {
+   "args": {
+    "down": 147,
+    "n_in": 100,
+    "n_out": 109,
+    "n_pre_pad": 17,
+    "n_pre_remove": 11,
+    "up": 160,
+    "upfirdn_len": 130
+   },
+   "arrays": {
+    "firwin": "firwin",
+    "h": "h",
+    "out": "c003__out",
+    "x": "c003__x"
+   },
+   "call": "scipy.signal.resample_poly(x, 160, 147)",
+   "id": "c003",
+   "input": "short",
+   "what": "np.random.default_rng(100).normal(0, 1, 100): shorter than the filter"
+  }
+ ],
+ "notes": {
+  "firwin": "the low-pass scipy designs inside: firwin(2 * 1600 + 1, 1 / 160, window=(\"kaiser\", 5.0)), before it is scaled by up = 160",
+  "h": "the filter as scipy hands it to upfirdn(h, x, 160, 147): firwin * 160 with n_pre_pad zeros in front; the output keeps samples n_pre_remove .. n_pre_remove + n_out of what upfirdn returns",
+  "n_out": "ceil(len(x) * 160 / 147)"
+ },
+ "tool": "dsp"
+}

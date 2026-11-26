@@ -1,0 +1,1322 @@
+{
+ "H": 640,
+ "SKY_DEPTH": "0x1.e848000000000p+19",
+ "W": 360,
+ "about": "reelkit.raster: Frame at 360 x 640, the glow kernels and apply_glows",
+ "cases": [
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "dep": "c000__dep",
+    "rgb": "c000__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "bg": [0, 0, 0]
+   },
+   "arrays": {
+    "dep": "c001__dep",
+    "rgb": "c001__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "bg": [255, 255, 255]
+   },
+   "arrays": {
+    "dep": "c002__dep",
+    "rgb": "c002__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "bg": ["0x1.5cccccccccccdp+3", "0x1.0666666666666p+3", "0x1.2800000000000p+4"]
+   },
+   "arrays": {
+    "dep": "c003__dep",
+    "rgb": "c003__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "bg": [300, -5, "0x1.fff5c28f5c28fp+6"]
+   },
+   "arrays": {
+    "dep": "c004__dep",
+    "rgb": "c004__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "bg": ["-0x1.ccccccccccccdp-1", "0x1.ffccccccccccdp+7", "0x1.0000000000000p+8"]
+   },
+   "arrays": {
+    "dep": "c005__dep",
+    "rgb": "c005__rgb"
+   },
+   "call": "Frame(bg)",
+   "id": "c005"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "bg": "c006__bg",
+    "dep": "c006__dep",
+    "rgb": "c006__rgb"
+   },
+   "call": "Frame(bg_array)",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b800000000000p+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d000000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "0x0.0p+0"
+    }
+   },
+   "arrays": {
+    "P": "c007__P",
+    "col": "c007__col",
+    "counts": "c007__counts",
+    "dep": "c007__dep",
+    "depth": "c007__depth",
+    "ret": "c007__ret",
+    "ret_counts": "c007__ret_counts",
+    "rgb": "c007__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b99999999999ap+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d333333333333p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "-0x1.999999999999ap-1"
+    }
+   },
+   "arrays": {
+    "P": "c008__P",
+    "col": "c008__col",
+    "counts": "c008__counts",
+    "dep": "c008__dep",
+    "depth": "c008__depth",
+    "ret": "c008__ret",
+    "ret_counts": "c008__ret_counts",
+    "rgb": "c008__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b800000000000p+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d000000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "0x0.0p+0"
+    }
+   },
+   "arrays": {
+    "P": "c009__P",
+    "col": "c009__col",
+    "counts": "c009__counts",
+    "dep": "c009__dep",
+    "depth": "c009__depth",
+    "ret": "c009__ret",
+    "ret_counts": "c009__ret_counts",
+    "rgb": "c009__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.2000000000000p+3",
+     "fov": "0x1.4000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.8000000000000p+5",
+     "roll": "0x1.e000000000000p+2",
+     "sy": "0x1.2c00000000000p+8",
+     "target": ["0x0.0p+0", "0x1.999999999999ap-2", "0x0.0p+0"],
+     "yaw": "0x1.2800000000000p+5"
+    }
+   },
+   "arrays": {
+    "P": "c010__P",
+    "col": "c010__col",
+    "counts": "c010__counts",
+    "dep": "c010__dep",
+    "depth": "c010__depth",
+    "ret": "c010__ret",
+    "ret_counts": "c010__ret_counts",
+    "rgb": "c010__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.0000000000000p+3",
+     "fov": "0x1.e000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "-0x1.e000000000000p+3",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.9080000000000p+8",
+     "target": ["0x1.0000000000000p+0", "0x1.0000000000000p-1", "-0x1.0000000000000p+1"],
+     "yaw": "-0x1.6800000000000p+6"
+    }
+   },
+   "arrays": {
+    "P": "c011__P",
+    "col": "c011__col",
+    "counts": "c011__counts",
+    "dep": "c011__dep",
+    "depth": "c011__depth",
+    "ret": "c011__ret",
+    "ret_counts": "c011__ret_counts",
+    "rgb": "c011__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b99999999999ap+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d333333333333p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "-0x1.999999999999ap-1"
+    }
+   },
+   "arrays": {
+    "P": "c012__P",
+    "col": "c012__col",
+    "counts": "c012__counts",
+    "dep": "c012__dep",
+    "depth": "c012__depth",
+    "ret": "c012__ret",
+    "ret_counts": "c012__ret_counts",
+    "rgb": "c012__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "bg": [40, 0, 60],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c013__P",
+    "col": "c013__col",
+    "counts": "c013__counts",
+    "dep": "c013__dep",
+    "depth": "c013__depth",
+    "ret": "c013__ret",
+    "ret_counts": "c013__ret_counts",
+    "rgb": "c013__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "bg": [40, 0, 60],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c014__P",
+    "col": "c014__col",
+    "counts": "c014__counts",
+    "dep": "c014__dep",
+    "depth": "c014__depth",
+    "ret": "c014__ret",
+    "ret_counts": "c014__ret_counts",
+    "rgb": "c014__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "bg": [40, 0, 60],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c015__P",
+    "col": "c015__col",
+    "counts": "c015__counts",
+    "dep": "c015__dep",
+    "depth": "c015__depth",
+    "ret": "c015__ret",
+    "ret_counts": "c015__ret_counts",
+    "rgb": "c015__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b800000000000p+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d000000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "0x0.0p+0"
+    }
+   },
+   "arrays": {
+    "P": "c016__P",
+    "col": "c016__col",
+    "counts": "c016__counts",
+    "dep": "c016__dep",
+    "depth": "c016__depth",
+    "ret": "c016__ret",
+    "ret_counts": "c016__ret_counts",
+    "rgb": "c016__rgb"
+   },
+   "call": "fr.poly(Cam(**cam), P, col, depth)",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b800000000000p+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d000000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "0x0.0p+0"
+    }
+   },
+   "arrays": {
+    "P": "c017__P",
+    "col": "c017__col",
+    "counts": "c017__counts",
+    "dep": "c017__dep",
+    "rgb": "c017__rgb",
+    "width": "c017__width"
+   },
+   "call": "fr.line(Cam(**cam), pts, col, width)",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.b99999999999ap+4",
+     "fov": "0x1.2000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.d333333333333p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.2000000000000p+8",
+     "target": ["0x1.eb851eb851eb8p-4", "0x1.0000000000000p-2", "0x0.0p+0"],
+     "yaw": "-0x1.999999999999ap-1"
+    }
+   },
+   "arrays": {
+    "P": "c018__P",
+    "col": "c018__col",
+    "counts": "c018__counts",
+    "dep": "c018__dep",
+    "rgb": "c018__rgb",
+    "width": "c018__width"
+   },
+   "call": "fr.line(Cam(**cam), pts, col, width)",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c019__P",
+    "col": "c019__col",
+    "counts": "c019__counts",
+    "dep": "c019__dep",
+    "rgb": "c019__rgb",
+    "width": "c019__width"
+   },
+   "call": "fr.line(Cam(**cam), pts, col, width)",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c020__P",
+    "col": "c020__col",
+    "counts": "c020__counts",
+    "dep": "c020__dep",
+    "rgb": "c020__rgb",
+    "width": "c020__width"
+   },
+   "call": "fr.line(Cam(**cam), pts, col, width)",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18],
+    "cam": {
+     "dist": "0x1.0000000000000p+2",
+     "fov": "0x1.9000000000000p+5",
+     "near": "0x1.999999999999ap-4",
+     "pitch": "0x1.1800000000000p+5",
+     "roll": "0x0.0p+0",
+     "sy": "0x1.4000000000000p+8",
+     "target": ["0x0.0p+0", "0x1.0000000000000p-1", "0x0.0p+0"],
+     "yaw": "0x1.9000000000000p+4"
+    }
+   },
+   "arrays": {
+    "P": "c021__P",
+    "col": "c021__col",
+    "counts": "c021__counts",
+    "dep": "c021__dep",
+    "rgb": "c021__rgb",
+    "width": "c021__width"
+   },
+   "call": "fr.line(Cam(**cam), pts, col, width)",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "col": "c022__col",
+    "counts": "c022__counts",
+    "dep": "c022__dep",
+    "has_z": "c022__has_z",
+    "pts": "c022__pts",
+    "rgb": "c022__rgb",
+    "z": "c022__z"
+   },
+   "call": "fr.screen_poly(pts, col, z)",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "col": "c023__col",
+    "counts": "c023__counts",
+    "dep": "c023__dep",
+    "has_z": "c023__has_z",
+    "pts": "c023__pts",
+    "rgb": "c023__rgb",
+    "z": "c023__z"
+   },
+   "call": "fr.screen_poly(pts, col, z)",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "col": "c024__col",
+    "counts": "c024__counts",
+    "dep": "c024__dep",
+    "has_z": "c024__has_z",
+    "pts": "c024__pts",
+    "rgb": "c024__rgb",
+    "z": "c024__z"
+   },
+   "call": "fr.screen_poly(pts, col, z)",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "center": "c025__center",
+    "col": "c025__col",
+    "dep": "c025__dep",
+    "has_z": "c025__has_z",
+    "n": "c025__n",
+    "r": "c025__r",
+    "rgb": "c025__rgb",
+    "rot": "c025__rot",
+    "z": "c025__z"
+   },
+   "call": "fr.disc(center, r, col, n, rot, z)",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "center": "c026__center",
+    "col": "c026__col",
+    "dep": "c026__dep",
+    "has_z": "c026__has_z",
+    "n": "c026__n",
+    "r": "c026__r",
+    "rgb": "c026__rgb",
+    "rot": "c026__rot",
+    "z": "c026__z"
+   },
+   "call": "fr.disc(center, r, col, n, rot, z)",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "center": "c027__center",
+    "col": "c027__col",
+    "dep": "c027__dep",
+    "has_z": "c027__has_z",
+    "n": "c027__n",
+    "r": "c027__r",
+    "rgb": "c027__rgb",
+    "rot": "c027__rot",
+    "z": "c027__z"
+   },
+   "call": "fr.disc(center, r, col, n, rot, z)",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "arr": "c028__arr",
+    "array": "c028__array",
+    "dep": "c028__dep",
+    "depth": "c028__depth",
+    "rgb": "c028__rgb"
+   },
+   "call": "fr.set_array(arr, depth); fr.array()",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "arr": "c029__arr",
+    "array": "c029__array",
+    "dep": "c029__dep",
+    "rgb": "c029__rgb"
+   },
+   "call": "fr.set_array(arr, depth); fr.array()",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "bg": [10, 8, 18]
+   },
+   "arrays": {
+    "arr": "c030__arr",
+    "array": "c030__array",
+    "dep": "c030__dep",
+    "depth": "c030__depth",
+    "rgb": "c030__rgb"
+   },
+   "call": "fr.set_array(arr, depth); fr.array()",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "r": 1
+   },
+   "arrays": {
+    "out": "c031__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "r": 2
+   },
+   "arrays": {
+    "out": "c032__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "r": 3
+   },
+   "arrays": {
+    "out": "c033__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "r": 4
+   },
+   "arrays": {
+    "out": "c034__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "r": 5
+   },
+   "arrays": {
+    "out": "c035__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "r": 6
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "r": 7
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "r": 8
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "r": 9
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "r": 10
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "r": 11
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "r": 12
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "r": 13
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "r": 14
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "r": 15
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "r": 16
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "r": 17
+   },
+   "arrays": {
+    "out": "c047__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "r": 18
+   },
+   "arrays": {
+    "out": "c048__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "r": 19
+   },
+   "arrays": {
+    "out": "c049__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "r": 20
+   },
+   "arrays": {
+    "out": "c050__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "r": 21
+   },
+   "arrays": {
+    "out": "c051__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "r": 22
+   },
+   "arrays": {
+    "out": "c052__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "r": 23
+   },
+   "arrays": {
+    "out": "c053__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "r": 24
+   },
+   "arrays": {
+    "out": "c054__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "r": 25
+   },
+   "arrays": {
+    "out": "c055__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "r": 26
+   },
+   "arrays": {
+    "out": "c056__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "r": 27
+   },
+   "arrays": {
+    "out": "c057__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "r": 28
+   },
+   "arrays": {
+    "out": "c058__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "r": 29
+   },
+   "arrays": {
+    "out": "c059__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "r": 30
+   },
+   "arrays": {
+    "out": "c060__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "r": 31
+   },
+   "arrays": {
+    "out": "c061__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "r": 32
+   },
+   "arrays": {
+    "out": "c062__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "r": 33
+   },
+   "arrays": {
+    "out": "c063__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "r": 34
+   },
+   "arrays": {
+    "out": "c064__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "r": 35
+   },
+   "arrays": {
+    "out": "c065__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "r": 36
+   },
+   "arrays": {
+    "out": "c066__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "r": 37
+   },
+   "arrays": {
+    "out": "c067__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "r": 38
+   },
+   "arrays": {
+    "out": "c068__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "r": 39
+   },
+   "arrays": {
+    "out": "c069__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "r": 40
+   },
+   "arrays": {
+    "out": "c070__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "r": 41
+   },
+   "arrays": {
+    "out": "c071__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "r": 42
+   },
+   "arrays": {
+    "out": "c072__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "r": 43
+   },
+   "arrays": {
+    "out": "c073__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "r": 44
+   },
+   "arrays": {
+    "out": "c074__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "r": 45
+   },
+   "arrays": {
+    "out": "c075__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "r": 46
+   },
+   "arrays": {
+    "out": "c076__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "r": 47
+   },
+   "arrays": {
+    "out": "c077__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "r": 48
+   },
+   "arrays": {
+    "out": "c078__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "r": 49
+   },
+   "arrays": {
+    "out": "c079__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "r": 50
+   },
+   "arrays": {
+    "out": "c080__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "r": 51
+   },
+   "arrays": {
+    "out": "c081__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "r": 52
+   },
+   "arrays": {
+    "out": "c082__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "r": 53
+   },
+   "arrays": {
+    "out": "c083__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "r": 54
+   },
+   "arrays": {
+    "out": "c084__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "r": 55
+   },
+   "arrays": {
+    "out": "c085__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "r": 56
+   },
+   "arrays": {
+    "out": "c086__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "r": 57
+   },
+   "arrays": {
+    "out": "c087__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "r": 58
+   },
+   "arrays": {
+    "out": "c088__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "r": 59
+   },
+   "arrays": {
+    "out": "c089__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "r": 60
+   },
+   "arrays": {
+    "out": "c090__out"
+   },
+   "call": "reelkit.raster.GLOW[r]",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c091__glows",
+    "in": "c091__in",
+    "out": "c091__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c092__glows",
+    "in": "c092__in",
+    "out": "c092__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c092"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c093__glows",
+    "in": "c093__in",
+    "out": "c093__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c093"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c094__glows",
+    "in": "c094__in",
+    "out": "c094__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c094"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c095__glows",
+    "in": "c095__in",
+    "out": "c095__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c095"
+  },
+  {
+   "args": {
+    "H": 64,
+    "W": 48
+   },
+   "arrays": {
+    "glows": "c096__glows",
+    "in": "c096__in",
+    "out": "c096__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c096"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "glows": "c097__glows",
+    "in": "c097__in",
+    "out": "c097__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c097"
+  },
+  {
+   "args": {},
+   "arrays": {
+    "glows": "c098__glows",
+    "in": "c098__in",
+    "out": "c098__out"
+   },
+   "call": "reelkit.raster.apply_glows(img, glows)",
+   "id": "c098"
+  }
+ ],
+ "note": "Every Frame case starts from Frame(bg) (args.bg: the tuple; or the array \"bg\" for \"Frame(bg_array)\"), runs its calls in order and stores what the frame then holds: rgb = np.asarray(fr.pil) (uint8, (640, 360, 3)) and dep = fr.depth() (float32, (640, 360)). The calls of one case are rows: P or pts holds every point list one after another, counts the points per call, col one colour per call. poly: depth per call; ret and ret_counts are the returned screen points (0 points where Python returned None). screen_poly and disc: z is used where has_z. apply_glows: glows rows are [x, y, r, red, green, blue, intensity]; the cases with args.W and args.H ran with reelkit.raster.W and H set to that size (the picture decides the size in the port).",
+ "tool": "kit"
+}

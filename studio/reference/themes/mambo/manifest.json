@@ -1,0 +1,11 @@
+{
+ "format": 1,
+ "entries": [
+  {"path": "studio/reference/themes/mambo/alto_sax.json", "sha256": "9a881ef21c1bbbcfc640027cadfda56060b80ef04fcf2404bef2b8c7139cd3a8", "bytes": 21074, "tool": "tools.studio_export.theme_mambo", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/mambo/bed.json", "sha256": "19f6da7b607da8fb594916f0e324d765d555fec55d69b07e0e12a584c4bd2daa", "bytes": 53059, "tool": "tools.studio_export.theme_mambo", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/mambo/exceptions.toml", "sha256": "fa29a01e9c4b1693533f0e35589afb4df98031bb9be56d8a8cab7b69f89cf7f4", "bytes": 781, "tool": "tools.studio_export.theme_mambo", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/mambo/pins.json", "sha256": "fd62ea974e1c937fe061285af8af79d0d7bbcfa44b951f00160e66a53c4f16e8", "bytes": 2009, "tool": "tools.studio_export.m3refs", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/mambo/theme.json", "sha256": "31adf539d0d7bcc0880e3fceeefcae4b417cb429be4a87a63ad13b26ade07522", "bytes": 3569, "tool": "tools.studio_export.theme_mambo", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"},
+  {"path": "studio/reference/themes/mambo/voicings.json", "sha256": "640e1d01171ac8b5138528bc78945e88d66a1a862b7489b24ea2d6a5558b0fb4", "bytes": 4736, "tool": "tools.studio_export.theme_mambo", "commit": "6963f6bc35e90e61441c030e935269a07903cf05", "dirty": false, "python": "3.13.18", "numpy": "2.5.3", "scipy": "1.18.1", "pillow": "12.3.0", "platform": "Windows-11-AMD64"}
+ ]
+}

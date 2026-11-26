@@ -1,0 +1,822 @@
+{
+ "about": "kit.music helpers (float64, 48,000 Hz), in the order they were called, from the recorded start state of the noise generator with an empty note cache",
+ "cases": [
+  {
+   "args": {
+    "name": "FLUTE"
+   },
+   "arrays": {
+    "out": "c000__out"
+   },
+   "call": "kit.music.inst_gain('FLUTE')",
+   "helper": "inst_gain",
+   "id": "c000",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "289533129354323354318955456298181112347"
+   },
+   "noise_after": "298504411499926805183013488005417175337",
+   "result": "0x1.5ee42307aeccfp-1",
+   "voice": "pp_bridge.voice(name='FLUTE', midi=82, vel=0.8, dur=0.2)"
+  },
+  {
+   "args": {
+    "name": "TROMBONE"
+   },
+   "arrays": {
+    "out": "c001__out"
+   },
+   "call": "kit.music.inst_gain('TROMBONE')",
+   "helper": "inst_gain",
+   "id": "c001",
+   "result": "0x1.a1206dba7baf8p-1",
+   "voice": "pp_bridge.voice(name='TROMBONE', midi=56, vel=0.8, dur=0.2)"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 72,
+    "name": "FLUTE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c002__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=72, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c002",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "298504411499926805183013488005417175337"
+   },
+   "noise_after": "96673253173847406107352017991985408546"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c003__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=76, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c003",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "96673253173847406107352017991985408546"
+   },
+   "noise_after": "146752722303888225491123205519571004417"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c004__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=84, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c004",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "146752722303888225491123205519571004417"
+   },
+   "noise_after": "338027530131957228603787495734003793190"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 93,
+    "name": "FLUTE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c005__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=93, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c005",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "338027530131957228603787495734003793190"
+   },
+   "noise_after": "272656951390177522256788438822431651323"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c006__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=40, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 47,
+    "name": "TROMBONE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c007__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=47, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c008__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=52, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.70a3d70a3d70ap-3",
+    "midi": 64,
+    "name": "TROMBONE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c009__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=64, dur=0.18, cap=0.6, vel=0.85)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "cap": "0x1.851eb851eb852p-2",
+    "dur": "0x1.999999999999ap-3",
+    "midi": 76,
+    "name": "FLUTE",
+    "vel": "0x1.999999999999ap-1"
+   },
+   "arrays": {
+    "out": "c010__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=76, dur=0.2, cap=0.38, vel=0.8)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c010",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "272656951390177522256788438822431651323"
+   },
+   "noise_after": "227577513295671761342069239716898008"
+  },
+  {
+   "args": {
+    "cap": "0x1.eb851eb851eb8p-3",
+    "dur": "0x1.eb851eb851eb8p-5",
+    "midi": 84,
+    "name": "FLUTE",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c011__out"
+   },
+   "call": "kit.music.note(name='FLUTE', midi=84, dur=0.06, cap=0.24, vel=1.0)",
+   "gain": "0x1.5ee42307aeccfp-1",
+   "helper": "note",
+   "id": "c011",
+   "noise": {
+    "inc": "336983293413220778415499640756163231851",
+    "state": "227577513295671761342069239716898008"
+   },
+   "noise_after": "291545217029142924767731019187969663984"
+  },
+  {
+   "args": {
+    "cap": "0x1.3333333333333p-1",
+    "dur": "0x1.3333333333333p-2",
+    "midi": 40,
+    "name": "TROMBONE",
+    "vel": "0x1.b333333333333p-1"
+   },
+   "arrays": {
+    "out": "c012__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=40, dur=0.3, cap=0.6, vel=0.85)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "cap": "0x1.0000000000000p+0",
+    "dur": "0x1.6666666666666p-1",
+    "midi": 52,
+    "name": "TROMBONE",
+    "vel": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c013__out"
+   },
+   "call": "kit.music.note(name='TROMBONE', midi=52, dur=0.7, cap=1.0, vel=1.0)",
+   "gain": "0x1.a1206dba7baf8p-1",
+   "helper": "note",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "cap": "0x1.999999999999ap-5",
+    "fade": "0x1.47ae147ae147bp-5"
+   },
+   "arrays": {
+    "out": "c014__out",
+    "x": "c014__x"
+   },
+   "call": "kit.music.fit(x=<array (1000,)>, cap=0.05, fade=0.04)",
+   "helper": "fit",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "cap": "0x1.999999999999ap-5",
+    "fade": "0x1.47ae147ae147bp-5"
+   },
+   "arrays": {
+    "out": "c015__out",
+    "x": "c015__x"
+   },
+   "call": "kit.music.fit(x=<array (5000,)>, cap=0.05, fade=0.04)",
+   "helper": "fit",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "cap": "0x1.47ae147ae147bp-7",
+    "fade": "0x1.47ae147ae147bp-5"
+   },
+   "arrays": {
+    "out": "c016__out",
+    "x": "c016__x"
+   },
+   "call": "kit.music.fit(x=<array (5000,)>, cap=0.01, fade=0.04)",
+   "helper": "fit",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "cap": "0x1.999999999999ap-5",
+    "fade": "0x1.47ae147ae147bp-8"
+   },
+   "arrays": {
+    "out": "c017__out",
+    "x": "c017__x"
+   },
+   "call": "kit.music.fit(x=<array (5000,)>, cap=0.05, fade=0.005)",
+   "helper": "fit",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "dur": "0x1.1eb851eb851ecp-5",
+    "semis": "0x1.0000000000000p+1"
+   },
+   "arrays": {
+    "out": "c018__out",
+    "x": "c008__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=2.0, dur=0.035)",
+   "helper": "gliss",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-5",
+    "semis": "0x1.8000000000000p+1"
+   },
+   "arrays": {
+    "out": "c019__out",
+    "x": "c007__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=3.0, dur=0.05)",
+   "helper": "gliss",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "dur": "0x1.0a3d70a3d70a4p-2",
+    "semis": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "out": "c020__out",
+    "x": "c008__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=12.0, dur=0.26)",
+   "helper": "gliss",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "dur": "0x1.47ae147ae147bp-2",
+    "semis": "0x1.8000000000000p+4"
+   },
+   "arrays": {
+    "out": "c021__out",
+    "x": "c009__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=24.0, dur=0.32)",
+   "helper": "gliss",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "dur": "0x1.ccccccccccccdp-1",
+    "semis": -10
+   },
+   "arrays": {
+    "out": "c022__out",
+    "x": "c008__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=-10, dur=0.9)",
+   "helper": "gliss",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "dur": "0x1.999999999999ap-5",
+    "semis": "0x1.0000000000000p+0"
+   },
+   "arrays": {
+    "out": "c023__out",
+    "x": "c003__out"
+   },
+   "call": "kit.music.gliss(x=<array (28800,)>, semis=1.0, dur=0.05)",
+   "helper": "gliss",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "semis": "-0x1.0000000000000p+1",
+    "t0": "0x1.999999999999ap-5",
+    "t1": "0x1.3333333333333p-2"
+   },
+   "arrays": {
+    "out": "c024__out",
+    "x": "c003__out"
+   },
+   "call": "kit.music.bend(x=<array (28800,)>, semis=-2.0, t0=0.05, t1=0.3)",
+   "helper": "bend",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "semis": "0x1.8000000000000p+1",
+    "t0": "0x0.0p+0",
+    "t1": "0x1.999999999999ap-3"
+   },
+   "arrays": {
+    "out": "c025__out",
+    "x": "c007__out"
+   },
+   "call": "kit.music.bend(x=<array (28800,)>, semis=3.0, t0=0.0, t1=0.2)",
+   "helper": "bend",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "delay": "0x1.3333333333333p-3",
+    "depth": "0x1.6666666666666p-2",
+    "rate": "0x1.6000000000000p+2"
+   },
+   "arrays": {
+    "out": "c026__out",
+    "x": "c003__out"
+   },
+   "call": "kit.music.vibrato(x=<array (28800,)>, depth=0.35, rate=5.5, delay=0.15)",
+   "helper": "vibrato",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "delay": "0x1.999999999999ap-3",
+    "depth": "0x1.0000000000000p-1",
+    "rate": "0x1.4000000000000p+2"
+   },
+   "arrays": {
+    "out": "c027__out",
+    "x": "c008__out"
+   },
+   "call": "kit.music.vibrato(x=<array (28800,)>, depth=0.5, rate=5.0, delay=0.2)",
+   "helper": "vibrato",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "opens": [
+     ["0x0.0p+0", "0x1.1393939393939p-3"]
+    ]
+   },
+   "arrays": {
+    "out": "c028__out",
+    "x": "c008__out"
+   },
+   "call": "kit.music.wah(x=<array (28800,)>, opens=[(0.0, 0.13455882352941176)])",
+   "helper": "wah",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "opens": [
+     ["0x0.0p+0", "0x1.999999999999ap-4"],
+     ["0x1.0000000000000p-2", "0x1.999999999999ap-2"]
+    ]
+   },
+   "arrays": {
+    "out": "c029__out",
+    "x": "c007__out"
+   },
+   "call": "kit.music.wah(x=<array (28800,)>, opens=[(0.0, 0.1), (0.25, 0.4)])",
+   "helper": "wah",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.ccccccccccccdp-1",
+    "k": 0,
+    "low": false,
+    "low_cut": [30, 70],
+    "t": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "gl": "c030__gl",
+    "out": "c030__out",
+    "x": "c010__out"
+   },
+   "call": "kit.music.colour(x=<array (18240,)>, k=0, t=12.0, drive_k=0.9, cut0=90, cut_span=520, drive=4.5, low=False, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.53851eb851ebap+6",
+    "own": "0x1.6e66666666664p+6"
+   },
+   "id": "c030",
+   "result": {
+    "gain": "0x1.0c29e746ea780p+0",
+    "lead": "0x1.13404ea4a8becp-4"
+   }
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.ccccccccccccdp-1",
+    "k": 0,
+    "low": false,
+    "low_cut": [30, 70],
+    "t": "0x1.e000000000000p+4"
+   },
+   "arrays": {
+    "gl": "c031__gl",
+    "out": "c031__out",
+    "x": "c010__out"
+   },
+   "call": "kit.music.colour(x=<array (18240,)>, k=0, t=30.0, drive_k=0.9, cut0=90, cut_span=520, drive=4.5, low=False, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.fa3d70a3d70acp+5",
+    "own": "0x1.d199999999987p+5"
+   },
+   "id": "c031",
+   "result": {
+    "gain": "0x1.ee5844203add1p-1",
+    "lead": "-0x1.a027525460bb8p-5"
+   }
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.ccccccccccccdp-1",
+    "k": 0,
+    "low": false,
+    "low_cut": [30, 70],
+    "t": "0x1.882c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "gl": "c032__gl",
+    "out": "c032__out",
+    "x": "c010__out"
+   },
+   "call": "kit.music.colour(x=<array (18240,)>, k=0, t=49.021568627450975, drive_k=0.9, cut0=90, cut_span=520, drive=4.5, low=False, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.051eb851eb8c8p+2",
+    "own": "0x1.a6666666665fep+2"
+   },
+   "id": "c032",
+   "result": {
+    "gain": "0x1.047ecedd95f66p+0",
+    "lead": "0x1.9ce075f6fcfe6p-6"
+   }
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.999999999999ap-1",
+    "k": 1,
+    "low": true,
+    "low_cut": [30, 70],
+    "t": "0x1.8000000000000p+3"
+   },
+   "arrays": {
+    "gl": "c033__gl",
+    "out": "c033__out",
+    "x": "c012__out"
+   },
+   "call": "kit.music.colour(x=<array (28800,)>, k=1, t=12.0, drive_k=0.8, cut0=90, cut_span=520, drive=4.5, low=True, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.6e66666666664p+6",
+    "own": "0x1.53851eb851ebap+6"
+   },
+   "id": "c033",
+   "result": {
+    "gain": "0x1.e8c6ae6e38515p-1",
+    "lead": "-0x1.13404ea4a8becp-4"
+   }
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.999999999999ap-1",
+    "k": 1,
+    "low": true,
+    "low_cut": [30, 70],
+    "t": "0x1.882c2c2c2c2c2p+5"
+   },
+   "arrays": {
+    "gl": "c034__gl",
+    "out": "c034__out",
+    "x": "c012__out"
+   },
+   "call": "kit.music.colour(x=<array (28800,)>, k=1, t=49.021568627450975, drive_k=0.8, cut0=90, cut_span=520, drive=4.5, low=True, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.a6666666665fep+2",
+    "own": "0x1.051eb851eb8c8p+2"
+   },
+   "id": "c034",
+   "result": {
+    "gain": "0x1.f72a1a468fc8ep-1",
+    "lead": "-0x1.9ce075f6fcfe6p-6"
+   }
+  },
+  {
+   "args": {
+    "cut0": 90,
+    "cut_span": 520,
+    "drive": "0x1.2000000000000p+2",
+    "drive_k": "0x1.0000000000000p+0",
+    "k": 1,
+    "low": false,
+    "low_cut": [30, 70],
+    "t": "0x1.e000000000000p+4"
+   },
+   "arrays": {
+    "gl": "c035__gl",
+    "out": "c035__out",
+    "x": "c012__out"
+   },
+   "call": "kit.music.colour(x=<array (28800,)>, k=1, t=30.0, drive_k=1.0, cut0=90, cut_span=520, drive=4.5, low=False, low_cut=(30, 70))",
+   "helper": "colour",
+   "hp": {
+    "other": "0x1.d199999999987p+5",
+    "own": "0x1.fa3d70a3d70acp+5"
+   },
+   "id": "c035",
+   "result": {
+    "gain": "0x1.0924939fb16a3p+0",
+    "lead": "0x1.a027525460bb8p-5"
+   }
+  },
+  {
+   "args": {
+    "decays": [
+     ["0x1.0000000000000p+0", "0x1.eb851eb851eb8p-4"],
+     ["0x1.6147ae147ae14p+1", "0x1.eb851eb851eb8p-5"],
+     ["0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+    ],
+    "dur": "0x1.999999999999ap-2",
+    "m": 84,
+    "seed": 0
+   },
+   "arrays": {
+    "out": "c036__out"
+   },
+   "call": "kit.music.clank(m=84, seed=0, dur=0.4, decays=((1.0, 0.12), (2.76, 0.06), (5.4, 0.03)))",
+   "helper": "clank",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "decays": [
+     ["0x1.0000000000000p+0", "0x1.eb851eb851eb8p-4"],
+     ["0x1.6147ae147ae14p+1", "0x1.eb851eb851eb8p-5"],
+     ["0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+    ],
+    "dur": "0x1.999999999999ap-2",
+    "m": 79,
+    "seed": 5
+   },
+   "arrays": {
+    "out": "c037__out"
+   },
+   "call": "kit.music.clank(m=79, seed=5, dur=0.4, decays=((1.0, 0.12), (2.76, 0.06), (5.4, 0.03)))",
+   "helper": "clank",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "decays": [
+     ["0x1.0000000000000p+0", "0x1.eb851eb851eb8p-4"],
+     ["0x1.6147ae147ae14p+1", "0x1.eb851eb851eb8p-5"],
+     ["0x1.599999999999ap+2", "0x1.eb851eb851eb8p-6"]
+    ],
+    "dur": "0x1.999999999999ap-2",
+    "m": 64,
+    "seed": 9
+   },
+   "arrays": {
+    "out": "c038__out"
+   },
+   "call": "kit.music.clank(m=64, seed=9, dur=0.4, decays=((1.0, 0.12), (2.76, 0.06), (5.4, 0.03)))",
+   "helper": "clank",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "dec": "0x1.eb851eb851eb8p-6",
+    "dur": "0x1.70a3d70a3d70ap-4",
+    "hi": 10000,
+    "lo": 3500,
+    "seed": 0
+   },
+   "arrays": {
+    "out": "c039__out"
+   },
+   "call": "kit.music.hiss(dur=0.09, seed=0, lo=3500, hi=10000, dec=0.03)",
+   "helper": "hiss",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "dec": "0x1.999999999999ap-5",
+    "dur": "0x1.47ae147ae147bp-3",
+    "hi": 9000,
+    "lo": 3000,
+    "seed": 17
+   },
+   "arrays": {
+    "out": "c040__out"
+   },
+   "call": "kit.music.hiss(dur=0.16, seed=17, lo=3000, hi=9000, dec=0.05)",
+   "helper": "hiss",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "dec": "0x1.999999999999ap-5",
+    "dur": "0x1.eb851eb851eb8p-4",
+    "hi": 11000,
+    "lo": 4000,
+    "seed": 70
+   },
+   "arrays": {
+    "out": "c041__out"
+   },
+   "call": "kit.music.hiss(dur=0.12, seed=70, lo=4000, hi=11000, dec=0.05)",
+   "helper": "hiss",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "dur": "0x1.0000000000000p+1",
+    "seed": 3
+   },
+   "arrays": {
+    "out": "c042__out"
+   },
+   "call": "kit.music.roar(dur=2.0, seed=3)",
+   "helper": "roar",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "crack": true,
+    "dur": "0x1.999999999999ap+0",
+    "seed": 0
+   },
+   "arrays": {
+    "out": "c043__out"
+   },
+   "call": "kit.music.thunder(dur=1.6, seed=0, crack=True)",
+   "helper": "thunder",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "crack": false,
+    "dur": "0x1.0000000000000p-1",
+    "seed": 3
+   },
+   "arrays": {
+    "out": "c044__out"
+   },
+   "call": "kit.music.thunder(dur=0.5, seed=3, crack=False)",
+   "helper": "thunder",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "dur": "0x1.cb4b4b4b4b4b4p+0",
+    "over": "0x0.0p+0",
+    "seed": 12
+   },
+   "arrays": {
+    "out": "c045__out"
+   },
+   "call": "kit.music.riser(dur=1.7941176470588234, over=0.0, seed=12)",
+   "helper": "riser",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "dur": "0x1.cb4b4b4b4b4c0p+0",
+    "over": "0x1.89374bc6a7efap-7",
+    "seed": 11
+   },
+   "arrays": {
+    "out": "c046__out"
+   },
+   "call": "kit.music.riser(dur=1.794117647058826, over=0.012, seed=11)",
+   "helper": "riser",
+   "id": "c046"
+  }
+ ],
+ "episode": "flute_vs_trombone",
+ "notes": {
+  "colour": "kit.music.colour reads the fight: `hp` holds P.hp_at(k, t) and P.hp_at(1 - k, t) of the episode's recording (seed 392), so the case can be redone without it. `gl` is (gain, lead)",
+  "order": "the cases ran in this order in one interpreter; a case with `noise` drew from the shared generator: `noise` is its state and inc before the call, noise_after the state after",
+  "result": "scalar results as float.hex(); they are also stored as small float64 arrays",
+  "tempo": "T.BEAT, T.BAR, T.S16 of the episode as float.hex() in `tempo`",
+  "x": "a shaping helper's input: the `out` of an earlier note case (the same npz member)"
+ },
+ "start": {
+  "inc": "336983293413220778415499640756163231851",
+  "state": "289533129354323354318955456298181112347"
+ },
+ "tempo": {
+  "BAR": "0x1.cb4b4b4b4b4b4p+0",
+  "BEAT": "0x1.cb4b4b4b4b4b4p-2",
+  "S16": "0x1.cb4b4b4b4b4b4p-4"
+ },
+ "tool": "voices"
+}

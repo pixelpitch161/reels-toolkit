@@ -1,0 +1,126 @@
+{
+ "about": "every frame on which the VS title card is drawn, pinned by the SHA-256 of title.draw(noise, frame / 30) (its (640, 360, 3) uint8 bytes in C order), for the episode and three other timelines",
+ "cases": [
+  {
+   "args": {
+    "bpm": 132,
+    "cards": 61,
+    "fighters": ["FLUTE", "TROMBONE"],
+    "series": "BALLFIGHT #15",
+    "timeline": "episode",
+    "timeline_values": {
+     "bar": "0x1.cb4b4b4b4b4b4p+0",
+     "beat": "0x1.cb4b4b4b4b4b4p-2",
+     "bpm": "0x1.0b8a7de6d1d61p+7",
+     "dur": "0x1.e800000000000p+5",
+     "nf": 1830,
+     "t_close": "0x1.3333333333333p-2",
+     "t_doors": ["0x1.7212121212121p+0", "0x1.c39d36d06a039p+0"],
+     "title": ["0x0.0p+0", "0x1.cb4b4b4b4b4b4p-2", "0x1.cb4b4b4b4b4b4p-1"]
+    }
+   },
+   "arrays": {
+    "frames": "c000__frames",
+    "sha256": "c000__sha256"
+   },
+   "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "bpm": 132,
+    "cards": 61,
+    "fighters": ["TROMBONE", "FLUTE"],
+    "series": "BALLFIGHT #15",
+    "timeline": "swapped",
+    "timeline_values": {
+     "bar": "0x1.cb4b4b4b4b4b4p+0",
+     "beat": "0x1.cb4b4b4b4b4b4p-2",
+     "bpm": "0x1.0b8a7de6d1d61p+7",
+     "dur": "0x1.e800000000000p+5",
+     "nf": 1830,
+     "t_close": "0x1.3333333333333p-2",
+     "t_doors": ["0x1.7212121212121p+0", "0x1.c39d36d06a039p+0"],
+     "title": ["0x0.0p+0", "0x1.cb4b4b4b4b4b4p-2", "0x1.cb4b4b4b4b4b4p-1"]
+    }
+   },
+   "arrays": {
+    "frames": "c001__frames",
+    "sha256": "c001__sha256"
+   },
+   "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "bpm": 96,
+    "cards": 84,
+    "fighters": ["FLUTE", "TROMBONE"],
+    "series": null,
+    "timeline": "bpm96",
+    "timeline_values": {
+     "bar": "0x1.4555555555555p+1",
+     "beat": "0x1.4555555555555p-1",
+     "bpm": "0x1.79b47582192e3p+6",
+     "dur": "0x1.e800000000000p+5",
+     "nf": 1830,
+     "t_close": "0x1.3333333333333p-2",
+     "t_doors": ["0x1.00ccccccccccdp+1", "0x1.417e4b17e4b18p+1"],
+     "title": ["0x0.0p+0", "0x1.4555555555555p-1", "0x1.4555555555555p+0"]
+    }
+   },
+   "arrays": {
+    "frames": "c002__frames",
+    "sha256": "c002__sha256"
+   },
+   "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "bpm": 200,
+    "cards": 43,
+    "fighters": ["FLUTE", "TROMBONE"],
+    "series": "BALLFIGHT #15",
+    "timeline": "bpm200",
+    "timeline_values": {
+     "bar": "0x1.3232323232323p+0",
+     "beat": "0x1.3232323232323p-2",
+     "bpm": "0x1.914fbcda3ac11p+7",
+     "dur": "0x1.e800000000000p+5",
+     "nf": 1830,
+     "t_close": "0x1.3333333333333p-2",
+     "t_doors": ["0x1.fe7e7e7e7e7e7p-1", "0x1.2a841db750ea8p+0"],
+     "title": ["0x0.0p+0", "0x1.3232323232323p-2", "0x1.3232323232323p-1"]
+    }
+   },
+   "arrays": {
+    "frames": "c003__frames",
+    "sha256": "c003__sha256"
+   },
+   "call": "hashlib.sha256(title.draw(noise, frame / 30).tobytes()).digest()",
+   "id": "c003"
+  }
+ ],
+ "episode": "flute_vs_trombone",
+ "fps": 30,
+ "mode": "RGB",
+ "noise": {
+  "call": "np.random.default_rng(seed).integers(0, 256, size=(640, 360, 3), dtype=np.uint8)",
+  "file": "noise.png",
+  "seed": 20261110
+ },
+ "note": "Each case is one timeline: the example episode (c000, as kit.picture draws it) or its config with FIGHTERS, BPM (the base tempo; loop_bpm snaps it to whole bars) and SERIES (None: no tag) as args give them and nothing else changed but CHORDS (one a bar, which the card does not read). The looks are the kit's (FLUTE: flute_keys, its close-up and glass; TROMBONE: the card's _slide_tubes and its model), registered as kit.picture does. frames (int32) lists every frame with door_offset not None and below OPEN_PX - 1, sha256 (uint8, n x 32) their digests in the same order; args.timeline_values the timeline's values, the floats as float.hex().",
+ "recording": {
+  "checked": "as in title.json; the other timelines run no fight",
+  "events": 522,
+  "file": "studio/reference/fights/flute_vs_trombone/ep392.bfrec",
+  "frames": 1394,
+  "hash": "038e1f40fc3373eb",
+  "seed": 392,
+  "t_ko": "0x1.902c2c2c2c2c2p+5",
+  "winner": 1
+ },
+ "size": [360, 640],
+ "tool": "title"
+}

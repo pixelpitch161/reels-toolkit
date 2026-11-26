@@ -1,0 +1,14 @@
+# The engine's self-replay hashes of HORN (studio/reference/fighters/horn/fight.json's config): both side orders,
+# seeds 1, 2, 3, 500 and 1 << 40. Written by the proving harness with BF_BLESS=1 on the Windows reference PC;
+# every PC and every build must give the same lines. Do not edit by hand.
+# left right seed winner t_ko n_events hash
+HORN FLUTE 1 0 35.54656862745098 658 b48be18886fbdd6b
+HORN FLUTE 2 0 30.954901960784312 512 e2ea9a51b34f4cf5
+HORN FLUTE 3 1 35.254901960784316 656 6cc245f4e5fbdcf7
+HORN FLUTE 500 0 35.129901960784316 583 6347f51f99ab5b9f
+HORN FLUTE 1099511627776 0 30.988235294117644 551 59da511b7e43b429
+FLUTE HORN 1 0 40.44656862745098 760 ffd85f17a5044fe4
+FLUTE HORN 2 1 28.79656862745098 447 2688c924bcd49d5b
+FLUTE HORN 3 1 39.15490196078431 623 94ef1e4579563762
+FLUTE HORN 500 1 26.129901960784316 451 d3193b5444d94298
+FLUTE HORN 1099511627776 1 35.09656862745098 582 9790d2b1d1bb997b

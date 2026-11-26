@@ -1,0 +1,37 @@
+{
+ "about": "scipy.signal.fftconvolve(a, b) (mode \"full\", 1-D): the convolution of reelkit.audio.reverb",
+ "cases": [
+  {
+   "args": {
+    "n_a": 1000,
+    "n_b": 300
+   },
+   "arrays": {
+    "a": "c000__a",
+    "b": "c000__b",
+    "out": "c000__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, b)",
+   "id": "c000",
+   "what": "noise against a short decaying noise burst (default_rng(1299): a, then b before its exp(-i / 60))"
+  },
+  {
+   "args": {
+    "n_a": 12000,
+    "n_b": 48000
+   },
+   "arrays": {
+    "a": "c001__a",
+    "b": "c001__b",
+    "out": "c001__out"
+   },
+   "call": "scipy.signal.fftconvolve(a, b)",
+   "id": "c001",
+   "what": "a decaying burst against one second shaped like the reverb's impulse response (noise * exp(-t / 0.55), low-passed at 5 kHz, the first 20 ms zero)"
+  }
+ ],
+ "notes": {
+  "out": "float64, len(a) + len(b) - 1"
+ },
+ "tool": "dsp"
+}

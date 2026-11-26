@@ -1,0 +1,261 @@
+{
+ "about": "ballfight_piano_vs_organ: what each check of kit/checks.py gives",
+ "checks": {
+  "band": {
+   "bed_buses": ["drums", "bass", "fx"],
+   "fighters": [
+    {
+     "band": [260, 4200],
+     "bus": "piano",
+     "name": "PIANO",
+     "section": [11.622484540640201, 9.385284218879619, 12.124906956375924, 12.775082820310015, 10.688323154053538],
+     "while_it_sounds": [11.622484540640201, 9.385284218879619, 12.124906956375924, 13.251377621108695, 10.688323154053538]
+    },
+    {
+     "band": [180, 1200],
+     "bus": "organ",
+     "name": "ORGAN",
+     "section": [4.87295600668601, 3.743579370225685, 5.209776471463176, 5.878956703885635, 5.800149909316048],
+     "while_it_sounds": [6.31190371904388, 5.577889355617458, 6.465539817863668, 6.645709375066037, 6.989346836747579]
+    }
+   ],
+   "how": "on the 16-bit stem wavs (mono mix / 32768), each band-passed with butter(4, band, \"band\", fs=48000) as sections: section = dB of the fighter's stem minus dB of the bed (the bed buses added up) over each span; while_it_sounds = the same over the samples where the fighter's 20 ms moving RMS is above a tenth of its largest in the span. dB = 20 log10(rms + 1e-9). Passes when every while_it_sounds is above 0",
+   "needs_frames": 0,
+   "pass": true,
+   "printed": ["band: PIANO     260-4200 Hz over the bed (dB), section / while it sounds: +11.6/+11.6  +9.4/ +9.4 +12.1/+12.1 +12.8/+13.3 +10.7/+10.7", "band: ORGAN     180-1200 Hz over the bed (dB), section / while it sounds:  +4.9/ +6.3  +3.7/ +5.6  +5.2/ +6.5  +5.9/ +6.6  +5.8/ +7.0"],
+   "spans": [
+    [3.5882352941176467, 10.0],
+    [10.0, 20.0],
+    [20.0, 32.0],
+    [32.0, 44.0],
+    [44.0, 49.57156862745098]
+   ]
+  },
+  "flash": {
+   "area_rows": 338,
+   "f0": 1194,
+   "f1": 1532,
+   "flash_frames": [],
+   "general_flashes": 0,
+   "how": "the stretch runs from 1 s before the first desperation move (or 8 s before the K.O. if that is earlier; never before FIGHT!) to 1.5 s after the K.O.: frames f0 .. f1 - 1. Each frame's relative luminance (reelkit.flashcheck.rel_lum, float32) goes to reelkit.flashcheck.analyse: area[j] is the largest share of the frame whose luminance changed by 0.1 or more against any of the 5 frames before frame f0 + j (darker state below 0.8); a transition needs a share of 0.25; two opposite transitions make a flash; passes when no 1 s holds more than 3",
+   "largest_area": 0.14088975694444444,
+   "largest_area_frame": 1229,
+   "largest_area_t": 40.96666666666667,
+   "low_moves_first_used": [40.82157, 40.82157],
+   "needs_frames": 338,
+   "pass": true,
+   "printed": ["flash: 39.8-51.1 s, 338 frames: general flashes 0, worst in any 1 s 0; largest share of frame changing >= 0.1: 14.1 % at 40.97 s  PASS"],
+   "t0": 39.82157,
+   "t1": 51.07156862745098,
+   "worst_in_1s": 0
+  },
+  "focus": {
+   "frames": 1830,
+   "how": "for every frame: the ring's 8 corners, both balls (floor and top), each look's focus_points, the keys and the shards; coc_map(depth, focus depth, 26.0, 0.17); passes when the largest is 0",
+   "needs_frames": 0,
+   "pass": true,
+   "points": 69107,
+   "printed": ["focus: max subject CoC over 1830 frames: 0.000 px  PASS"],
+   "worst_coc": 0.0
+  },
+  "levels": {
+   "build": -0.04283246351836212,
+   "dips": [],
+   "ending": -11.384032204948372,
+   "how": "rows: reelkit.levels.profile on the mono mix of audio.wav (mean of the channels / 32768): the RMS in dBFS of each 2 s window and the rough hit rate. There are round(61.013 / 2) = 31 windows; the last one (60-62 s) holds only the 1.013 s that are left. ending = mean of the last 10 windows, opening = mean of the first 5, build = mean of windows 15.. minus mean of windows 0..14, spread = loudest minus quietest window with the one allowed dip left out",
+   "module_output": ["window   dBFS  hits/s", "   0-2    -10.8    4.5", "   2-4    -11.4    2.5", "   4-6    -11.3    0.0", "   6-8    -11.2    0.5", "   8-10   -11.2    0.5", "  10-12   -11.2    1.0", "  12-14   -11.1    1.0", "  14-16   -11.4    0.5", "  16-18   -11.1    0.0", "  18-20   -11.2    0.5", "  20-22   -11.1    1.0", "  22-24   -11.2    3.0", "  24-26   -11.1    0.0", "  26-28   -10.9    1.5", "  28-30   -10.9    0.0", "  30-32   -10.9    0.5", "  32-34   -11.0    0.5", "  34-36   -10.8    1.0", "  36-38   -10.9    0.0", "  38-40   -10.7    0.5", "  40-42   -10.6    1.5", "  42-44   -11.0    1.5", "  44-46   -10.8    0.0", "  46-48   -10.9    1.0", "  48-50   -10.9    0.0", "  50-52   -13.6    1.5", "  52-54   -11.2    2.5", "  54-56   -11.6    3.0", "  56-58   -11.5    3.0", "  58-60   -11.4    3.5", "  60-62   -11.0    0.5", "ending (last 20 s): -11.4 dBFS  (the reference level)", "opening (0-10 s): -11.2 dBFS (+0.2 dB vs ending), 1.6 hits/s   OK", "build (30-60 s vs 0-30 s): -0.0 dB   OK", "spread (loudest - quietest 2 s window, the one allowed dip excluded): 2.9 dB   OK", "dips (> 3 dB below the ending): 0   OK", "PASS"],
+   "needs_frames": 0,
+   "opening": -11.153879194547816,
+   "opening_hits_per_s": 1.6,
+   "opening_minus_ending": 0.23015301040055647,
+   "pass": true,
+   "printed": ["levels: opening (0-10 s): -11.2 dBFS (+0.2 dB vs ending), 1.6 hits/s   OK | build (30-60 s vs 0-30 s): -0.0 dB   OK | spread (loudest - quietest 2 s window, the one allowed dip excluded): 2.9 dB   OK | dips (> 3 dB below the ending): 0   OK", "levels: PASS"],
+   "rows_count": 31,
+   "spread": 2.9375768585302655,
+   "targets": {
+    "build_max": 1.5,
+    "dip_below": 3.0,
+    "dips_allowed": 1,
+    "opening_within": 1.5,
+    "spread_max": 5.0
+   },
+   "window_s": 2.0
+  },
+  "loop": {
+   "audio": {
+    "fails": 0,
+    "first_20ms_db": -7.998287581718937,
+    "jump": 0.007904052734375,
+    "last_20ms_db": -11.865926243302356,
+    "step_db": 3.8676386615834186,
+    "typical_step": 0.0168609619140625
+   },
+   "frames": {
+    "head": [0, 30],
+    "tail": [1680, 1830]
+   },
+   "how": "picture: mad(a, b) = mean absolute RGB difference of two frames (int16 subtraction). steps = the mad of each frame to the next over the last 150 frames, then over the first 30; normal = max(median(steps), 0.5); seam = mad(last frame, frame 0); fails when seam / normal is above 2.5, when a one-off step is above 6x normal, or when a frame of the last 5 s (its final second left out) is nearer to frame 0 than half the seam and below 3.0 while the seam ratio is above 1.5. audio: the mono mix; dB of the last and first 20 ms (20 log10(rms + 1e-9)); a click when the jump from the last to the first sample is above max(0.08, 12 x the median sample step of the first second)",
+   "needs_frames": 180,
+   "pass": true,
+   "picture": {
+    "big_jumps": [
+     {
+      "ratio": 21.539656610806126,
+      "step": 141
+     },
+     {
+      "ratio": 12.467855687831644,
+      "step": 142
+     },
+     {
+      "ratio": 26.267016751492207,
+      "step": 143
+     },
+     {
+      "ratio": 29.901001732453008,
+      "step": 144
+     },
+     {
+      "ratio": 32.08200833378261,
+      "step": 145
+     },
+     {
+      "ratio": 30.00275569522389,
+      "step": 146
+     },
+     {
+      "ratio": 26.62511929025563,
+      "step": 147
+     },
+     {
+      "ratio": 19.2996765754234,
+      "step": 148
+     },
+     {
+      "ratio": 14.67467956289049,
+      "step": 149
+     },
+     {
+      "ratio": 25.655390252131106,
+      "step": 150
+     },
+     {
+      "ratio": 20.577807816103196,
+      "step": 151
+     },
+     {
+      "ratio": 17.668908610185845,
+      "step": 152
+     },
+     {
+      "ratio": 11.972704277441483,
+      "step": 153
+     },
+     {
+      "ratio": 12.460552372938162,
+      "step": 154
+     },
+     {
+      "ratio": 11.335125998856148,
+      "step": 155
+     },
+     {
+      "ratio": 16.27670892844141,
+      "step": 162
+     },
+     {
+      "ratio": 32.703922836087266,
+      "step": 163
+     },
+     {
+      "ratio": 22.015892769106866,
+      "step": 164
+     },
+     {
+      "ratio": 25.9999399727543,
+      "step": 165
+     },
+     {
+      "ratio": 12.972494737889363,
+      "step": 166
+     },
+     {
+      "ratio": 17.509510705692527,
+      "step": 167
+     },
+     {
+      "ratio": 11.319257685293826,
+      "step": 168
+     },
+     {
+      "ratio": 12.392216911787182,
+      "step": 169
+     },
+     {
+      "ratio": 10.79263198907504,
+      "step": 175
+     },
+     {
+      "ratio": 27.67691224294583,
+      "step": 176
+     },
+     {
+      "ratio": 29.565242668477858,
+      "step": 177
+     }
+    ],
+    "fails": 0,
+    "nearest_to_frame_0": {
+     "frame": 1766,
+     "mad": 66.62557725694444
+    },
+    "normal": 1.301492332175926,
+    "ratio": 0.3880661389086046,
+    "seam": 0.5050651041666666,
+    "steps_rows": 178
+   },
+   "printed": ["loop check (the loop point must be the file boundary):", "  OK   seam: last frame -> frame 0 changes 0.51 vs normal step 1.30 (0.4x, limit 2.5x)", "  OK   restart: 8 recurring jumps in the last 5 s look like beat pulses, not a reset", "  OK   repeat: no copy of the opening inside the last 5 s", "  OK   audio level across the seam: last 20 ms -11.9 dBFS vs first 20 ms -8.0 (3.9 dB, limit 6)", "  OK   audio click: sample jump 0.008 at the seam (typical step 0.0169)", "loop: PASS"]
+  },
+  "loudness": {
+   "fight_lufs": -9.935556890402465,
+   "how": "audio.wav / 32768 through the two BS.1770 K-weighting filters (48 kHz coefficients, in kit/checks.py), then -0.691 + 10 log10(sum over the channels of the mean square + 1e-12) over the samples of each span (first and one-past-last sample in `spans`). The kit prints the difference and returns it; it sets no pass mark",
+   "intro_lufs": -11.009620838380053,
+   "intro_minus_fight": -1.0740639479775886,
+   "needs_frames": 0,
+   "printed": ["loudness: intro (title card + count-in) -11.0 LUFS vs the fight -9.9: -1.1 LU"],
+   "spans": {
+    "fight": [172235, 2379435],
+    "intro": [0, 172235]
+   }
+  },
+  "safezone": {
+   "boxes_sha256": "69e4cf5de63d84b2aa6b5484a5eac136691b58624efda61fc5a5806b5625df04",
+   "frames_checked": 244,
+   "frames_rows": 244,
+   "how": "boxes: for each checked time t (frame int(round(t * 30)), Python rounding), every box reelkit.ui drew: [x0, y0, x1, y1, kind, info] in internal pixels, in drawing order. A box is outside when reelkit.config.safe_overshoot is above 0; panels and labels partly off the frame are skipped as sliding in or out, captions never are",
+   "needs_frames": 244,
+   "outside": [],
+   "overlaps": [],
+   "pass": true,
+   "printed": ["safe box (internal px) x 20-340, y 96-500, minus the button column x >= 300 below y 290; 244 frames checked, 5475 tracked items", "  OK: every caption, label and panel is inside the safe box", "safezone: PASS"],
+   "safe": [20, 96, 340, 500],
+   "safe_buttons": [300, 290, 360, 640],
+   "step": 0.25,
+   "tracked": 5475
+  }
+ },
+ "episode_facts": {
+  "audio_wav_sha256": "f0905eb4db60018ec2bd6a57dc6c274e34d52059a94696e82c7f5dedcb2d6565",
+  "fps": 30,
+  "frames": 1830,
+  "names": ["PIANO", "ORGAN"],
+  "seed": 638,
+  "t_fight": 3.5882352941176467,
+  "t_ko": 49.57156862745098,
+  "winner": 1
+ },
+ "format": 1,
+ "frames_drawn": 693,
+ "rows_cache": "episodes/piano_vs_organ/checks_rows.json",
+ "tool": "tools.studio_export.episode_piano_vs_organ"
+}

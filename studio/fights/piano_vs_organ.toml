@@ -1,0 +1,75 @@
+format = 2
+app_version = "0.1.0"
+fighters = ["PIANO", "ORGAN"]
+arena = "ring"
+handicap = [1.0, 0.55]
+dmg_scale = 1.0
+tempo_bpm = 132.0
+seed = 638
+
+[pair_rules]
+
+[music]
+theme = "prog_duel"
+arrangement = "classic"
+key = "A"
+scale = "minor"
+chords_intro = ["Am", "E7"]
+chord_loop = ["Am", "F", "G", "E7", "Am", "F", "Dm", "E7"]
+chords_tail = []
+music_seed = 1
+
+[music.roles]
+PIANO = "melody"
+ORGAN = "bass"
+
+[music.lines]
+PIANO = [
+    76, "rest", 72, 81, "rest", 76, 72, 74,
+    77, "rest", 72, 81, "rest", 77, 76, "rest",
+    79, "rest", 74, 83, "rest", 79, 77, 76,
+    80, "rest", 76, 83, "rest", 80, 81, 83,
+    84, "rest", 81, 76, "rest", 72, 76, 81,
+    84, "rest", 81, 77, "rest", 72, 77, 81,
+    81, "rest", 77, 74, "rest", 69, 74, 77,
+    83, "rest", 80, 76, "rest", 74, 71, "rest",
+]
+
+[music.solos]
+PIANO = [
+    [0.0, 69, 0.25], [0.25, 72, 0.25], [0.5, 76, 0.25], [0.75, 81, 0.25],
+    [1.0, 84, 0.75], [1.75, 83, 0.25], [2.0, 81, 0.5], [2.5, 76, 0.25],
+    [2.75, 79, 0.25], [3.0, 81, 1.0], [4.0, 77, 0.25], [4.25, 81, 0.25],
+    [4.5, 84, 0.25], [4.75, 81, 0.25], [5.0, 77, 0.25], [5.25, 72, 0.25],
+    [5.5, 77, 0.25], [5.75, 81, 0.25], [6.0, 84, 0.5], [6.5, 83, 0.5],
+    [7.0, 81, 1.0],
+]
+ORGAN = [
+    [0.0, 76, 0.5], [0.5, 72, 0.25], [0.75, 74, 0.25], [1.0, 76, 0.5],
+    [1.5, 69, 1.5], [3.0, 77, 0.25], [3.25, 76, 0.25], [3.5, 74, 0.25],
+    [3.75, 72, 0.25], [4.0, 71, 0.5], [4.5, 68, 0.5], [5.0, 69, 2.0],
+    [7.0, 64, 1.0],
+]
+
+[music.title_hits]
+PIANO = [33, 45, 52, 57]
+ORGAN = [33, 45, 52, 57, 60, 64, 69, 76]
+
+[music.mix]
+
+[music.theme_options]
+
+[picture]
+shard_seed = 271
+
+[picture.title_lines]
+
+[captions]
+caption = "Same keys, different monster 🎹⛪ Comment the next match-up 👇"
+instagram = "#ballfight #piano #organ #pipeorgan #progrock #keyboards #pianist #organist #pixelart #lowpoly #satisfying #music"
+tiktok = "#fyp #ballfight #piano #organ #progrock #pianotok #organtok #pixelart #satisfying #music"
+shorts = [
+    "Piano vs Organ: the keyboard duel",
+    "A player-piano roll that fires its own melody vs pipes that erupt from the floor, every hit in key. Same keys, different monster.",
+    "#shorts #ballfight #piano #organ #progrock #pixelart #music",
+]

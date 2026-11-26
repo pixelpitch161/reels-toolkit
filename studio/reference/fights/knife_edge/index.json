@@ -1,0 +1,91 @@
+{
+ "about": "A core-only Python fight (two bags, no weapon, no ability) in which the balls travel side by side exactly R + R apart, so clash events are made or not on the last bit of a distance; made by tools/studio_export/knife_edge.py (its docstring has the rules); do not edit by hand. \"fighters\" are the two bag entries added to the kit's roster table for the fight, in the shape of bf-content/data/roster.json. The fight is the first \"window\" seconds after \"t_fight\"; \"side_by_side\" is its longest run of clashes on consecutive steps.",
+ "tool": "knife_edge",
+ "format": 1,
+ "episode": "flute_vs_trombone",
+ "t_fight": 3.5882352941176467,
+ "window": 13.0,
+ "min_run": 10,
+ "fighters": [
+  {
+   "name": "BAG",
+   "color": [200, 200, 200],
+   "dark": [90, 90, 90],
+   "weapon": {
+    "kind": "none"
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "NOTHING",
+     "kind": "none",
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "NOTHING",
+     "kind": "none",
+     "every_bars": 4
+    },
+    "low": {
+     "name": "NOTHING",
+     "kind": "none",
+     "every_bars": 4
+    }
+   },
+   "pp": "",
+   "register": [60, 72],
+   "idiom": ""
+  },
+  {
+   "name": "SHIELD BAG",
+   "color": [200, 200, 200],
+   "dark": [90, 90, 90],
+   "weapon": {
+    "kind": "none"
+   },
+   "abilities": {
+    "unlock1": {
+     "name": "NOTHING",
+     "kind": "none",
+     "every_bars": 4
+    },
+    "unlock2": {
+     "name": "NOTHING",
+     "kind": "none",
+     "every_bars": 4
+    },
+    "low": {
+     "name": "BRACE",
+     "kind": "shield",
+     "dur_beats": 8
+    }
+   },
+   "pp": "",
+   "register": [60, 72],
+   "idiom": ""
+  }
+ ],
+ "fights": [
+  {
+   "name": "core_s4",
+   "file": "fights/knife_edge/core_s4.bfrec",
+   "seed": 4,
+   "fighters": ["BAG", "SHIELD BAG"],
+   "overrides": {
+    "dmg_side": [1.0, 1.0],
+    "LOW_HP": -1.0,
+    "t_max": 16.588235294117645
+   },
+   "frames": 391,
+   "hash": "1659db62f7e26a6a",
+   "events": {
+    "rope": 18,
+    "clash": 57
+   },
+   "side_by_side": {
+    "first": 14.6799,
+    "last": 15.0799,
+    "clashes": 49
+   }
+  }
+ ]
+}

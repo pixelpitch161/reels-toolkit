@@ -1,0 +1,181 @@
+{
+ "about": "SHA-256 of the buffers kit.picture.render holds after a stage, for frames 150, 600 and 1500 of flute_vs_trombone (seed 392): [dtype, sha256 of the array bytes in C order] per stage and role (rgb: (640, 360, 3); depth: (640, 360))",
+ "base_looks": {
+  "stages": {
+   "150": {
+    "arena": {
+     "depth": ["<f4", "bfbe31af968378ad7823b003feaf86e795aa929248a38880cc52c1163d8c3f18"],
+     "rgb": ["|u1", "c717daa37c05852b6179a3cb37f7cc487ac5831a5adc96787e718b64d16419fb"]
+    },
+    "canvas": {
+     "depth": ["<f4", "7484ccc5bc98ea6ff34402ff1fb8294442b6f52a5f7bf8badd7eac50e998c9f9"],
+     "rgb": ["<f4", "c4d511a3b5c9ad5c2e8c7b59a121510ca12f7ed0a806b7f9934f67f9a422bbc2"]
+    },
+    "countdown": {
+     "rgb": ["|u1", "6ef7d4a296bca3f3a9fb71a90a6d65f78601ba108af676348eba1e439c4cba62"]
+    },
+    "floor": {
+     "depth": ["<f4", "1befd754f6823db5aef5f9bd1feb42bc439442a546d8c7af89d50aedc33ae40f"],
+     "rgb": ["<f4", "df7002a702c689631031972f755aad97b5e3fc5e970e8abbcabd8c8d4b2455bb"]
+    },
+    "hud": {
+     "rgb": ["|u1", "4715f88d7f0b20071f533dc3290b599603ffe0e7f7403b65a94883f6453c3c41"]
+    },
+    "over_ring": {
+     "rgb": ["<f4", "1f273b671cf7ad1dad4d018f93d8f9d61f6bd5d74f6ec69d4be0bfe1f160a581"]
+    },
+    "painter": {
+     "depth": ["<f4", "39a31819c77a1ceffd629c511bce3b25de7537163da12208af49b2aae8728015"],
+     "rgb": ["<f4", "1f273b671cf7ad1dad4d018f93d8f9d61f6bd5d74f6ec69d4be0bfe1f160a581"]
+    },
+    "particles": {
+     "depth": ["<f4", "39a31819c77a1ceffd629c511bce3b25de7537163da12208af49b2aae8728015"],
+     "rgb": ["<f4", "1f273b671cf7ad1dad4d018f93d8f9d61f6bd5d74f6ec69d4be0bfe1f160a581"]
+    },
+    "skirt": {
+     "depth": ["<f4", "b431ae864270ef458deeb2d1b1608acf531bd24f3684f7518dcaa57cd14190cb"],
+     "rgb": ["|u1", "8d8706f5ddf9e7c505debbd765694567c26819e668ec1c25ddf33d7bb4444386"]
+    },
+    "sparks": {
+     "rgb": ["<f4", "1f273b671cf7ad1dad4d018f93d8f9d61f6bd5d74f6ec69d4be0bfe1f160a581"]
+    },
+    "title": {
+     "rgb": ["|u1", "4715f88d7f0b20071f533dc3290b599603ffe0e7f7403b65a94883f6453c3c41"]
+    }
+   },
+   "1500": {
+    "arena": {
+     "depth": ["<f4", "778c6f5b9522309fb380906e03c4300558fcfb0c474771b42e6e3f96be8d680a"],
+     "rgb": ["|u1", "614f0dccfce4c1323fe85fbf325088794c4f654484d9e1f1833a378bed64fe1b"]
+    },
+    "canvas": {
+     "depth": ["<f4", "70f9b69aa08617a5dccbe690447dcd208108f06687ba165db6650096ac042603"],
+     "rgb": ["<f4", "4a51f9a094f9d0de2474f32c08492b44c06406cf387692b260a35c3b005f8927"]
+    },
+    "countdown": {
+     "rgb": ["|u1", "77420364abb3ce6c95f0cad2ed2406b0679d02621515e2642f1f8ab994df5eb9"]
+    },
+    "floor": {
+     "depth": ["<f4", "aa1e762b5a9d9911919d0a1df8d75434ebdc9b117b786199f6ec04d566cf754b"],
+     "rgb": ["<f4", "9025bf59ff2d9e6263be2f44bb42aa09a01c1188fbd2cc76b15dd92e8fcc723e"]
+    },
+    "hud": {
+     "rgb": ["|u1", "5e28d533935dca15a85079ff04cf4ca29c02a561805e4b97454ff0c6fa30e14b"]
+    },
+    "over_ring": {
+     "rgb": ["<f4", "479c9d57de512eab73d9b84ed23c99765ba0d71b3141d69ec7c3b639164ea2d1"]
+    },
+    "painter": {
+     "depth": ["<f4", "8b820863292bace2703f91ddeddc98177f5b4e68ae085b4e40ea96998b0d319d"],
+     "rgb": ["<f4", "479c9d57de512eab73d9b84ed23c99765ba0d71b3141d69ec7c3b639164ea2d1"]
+    },
+    "particles": {
+     "depth": ["<f4", "8b820863292bace2703f91ddeddc98177f5b4e68ae085b4e40ea96998b0d319d"],
+     "rgb": ["<f4", "479c9d57de512eab73d9b84ed23c99765ba0d71b3141d69ec7c3b639164ea2d1"]
+    },
+    "skirt": {
+     "depth": ["<f4", "dac7108872ea5495f67a1e0c0e9112f5e9cbdc70c9ae0fd0812cfd4540c858d8"],
+     "rgb": ["|u1", "07a874fdbb1ec3c5337be9e90aa06bf906d907cc60cd5d5a0e3162c3693831f9"]
+    },
+    "sparks": {
+     "rgb": ["<f4", "479c9d57de512eab73d9b84ed23c99765ba0d71b3141d69ec7c3b639164ea2d1"]
+    },
+    "title": {
+     "rgb": ["|u1", "5e28d533935dca15a85079ff04cf4ca29c02a561805e4b97454ff0c6fa30e14b"]
+    }
+   },
+   "600": {
+    "arena": {
+     "depth": ["<f4", "56263c10b66161fa1de77ad75d0d4b0576f714a65c0fa12ef6bc7cb3b59bc1c6"],
+     "rgb": ["|u1", "c5ba626272e298fec5e91ff296738c8dc584052d7602b31ef6c967997048f0d5"]
+    },
+    "canvas": {
+     "depth": ["<f4", "fc97ce8e6c97e79b66f7ab1f34b4fda5afe6834971bd5cdff414dcdc79d3a4b5"],
+     "rgb": ["<f4", "203dc0634fff7f4d92aaed2ce0679e7dc5408aec5c2421d3525fbc161859d9db"]
+    },
+    "countdown": {
+     "rgb": ["|u1", "2df1c36fa49303413a74a786c3c7e38b00f122f168c0845af3e947548f7a214f"]
+    },
+    "floor": {
+     "depth": ["<f4", "83dcb7dfd05e1fe2f46b0934efb9ec10026cf9bf9c6235348d5b8566bce3bc6a"],
+     "rgb": ["<f4", "736d473cadb338945c3bed0f317ced87faccd3e0beb11476f7bfd4eb32346959"]
+    },
+    "hud": {
+     "rgb": ["|u1", "e16866eba66afc34654b80e59abac19fef70af11abe19400c25e4076dd0665f0"]
+    },
+    "over_ring": {
+     "rgb": ["<f4", "5aaa762f06d44336ceef2a95992d225599fffbe5f2fd9d363ffc7d8483c1fbaa"]
+    },
+    "painter": {
+     "depth": ["<f4", "6b776941e154d32067c81a87a97ae1c4dcf182fc76a4d4bd04bd2a7e3826a3a6"],
+     "rgb": ["<f4", "5aaa762f06d44336ceef2a95992d225599fffbe5f2fd9d363ffc7d8483c1fbaa"]
+    },
+    "particles": {
+     "depth": ["<f4", "6b776941e154d32067c81a87a97ae1c4dcf182fc76a4d4bd04bd2a7e3826a3a6"],
+     "rgb": ["<f4", "5aaa762f06d44336ceef2a95992d225599fffbe5f2fd9d363ffc7d8483c1fbaa"]
+    },
+    "skirt": {
+     "depth": ["<f4", "082fee629b8d926759eb72aef161e1c2a63e0a9921c473aa2c956682330f9e43"],
+     "rgb": ["|u1", "3c9c7f1c3e2dbbec589c312972a9db63dabb6ed82595a19714e9fec5aaddb184"]
+    },
+    "sparks": {
+     "rgb": ["<f4", "5aaa762f06d44336ceef2a95992d225599fffbe5f2fd9d363ffc7d8483c1fbaa"]
+    },
+    "title": {
+     "rgb": ["|u1", "e16866eba66afc34654b80e59abac19fef70af11abe19400c25e4076dd0665f0"]
+    }
+   }
+  },
+  "what": "the base-class look (kit/fighters/base.py Look) for both fighters"
+ },
+ "episode": "flute_vs_trombone",
+ "episode_looks": {
+  "stages": {
+   "150": {
+    "arena": {
+     "depth": ["<f4", "bfbe31af968378ad7823b003feaf86e795aa929248a38880cc52c1163d8c3f18"],
+     "rgb": ["|u1", "7cda2c2fe4baab5f98c7afb36ec385265aa9b1ce2dcf7e515769658b85cb1f0d"]
+    },
+    "floor": {
+     "depth": ["<f4", "1befd754f6823db5aef5f9bd1feb42bc439442a546d8c7af89d50aedc33ae40f"],
+     "rgb": ["<f4", "ae4bb3ba46ff5d4949f7188f5e39f9ed210fe34f1f738dbe374ba64442886937"]
+    },
+    "skirt": {
+     "depth": ["<f4", "b431ae864270ef458deeb2d1b1608acf531bd24f3684f7518dcaa57cd14190cb"],
+     "rgb": ["|u1", "3a959725527f4c1d2e089d508a4fb35c6a037554fb2b8c917bd6efdf8ff8dd01"]
+    }
+   },
+   "1500": {
+    "arena": {
+     "depth": ["<f4", "6d1c9b2097e3612baa6055e6fe6ea79942ee75ee60a41be44ef8dda93642107f"],
+     "rgb": ["|u1", "3999d1c19aa180d8ce10357c9e7411268515b44b7b60759477724b117fc21d34"]
+    },
+    "floor": {
+     "depth": ["<f4", "106062a262933336d7624ba2e97801f7d914d434c3a2cd9fc868980ecebe68fc"],
+     "rgb": ["<f4", "3fcc6cdfe74263d7677eeb5510c192ceee6ef9601079087088ab94ec8c36f061"]
+    },
+    "skirt": {
+     "depth": ["<f4", "8984bba4bfe1c09d962d2d9bf7bd3bae33389fc88df90a54f4d850b33c3052f7"],
+     "rgb": ["|u1", "c263658f73d8bc4146d8ad009a7fff9aa0634731a1035f700f5a98bedfb20254"]
+    }
+   },
+   "600": {
+    "arena": {
+     "depth": ["<f4", "56263c10b66161fa1de77ad75d0d4b0576f714a65c0fa12ef6bc7cb3b59bc1c6"],
+     "rgb": ["|u1", "df5a4b0dd80e3e76cc4ada3c2190db74ce5e32cf5aba5571e2e2ca19751cd599"]
+    },
+    "floor": {
+     "depth": ["<f4", "83dcb7dfd05e1fe2f46b0934efb9ec10026cf9bf9c6235348d5b8566bce3bc6a"],
+     "rgb": ["<f4", "9be29674dd9a6f63c38ceecae18ee754ae2f63627d70dc2542356348e0ce59f1"]
+    },
+    "skirt": {
+     "depth": ["<f4", "082fee629b8d926759eb72aef161e1c2a63e0a9921c473aa2c956682330f9e43"],
+     "rgb": ["|u1", "4708802f1137ab25ccb9fe573cf41db10b226c71640b718ce12bc3312e9f10b7"]
+    }
+   }
+  },
+  "what": "the episode as it is: FLUTE's and TROMBONE's own looks"
+ },
+ "frames": [150, 600, 1500],
+ "tool": "ring"
+}

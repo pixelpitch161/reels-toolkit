@@ -1,0 +1,15 @@
+[package]
+name = "bf-picture"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+bf-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+bf-testdata = { path = "../bf-testdata" }
+sha2.workspace = true

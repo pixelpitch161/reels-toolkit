@@ -1,0 +1,1030 @@
+{
+ "about": "scipy.spatial.ConvexHull(pts).vertices for 2-D points",
+ "cases": [
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c000__out",
+    "pts": "c000__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c000"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c001__out",
+    "pts": "c001__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c001"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c002__out",
+    "pts": "c002__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c002"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c003__out",
+    "pts": "c003__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c003"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c004__out",
+    "pts": "c004__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c004"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c005__out",
+    "pts": "c005__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c005"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c006__out",
+    "pts": "c006__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c006"
+  },
+  {
+   "args": {
+    "kind": "beam"
+   },
+   "arrays": {
+    "out": "c007__out",
+    "pts": "c007__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c007"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c008__out",
+    "pts": "c008__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c008"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c009__out",
+    "pts": "c009__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c009"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c010__out",
+    "pts": "c010__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c010"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c011__out",
+    "pts": "c011__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c011"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c012__out",
+    "pts": "c012__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c012"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c013__out",
+    "pts": "c013__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c013"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c014__out",
+    "pts": "c014__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c014"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c015__out",
+    "pts": "c015__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c015"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c016__out",
+    "pts": "c016__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c016"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c017__out",
+    "pts": "c017__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c017"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c018__out",
+    "pts": "c018__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c018"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c019__out",
+    "pts": "c019__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c019"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c020__out",
+    "pts": "c020__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c020"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c021__out",
+    "pts": "c021__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c021"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c022__out",
+    "pts": "c022__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c022"
+  },
+  {
+   "args": {
+    "kind": "cloud"
+   },
+   "arrays": {
+    "out": "c023__out",
+    "pts": "c023__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c023"
+  },
+  {
+   "args": {
+    "kind": "ellipse"
+   },
+   "arrays": {
+    "out": "c024__out",
+    "pts": "c024__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c024"
+  },
+  {
+   "args": {
+    "kind": "circle listed clockwise"
+   },
+   "arrays": {
+    "out": "c025__out",
+    "pts": "c025__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c025"
+  },
+  {
+   "args": {
+    "kind": "circle and inside"
+   },
+   "arrays": {
+    "out": "c026__out",
+    "pts": "c026__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c026"
+  },
+  {
+   "args": {
+    "kind": "rectangle and its centre"
+   },
+   "arrays": {
+    "out": "c027__out",
+    "pts": "c027__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c027"
+  },
+  {
+   "args": {
+    "kind": "triangle"
+   },
+   "arrays": {
+    "out": "c028__out",
+    "pts": "c028__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c028"
+  },
+  {
+   "args": {
+    "kind": "triangle listed clockwise"
+   },
+   "arrays": {
+    "out": "c029__out",
+    "pts": "c029__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c029"
+  },
+  {
+   "args": {
+    "kind": "grid 4 x 4"
+   },
+   "arrays": {
+    "out": "c030__out",
+    "pts": "c030__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c030"
+  },
+  {
+   "args": {
+    "kind": "square with edge midpoints"
+   },
+   "arrays": {
+    "out": "c031__out",
+    "pts": "c031__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c031"
+  },
+  {
+   "args": {
+    "kind": "repeated points"
+   },
+   "arrays": {
+    "out": "c032__out",
+    "pts": "c032__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c032"
+  },
+  {
+   "args": {
+    "kind": "repeated points"
+   },
+   "arrays": {
+    "out": "c033__out",
+    "pts": "c033__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c033"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c034__out",
+    "pts": "c034__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c034"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c035__out",
+    "pts": "c035__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c035"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c036__out",
+    "pts": "c036__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c036"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c037__out",
+    "pts": "c037__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c037"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c038__out",
+    "pts": "c038__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c038"
+  },
+  {
+   "args": {
+    "kind": "cloud with every point twice"
+   },
+   "arrays": {
+    "out": "c039__out",
+    "pts": "c039__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c039"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c040__out",
+    "pts": "c040__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c040"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c041__out",
+    "pts": "c041__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c041"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c042__out",
+    "pts": "c042__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c042"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c043__out",
+    "pts": "c043__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c043"
+  },
+  {
+   "args": {
+    "kind": "tight clusters"
+   },
+   "arrays": {
+    "out": "c044__out",
+    "pts": "c044__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c044"
+  },
+  {
+   "args": {
+    "kind": "tight clusters"
+   },
+   "arrays": {
+    "out": "c045__out",
+    "pts": "c045__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c045"
+  },
+  {
+   "args": {
+    "kind": "whole numbers"
+   },
+   "arrays": {
+    "out": "c046__out",
+    "pts": "c046__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c046"
+  },
+  {
+   "args": {
+    "kind": "whole numbers"
+   },
+   "arrays": {
+    "out": "c047__out",
+    "pts": "c047__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c047"
+  },
+  {
+   "args": {
+    "kind": "whole numbers"
+   },
+   "arrays": {
+    "out": "c048__out",
+    "pts": "c048__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c048"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c049__out",
+    "pts": "c049__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c049"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c050__out",
+    "pts": "c050__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c050"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c051__out",
+    "pts": "c051__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c051"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c052__out",
+    "pts": "c052__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c052"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c053__out",
+    "pts": "c053__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c053"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c054__out",
+    "pts": "c054__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c054"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c055__out",
+    "pts": "c055__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c055"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c056__out",
+    "pts": "c056__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c056"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c057__out",
+    "pts": "c057__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c057"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c058__out",
+    "pts": "c058__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c058"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c059__out",
+    "pts": "c059__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c059"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c060__out",
+    "pts": "c060__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c060"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c061__out",
+    "pts": "c061__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c061"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c062__out",
+    "pts": "c062__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c062"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c063__out",
+    "pts": "c063__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c063"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c064__out",
+    "pts": "c064__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c064"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c065__out",
+    "pts": "c065__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c065"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c066__out",
+    "pts": "c066__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c066"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c067__out",
+    "pts": "c067__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c067"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c068__out",
+    "pts": "c068__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c068"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c069__out",
+    "pts": "c069__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c069"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c070__out",
+    "pts": "c070__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c070"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c071__out",
+    "pts": "c071__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c071"
+  },
+  {
+   "args": {
+    "kind": "near a line"
+   },
+   "arrays": {
+    "out": "c072__out",
+    "pts": "c072__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c072"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c073__out",
+    "pts": "c073__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c073"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c074__out",
+    "pts": "c074__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c074"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c075__out",
+    "pts": "c075__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c075"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c076__out",
+    "pts": "c076__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c076"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c077__out",
+    "pts": "c077__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c077"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c078__out",
+    "pts": "c078__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c078"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c079__out",
+    "pts": "c079__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c079"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c080__out",
+    "pts": "c080__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c080"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c081__out",
+    "pts": "c081__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c081"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c082__out",
+    "pts": "c082__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c082"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c083__out",
+    "pts": "c083__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c083"
+  },
+  {
+   "args": {
+    "kind": "mirrored cloud"
+   },
+   "arrays": {
+    "out": "c084__out",
+    "pts": "c084__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c084"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c085__out",
+    "pts": "c085__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c085"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c086__out",
+    "pts": "c086__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c086"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c087__out",
+    "pts": "c087__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c087"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c088__out",
+    "pts": "c088__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c088"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c089__out",
+    "pts": "c089__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c089"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c090__out",
+    "pts": "c090__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c090"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c091__out",
+    "pts": "c091__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c091"
+  },
+  {
+   "args": {
+    "kind": "two extreme points"
+   },
+   "arrays": {
+    "out": "c092__out",
+    "pts": "c092__pts"
+   },
+   "call": "scipy.spatial.ConvexHull(pts).vertices",
+   "id": "c092"
+  }
+ ],
+ "note": "pts is (n, 2) float64; out the indices of the hull corners in the order scipy gives them (counter-clockwise for the usual axes; int32 as scipy returns them). The first cases are the spot's beam as kit.picture.render builds it: the can's screen position, then 32 points of the pool's rim. The port follows Qhull's build up to its merging of facets and reports the inputs that need it; none of these cases does (the test fails a case the port does not follow).",
+ "tool": "kit"
+}

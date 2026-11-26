@@ -1,0 +1,136 @@
+{
+ "about": "ballfight_bassdrum_vs_tuba: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "roll", 0, -1.85, 1.85, 1.9489733988509985, -1.700746557390782, 3.8208333333333333, 4.059114583333333, 4.892447916666666, 0],
+   "index": 1,
+   "item": "roll",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.63333,
+   "event": [4.44583, "hit", 1, 0, 3.9732, -0.22023819685654206, 0.3321229187189956, "roll", 0],
+   "index": 2,
+   "item": "hit/roll",
+   "scenario": "swapped",
+   "seed": 1,
+   "t": 4.44583
+  },
+  {
+   "after_fight": 4.216670000000001,
+   "event": [8.02917, "gulp", 1, -0.9133066551022077, 0.7180842506591921, 1.92],
+   "index": 27,
+   "item": "gulp",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 8.02917
+  },
+  {
+   "after_fight": 4.216670000000001,
+   "event": [8.02917, "hit", 1, 0, 1.98, -0.9133066551022077, 0.7180842506591921, "gulp", 0],
+   "index": 26,
+   "item": "hit/gulp",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 8.02917
+  },
+  {
+   "after_fight": 4.216670000000001,
+   "event": [8.02917, "roll_off", 0, "held"],
+   "index": 28,
+   "item": "roll_off",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 8.02917
+  },
+  {
+   "after_fight": 0.9666699999999997,
+   "event": [4.77917, "pah", 1, 0, 4.361350033862533],
+   "index": 5,
+   "item": "pah",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.77917
+  },
+  {
+   "after_fight": 4.775,
+   "event": [8.5875, "hit", 1, 0, 3.3000000000000003, -1.0756451117595969, 0.5022855225305267, "spit", 0],
+   "index": 30,
+   "item": "hit/spit",
+   "scenario": "plain",
+   "seed": 3,
+   "t": 8.5875
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/bassdrum_vs_tuba/scenarios/plain_s1.bfrec", "episodes/bassdrum_vs_tuba/scenarios/plain_s2.bfrec", "episodes/bassdrum_vs_tuba/scenarios/plain_s3.bfrec"],
+   "fighters": ["BASS DRUM", "TUBA"],
+   "handicap": [0.86, 1.0],
+   "hashes": ["a7642350738674a0", "c9bd45fc74759c10", "de2d744eeacd8268"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.66,
+    "dmg_side": [0.86, 1.0],
+    "swallow_rollers": true,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/bassdrum_vs_tuba/scenarios/swapped_s1.bfrec", "episodes/bassdrum_vs_tuba/scenarios/swapped_s2.bfrec", "episodes/bassdrum_vs_tuba/scenarios/swapped_s3.bfrec"],
+   "fighters": ["TUBA", "BASS DRUM"],
+   "handicap": [1.0, 0.86],
+   "hashes": ["803650c26ab933be", "af6d2f343a5b9ee8", "96aa848fe04165b8"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.66,
+    "dmg_side": [1.0, 0.86],
+    "swallow_rollers": true,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.8125,
+ "tool": "tools.studio_export.episode_bassdrum_vs_tuba",
+ "window": 20.0
+}

@@ -1,0 +1,11 @@
+# The controller's rulings that let a reference folder's gate miss one item (plan section 2, "The bars, never
+# loosened"). ONLY THE CONTROLLER EDITS THIS FILE. A folder's exceptions.toml entry is honoured only when a row here
+# names the same ruling, folder, gate and item; the proving harness (bf-harness refs::check_exceptions) fails
+# on any other entry, and on an entry that excuses nothing any more. One table per ruling, replacing the empty list:
+#
+#   [[rulings]]
+#   ruling = "M3-R<n>"                 # the ledger's ruling
+#   folder = "fighters/<slug>"         # the reference folder
+#   gate = "look"                      # look, title, sprites, sound, stems, voice, checks, frames
+#   what = "left frame 1234"           # the item, exactly as the gate names it in its failure
+rulings = []

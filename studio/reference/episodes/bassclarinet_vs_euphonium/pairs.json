@@ -1,0 +1,315 @@
+{
+ "about": "examples/bassclarinet_vs_euphonium: the pair's own links (plan Table S5): each item's first occurrence over the scenario fights (scenario, seed, time, event index, the event), within 20.0 s of FIGHT!",
+ "format": 1,
+ "links": [
+  {
+   "after_fight": 1.9083300000000003,
+   "event": [5.72083, "anchor", 0, 1.4086925432846622, -1.2581502497934935, 0.95, 6.673958333333333],
+   "index": 8,
+   "item": "anchor",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 5.72083
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "pull", 0, 1.3039444493630414, -0.3139427319141943, -2.5841468910380825, -0.2866789938907515],
+   "index": 33,
+   "item": "pull",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 2.175,
+   "event": [5.9875, "hit", 1, 0, 3.06, 0.0986084926644955, -0.9626565590362718, "anchor", 0],
+   "index": 16,
+   "item": "hit/anchor",
+   "scenario": "swapped",
+   "seed": 3,
+   "t": 5.9875
+  },
+  {
+   "after_fight": 3.3416699999999997,
+   "event": [7.15417, "twin", 0, 10.966666666666667],
+   "index": 46,
+   "item": "twin",
+   "scenario": "early_levels",
+   "seed": 1,
+   "t": 7.15417
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "snip_open", 0, 6.798307291666667, 2.1227379484674733],
+   "index": 38,
+   "item": "snip_open",
+   "scenario": "early_levels",
+   "seed": 1,
+   "t": 6.67917
+  },
+  {
+   "after_fight": 2.99167,
+   "event": [6.80417, "snip", 0, 1, 1.9959254463488367, 0.9],
+   "index": 41,
+   "item": "snip",
+   "scenario": "early_levels",
+   "seed": 1,
+   "t": 6.80417
+  },
+  {
+   "after_fight": 3.3416699999999997,
+   "event": [7.15417, "lights_out", 0, 9.060416666666667],
+   "index": 52,
+   "item": "lights_out",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 7.15417
+  },
+  {
+   "after_fight": 5.25,
+   "event": [9.0625, "erupt", 0, 1.4726866758609902, 0.42297714209464293, 1],
+   "index": 72,
+   "item": "erupt",
+   "scenario": "early_low",
+   "seed": 2,
+   "t": 9.0625
+  },
+  {
+   "after_fight": 0.008329999999999949,
+   "event": [3.82083, "mortar", 1, 1, 0, -0.07044011915090342, 0.12539275598838184],
+   "index": 0,
+   "item": "mortar",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 3.82083
+  },
+  {
+   "after_fight": 0.9666699999999997,
+   "event": [4.77917, "shell", 1, -0.07044011915090342, 0.12539275598838184, 1, 0, 0, "mortar"],
+   "index": 3,
+   "item": "shell",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.77917
+  },
+  {
+   "after_fight": 0.9666699999999997,
+   "event": [4.77917, "hit", 1, 0, 1.7680000000000002, -0.04515675472423786, 0.10089013940746391, "shell", 0],
+   "index": 2,
+   "item": "hit/shell",
+   "scenario": "plain",
+   "seed": 1,
+   "t": 4.77917
+  },
+  {
+   "after_fight": 3.8166700000000002,
+   "event": [7.62917, "barrage", 1, 14, 6],
+   "index": 51,
+   "item": "barrage",
+   "scenario": "early_low",
+   "seed": 1,
+   "t": 7.62917
+  },
+  {
+   "after_fight": 2.86667,
+   "event": [6.67917, "copy", 1, "ENDPIN ANCHOR", "anchor"],
+   "index": 24,
+   "item": "copy",
+   "scenario": "early_levels",
+   "seed": 2,
+   "t": 6.67917
+  }
+ ],
+ "scenarios": [
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/plain_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/plain_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/plain_s3.bfrec"],
+   "fighters": ["BASS CLARINET", "EUPHONIUM"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["38fbee60e3c81b28", "cbcf614a209720b5", "cda6d6d37540542a"],
+   "name": "plain",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/swapped_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/swapped_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/swapped_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "BASS CLARINET"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["1ce40720cee526c6", "f8285053625152b0", "704b550a7790fada"],
+   "name": "swapped",
+   "overrides": {},
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [14.0, 36.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/early_levels_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_levels_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_levels_s3.bfrec"],
+   "fighters": ["BASS CLARINET", "EUPHONIUM"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["84f4f0e63d62069d", "950f7a276e51ea7c", "d974ee348fb82f09"],
+   "name": "early_levels",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/early_levels_swapped_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_levels_swapped_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_levels_swapped_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "BASS CLARINET"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["17c2a1a8f31e41e1", "60b32714b1cba4c6", "e6586e42b12f85bf"],
+   "name": "early_levels_swapped",
+   "overrides": {
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 25.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/early_low_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_low_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_low_s3.bfrec"],
+   "fighters": ["BASS CLARINET", "EUPHONIUM"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["7e0f14e42b6e6633", "36500a7a4a4e5732", "0396f25d3ac4ae90"],
+   "name": "early_low",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": false
+  },
+  {
+   "cache": ["episodes/bassclarinet_vs_euphonium/scenarios/early_low_swapped_s1.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_low_swapped_s2.bfrec", "episodes/bassclarinet_vs_euphonium/scenarios/early_low_swapped_s3.bfrec"],
+   "fighters": ["EUPHONIUM", "BASS CLARINET"],
+   "handicap": [1.0, 1.0],
+   "hashes": ["585a20538ea98ea6", "e6093ff919c2e18f", "e98b4c09bc20dee0"],
+   "name": "early_low_swapped",
+   "overrides": {
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0]
+   },
+   "rules": {
+    "A": 3.0,
+    "DT": 0.008333333333333333,
+    "FPS": 30,
+    "HP": 100.0,
+    "KEY_R": 0.11,
+    "KNOCK_T": 0.38,
+    "LAUNCH_SPREAD": 38.0,
+    "LOW_HP": 92.0,
+    "LV_DMG": [2.0, 5.0],
+    "R": 0.6,
+    "ROPE_GIVE": 5.0,
+    "V": 2.6,
+    "beat": 0.4765625,
+    "bpm": 125.90163934426229,
+    "dmg_scale": 0.68,
+    "dmg_side": [1.0, 1.0],
+    "t_fight": 3.8125,
+    "t_max": 58.0
+   },
+   "seeds": [1, 2, 3],
+   "swapped": true
+  }
+ ],
+ "t_fight": 3.8125,
+ "tool": "tools.studio_export.episode_bassclarinet_vs_euphonium",
+ "window": 20.0
+}
