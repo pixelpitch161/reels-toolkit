@@ -341,7 +341,7 @@ All through `PC-Tests:` lines, only what changed:
 
 - `classic_golden` and the kit-parity tests, unchanged, in every stage.
 - The yardstick tests for each converted fighter (a new `bf-harness` test, `engine2_voices.rs`, in place of that
-  fighter's `real_voices.rs` checks).
+  fighter's `real_voices.rs` checks; since the built engines, `engine2_built.rs`: see "Revision: built engines").
 - The engine's own unit tests (recipe reading, interpolation, determinism: the same note twice is identical, repeats
   differ, no overtone above 0.45 of the sample rate, notes exactly `cap` long).
 - The fighter's `fighter_*` and `episode_*` suites that cover it, and `composed_build`.

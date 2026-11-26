@@ -26,9 +26,11 @@ sound one and two octaves over it, so their pitches were moved up (the tool now 
 
 ## Piano (fighter PIANO)
 
-**Ships from:** VCSL Steinway B (CC0), strengths vl2, vl3, vl4. **Studied:** VCSL Steinway B, Iowa Steinway B (PC),
-Salamander Yamaha C5, Headroom Yamaha C3. **Code:** `bf-sound/src/voice/engine2/piano.rs`, recipe
-`bf-content/data/voices/PIANO.ve2`.
+**Plays (since stage 1b):** the struck-string engine, Aedan's pick P16, built from the working parts below and checked
+against the four real pianos (`bf-sound/src/voice/engine2/strings.rs` and `board.rs`; "The built engine" below).
+**Studied:** VCSL Steinway B, Iowa Steinway B (PC), Salamander Yamaha C5, Headroom Yamaha C3. **Kept, played by no
+fighter:** stage 1's recipe voice from the VCSL Steinway B (CC0), strengths vl2, vl3, vl4 (`engine2/piano.rs`, recipe
+`bf-content/data/voices/PIANO.ve2`, `RECIPE` in the fighter's voice).
 
 ### Working parts
 
@@ -150,6 +152,34 @@ Salamander).
 Struck notes of any length; chords; the sustain pedal for legato and washes; accents strike harder. No vibrato, no
 slides (a piano cannot bend). A repeated key re-strikes a string that is still ringing.
 
+Every technique, as the built engine plays it (asked for as in `voice-engine-2-playing.md`): strength and accent;
+staccato to legato by the key's length; the sustain pedal, a half pedal and the pedal coming up at a set moment; the
+soft pedal (one string fewer, softer felt); the middle pedal (this note held, the others quiet); a hand damping the
+strings; a choked stop; harmonics (the string touched at 1/2 to 1/6 as it is struck); a string plucked inside the
+piano. Trills, runs, repeated notes, glissandos and clusters are made of single notes by the composition system.
+
+### The built engine (stage 1b, P16)
+
+Each key's strings are modelled from their parts and run one sample at a time, at any sample rate:
+
+- **Strings.** Each string is a set of stiff-string modes (overtone *n* at *n* × pitch × sqrt(1 + *B* n²)), one to
+  three strings a key as on a grand, tuned a hair apart (0.6 cents, wider at the top) so they beat and pass energy
+  through the bridge (the two-stage decay comes out of that coupling, not out of a table). The tension glides a hair
+  flat as a loud note settles.
+- **Hammer.** A felt hammer as a hardening spring (force rising as the squeeze to a power), with its stiffness set
+  per key so its contact time matches the register's; a faster hammer squeezes harder, leaves sooner and is brighter.
+  Struck at about an eighth of the string.
+- **Board.** The strings' push on the bridge goes out straight and through 1400 small resonances of the board (the
+  middle of the sketch's two microphones), then the board's average response (a little less low end and upper
+  middle, a little more top).
+- **Dampers** land over 20 ms when the key comes up; the top keys from F6 have none. Under the sustain pedal the
+  strings within two octaves ring along softly (about 26 dB under), driven by the bridge.
+- **Room.** The fighter's own small room (2.4 s, fading 60 dB in 1.3 s) and width are added at the bus.
+
+Checked by `bf-harness/tests/engine2_built.rs`: the listening riff's octave bands lie inside the four real pianos'
+(within 1.5 dB), the high notes keep their energy over 4 kHz as low as P16's (the "very synthesized" P12 had 17 dB
+more there), and repeats differ. Each technique has its own check in `strings.rs`.
+
 ### The consensus carried into the recipe
 
 - **The strength steps.** VCSL evened its three strengths out to one loudness (its loudness column reads 0 to -1 dB),
@@ -186,7 +216,8 @@ slides (a piano cannot bend). A repeated key re-strikes a string that is still r
 
 - **Single overtones.** The literature describes a smooth two-stage decay [1][2]; measured, a single overtone of a
   real note beats by up to 33 dB within 2.5 s while the whole note dies smoothly. The yardstick therefore compares
-  single overtones only in a note's first 0.3 s and the overtones' median after that (`engine2_voices.rs`).
+  single overtones only in a note's first 0.3 s and the overtones' median after that (the recipe voice's yardstick,
+retired with it in stage 1b; the built engine's beating comes from its unison strings).
 - **The soft layer's darkness.** VCSL's softest strength is darker than any other piano's softest; it is kept as
   recorded (treated as pianissimo), since the other pianos' softest recordings are not the softest a piano can play.
 
@@ -208,9 +239,11 @@ slides (a piano cannot bend). A repeated key re-strikes a string that is still r
 
 ## Organ (fighter ORGAN)
 
-**Ships from:** VSCO 2 CE pipe organ (CC0), main chorus, quiet and loud. **Studied:** VSCO 2 CE, VCSL Renaissance organ
-(Full), Lars Palo's Bureå and Piteå organs' principals, one rank at a time (PC). **Code:** `bf-sound/src/voice/engine2/organ.rs`, recipe
-`bf-content/data/voices/ORGAN.ve2`.
+**Plays (since stage 1b):** the pipe engine, Aedan's pick O8: a grand chorus built pipe by pipe from the working parts
+below (`bf-sound/src/voice/engine2/pipes.rs`; "The built engine" below). **Studied:** VSCO 2 CE, VCSL Renaissance
+organ (Full), Lars Palo's Bureå and Piteå organs' principals, one rank at a time (PC). **Kept, played by no fighter:**
+stage 1's recipe voice from the VSCO 2 CE pipe organ (CC0), main chorus, quiet and loud (`engine2/organ.rs`, recipe
+`bf-content/data/voices/ORGAN.ve2`, `RECIPE` in the fighter's voice).
 
 ### Working parts
 
@@ -280,9 +313,33 @@ clatter (not modelled). The recipe keeps the organ's wind noise (no `dehiss`): i
 
 ### How it is played
 
-Held notes and chords, legato from key to key, no accents by touch (an accent is a wider chord or a new stop), no
-vibrato (the tremulant is not used). A crescendo brings stops in: the fighter's CATHEDRAL, PULL ALL STOPS and title
-blast swell from the quiet setting to the loud one (Aedan's "main chorus, building up").
+Held notes and chords, legato from key to key, no accents by touch (an accent is a wider chord or a new stop). A
+crescendo brings stops in: the fighter's CATHEDRAL, PULL ALL STOPS and title blast swell from part way through the
+stops to the full set (Aedan's "main chorus, building up").
+
+Every technique, as the built engine plays it (asked for as in `voice-engine-2-playing.md`): any registration of its
+fourteen manual and four pedal stops (nine ready sets, from a soft stopped flute to the full organ with its reeds);
+sub and octave couplers; a crescendo bringing the stops in; the swell box (a volume pedal, darker shut); the
+tremulant; an accent that speaks quicker; the shortest stop. The wind sags a hair under a big chord.
+
+### The built engine (stage 1b, O8)
+
+Each note sounds every pipe its stops draw, added up from their overtones, in short blocks at any sample rate:
+
+- **Pipes.** Each kind has its own overtones: principals, stopped flutes (odd overtones), chimney flutes, strings
+  (bright and thin), and the reeds (trumpet, trombone, oboe). The mixture and cymbal break back an octave above
+  about 2.7 kHz, as real mixtures do. Every pipe is a hair out of tune with the next (about 1.3 cents, reeds 1.6), the
+  celeste 6 cents sharp so it beats; a unison's pipes start near each other's phase, so they add.
+- **Speech.** A flue pipe speaks in tens of milliseconds, flicking up through its octave first, with a puff of chiff;
+  a reed starts a hair sharp. The wind's breath is band-passed per pipe. A flue pipe stops in 12 ms plus four of its
+  own periods, a reed in 12 ms.
+- **Wind.** It wavers slowly (0.35 cents, 0.2 dB, 1.5 a second) and sags under chords of three or more.
+- **Polish.** A gentle tone lift per note (a little warmth at 110 and 250 Hz, presence at 2.8 kHz, air at 9 kHz).
+- **Room.** The fighter's own room (3.3 s, fading 60 dB in 1.8 s, kept light as Aedan asked) and width are added at
+  the bus.
+
+Checked by `bf-harness/tests/engine2_built.rs`: the listening riff keeps O8's octave balance (within 2 dB a band),
+and repeats differ. Each technique has its own check in `pipes.rs`.
 
 ### Where the literature and the measurements disagree
 

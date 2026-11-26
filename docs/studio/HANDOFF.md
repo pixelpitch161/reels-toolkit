@@ -278,31 +278,38 @@ can show at once; the 4 s gap between names counts per fighter).
 
 ## Voice Engine 2 (realistic instruments, from Nov 26)
 
-Voice Engine 2 is the Studio's own instrument synthesizer: each instrument plays from a **recipe** measured from real
-recordings (every overtone's level, tuning and stretch over the note's life, plus its noise in 24 bands) and from
-modelled **working parts** (a piano's hammer, damper and pedal; an organ's wind, speech and stops). It plays only
-under the Composed arrangement; Classic is untouched, byte for byte. Stage 1 (piano and organ) is the pilot; the
-families follow one stage at a time, each stopping at a listening page for the owner's review
-(`docs/studio/2026-11-26-voice-engine-2-design.md`).
+Voice Engine 2 is the Studio's own instrument synthesizer. Since stage 1b each instrument family has its **own built
+engine**, modelled from how the instrument physically works and judged by ear, with real recordings as the reference
+for facts (the owner's rule, 2026-11-26): the piano is the struck-string engine (`strings.rs` with `board.rs`, the
+owner's pick P16), the organ the pipe engine (`pipes.rs`, O8). Every instrument plays all its techniques (pedals,
+harmonics, stops, swell box...), and the engines run one note at a time at any sample rate (a plugin could use them
+later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
+plays only under the Composed arrangement; Classic is untouched, byte for byte. The families follow one stage at a
+time, each with its own engine and voice lab, stopping at a listening page for the owner's review
+(`docs/studio/2026-11-26-voice-engine-2-design.md`, "Revision: built engines").
 
-- **Where:** the engine in `bf-sound/src/voice/engine2/` (recipe format, player, `play.rs` for how a note is played,
-  each instrument's parts, `space.rs` for width and an instrument's own room); the recipes in
-  `bf-content/data/voices/<FIGHTER>.ve2`, each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs`
-  (`ENGINE2`); parts ask for notes with `MusicCtx::note_played`. The measuring is `bf-harness/src/e2measure.rs`;
-  the tool is `cargo run --release -p bf-harness --example recipes -- <fetch|study|measure|check|reference|sets>`;
-  the yardstick is `bf-harness/tests/engine2_voices.rs` against `tests/reference/engine2/<FIGHTER>.json`.
+- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `eq.rs`; `play.rs`
+  for how a note is played; `space.rs` for width and an instrument's own room; the kept recipe engine's format,
+  player and parts); each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs` (`ENGINE2`, built with
+  `Instrument::built`; `RECIPE` the kept recipe voice); parts ask for notes with `MusicCtx::note_played`. The built
+  voices' yardstick is `bf-harness/tests/engine2_built.rs` (the listening riffs against the real instruments' octave
+  bands and the owner's picks as built); each technique has its own unit test beside its engine. The recordings
+  tool is `cargo run --release -p bf-harness --example recipes -- <fetch|study|measure|check|reference|sets>`, the
+  measuring `bf-harness/src/e2measure.rs`.
 - **The licence rule:** a shipped recipe is measured only from CC0 or "free for any use" recordings. CC BY and
   CC BY-SA sets may be studied (general facts about the instrument), never shipped from; non-commercial and
   all-rights-reserved sets are not used at all. Every set is listed in `docs/studio/voice-engine-2-sources.md`.
   Recordings are never committed (they live in the git-ignored `studio/reference/.cache/`).
-- **Adding an instrument** (a later stage): `recipes fetch` its sets (PC-only sets by Remote Control); `recipes
-  study` it and write its sheet in `docs/studio/voice-engine-2-instruments.md` (working parts, the spread across the
-  sources, the published acoustics); `recipes measure` its recipe; `recipes check` the rebuilt notes against the
-  recordings; `recipes reference` its yardstick and add it to `engine2_voices.rs`; its parts in `engine2/` and its
-  `ENGINE2` in the fighter's `voice.rs`; then `ballfight levels --write` for its row, and the speed check (at most
-  25% slower than before on its fights).
-- **Playing:** `docs/studio/voice-engine-2-playing.md` lists what a note can ask for (accent, swell, pedal, mute,
-  chord size...), for the owner's composition system.
+- **Adding a family** (a later stage): `recipes fetch` and `recipes study` its sets (PC-only sets by Remote
+  Control) and write its sheet in `docs/studio/voice-engine-2-instruments.md` (working parts, every technique, the
+  spread across the sources, the published acoustics); sketch its engine from its parts in a voice lab and let the
+  owner pick by ear (rounds of named variants); port the pick into `engine2/` (one sample or one short block at a
+  time, the sample rate passed in, never a fixed 48 kHz) with a test per technique; give the fighter its `ENGINE2`
+  (`Instrument::built`) and add it to `engine2_built.rs`; then `ballfight levels <fights> --write
+  crates/bf-content/src/levels_table.rs` for its row, and the speed check (at most 25% slower than before on its
+  fights).
+- **Playing:** `docs/studio/voice-engine-2-playing.md` lists what a note can ask for (accent, swell, pedals, mute,
+  technique, stops, swell box, chord size...) and each instrument's techniques, for the owner's composition system.
 
 ## How to add a fighter
 
