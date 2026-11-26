@@ -16,6 +16,7 @@
 
 use bf_core::dmath;
 use bf_core::event::Event;
+use bf_core::roster::FighterCfg;
 use bf_picture::bold::floor::{self, Family};
 use bf_picture::bold::px;
 use bf_picture::bold::{self, HitSize, INK, WHITE};
@@ -66,6 +67,8 @@ pub(super) struct Slash {
 pub(super) struct Bold {
     /// The bow's spin as the fight starts and at its fastest.
     spin: (f64, f64),
+    /// PIZZICATO's fan: how many lanes, and its sweep in degrees.
+    pizz: (usize, f64),
     slashes: Vec<Slash>,
     /// Landed darts: when and where.
     pops: Vec<(f64, f64, f64)>,
@@ -138,8 +141,8 @@ fn bow_quads(p: [f64; 2], th: f64, blen: f64, sd: f64) -> [([V3; 4], V3); 4] {
 
 impl ViolinLook {
     /// The slashes, landed darts and moves of side `k`, from its events and its spin.
-    pub(super) fn bold_setup(p: &PictureCtx, k: usize) -> Bold {
-        let weapon = &p.cfg[k].raw["weapon"];
+    pub(super) fn bold_setup(p: &PictureCtx, k: usize, cfg: &FighterCfg) -> Bold {
+        let weapon = &cfg.raw["weapon"];
         let spin0 = weapon["spin"].as_f64().unwrap_or(2.4);
         let spin_max = weapon["spin_max"].as_f64().unwrap_or(spin0 + 1.0);
         let mine = |e: &&Event| e.who() == Some(k);
@@ -159,8 +162,13 @@ impl ViolinLook {
                 .map(|e| e.t)
                 .collect()
         };
+        let pizz = &cfg.raw["abilities"]["unlock1"];
         Bold {
             spin: (spin0, spin_max),
+            pizz: (
+                pizz["n"].as_f64().unwrap_or(5.0).clamp(1.0, 9.0) as usize,
+                pizz["sweep"].as_f64().unwrap_or(64.0),
+            ),
             slashes: hits("blade")
                 .map(|e| {
                     let i = p.sim_i(e.t);
@@ -228,9 +236,8 @@ impl ViolinLook {
         let tint = bold::light(p.col[k]);
         // PIZZICATO: the lanes of the fan to come
         if let Some(u) = Self::until(&self.bold.plucks, c.t, PLUCK_IN_S) {
-            let ab = &p.cfg[k].raw["abilities"]["unlock1"];
-            let n = ab["n"].as_f64().unwrap_or(5.0).clamp(1.0, 9.0) as usize;
-            let sweep = ab["sweep"].as_f64().unwrap_or(64.0).to_radians();
+            let (n, sweep) = self.bold.pizz;
+            let sweep = sweep.to_radians();
             let aim = dmath::atan2(foe[1] - me[1], foe[0] - me[0]);
             for j in 0..n {
                 let ang = aim + sweep * (j as f64 / (n.max(2) - 1) as f64 - 0.5);

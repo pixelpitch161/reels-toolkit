@@ -28,6 +28,7 @@ use bf_picture::ring::PictureCtx;
 use bf_picture::scene::{A, CANVAS_RIM, R_BALL as R, to_world};
 
 use super::{BAR, BRASS, HOLE, KEY_B, KEY_W, Kind, LAT, PAPER, PAPER_DK, PianoLook, Shot, WOOD, int, is_black, num};
+use bf_core::roster::FighterCfg;
 
 /// The bold paper is wider: it runs from the bar out to a spool at the apron's edge.
 const DEPTH: f64 = 0.49;
@@ -114,6 +115,28 @@ fn fan_key(cam: &Cam, x: f64, z: f64, y: f64, ang: f64, half: f64, r0: f64, r1: 
         at(r1, ang + half),
         at(r0, ang + half),
     ]
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// GLISSANDO: its keys, its sweep in degrees and its beats.
+    gliss: (f64, f64, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let ab = &cfg.unlock2;
+        Nums {
+            gliss: (
+                ab.get("n").unwrap_or(15.0).max(2.0),
+                ab.get("sweep").unwrap_or(150.0),
+                ab.get("beats").unwrap_or(1.0),
+            ),
+        }
+    }
 }
 
 impl PianoLook {
@@ -589,10 +612,9 @@ impl PianoLook {
     fn bold_fan(&self, p: &PictureCtx, img: &mut Pic, f: &FrameCtx<'_>) {
         let k = self.k;
         let t = f.t;
-        let ab = &p.cfg[k].unlock2;
-        let n = ab.get("n").unwrap_or(15.0).max(2.0);
-        let sweep = ab.get("sweep").unwrap_or(150.0) * dmath::PI / 180.0;
-        let dur = ab.get("beats").unwrap_or(1.0) * p.show.grid.beat;
+        let (n, sweep, beats) = self.nums.gliss;
+        let sweep = sweep * dmath::PI / 180.0;
+        let dur = beats * p.show.grid.beat;
         let me = f.fs[k].p;
         // open: how far the fan has unfolded; age: seconds since the first key left; aim: its middle
         let (open, age, aim) = if let Some((age, e)) = bold::since(p, k, &["ability:arc"], t, dur + FAN_OUT_S) {

@@ -145,6 +145,8 @@ enum Item {
 /// MELLOPHONE's look.
 #[derive(Clone, Debug, Default)]
 pub struct MellophoneLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// Its rope landings: `(t, x, z, echoes)`.
@@ -234,8 +236,9 @@ impl Look for MellophoneLook {
         Some(String::new())
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let mine = |e: &&Event| e.who() == Some(k);
         let ev = &p.rec.events;
         self.ropes = ev

@@ -203,6 +203,8 @@ type SpriteKey = (bool, u32, u64, u64);
 /// BASS DRUM's look: `Look` of `kit/fighters/bass_drum.py`.
 #[derive(Debug)]
 pub struct BassDrumLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `T.T_FIGHT`.
@@ -232,6 +234,7 @@ impl BassDrumLook {
     pub fn new() -> BassDrumLook {
         BassDrumLook {
             k: 0,
+            nums: bold::Nums::default(),
             t_fight: 0.0,
             segs: Vec::new(),
             booms: Vec::new(),
@@ -356,6 +359,7 @@ impl Look for BassDrumLook {
     /// it.)
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.t_fight = p.show.grid.t_fight;
         let ev = &p.rec.events;
         self.segs = state::segs(ev, k);

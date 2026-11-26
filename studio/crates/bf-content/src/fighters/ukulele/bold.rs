@@ -17,6 +17,7 @@
 //!   lines.
 
 use bf_core::dmath;
+use bf_core::roster::FighterCfg;
 use bf_picture::bold::floor::{self, Family};
 use bf_picture::bold::px;
 use bf_picture::bold::{self};
@@ -206,6 +207,26 @@ fn blocks(ic: &mut [V3], c: &CanvasCtx<'_>, cx: f64, cz: f64, r: f64, half_w: f6
     }
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// CHUNK's ring: its speed and full radius.
+    chunk: (f64, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            chunk: (
+                cfg.unlock1.get("speed").unwrap_or(7.5),
+                cfg.unlock1.get("radius").unwrap_or(3.0),
+            ),
+        }
+    }
+}
+
 impl UkuleleLook {
     /// How far the enemy is lifted by the waterspout at `t`: up at every tick that catches it, down again
     /// [`SUCK_S`] after the last.
@@ -217,9 +238,8 @@ impl UkuleleLook {
 
     /// CHUNK's ring `age` seconds after the strum: its radius, jumping outward in four steps, and whether it has
     /// reached its full size (it then stands for [`CHUNK_HOLD_S`]); `None` once it is cut off.
-    fn chunk_ring(p: &PictureCtx, k: usize, age: f64) -> Option<(f64, f64)> {
-        let ab = &p.cfg[k].unlock1;
-        let (speed, rmax) = (ab.get("speed").unwrap_or(7.5), ab.get("radius").unwrap_or(3.0));
+    fn chunk_ring(&self, age: f64) -> Option<(f64, f64)> {
+        let (speed, rmax) = self.nums.chunk;
         let dur = (rmax - R) / speed.max(1e-6);
         if !(0.0..dur + CHUNK_HOLD_S).contains(&age) {
             return None;
@@ -314,7 +334,7 @@ impl UkuleleLook {
         }
         // CHUNK: the ring stands at its full size for a moment after the wave itself is gone
         if let Some((age, e)) = bold::since(p, k, &CHUNK, t, 2.0)
-            && let Some((r, rmax)) = Self::chunk_ring(p, k, age)
+            && let Some((r, rmax)) = self.chunk_ring(age)
             && r >= rmax
             && !p.run.waves(c.i).iter().any(|w| w.owner == k && w.kind == "shockwave")
         {
@@ -334,7 +354,7 @@ impl UkuleleLook {
         // CHUNK: the plucked string's ring, thin, and over it the thick blocks that jump outward in steps
         let tint = bold::light(p.col[w.owner]);
         floor::wave(ic, c, Family::Strings, w, c.t, tint, 0.5);
-        if let Some((r, _)) = Self::chunk_ring(p, w.owner, c.t - w.t0) {
+        if let Some((r, _)) = self.chunk_ring(c.t - w.t0) {
             blocks(ic, c, w.cx, w.cz, r - 0.2, 0.2, 12.0, tint, 1.1);
         }
     }

@@ -295,6 +295,8 @@ enum Item {
 /// UKULELE's look.
 #[derive(Clone, Debug, Default)]
 pub struct UkuleleLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     surfs: Vec<Surf>,
     spouts: Vec<Spout>,
@@ -384,6 +386,7 @@ impl Look for UkuleleLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let life = match &cfg.weapon {
             WeaponCfg::Surf(w) => w.life,
             _ => 1.1,

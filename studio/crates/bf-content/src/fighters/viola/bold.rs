@@ -13,6 +13,7 @@
 
 use bf_core::dmath;
 use bf_core::event::Event;
+use bf_core::roster::FighterCfg;
 use bf_picture::bold::floor::{self, Family};
 use bf_picture::bold::px;
 use bf_picture::bold::{self, HitSize, Status, StatusKind};
@@ -92,13 +93,36 @@ fn ellipse(img: &mut Pic, c: (f64, f64), rx: f64, ry: f64, col: V3, a: f64) {
     px::ink_poly(img, &pts, col, a);
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// How far a note rolls and how long it holds (the weapon's `roll` and `hold`).
+    roll_hold: (f64, f64),
+    /// The rests before a note: under MELODY AT LAST, and otherwise.
+    rests: (i64, i64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let raw = &cfg.raw;
+        let w = &raw["weapon"];
+        Nums {
+            roll_hold: (w["roll"].as_f64().unwrap_or(2.0), w["hold"].as_f64().unwrap_or(4.0)),
+            rests: (
+                raw["abilities"]["unlock2"]["rest"].as_f64().unwrap_or(1.0) as i64,
+                w["every"].as_f64().unwrap_or(4.0) as i64 - 1,
+            ),
+        }
+    }
+}
+
 impl ViolaLook {
     /// The lane of the note of a `note` event: from where it appears, along its aim, as far as it rolls in its
     /// whole note or to the ropes.
-    fn lane_of(p: &PictureCtx, k: usize, e: &Event) -> ([f64; 2], [f64; 2], f64) {
-        let w = &p.cfg[k].raw["weapon"];
-        let roll = w["roll"].as_f64().unwrap_or(2.0);
-        let hold = w["hold"].as_f64().unwrap_or(4.0);
+    fn lane_of(&self, p: &PictureCtx, e: &Event) -> ([f64; 2], [f64; 2], f64) {
+        let (roll, hold) = self.nums.roll_hold;
         let (a, aim, r) = ([e.f(4), e.f(5)], e.f(6), e.f(7));
         let u = [dmath::cos(aim), dmath::sin(aim)];
         let lim = scene::A - r;
@@ -122,13 +146,8 @@ impl ViolaLook {
     }
 
     /// How many pips the count has: the rests before a note (one under MELODY AT LAST).
-    fn pips(p: &PictureCtx, k: usize, melody: bool) -> i64 {
-        let raw = &p.cfg[k].raw;
-        if melody {
-            raw["abilities"]["unlock2"]["rest"].as_f64().unwrap_or(1.0) as i64
-        } else {
-            raw["weapon"]["every"].as_f64().unwrap_or(4.0) as i64 - 1
-        }
+    fn pips(&self, melody: bool) -> i64 {
+        if melody { self.nums.rests.0 } else { self.nums.rests.1 }
     }
 
     pub(super) fn bold_canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
@@ -164,13 +183,13 @@ impl ViolaLook {
         // through the last rest: a dashed lane where each coming note will roll (two for a DOUBLE STOP)
         for e in bold::events_in(p, k, &["note"], t, t + g.beat).filter(|e| e.t > t && e.i(8) != 2) {
             let u = 1.0 - (e.t - t) / g.beat;
-            let (a, b, r) = Self::lane_of(p, k, e);
+            let (a, b, r) = self.lane_of(p, e);
             floor::dashes(ic, c, a, b, r * 0.45, 0.4, t * 3.0, tint, 0.25 + 0.5 * u);
         }
         // as it rolls out: its lane, lit and fading
         for e in bold::events_in(p, k, &["note"], t - LANE_S, t).filter(|e| e.i(8) != 2) {
             let fade = 1.0 - (t - e.t) / LANE_S;
-            let (a, b, r) = Self::lane_of(p, k, e);
+            let (a, b, r) = self.lane_of(p, e);
             floor::lane(ic, c, a, b, r * 0.55, tint, 0.6 * fade);
         }
         // the tread a rolling note leaves behind it
@@ -308,7 +327,7 @@ impl ViolaLook {
                 px::ink_arc(img, d.s, rp + 4.0, 1.6, a0, a0 + dmath::TAU * left, pale, 0.95);
             }
             // the rest pips over the ball: one lights up a beat, the newest pops
-            let total = Self::pips(p, k, mel || melody.is_some()).max(count).max(1);
+            let total = self.pips(mel || melody.is_some()).max(count).max(1);
             let pip_at = |j: i64| (sx + (j as f64 - (total - 1) as f64 / 2.0) * 14.0, sy - rp - 13.0);
             if resting && count > 0 {
                 let t_beat = g.t_fight + ((t - g.t_fight) / g.beat + 1e-6).floor() * g.beat;

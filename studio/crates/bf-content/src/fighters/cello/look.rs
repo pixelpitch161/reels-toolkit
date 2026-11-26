@@ -228,6 +228,8 @@ type Grab = (i64, f64, f64, f64, f64);
 /// are read by no hook.)
 #[derive(Clone, Debug, Default)]
 pub struct CelloLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `THROWS`.
@@ -356,8 +358,9 @@ impl Look for CelloLook {
     }
 
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: the look reads no roster number, only side `k`'s events.
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         let mine = |kind: &'static str| ev.iter().filter(move |e| e.kind == kind && e.who() == Some(k));
         self.throws = mine("throw")

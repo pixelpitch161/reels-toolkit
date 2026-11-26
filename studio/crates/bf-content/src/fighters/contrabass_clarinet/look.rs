@@ -84,6 +84,8 @@ fn toward_white(c: V3, w: f64) -> V3 {
 /// CONTRABASS CLARINET's look.
 #[derive(Clone, Debug, Default)]
 pub struct ContraLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// Its blasts.
@@ -228,6 +230,7 @@ impl Look for ContraLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.horns = horns(&p.rec.events, k);
         self.hold = cfg.low.get("hold").unwrap_or(0.3);
         let num = |e: &Event, i: usize| -> Option<f64> { (e.fields.len() > i - 2).then(|| e.f(i)) };

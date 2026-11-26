@@ -30,6 +30,7 @@ use bf_picture::scene::{self, A, R_BALL as R};
 
 use super::{BEAM_Y, OboeLook, draw_reed, extra, unit, wobble_rim};
 use crate::fighters::shared::reeds::{self, CANE, CANE_D, THREAD};
+use bf_core::roster::FighterCfg;
 
 /// The sickly green of everything out of tune.
 const SOUR_G: V3 = [176.0, 222.0, 64.0];
@@ -95,6 +96,26 @@ fn wind_ring(img: &mut Pic, cam: &Cam, c0: [f64; 2], r: f64, rot: f64, col: V3, 
     }
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// ILL WIND's gust: its speed and radius.
+    gust: (f64, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            gust: (
+                cfg.low.get("speed").unwrap_or(4.5),
+                cfg.low.get("radius").unwrap_or(9.0),
+            ),
+        }
+    }
+}
+
 impl OboeLook {
     /// The aim lock under way at `t`: how far it is (0 to 1), its aim and the length of the beam to come.
     fn lock(&self, t: f64) -> Option<(f64, f64, f64)> {
@@ -153,8 +174,7 @@ impl OboeLook {
     /// ILL WIND's gust at `t`: where it started, its radius now and how far it has faded (1 fresh, 0 gone).
     fn gust(&self, p: &PictureCtx, t: f64) -> Option<([f64; 2], f64, f64)> {
         let k = self.k;
-        let low = &p.cfg[k].low;
-        let (speed, radius) = (low.get("speed").unwrap_or(4.5), low.get("radius").unwrap_or(9.0));
+        let (speed, radius) = self.nums.gust;
         let (age, e) = bold::since(p, k, &["ability:wave"], t, (radius - R) / speed.max(1e-6))?;
         let r = R + speed * age;
         Some((p.run.p(p.sim_i(e.t), k), r, 1.0 - r / radius.max(1e-6)))

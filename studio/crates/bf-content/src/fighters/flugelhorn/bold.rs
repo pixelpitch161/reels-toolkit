@@ -25,6 +25,7 @@ use bf_picture::ring::PictureCtx;
 use bf_picture::scene::R_BALL as R;
 
 use super::{FEATHER, FlugelLook, world};
+use bf_core::roster::FighterCfg;
 
 /// The shaded feathers of a wing, between the white ones.
 const SHADE: V3 = [214.0, 220.0, 226.0];
@@ -190,6 +191,23 @@ struct Burst {
     feathers: u64,
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// FEATHER SHOWER's beats.
+    volley_beats: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            volley_beats: cfg.raw["abilities"]["unlock2"]["beats"].as_f64().unwrap_or(2.0),
+        }
+    }
+}
+
 impl FlugelLook {
     /// The ball's heading at recording frame `i`, or `or` when it is hardly moving.
     fn heading(p: &PictureCtx, i: usize, k: usize, or: f64) -> f64 {
@@ -291,7 +309,7 @@ impl FlugelLook {
             return Some(glide(Self::heading(p, f.i, k, st.th)));
         }
         // FEATHER SHOWER: up and back, a flick forward, shivering while the feathers leave
-        let vol = Self::volley(p, k);
+        let vol = self.volley(p);
         if let Some((u, _)) = bold::until(p, k, &["ability:arc"], t, 3.0 * FLICK) {
             return Some(Pose {
                 aim: st.th,
@@ -336,8 +354,8 @@ impl FlugelLook {
     }
 
     /// Seconds a FEATHER SHOWER takes to throw its feathers.
-    fn volley(p: &PictureCtx, k: usize) -> f64 {
-        p.cfg[k].raw["abilities"]["unlock2"]["beats"].as_f64().unwrap_or(2.0) * p.show.grid.beat
+    fn volley(&self, p: &PictureCtx) -> f64 {
+        self.nums.volley_beats * p.show.grid.beat
     }
 
     /// Every clap from `t - back` to `t`, as what sheds feathers and sends a gust.

@@ -134,6 +134,8 @@ fn draw_stick(img: &mut Img<f32>, cam: &Cam, a: (f64, f64), b: (f64, f64), alpha
 /// SNARE DRUM's look.
 #[derive(Default)]
 pub struct SnareDrumLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     strokes: Vec<Stroke>,
     flams: Vec<(f64, f64)>,
@@ -205,8 +207,9 @@ impl Look for SnareDrumLook {
         Some(String::new())
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         self.strokes = state::strokes(ev, k);
         self.flams = state::windows(ev, k, "flam");

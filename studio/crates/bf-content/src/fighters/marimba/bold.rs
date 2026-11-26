@@ -27,6 +27,7 @@ use bf_picture::ring::ropes::RopeEv;
 use bf_picture::scene::{A, R_BALL as R, to_world};
 
 use super::{BIRCH, FLY_Y, MarimbaLook, ROSEWOOD, Row, how};
+use bf_core::roster::FighterCfg;
 
 /// A head's colour by its bounces: rose, orange, gold, white.
 const STEPS: [V3; 4] = [
@@ -115,6 +116,28 @@ fn mallet(fr: &mut Frame, cam: &Cam, x: f64, z: f64, dir: (f64, f64), len: f64, 
     }
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// FIVE OCTAVES' beats.
+    fan_beats: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            fan_beats: [&cfg.unlock1, &cfg.unlock2, &cfg.low]
+                .iter()
+                .find(|ab| ab.params.contains_key("n") && ab.params.contains_key("beats"))
+                .and_then(|ab| ab.params.get("beats"))
+                .copied()
+                .unwrap_or(2.0),
+        }
+    }
+}
+
 impl MarimbaLook {
     /// Its mallets showing at `t` with their ids, from the recorded `MALLETS`.
     fn live_ids(&self, p: &PictureCtx, t: f64) -> Vec<(i64, Row)> {
@@ -152,13 +175,7 @@ impl MarimbaLook {
     /// FIVE OCTAVES: when it started, how long its fan runs, and the id of its first mallet.
     fn fan(&self, p: &PictureCtx) -> Option<(f64, f64, i64)> {
         let t0 = self.five?;
-        let cfg = &p.cfg[self.k];
-        let beats = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
-            .iter()
-            .find(|ab| ab.params.contains_key("n") && ab.params.contains_key("beats"))
-            .and_then(|ab| ab.params.get("beats"))
-            .copied()
-            .unwrap_or(2.0);
+        let beats = self.nums.fan_beats;
         let id0 = self
             .throws
             .iter()

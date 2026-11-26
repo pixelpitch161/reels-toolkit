@@ -24,6 +24,7 @@ use bf_picture::ring::PictureCtx;
 use bf_picture::scene;
 
 use super::{ContrabassoonLook, PIPE_Y, PipeL, SILVER, WATER, ss};
+use bf_core::roster::FighterCfg;
 
 /// The pipes' maroon.
 const MAROON: V3 = [160.0, 40.0, 52.0];
@@ -106,6 +107,23 @@ fn mix(a: V3, b: V3, k: f64) -> V3 {
 
 fn on_floor(cam: &Cam, q: [f64; 2], y: f64) -> (f64, f64) {
     bold::at(cam, q[0], q[1], y)
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// The spray's reach.
+    reach: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            reach: cfg.raw["abilities"]["unlock1"]["reach"].as_f64().unwrap_or(0.9),
+        }
+    }
 }
 
 impl ContrabassoonLook {
@@ -212,10 +230,8 @@ impl ContrabassoonLook {
     }
 
     /// The spray's reach.
-    fn reach(&self, p: &PictureCtx) -> f64 {
-        p.cfg[self.k].raw["abilities"]["unlock1"]["reach"]
-            .as_f64()
-            .unwrap_or(0.9)
+    fn reach(&self) -> f64 {
+        self.nums.reach
     }
 
     pub(super) fn bold_items_free(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Vec<(f64, Payload)> {
@@ -304,7 +320,7 @@ impl ContrabassoonLook {
         }
         let water = [0.3, 0.85, 1.7];
         let beat = p.show.grid.beat;
-        let reach = self.reach(p);
+        let reach = self.reach();
         let me = c.fs[k].p;
         for s in &self.sprays {
             let age = (tc - s.t0) / beat;
@@ -450,7 +466,7 @@ impl ContrabassoonLook {
         }
         // WATER KEY: droplets out of every pipe end and the ball, and a squirt inward from every bend
         let beat = p.show.grid.beat;
-        let reach = self.reach(p);
+        let reach = self.reach();
         let me = f.fs[k].p;
         for (n, s) in self.sprays.iter().enumerate() {
             let age = (tc - s.t0) / beat;

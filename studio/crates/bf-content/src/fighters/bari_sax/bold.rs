@@ -27,6 +27,7 @@ use bf_picture::scene::{self, R_BALL as R};
 
 use super::state::Src;
 use super::{BariSaxLook, Crane, CraneItem, PicSrc, STEEL, STEEL_HI, VERT, add3, cable, sub3, unit2, unit3, w_at};
+use bf_core::roster::FighterCfg;
 
 /// GROWL's orange, as paint and as canvas light.
 const ORANGE: V3 = [255.0, 150.0, 40.0];
@@ -107,6 +108,27 @@ fn draw_bold_crane(arr: &mut Img<f32>, cam: &Cam, cs: &Crane, col: V3) {
     px::line(arr, corner(-0.7, 0.85), corner(0.7, 0.85), 1.0, STEEL_HI, 0.9);
     for (q, a) in &cs.pieces {
         chain(arr, &cam.wp(q), 3.2, STEEL, *a);
+    }
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// GROWL's ring: the speed and radius of its shockwave move (`None` without one that has both).
+    growl: Option<(f64, f64)>,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let abilities = &cfg.raw["abilities"];
+        let growl = ["unlock1", "unlock2", "low"]
+            .iter()
+            .map(|slot| &abilities[*slot])
+            .find(|a| a["kind"].as_str() == Some("shockwave"))
+            .and_then(|ab| Some((ab["speed"].as_f64()?, ab["radius"].as_f64()?)));
+        Nums { growl }
     }
 }
 
@@ -233,12 +255,7 @@ impl BariSaxLook {
     fn growl_linger(&self, p: &PictureCtx, t: f64) -> Option<([f64; 2], f64, f64)> {
         let k = self.k;
         let (age, e) = bold::since(p, k, &["ability:shockwave"], t.min(p.t_ko), 1.0)?;
-        let abilities = &p.cfg[k].raw["abilities"];
-        let ab = ["unlock1", "unlock2", "low"]
-            .iter()
-            .map(|slot| &abilities[*slot])
-            .find(|a| a["kind"].as_str() == Some("shockwave"))?;
-        let (speed, radius) = (ab["speed"].as_f64()?, ab["radius"].as_f64()?);
+        let (speed, radius) = self.nums.growl?;
         // (from a frame before the run's own ring is gone, so the two join without a gap)
         let over = age - radius / speed.max(1e-6) + 0.04;
         (0.0..LINGER_S)

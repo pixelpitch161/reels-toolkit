@@ -25,6 +25,7 @@ use bf_picture::ring::ropes::RopeEv;
 use bf_picture::scene::{self, A, R_BALL as R};
 
 use super::{FLY_Y, HOT, MellophoneLook, WaveRow, arc, bayer, how, num};
+use bf_core::roster::FighterCfg;
 
 /// A first wave: the mellophone's blue, lifted so it reads on the canvas.
 const PERI: V3 = [188.0, 206.0, 255.0];
@@ -114,6 +115,31 @@ fn shape(w: &WaveRow) -> (f64, u32, usize, V3) {
     }
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// The beats an echo waits on its rope: SLAPBACK's and STADIUM ECHO's.
+    waits: (f64, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let slap = match &cfg.weapon {
+            WeaponCfg::Slapback(w) => w.delay,
+            _ => 0.5,
+        };
+        let stadium = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
+            .iter()
+            .find(|ab| ab.params.contains_key("half_w"))
+            .and_then(|ab| ab.params.get("delay"))
+            .copied()
+            .unwrap_or(0.25);
+        Nums { waits: (slap, stadium) }
+    }
+}
+
 impl MellophoneLook {
     /// The `slap` event that blew wave `id`, looking back from `t`.
     fn birth(p: &PictureCtx, k: usize, id: i64, t: f64) -> Option<&Event> {
@@ -174,17 +200,7 @@ impl MellophoneLook {
 
     /// The seconds an echo waits on its rope: SLAPBACK's and STADIUM ECHO's.
     fn waits(&self, p: &PictureCtx) -> (f64, f64) {
-        let cfg = &p.cfg[self.k];
-        let slap = match &cfg.weapon {
-            WeaponCfg::Slapback(w) => w.delay,
-            _ => 0.5,
-        };
-        let stadium = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
-            .iter()
-            .find(|ab| ab.params.contains_key("half_w"))
-            .and_then(|ab| ab.params.get("delay"))
-            .copied()
-            .unwrap_or(0.25);
+        let (slap, stadium) = self.nums.waits;
         let beat = p.show.grid.beat;
         ((slap * beat).max(1e-3), (stadium * beat).max(1e-3))
     }

@@ -29,6 +29,7 @@ use bf_picture::ring::state::BallState;
 use bf_picture::scene::{self, R_BALL as R};
 
 use super::{BassoonLook, Crook, Hop, MAPLE_DUST, Stomp, THREAD, WHITE, crook_points, hop_height, how, unit};
+use bf_core::roster::FighterCfg;
 
 /// The crook's brass.
 const BRASS: V3 = [232.0, 188.0, 92.0];
@@ -82,6 +83,23 @@ fn ticks(img: &mut Pic, cam: &Cam, x: f64, z: f64, n: usize, r0: f64, r1: f64, w
         let p0 = bold::at(cam, x + d[0] * r0, z + d[1] * r0, 0.04);
         let p1 = bold::at(cam, x + d[0] * r1, z + d[1] * r1, 0.04);
         px::ink_line(img, p0, p1, w, col, a);
+    }
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// The half angle of the enemy's back, in degrees.
+    back_half: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            back_half: cfg.raw["weapon"]["back_half"].as_f64().unwrap_or(55.0),
+        }
     }
 }
 
@@ -265,7 +283,7 @@ impl BassoonLook {
             && let Some(face) = self.facing(p, c.t)
         {
             // the enemy's back: a dashed arc, gold while a hop is on its way to land behind it
-            let half = p.cfg[k].raw["weapon"]["back_half"].as_f64().unwrap_or(55.0) * dmath::PI / 180.0;
+            let half = self.nums.back_half * dmath::PI / 180.0;
             let coming = self
                 .hop_at(p, c.t)
                 .is_some_and(|(h, _)| self.stomp_of(h).is_some_and(|s| s.back));

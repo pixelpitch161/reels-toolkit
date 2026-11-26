@@ -418,6 +418,8 @@ fn num(v: &Value) -> f64 {
 /// VIOLA's look.
 #[derive(Default)]
 pub struct ViolaLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     enemy: usize,
     col: V3,
@@ -763,6 +765,7 @@ impl Look for ViolaLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.enemy = 1 - k;
         self.col = p.col[k];
         self.dark = p.dark[k];

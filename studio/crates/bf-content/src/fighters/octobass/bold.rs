@@ -19,6 +19,7 @@
 
 use bf_core::dmath;
 use bf_core::event::Event;
+use bf_core::roster::FighterCfg;
 use bf_picture::bold::floor::{self, Family};
 use bf_picture::bold::px;
 use bf_picture::bold::{self, HitSize, Status, StatusKind};
@@ -156,9 +157,9 @@ fn cracks(ic: &mut [V3], c: &CanvasCtx<'_>, cx: f64, cz: f64, seed: i64, grow: f
 
 impl OctobassLook {
     /// The arms, the seven's windows and the numbers of side `k`, from its events and its roster entry.
-    pub(super) fn bold_setup(p: &PictureCtx, k: usize) -> Bold {
+    pub(super) fn bold_setup(p: &PictureCtx, k: usize, cfg: &FighterCfg) -> Bold {
         let beat = p.show.grid.beat;
-        let raw = &p.cfg[k].raw;
+        let raw = &cfg.raw;
         let ability = |slot: &str, key: &str, or: f64| raw["abilities"][slot][key].as_f64().unwrap_or(or);
         let mut b = Bold {
             reach: (

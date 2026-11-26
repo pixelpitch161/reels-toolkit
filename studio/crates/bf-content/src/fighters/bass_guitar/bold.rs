@@ -28,6 +28,7 @@ use bf_picture::ring::state::BallState;
 use bf_picture::scene::{R_BALL as R, to_world};
 
 use super::{BassGuitarLook, CHROME, DARK, FLY_Y, HOT, MAPLE, Row, how, pick_shape};
+use bf_core::roster::FighterCfg;
 
 /// A bold pick's size across (classic: 0.26).
 const PICK_S: f64 = 0.58;
@@ -99,6 +100,27 @@ fn resample(pts: &[[f64; 2]], step: f64) -> Vec<[f64; 2]> {
         need = at - len;
     }
     out
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// The beats FRET SLIDE and HEADSTOCK wind up for.
+    wind: (f64, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let ab = &cfg.raw["abilities"];
+        Nums {
+            wind: (
+                ab["unlock1"]["wind_beats"].as_f64().unwrap_or(0.5),
+                ab["unlock2"]["wind_beats"].as_f64().unwrap_or(0.75),
+            ),
+        }
+    }
 }
 
 impl BassGuitarLook {
@@ -270,10 +292,7 @@ impl BassGuitarLook {
         let done = ((me[0] - a[0]) * ux + (me[1] - a[1]) * uz).max(0.0);
         let holding = d.row.a < 0.5 && d.ago == 0;
         // while it holds, the frets light up one after another
-        let wind = p.cfg[k].raw["abilities"]["unlock1"]["wind_beats"]
-            .as_f64()
-            .unwrap_or(0.5)
-            * p.show.grid.beat;
+        let wind = self.nums.wind.0 * p.show.grid.beat;
         let lit_to = match bold::since(p, k, &["fret_slide"], f.t, 4.0) {
             Some((age, e)) if holding && e.i(3) == 0 => len * ((age + 0.04) / wind.max(1e-6)).clamp(0.12, 1.0),
             _ => len,
@@ -348,10 +367,7 @@ impl BassGuitarLook {
                 let mut smear = Vec::new();
                 let mut last = tip;
                 // only the sweep smears, not the wind-up
-                let wind = p.cfg[k].raw["abilities"]["unlock2"]["wind_beats"]
-                    .as_f64()
-                    .unwrap_or(0.75)
-                    * p.show.grid.beat;
+                let wind = self.nums.wind.1 * p.show.grid.beat;
                 let sweeping = bold::since(p, k, &["headstock"], f.t, 3.0)
                     .is_some_and(|(age, e)| e.i(3) == 1 || age >= wind - 0.02);
                 for back in 1..=if sweeping { 3usize.min(i) } else { 0 } {
@@ -562,10 +578,7 @@ impl BassGuitarLook {
             && let Some((age, e)) = bold::since(p, k, &["headstock"], f.t, 3.0)
             && e.i(3) == 0
         {
-            let wind = p.cfg[k].raw["abilities"]["unlock2"]["wind_beats"]
-                .as_f64()
-                .unwrap_or(0.75)
-                * p.show.grid.beat;
+            let wind = self.nums.wind.1 * p.show.grid.beat;
             let u = age / wind.max(1e-6);
             if (0.45..1.0).contains(&u) {
                 let (dx, dz) = (r.x1 - r.x0, r.z1 - r.z0);

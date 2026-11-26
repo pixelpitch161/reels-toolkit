@@ -222,7 +222,7 @@ impl Look for OctobassLook {
         Some(String::new())
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
         let ev = &p.rec.events;
         self.pops = ev
@@ -238,7 +238,7 @@ impl Look for OctobassLook {
             .map(|e| e.t)
             .collect();
         if p.bold {
-            self.bold = Self::bold_setup(p, k);
+            self.bold = Self::bold_setup(p, k, cfg);
         }
     }
 

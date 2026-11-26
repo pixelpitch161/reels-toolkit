@@ -318,6 +318,8 @@ fn img_set(arr: &mut Img<f32>, x: usize, y: usize, col: V3) {
 /// ELECTRIC's look: `Look` of `kit/fighters/electric.py`.
 #[derive(Clone, Debug, Default)]
 pub struct ElectricLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `BOLTS`.
@@ -506,8 +508,9 @@ impl Look for ElectricLook {
     }
 
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`: the look reads no roster number, only side `k`'s events.
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         let mine = |e: &Event, kind: &str| e.kind == kind && e.who() == Some(k);
         self.bolts = ev
