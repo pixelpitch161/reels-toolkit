@@ -54,6 +54,8 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.08,
     stop: 0.055,
+    keep_shape: false,
+    tail: &[],
 };
 
 /// OCTOBASS's voice.

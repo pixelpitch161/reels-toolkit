@@ -24,7 +24,7 @@ use bf_core::py::{fmod_py, py_max, py_min};
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// BAGPIPES's register in `pp_bridge`'s roster (`('BAGPIPES', 'bagpipes60_lowpoly', None, (67, 81), ...)`).
@@ -295,6 +295,27 @@ pub const CORRECTION: &Correction = &[
     (81, [0.3, 5.3, 0.0, -0.2, 0.2, -1.2, 14.9, -1.1]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (67, [-15.6, -24.7, -27.5, -22.1]),
+    (68, [-15.1, -23.9, -27.0, -21.2]),
+    (69, [-14.7, -23.0, -26.1, -20.4]),
+    (70, [-14.7, -22.3, -25.1, -19.7]),
+    (71, [-15.1, -22.2, -24.2, -19.4]),
+    (72, [-15.9, -22.3, -23.6, -19.4]),
+    (73, [-19.0, -23.1, -25.0, -22.0]),
+    (74, [-19.3, -23.1, -25.2, -22.0]),
+    (75, [-19.6, -23.3, -25.6, -22.3]),
+    (76, [-22.6, -29.2, -31.6, -29.9]),
+    (77, [-22.1, -28.8, -31.1, -29.4]),
+    (78, [-21.4, -27.9, -30.5, -28.5]),
+    (79, [-20.1, -26.8, -29.6, -27.6]),
+    (80, [-22.9, -25.0, -24.7, -30.4]),
+    (81, [-22.5, -24.7, -25.4, -31.4]),
+];
+
 /// The Composed arrangement's chanter (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added. Its start and stop stay its own: the high-G grace in front is the pipe's, and a slower start would
 /// smother it.
@@ -303,6 +324,8 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.0,
     stop: 0.0,
+    keep_shape: false,
+    tail: TAIL,
 };
 
 /// BAGPIPES's Pixel Pitch voice (`pp_bridge.voice('BAGPIPES', ...)`).

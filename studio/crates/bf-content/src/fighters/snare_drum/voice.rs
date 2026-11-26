@@ -5,6 +5,7 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::synth;
+use bf_sound::voice::real::Rework;
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The snare's register: the head is tuned around C5; notes only shade its pitch.
@@ -22,6 +23,17 @@ pub enum Stroke {
     Rim,
 }
 
+/// The Composed arrangement's SNARE DRUM (sound upgrade, stage 3, S1): a drum has no overtones to set, so only the
+/// small differences between its repeated strokes (a hair of pitch, a little level).
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+    keep_shape: false,
+    tail: &[],
+};
+
 /// SNARE DRUM's voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SnareDrumVoice;
@@ -37,6 +49,10 @@ impl Voice for SnareDrumVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {
