@@ -12,6 +12,7 @@
 use bf_core::dmath::{self, PI};
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
+use bf_sound::voice::real::{Correction, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The TUBA's register in `pp_bridge`'s roster (`('TUBA', 'tuba60_lowpoly', None, (33, 55), 0, 1.0)`); also its
@@ -27,6 +28,44 @@ const TONE: Brass = Brass {
     tilt: 1.0,
 };
 
+/// The TUBA's overtone correction toward a real tuba: gains in dB for its first eight harmonics, note by
+/// note (FluidR3, `bf-harness/tests/reference/fluidr3.json`; the reference is the tuba). Written by
+/// `cargo run --release -p bf-harness --example references -- correct "TUBA"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (33, [-13.0, 11.1, 8.6, 15.3, 13.8, 19.9, 12.6, 12.6]),
+    (34, [-13.0, 11.1, 8.6, 15.3, 13.8, 20.0, 12.6, 12.6]),
+    (35, [-14.7, 11.1, 13.3, 10.6, 17.5, 15.7, 12.6, 8.2]),
+    (36, [-14.8, 11.1, 13.3, 10.6, 17.5, 15.7, 12.6, 8.2]),
+    (37, [-14.7, 11.1, 13.3, 10.6, 17.5, 15.7, 12.7, 8.2]),
+    (38, [-14.8, 11.1, 13.3, 10.6, 17.5, 15.7, 12.7, 8.2]),
+    (39, [-14.7, 11.1, 13.3, 10.6, 17.5, 15.7, 12.7, 8.2]),
+    (40, [0.0, 6.1, 9.8, 7.6, 6.9, 5.6, 2.6, 0.1]),
+    (41, [0.0, 6.1, 9.8, 7.6, 6.9, 5.6, 2.6, 0.0]),
+    (42, [0.0, 6.1, 9.8, 7.6, 6.9, 5.6, 2.6, 0.0]),
+    (43, [0.0, 6.1, 9.8, 7.6, 6.9, 5.6, 2.6, 0.0]),
+    (44, [0.0, 6.1, 9.8, 7.6, 6.9, 5.6, 2.6, 0.0]),
+    (45, [0.0, -6.8, 2.9, -2.8, -7.7, -10.9, -28.8, -30.0]),
+    (46, [0.0, -6.8, 2.9, -2.8, -7.7, -10.9, -28.8, -30.0]),
+    (47, [0.0, -6.8, 2.9, -2.7, -7.7, -10.9, -28.8, -30.0]),
+    (48, [0.0, -6.9, 2.9, -2.8, -7.7, -10.9, -28.8, -30.0]),
+    (49, [0.0, -6.9, 2.8, -2.8, -7.7, -10.9, -28.8, -30.0]),
+    (50, [0.0, 9.0, 0.3, -3.4, -17.5, -28.1, -17.5, -28.8]),
+    (51, [0.0, 8.9, 0.3, -3.4, -17.5, -28.1, -17.5, -28.8]),
+    (52, [0.0, 8.8, 0.3, -3.5, -17.6, -28.2, -17.5, -28.8]),
+    (53, [0.0, 8.8, 0.3, -3.5, -17.6, -28.1, -17.6, -28.9]),
+    (54, [0.0, 8.7, 0.2, -3.5, -17.6, -28.2, -17.6, -28.9]),
+    (55, [0.0, -9.8, -18.0, -27.7, -24.6, -30.0, -30.0, -30.0]),
+];
+
+/// The Composed arrangement's TUBA (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, and a slower start (50 ms to full level), nearer the real one's.
+pub const REWORK: Rework = Rework {
+    correction: CORRECTION,
+    speak: 0.05,
+    stop: 0.0,
+};
+
 /// The TUBA's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TubaVoice;
@@ -38,6 +77,10 @@ impl Voice for TubaVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

@@ -68,7 +68,12 @@ arrangement, switched on the Music screen:
   A voice that plays through `ctx.note` opts in with `Voice::reworked` and `Voice::note_real`; parts with their own
   tone functions (alto, bari, tenor) choose the real tone under `ctx.composed_on()`. Repeats of one note take turns
   among three variants (`voice::real::Repeats`). The shared pieces are in `bf-sound/src/voice/real.rs` (`levels`,
-  `reshape`, `buzz`, `wobble`). The real instruments' fingerprints are
+  `reshape`, `buzz`, `wobble`). From the low instruments on, a voice is reworked from the outside instead: its own
+  note through an overtone `Correction` (a peak or dip at each of the first seven harmonics, `real::correct`), a
+  slower start and a quicker stop (`real::Rework`, `Voice::rework`). `references -- correct "<FIGHTER>"` writes
+  the table, refining it until the corrected notes match the real ones. Drums (timpani, bass drum) get only the
+  repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and
+  the contrabass above 57; those notes keep the table's last row. The real instruments' fingerprints are
   `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in
   `F:\bf-refs`, `references -- render`); `references -- profile` prints a voice's overtone table from them and
   `references -- compare "<FIGHTER>"` measures a reworked voice note by note. `tests/real_voices.rs` is S1's test:

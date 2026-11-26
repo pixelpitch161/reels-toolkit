@@ -21,6 +21,7 @@
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{Correction, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The TROMBONE's register in `pp_bridge`'s roster (`('TROMBONE', 'trombone60_lowpoly', None, (45, 67), ...)`).
@@ -38,6 +39,44 @@ const TILT: f64 = 0.8;
 /// `brass2`'s default `att`: the attack, in seconds.
 const ATT: f64 = 0.03;
 
+/// The TROMBONE's overtone correction toward a real trombone: gains in dB for its first eight harmonics, note by
+/// note (FluidR3, `bf-harness/tests/reference/fluidr3.json`; the reference is the trombone). Written by
+/// `cargo run --release -p bf-harness --example references -- correct "TROMBONE"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (45, [-30.0, -6.9, -1.4, 13.1, 4.9, 11.6, 10.4, 12.0]),
+    (46, [-30.0, -6.7, -1.2, 13.1, 4.7, 11.5, 10.5, 12.0]),
+    (47, [-18.3, -1.1, 3.4, 13.1, 14.3, 15.1, 3.0, 12.3]),
+    (48, [-18.2, -1.1, 3.5, 13.1, 14.4, 15.2, 3.5, 12.6]),
+    (49, [-20.8, -10.5, 10.8, 5.1, 13.2, 8.8, 9.0, 14.9]),
+    (50, [-20.9, -10.5, 10.8, 5.1, 13.1, 8.7, 9.1, 14.9]),
+    (51, [-21.0, -10.6, 10.8, 5.1, 13.1, 8.7, 9.2, 14.9]),
+    (52, [-17.6, -6.2, 10.0, 6.4, 12.2, 7.7, 8.0, 8.6]),
+    (53, [-17.5, -6.0, 10.0, 6.5, 12.3, 7.6, 7.7, 9.0]),
+    (54, [-17.4, -5.8, 10.0, 6.6, 12.3, 7.6, 7.5, 9.4]),
+    (55, [-17.7, 6.0, 5.4, 6.5, 2.0, 2.9, 6.4, 4.3]),
+    (56, [-17.7, 6.0, 5.3, 6.5, 2.0, 2.9, 6.4, 4.2]),
+    (57, [-17.7, 5.9, 5.2, 6.4, 2.0, 2.9, 6.3, 4.0]),
+    (58, [-17.7, 6.0, 5.1, 6.4, 2.0, 2.9, 6.2, 3.7]),
+    (59, [-2.4, 6.9, 9.8, 6.5, 8.4, 5.5, 3.6, 14.3]),
+    (60, [-2.2, 7.0, 10.0, 6.7, 8.6, 5.9, 3.8, 14.6]),
+    (61, [-10.7, 5.9, 6.7, 7.7, -4.9, 9.0, 4.9, 6.7]),
+    (62, [-10.9, 5.9, 6.7, 8.1, -4.5, 9.4, 5.3, 6.8]),
+    (63, [-11.2, 6.0, 6.8, 8.4, -3.9, 9.8, 5.7, 6.9]),
+    (64, [-8.6, 6.0, -1.8, 4.3, 10.4, 7.0, 11.1, -7.3]),
+    (65, [-8.8, 6.0, -1.6, 4.3, 10.7, 7.1, 11.3, -6.6]),
+    (66, [-5.5, 6.0, 0.1, 9.1, 7.2, 5.7, 1.5, 1.6]),
+    (67, [-5.5, 6.0, -0.0, 9.1, 7.2, 5.9, 1.5, 1.7]),
+];
+
+/// The Composed arrangement's TROMBONE (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, a slower start (50 ms to full level) and a quicker stop, nearer the real one's.
+pub const REWORK: Rework = Rework {
+    correction: CORRECTION,
+    speak: 0.05,
+    stop: 0.094,
+};
+
 /// The TROMBONE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TromboneVoice;
@@ -49,6 +88,10 @@ impl Voice for TromboneVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

@@ -30,9 +30,10 @@ use bf_sound::music::{
 use bf_sound::synth::{self, THUD_SEED, WHOOSH_SEED};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, Repeats};
 
 use super::state;
-use super::voice::euph;
+use super::voice::{REWORK, euph};
 use crate::fighters::shared::slap::{self, DUR as SLAP_DUR};
 
 /// The name the part's errors carry.
@@ -43,6 +44,8 @@ const H: &str = "EUPHONIUM";
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Key {
     Eup(u64, u64, u64),
+    /// A Composed note: [`Key::Eup`]'s numbers and which of its repeats ([`Repeats`]).
+    Real(u64, u64, u64, u64),
     Slap(u64, u64),
 }
 
@@ -85,6 +88,8 @@ pub struct EuphoniumSound {
     k: usize,
     /// `_VC`: every note made so far, by its key.
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// How often each Composed note has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl EuphoniumSound {
@@ -93,6 +98,7 @@ impl EuphoniumSound {
         EuphoniumSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -117,13 +123,38 @@ impl EuphoniumSound {
     /// # Errors
     /// Where Python raises: a `dur` the synth cannot make a note of, a note too short to fade.
     pub fn eup(&self, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        let key = Key::Eup(bits(m, 3), bits(dur, 3), bits(vel, 2));
+        self.note(false, m, dur, vel)
+    }
+
+    /// [`EuphoniumSound::eup`] as the build plays it: under the Composed arrangement the note is reworked toward the
+    /// real instrument ([`REWORK`], sound upgrade, stage 3), its repeats taking turns among a few variants; under
+    /// Classic it is the kit's, to the sample.
+    ///
+    /// # Errors
+    /// As [`EuphoniumSound::eup`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.note(ctx.composed_on(), m, dur, vel)
+    }
+
+    fn note(&self, composed: bool, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        let first = [bits(m, 3), bits(dur, 3), bits(vel, 2)];
+        let (key, variant) = if composed {
+            let variant = self.repeats.next(&first);
+            (Key::Real(first[0], first[1], first[2], variant), variant)
+        } else {
+            (Key::Eup(first[0], first[1], first[2]), 0)
+        };
         self.cached(key, || {
             let n = (dur + 0.16) * SRF;
             if !(pp::has_len(dur + 0.16) && n.is_finite() && n > -1.0) {
                 return Err(MusicError::new(H, format!("a note held {dur} s")));
             }
             let x = pp::to_48k(&euph(pp::midi_hz(m), dur, vel));
+            let x = if composed {
+                real::rework(&x, m, dur, SRF, &REWORK, variant)
+            } else {
+                x
+            };
             // n = int((dur + 0.16) * A.SR); x = x[:n].copy(), padded with zeros to n
             let n = n as usize;
             let mut x: Vec<f64> = x.into_iter().take(n).collect();
@@ -306,7 +337,7 @@ impl EuphoniumSound {
                 )
             })?);
             let n = s.n.min(5) as f64;
-            let (sig, g, lead) = self.col(ctx, &self.eup(m, dur, 0.75 + 0.04 * n)?, t0)?;
+            let (sig, g, lead) = self.col(ctx, &self.played(ctx, m, dur, 0.75 + 0.04 * n)?, t0)?;
             mix.note(
                 &bus,
                 &Sig::Mono(sig),
@@ -317,7 +348,7 @@ impl EuphoniumSound {
             );
             if self.twin_on(ctx, t0)? {
                 // a copied MULTIPHONICS: two notes at once
-                let (sig, _, _) = self.col(ctx, &self.eup(m + 7.0, dur, 0.6)?, t0)?;
+                let (sig, _, _) = self.col(ctx, &self.played(ctx, m + 7.0, dur, 0.6)?, t0)?;
                 mix.note(&bus, &Sig::Mono(sig), tq, 0.20 * g, 0.25, one);
             }
             if lead > 0.04 {
@@ -328,7 +359,7 @@ impl EuphoniumSound {
                     .chord_tones(mi - 5, mi - 3, ctx.harmony.chord_at(tq))
                     .map_err(bad)?;
                 if let Some(&u) = under.last() {
-                    let (sig, _, _) = self.col(ctx, &self.eup(f64::from(u), dur, 0.55)?, t0)?;
+                    let (sig, _, _) = self.col(ctx, &self.played(ctx, f64::from(u), dur, 0.55)?, t0)?;
                     mix.note(&bus, &Sig::Mono(sig), tq, 0.15 * g, 0.25, one);
                 }
             }
@@ -368,7 +399,7 @@ impl EuphoniumSound {
                     }
                 };
                 if let Some(u) = fat {
-                    let (sig, g, _) = self.col(ctx, &self.eup(f64::from(u), 0.35, 0.95)?, t)?;
+                    let (sig, g, _) = self.col(ctx, &self.played(ctx, f64::from(u), 0.35, 0.95)?, t)?;
                     mix.note(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.25, one);
                 }
             }
@@ -397,10 +428,16 @@ impl EuphoniumSound {
                 "barrage" if mine(e)? => {
                     // NOT A TUBA: a falling run, one note per landing
                     let tq = ctx.q16(t);
-                    mix.place(&bus, &Sig::Mono(self.eup(topf, beat, 1.0)?.to_vec()), tq, 0.46, 0.2);
                     mix.place(
                         &bus,
-                        &Sig::Mono(self.eup(topf - 12.0, beat, 0.9)?.to_vec()),
+                        &Sig::Mono(self.played(ctx, topf, beat, 1.0)?.to_vec()),
+                        tq,
+                        0.46,
+                        0.2,
+                    );
+                    mix.place(
+                        &bus,
+                        &Sig::Mono(self.played(ctx, topf - 12.0, beat, 0.9)?.to_vec()),
                         tq,
                         0.30,
                         0.2,
@@ -416,7 +453,7 @@ impl EuphoniumSound {
                         }
                         seen.push(tl);
                         let m = seq[(seen.len() - 1).min(seq.len() - 1)];
-                        let (sig, _, _) = self.col(ctx, &self.eup(f64::from(m), 0.4 * beat, 0.95)?, l.t)?;
+                        let (sig, _, _) = self.col(ctx, &self.played(ctx, f64::from(m), 0.4 * beat, 0.95)?, l.t)?;
                         mix.place(&bus, &Sig::Mono(sig), tl, 0.34, 0.2);
                     }
                     mix.place("fx", &Sig::Mono(thunder(1.4, 44, false)?), tq, 0.30, 0.0);
@@ -430,7 +467,7 @@ impl EuphoniumSound {
                         self.wah_wah(ctx, mix, tq, t)?;
                         continue;
                     }
-                    let x = self.eup(topf - 10.0, 0.8 * beat, 0.9)?;
+                    let x = self.played(ctx, topf - 10.0, 0.8 * beat, 0.9)?;
                     mix.place(&bus, &Sig::Mono(bend(&x, 5.0, 0.08, 0.8 * beat)?), tq, 0.40, 0.2);
                     // a ghost of the enemy (#38: a bass-clarinet growl)
                     let lo = ctx.cfg[self.enemy()].register.0;
@@ -438,7 +475,7 @@ impl EuphoniumSound {
                     mix.place(&es.bus(ctx), &Sig::Mono(ghost.to_vec()), tq + beat * 0.5, 0.14, 0.25);
                     if kind == "haste" {
                         // a copied rip (POWER SLIDE): up an octave into it
-                        let x = gliss(&self.eup(topf - 5.0, 0.45, 1.0)?, 12.0, 0.3)?;
+                        let x = gliss(&self.played(ctx, topf - 5.0, 0.45, 1.0)?, 12.0, 0.3)?;
                         let (sig, _, _) = self.col(ctx, &x, t)?;
                         mix.place(&bus, &Sig::Mono(sig), tq + beat, 0.30, 0.2);
                     } else if kind == "slam" {
@@ -447,7 +484,7 @@ impl EuphoniumSound {
                         let tb = beat * tele;
                         mix.place(
                             &bus,
-                            &Sig::Mono(self.eup(topf - 24.0, tb, 1.0)?.to_vec()),
+                            &Sig::Mono(self.played(ctx, topf - 24.0, tb, 1.0)?.to_vec()),
                             tq,
                             0.40,
                             0.2,
@@ -469,7 +506,7 @@ impl EuphoniumSound {
                     );
                     mix.place(
                         &bus,
-                        &Sig::Mono(self.eup(topf - 12.0, 0.5, 1.0)?.to_vec()),
+                        &Sig::Mono(self.played(ctx, topf - 12.0, 0.5, 1.0)?.to_vec()),
                         t,
                         0.36,
                         0.2,
@@ -479,7 +516,13 @@ impl EuphoniumSound {
                     // a copied SLAP TONGUE: a brass slap
                     let tq = ctx.q16(t);
                     let m = f64::from(self.note_at(ctx, tq)? - 12);
-                    mix.place(&bus, &Sig::Mono(self.eup(m, 0.12, 1.0)?.to_vec()), tq, 0.46, 0.2);
+                    mix.place(
+                        &bus,
+                        &Sig::Mono(self.played(ctx, m, 0.12, 1.0)?.to_vec()),
+                        tq,
+                        0.46,
+                        0.2,
+                    );
                     mix.place("fx", &Sig::Mono(scaled(&self.slap(72.0, 0.8)?, 0.6)), tq, 0.25, 0.0);
                     if event_int(H, e, 3)? != 0 {
                         let thud = synth::thud(0.35, 180.0, 60.0, noise_seed(H, t * 7.0)?);
@@ -490,7 +533,7 @@ impl EuphoniumSound {
                     // MARCHING ORDERS: a fanfare triplet + a roll
                     let tq = ctx.q16(t);
                     for (j, m) in [top - 5, top - 5, top].into_iter().enumerate() {
-                        let x = self.eup(f64::from(m), if j < 2 { 0.13 } else { 0.5 }, 1.0)?;
+                        let x = self.played(ctx, f64::from(m), if j < 2 { 0.13 } else { 0.5 }, 1.0)?;
                         mix.place(&bus, &Sig::Mono(x.to_vec()), tq + j as f64 * beat / 3.0, 0.40, 0.2);
                     }
                     if bed.has(BedHook::PressRoll) {
@@ -500,14 +543,14 @@ impl EuphoniumSound {
                 }
                 "lights_out" if mine(e)? => {
                     // a copied LIGHTS OUT
-                    let x = self.eup(topf - 26.0, event_number(H, e, 3)? - t, 0.9)?;
+                    let x = self.played(ctx, topf - 26.0, event_number(H, e, 3)? - t, 0.9)?;
                     mix.place(&bus, &Sig::Mono(x.to_vec()), ctx.q16(t), 0.34, 0.2);
                 }
                 "erupt" if mine(e)? => {
                     let tq = ctx.q16(t);
                     mix.place(
                         &bus,
-                        &Sig::Mono(self.eup(topf - 14.0, 0.4, 1.0)?.to_vec()),
+                        &Sig::Mono(self.played(ctx, topf - 14.0, 0.4, 1.0)?.to_vec()),
                         tq,
                         0.5,
                         0.2,
@@ -551,7 +594,7 @@ impl EuphoniumSound {
         }
         for (j, m) in [m0 + 3, m0 + 2, m0 + 1, m0].into_iter().enumerate() {
             let d = if j < 3 { 0.5 * beat } else { 1.6 * beat };
-            let note = self.eup(f64::from(m), d, 0.9)?;
+            let note = self.played(ctx, f64::from(m), d, 0.9)?;
             let mut x = if j > 0 { gliss(&note, 1.0, 0.04)? } else { note.to_vec() };
             if j == 3 {
                 x = vibrato(&x, 0.5, 5.0, 0.2)?;
@@ -597,8 +640,8 @@ impl Sound for EuphoniumSound {
     }
 
     /// `voice(m, dur, vel=0.85)`: `eup(m, dur, vel)`.
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.eup(m, dur, vel)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel)
     }
 
     /// The slam of a copied PEDAL TONE calls the bed's `boom` (not under `hasattr`); its press roll is asked for.
@@ -617,7 +660,7 @@ impl Sound for EuphoniumSound {
             None => vec![top - 12, top - 5, top - 24],
         };
         for (m, g) in hits.iter().zip([0.50, 0.36, 0.30, 0.26, 0.22]) {
-            let x = self.eup(f64::from(*m), 1.5 * beat, 1.0)?;
+            let x = self.played(ctx, f64::from(*m), 1.5 * beat, 1.0)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), t, g, 0.2);
         }
         Ok(())
@@ -638,7 +681,7 @@ impl Sound for EuphoniumSound {
 
     /// A falling blast, valves (#38).
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
-        let x = self.eup(f64::from(self.top(ctx) - 14), 1.0, 1.0)?;
+        let x = self.played(ctx, f64::from(self.top(ctx) - 14), 1.0, 1.0)?;
         // M.bend(x, -9.0, 0.05, 1.0) * np.linspace(1, 0.4, len(x))
         let fall: Vec<f64> = bend(&x, -9.0, 0.05, 1.0)?
             .iter()
@@ -653,12 +696,18 @@ impl Sound for EuphoniumSound {
         let top = f64::from(self.top(ctx));
         mix.place(
             "solo",
-            &Sig::Mono(self.eup(top - 7.0, 0.9, 1.0)?.to_vec()),
+            &Sig::Mono(self.played(ctx, top - 7.0, 0.9, 1.0)?.to_vec()),
             tw,
             0.45,
             0.0,
         );
-        mix.place("solo", &Sig::Mono(self.eup(top, 0.9, 0.9)?.to_vec()), tw, 0.30, 0.0);
+        mix.place(
+            "solo",
+            &Sig::Mono(self.played(ctx, top, 0.9, 0.9)?.to_vec()),
+            tw,
+            0.30,
+            0.0,
+        );
         Ok(())
     }
 
@@ -669,7 +718,7 @@ impl Sound for EuphoniumSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.eup(f64::from(m), d * grid.beat * 0.95, 0.95)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat * 0.95, 0.95)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.52, 0.0);
         }
         Ok(())
@@ -683,7 +732,7 @@ impl Sound for EuphoniumSound {
         let run = [-17, -14, -12, -9, -5, 0].map(|d| top + d);
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.eup(f64::from(m), 0.14, 0.7)?;
+            let x = self.played(ctx, f64::from(m), 0.14, 0.7)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), tj, 0.22, 0.0);
         }
         Ok(())
@@ -697,7 +746,7 @@ impl Sound for EuphoniumSound {
         for j in 1..8 {
             let tb = t30 + f64::from(j) * grid.beat;
             let m = self.note_at(ctx, tb)?;
-            let x = self.eup(f64::from(m), 0.9 * grid.beat, 0.85)?;
+            let x = self.played(ctx, f64::from(m), 0.9 * grid.beat, 0.85)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), tb, 0.36, 0.2);
         }
         Ok(())

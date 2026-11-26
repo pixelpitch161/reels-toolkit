@@ -141,15 +141,25 @@ pub trait Voice: Send + Sync {
     /// Whether the voice has a note toward the real instrument ([`Voice::note_real`], sound upgrade, stage 3, S1).
     /// The default says no: the voice has not been reworked yet.
     fn reworked(&self) -> bool {
-        false
+        self.rework().is_some()
+    }
+
+    /// How the voice's own notes are reworked toward the real instrument ([`real::rework`]), for a voice reworked
+    /// from the outside. The default is none.
+    fn rework(&self) -> Option<&'static real::Rework> {
+        None
     }
 
     /// The note toward the real instrument, which the Composed arrangement plays where the voice is
     /// [reworked](Voice::reworked): as [`Voice::note`], with `variant` (0 to [`real::TURNS`] - 1) saying which repeat
-    /// of the note this is, so repeats differ a little. The default is [`Voice::note`].
+    /// of the note this is, so repeats differ a little. The default is [`Voice::note`] reworked as
+    /// [`Voice::rework`] says, or the note itself for a voice with no rework.
     fn note_real(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64, variant: u64) -> Vec<f64> {
-        let _ = variant;
-        self.note(noise, midi, vel, dur)
+        let x = self.note(noise, midi, vel, dur);
+        match self.rework() {
+            Some(r) => real::rework(&x, midi, dur, crate::SRF, r, variant),
+            None => x,
+        }
     }
 }
 

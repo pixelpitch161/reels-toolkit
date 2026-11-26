@@ -129,6 +129,98 @@ pub fn wobble(seed: u64, cents: f64, level: f64) -> (f64, f64) {
     (dmath::pow(2.0, c / 1200.0), 1.0 + l)
 }
 
+/// A voice's per-note overtone correction toward its real instrument, in rising MIDI order: the gain in dB of each of
+/// its first [`SET`] harmonics, the eighth's gain also for everything above it. Written by
+/// `cargo run --release -p bf-harness --example references -- correct "<FIGHTER>"`, which measures the voice's own
+/// notes against the real ones and refines the gains until the corrected notes match.
+pub type Correction = [(i32, [f64; SET])];
+
+/// How a voice is reworked from its own notes, for a voice whose make-up is not opened up as the saxes' are: an
+/// overtone [`Correction`], the real instrument's slower start (`speak`, seconds to full level, 0 to keep the voice's
+/// own) and quicker stop (`stop`, an extra time constant after the held length, 0 to keep the voice's own).
+#[derive(Clone, Copy, Debug)]
+pub struct Rework {
+    pub correction: &'static Correction,
+    pub speak: f64,
+    pub stop: f64,
+}
+
+/// A peaking filter (a biquad) over `x` at `sr` Hz: `db` of gain at `fc`, `q` its quality, 0 dB far from it.
+fn peak(x: &[f64], fc: f64, q: f64, db: f64, sr: f64) -> Vec<f64> {
+    let a = dmath::pow(10.0, db / 40.0);
+    let w0 = 2.0 * dmath::PI * fc / sr;
+    let alpha = dmath::sin(w0) / (2.0 * q);
+    let cw = dmath::cos(w0);
+    let a0 = 1.0 + alpha / a;
+    let (b0, b1, b2) = ((1.0 + alpha * a) / a0, -2.0 * cw / a0, (1.0 - alpha * a) / a0);
+    let (a1, a2) = (-2.0 * cw / a0, (1.0 - alpha / a) / a0);
+    let (mut x1, mut x2, mut y1, mut y2) = (0.0, 0.0, 0.0, 0.0);
+    x.iter()
+        .map(|&v| {
+            let y = b0 * v + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+            (x2, x1) = (x1, v);
+            (y2, y1) = (y1, y);
+            y
+        })
+        .collect()
+}
+
+/// `x` (a note at `f` Hz, `sr` Hz) with its first [`SET`] harmonics turned by `db`: everything by the eighth's gain,
+/// and a narrow peak or dip (a third of the pitch wide) at each of the first seven by the rest of its own; at the
+/// note's own loudness.
+pub fn correct(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
+    let rest = db[SET - 1];
+    let mut y: Vec<f64> = x.to_vec();
+    for (k, d) in db.iter().enumerate() {
+        let fc = f * (k + 1) as f64;
+        let d = d - rest;
+        if !(fc > 0.0 && fc < 0.45 * sr) || d == 0.0 {
+            continue;
+        }
+        y = peak(&y, fc, 3.0 * (k + 1) as f64, d, sr);
+    }
+    let (a, b) = (
+        x.iter().map(|v| v * v).sum::<f64>(),
+        y.iter().map(|v| v * v).sum::<f64>(),
+    );
+    if b > 0.0 && a > 0.0 {
+        let k = (a / b).sqrt();
+        y.iter_mut().for_each(|v| *v *= k);
+    }
+    y
+}
+
+/// The reworked note of MIDI `midi`, held `dur` s, from the voice's own note `x` at `sr` Hz: its overtones corrected
+/// ([`correct`]), its start slowed and its stop quickened as `r` says, and the `variant`th repeat ([`wobble`]) a few
+/// cents off (read through a hair faster or slower) and a little louder or quieter.
+pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64) -> Vec<f64> {
+    let f = 440.0 * dmath::pow(2.0, (midi - 69.0) / 12.0);
+    let mut y = correct(x, f, sr, &levels(r.correction, midi));
+    for (i, v) in y.iter_mut().enumerate() {
+        let t = i as f64 / sr;
+        if r.speak > 0.0 && t < r.speak {
+            *v *= t / r.speak;
+        }
+        if r.stop > 0.0 && t > dur {
+            *v *= dmath::exp(-(t - dur) / r.stop);
+        }
+    }
+    if variant == 0 {
+        return y;
+    }
+    let (pitch, level) = wobble(pitch_seed(f) ^ (variant << 32), 4.0, 0.04);
+    (0..y.len())
+        .map(|i| {
+            let p = i as f64 * pitch;
+            let j = p as usize;
+            let fr = p - j as f64;
+            let a = y.get(j).copied().unwrap_or(0.0);
+            let b = y.get(j + 1).copied().unwrap_or(0.0);
+            (a + fr * (b - a)) * level
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -194,5 +286,87 @@ mod tests {
         assert_eq!((p, l), wobble(7, 6.0, 0.05));
         assert_ne!((p, l), wobble(8, 6.0, 0.05));
         assert!((dmath::log2(p) * 1200.0).abs() <= 6.0 && (l - 1.0).abs() <= 0.05);
+    }
+
+    /// The level in dB of `x`'s component at `f` Hz (a projection over the whole of `x`, at `sr` Hz).
+    fn level_at(x: &[f64], f: f64, sr: f64) -> f64 {
+        let (mut c, mut s) = (0.0, 0.0);
+        for (i, v) in x.iter().enumerate() {
+            let w = 2.0 * dmath::PI * f * i as f64 / sr;
+            c += v * dmath::cos(w);
+            s += v * dmath::sin(w);
+        }
+        let n = x.len() as f64;
+        10.0 * dmath::log10((c * c + s * s) / (n * n) + 1e-30)
+    }
+
+    /// A steady note at `f` Hz with eight equal harmonics, `n` samples at 48 kHz.
+    fn even_note(f: f64, n: usize) -> Vec<f64> {
+        (0..n)
+            .map(|i| {
+                let t = i as f64 / 48_000.0;
+                (1..=SET)
+                    .map(|k| dmath::sin(2.0 * dmath::PI * f * k as f64 * t))
+                    .sum::<f64>()
+                    / 8.0
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_correction_turns_each_harmonic_by_its_gain_and_keeps_the_loudness() {
+        let f = 110.0;
+        let x = even_note(f, 48_000);
+        let db = [-12.0, 0.0, 6.0, -6.0, 0.0, -20.0, 3.0, 0.0];
+        let y = correct(&x, f, 48_000.0, &db);
+        assert_eq!(y.len(), x.len());
+        let energy = |v: &[f64]| v.iter().map(|a| a * a).sum::<f64>();
+        assert!((energy(&y) / energy(&x) - 1.0).abs() < 1e-9);
+        // each harmonic moves by its own gain against the second's (after the settling of the first 0.2 s)
+        let (xs, ys) = (&x[9_600..], &y[9_600..]);
+        let moved = |k: usize| {
+            let fk = f * (k + 1) as f64;
+            level_at(ys, fk, 48_000.0) - level_at(xs, fk, 48_000.0)
+        };
+        let base = moved(1);
+        for (k, want) in db.iter().enumerate() {
+            let got = moved(k) - base;
+            assert!(
+                (got - want).abs() < 1.5,
+                "harmonic {}: {got:.2} dB, wanted {want}",
+                k + 1
+            );
+        }
+        // no correction is the note itself
+        assert_eq!(correct(&x, f, 48_000.0, &[0.0; SET]), x);
+    }
+
+    #[test]
+    fn a_rework_shapes_the_start_and_stop_and_its_repeats_differ() {
+        const FLAT: Rework = Rework {
+            correction: &[],
+            speak: 0.0,
+            stop: 0.0,
+        };
+        const SHAPED: Rework = Rework {
+            correction: &[],
+            speak: 0.05,
+            stop: 0.02,
+        };
+        let x = even_note(220.0, 24_000);
+        assert_eq!(rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 0), x);
+        let y = rework(&x, 57.0, 0.3, 48_000.0, &SHAPED, 0);
+        // about half as loud at 25 ms, the same at 0.2 s, and far quieter 0.1 s after the release
+        let t = 1_201.0 / 48_000.0;
+        assert!((y[1_201] / x[1_201] - t / 0.05).abs() < 1e-9);
+        assert_eq!(y[9_601], x[9_601]);
+        assert!((y[19_211] / x[19_211]).abs() < 0.01);
+        let (a, b) = (
+            rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 1),
+            rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 2),
+        );
+        assert_eq!(a.len(), x.len());
+        assert!(a != x && a != b && a.iter().all(|v| v.is_finite()));
+        assert_eq!(a, rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 1));
     }
 }

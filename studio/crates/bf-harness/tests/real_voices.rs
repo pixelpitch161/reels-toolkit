@@ -1,7 +1,8 @@
 //! The sound upgrade's stage 3 (S1): the reworked voices against recordings of the real instruments (FluidR3's
 //! fingerprints, `tests/reference/fluidr3.json`, made on the owner's PC by the `references` example).
 //!
-//! Saxes first (bari, alto, soprano, tenor): each sax, on every note of its register, is nearer to its own real instrument than to the real
+//! Saxes first (bari, alto, soprano, tenor), then the low instruments (tuba, sousaphone, euphonium, trombone,
+//! octobass, contrabass): each, on every note of its register, is nearer to its own real instrument than to the real
 //! brass it could be taken for, and within [`AT_MOST`] of its own (the fingerprint distance,
 //! [`bf_harness::timbre::distance`]).
 
@@ -30,6 +31,8 @@ fn references() -> BTreeMap<String, BTreeMap<i32, Fingerprint>> {
                 .expect("its notes")
                 .iter()
                 .filter_map(Fingerprint::from_json)
+                // FluidR3 has no sample for some notes (the tuba above 72, the contrabass above 57): silence
+                .filter(|f| f.harmonics.iter().any(|&h| h > -200.0))
                 .map(|f| (f.midi, f))
                 .collect();
             (name.clone(), notes)
@@ -41,6 +44,37 @@ fn references() -> BTreeMap<String, BTreeMap<i32, Fingerprint>> {
 fn built(midi: i32, tone: impl Fn(f64) -> Vec<f64>) -> Fingerprint {
     let x = pp::to_48k(&tone(pp::midi_hz(f64::from(midi))));
     timbre::fingerprint(&x, midi, 1.0, true)
+}
+
+/// Every note of `fighter`'s register that its real instrument `own` has a reference for, as the Composed arrangement
+/// plays it ([`Voice::note_real`](bf_sound::voice::Voice::note_real)), is nearer to `own` than to each of `rivals`
+/// and within [`AT_MOST`] of it.
+fn reworked_nearer_its_own(fighter: &str, own: &str, rivals: &[&str]) {
+    let v = bf_content::fighters::voice(fighter).expect("a voice");
+    assert!(v.reworked(), "{fighter} is not reworked");
+    let refs = references();
+    let (lo, hi) = v.register();
+    let mut bad = Vec::new();
+    let mut seen = 0;
+    for m in lo..=hi {
+        let Some(real) = refs[own].get(&m) else { continue };
+        seen += 1;
+        let x = v.note_real(&mut bf_sound::voice::PpNoise::start(), f64::from(m), 0.8, 1.0, 0);
+        let b = timbre::fingerprint(&x, m, 1.0, true);
+        let d_own = timbre::distance(&b.harmonics, &real.harmonics);
+        for r in rivals {
+            let Some(rr) = refs[*r].get(&m) else { continue };
+            let d = timbre::distance(&b.harmonics, &rr.harmonics);
+            if d <= d_own {
+                bad.push(format!("{m}: {d_own:.1} to the real {own}, {d:.1} to the real {r}"));
+            }
+        }
+        if d_own > AT_MOST {
+            bad.push(format!("{m}: {d_own:.1} to the real {own}, over {AT_MOST}"));
+        }
+    }
+    assert!(seen >= 10, "{fighter}: only {seen} notes have a reference");
+    assert!(bad.is_empty(), "{fighter}:\n{}", bad.join("\n"));
 }
 
 /// Every note from `lo` to `hi` of `tone` is nearer to reference `own` than to each of `rivals`, and within
@@ -106,4 +140,47 @@ fn the_tenor_sax_is_a_tenor_sax_not_brass() {
         &["trumpet", "french horn", "trombone"],
         |f| tenor_tone_real(f, 1.0, 0.8, VOICE_HONK, 0.0, 0),
     );
+}
+
+#[test]
+fn the_tuba_family_is_tubas_not_trombones_or_saxes() {
+    for fighter in ["TUBA", "SOUSAPHONE", "EUPHONIUM"] {
+        reworked_nearer_its_own(fighter, "tuba", &["trombone", "bari sax", "bassoon", "french horn"]);
+    }
+}
+
+#[test]
+fn the_trombone_is_a_trombone_not_a_tuba_or_a_sax() {
+    reworked_nearer_its_own(
+        "TROMBONE",
+        "trombone",
+        &["tuba", "bari sax", "french horn", "tenor sax"],
+    );
+}
+
+#[test]
+fn the_big_strings_are_contrabasses_not_cellos_or_bass_guitars() {
+    for fighter in ["OCTOBASS", "CONTRABASS"] {
+        reworked_nearer_its_own(fighter, "contrabass", &["cello", "finger bass", "tuba"]);
+    }
+}
+
+#[test]
+fn the_drums_repeats_differ_and_keep_their_length() {
+    for fighter in ["TIMPANI", "BASS DRUM"] {
+        let v = bf_content::fighters::voice(fighter).expect("a voice");
+        assert!(v.reworked(), "{fighter}");
+        let (lo, hi) = v.register();
+        let m = f64::from((lo + hi) / 2);
+        let note = |variant| v.note_real(&mut bf_sound::voice::PpNoise::start(), m, 0.8, 0.5, variant);
+        let (a, b) = (note(0), note(1));
+        assert_eq!(
+            a,
+            v.note(&mut bf_sound::voice::PpNoise::start(), m, 0.8, 0.5),
+            "{fighter}"
+        );
+        assert_eq!(a.len(), b.len(), "{fighter}");
+        assert_ne!(a, b, "{fighter}");
+        assert!(b.iter().all(|x| x.is_finite()), "{fighter}");
+    }
 }

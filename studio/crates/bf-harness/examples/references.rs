@@ -399,6 +399,8 @@ fn committed() -> BTreeMap<String, BTreeMap<i32, timbre::Fingerprint>> {
                 .expect("its notes")
                 .iter()
                 .filter_map(timbre::Fingerprint::from_json)
+                // FluidR3 has no sample for some notes (the tuba above 72, the contrabass above 57): silence
+                .filter(|f| f.harmonics.iter().any(|&h| h > -200.0))
                 .map(|f| (f.midi, f))
                 .collect();
             (name.clone(), notes)
@@ -407,6 +409,7 @@ fn committed() -> BTreeMap<String, BTreeMap<i32, timbre::Fingerprint>> {
 }
 
 /// A voice's note at 44.1 kHz, from its frequency, its length in seconds and which repeat of the note it is.
+/// A note at `f` Hz held `dur` s, the `repeat`th time, at 48 kHz.
 type Tone = Box<dyn Fn(f64, f64, u64) -> Vec<f64>>;
 
 /// A reworked fighter: its register, its real instrument, its rivals, and its note today and reworked.
@@ -417,6 +420,7 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
     use bf_content::fighters::tenor_sax::voice as tenor;
     use bf_core::rng::Generator;
     use bf_sound::voice::pp::alto::alto_tone;
+    use bf_sound::voice::pp::to_48k;
     use bf_sound::voice::real::midi_of;
     // the alto block's breath, from a fresh generator each note, as the alto part seeds it
     let rn = || Generator::new(23);
@@ -425,33 +429,147 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
             bari::REGISTER,
             "bari sax",
             &["trombone", "tuba"],
-            Box::new(|f, dur, _| bari::bari_tone_scooped(f, dur, 0.8, 0.0, Some(bari::STEADY_SCOOP))),
-            Box::new(|f, dur, repeat| bari::bari_tone_real(f, dur, 0.8, 0.0, repeat % 3)),
+            Box::new(|f, dur, _| to_48k(&bari::bari_tone_scooped(f, dur, 0.8, 0.0, Some(bari::STEADY_SCOOP)))),
+            Box::new(|f, dur, repeat| to_48k(&bari::bari_tone_real(f, dur, 0.8, 0.0, repeat % 3))),
         ),
         "ALTO SAX" => (
             alto::REGISTER,
             "alto sax",
             &["trumpet", "french horn", "trombone"],
-            Box::new(move |f, dur, _| alto_tone(&mut rn(), f, dur, 0.8, &alto::TONE)),
-            Box::new(move |f, dur, repeat| alto::tone_real(&mut rn(), midi_of(f), dur, 0.8, &alto::TONE, repeat % 3)),
+            Box::new(move |f, dur, _| to_48k(&alto_tone(&mut rn(), f, dur, 0.8, &alto::TONE))),
+            Box::new(move |f, dur, repeat| {
+                to_48k(&alto::tone_real(
+                    &mut rn(),
+                    midi_of(f),
+                    dur,
+                    0.8,
+                    &alto::TONE,
+                    repeat % 3,
+                ))
+            }),
         ),
         "SOPRANO SAX" => (
             soprano::REGISTER,
             "soprano sax",
             &["trumpet", "muted trumpet", "french horn"],
-            Box::new(move |f, dur, _| alto_tone(&mut rn(), f, dur, 0.8, &soprano::TONE)),
+            Box::new(move |f, dur, _| to_48k(&alto_tone(&mut rn(), f, dur, 0.8, &soprano::TONE))),
             Box::new(move |f, dur, repeat| {
-                soprano::tone_real(&mut rn(), midi_of(f), dur, 0.8, &soprano::TONE, repeat % 3)
+                to_48k(&soprano::tone_real(
+                    &mut rn(),
+                    midi_of(f),
+                    dur,
+                    0.8,
+                    &soprano::TONE,
+                    repeat % 3,
+                ))
             }),
         ),
         "TENOR SAX" => (
             tenor::REGISTER,
             "tenor sax",
             &["trumpet", "french horn", "trombone"],
-            Box::new(|f, dur, _| tenor::tenor_tone(f, dur, 0.8, tenor::VOICE_HONK, 0.0)),
-            Box::new(|f, dur, repeat| tenor::tenor_tone_real(f, dur, 0.8, tenor::VOICE_HONK, 0.0, repeat % 3)),
+            Box::new(|f, dur, _| to_48k(&tenor::tenor_tone(f, dur, 0.8, tenor::VOICE_HONK, 0.0))),
+            Box::new(|f, dur, repeat| to_48k(&tenor::tenor_tone_real(f, dur, 0.8, tenor::VOICE_HONK, 0.0, repeat % 3))),
         ),
-        _ => panic!("{fighter} has no reworked voice yet"),
+        _ => {
+            // a voice reworked from the outside (Voice::rework): its own note, and its Composed note
+            let v = bf_content::fighters::voice(fighter).unwrap_or_else(|| panic!("{fighter} has no voice"));
+            assert!(v.reworked(), "{fighter} has no reworked voice yet");
+            let own = MAP
+                .iter()
+                .find(|(f, _)| *f == fighter)
+                .map(|(_, r)| *r)
+                .expect("a reference");
+            let midi = |f: f64| midi_of(f).round();
+            let w = v.clone();
+            (
+                v.register(),
+                own,
+                rivals(fighter),
+                Box::new(move |f, dur, _| w.note(&mut PpNoise::start(), midi(f), 0.8, dur)),
+                Box::new(move |f, dur, repeat| v.note_real(&mut PpNoise::start(), midi(f), 0.8, dur, repeat % 3)),
+            )
+        }
+    }
+}
+
+/// A voice's overtone [`Correction`](bf_sound::voice::real::Correction) toward its real instrument, printed as the
+/// table its voice file keeps: for each note of its register, gains for its first eight harmonics, refined until the
+/// corrected note's overtones match the real ones (or stop improving).
+fn correct(fighter: &str) {
+    use bf_sound::voice::real::{self, SET};
+    let refs = committed();
+    let v = bf_content::fighters::voice(fighter).unwrap_or_else(|| panic!("{fighter} has no voice"));
+    let own = MAP
+        .iter()
+        .find(|(f, _)| *f == fighter)
+        .map(|(_, r)| *r)
+        .expect("a reference");
+    let (lo, hi) = v.register();
+    let rows: Vec<(i32, [f64; SET], f64, f64)> = std::thread::scope(|sc| {
+        let hs: Vec<_> = (lo..=hi)
+            .map(|m| {
+                let v = &v;
+                let refs = &refs;
+                sc.spawn(move || {
+                    let real = &refs[own].get(&m)?.harmonics;
+                    let x = v.note(&mut PpNoise::start(), f64::from(m), 0.8, HELD);
+                    let f = bf_sound::voice::pp::midi_hz(f64::from(m));
+                    let measure = |g: &[f64; SET]| {
+                        let y = real::correct(&x, f, bf_sound::SRF, g);
+                        timbre::fingerprint(&y, m, HELD, true).harmonics
+                    };
+                    let mut g = [0.0; SET];
+                    let before = timbre::distance(&measure(&g), real);
+                    let (mut best, mut best_g) = (before, g);
+                    for _ in 0..8 {
+                        let h = measure(&g);
+                        for k in 0..SET {
+                            g[k] = (g[k] + 0.85 * (real[k] - h[k])).clamp(-30.0, 24.0);
+                        }
+                        let d = timbre::distance(&measure(&g), real);
+                        if d < best {
+                            (best, best_g) = (d, g);
+                        }
+                    }
+                    if std::env::var_os("BF_SHOW").is_some() {
+                        let show = |h: &[f64]| h.iter().take(SET).map(|x| format!("{x:>6.1}")).collect::<String>();
+                        eprintln!(
+                            "{m} real {}\n{m} was  {}\n{m} now  {}\n{m} gain {}",
+                            show(real),
+                            show(&measure(&[0.0; SET])),
+                            show(&measure(&best_g)),
+                            show(&best_g)
+                        );
+                    }
+                    Some((m, best_g, before, best))
+                })
+            })
+            .collect();
+        hs.into_iter().filter_map(|h| h.join().expect("a note")).collect()
+    });
+    println!("pub const CORRECTION: &Correction = &[");
+    for (m, g, _, _) in &rows {
+        let g: Vec<String> = g.iter().map(|x| format!("{x:.1}")).collect();
+        println!("    ({m}, [{}]),", g.join(", "));
+    }
+    println!("];");
+    for (m, _, was, now) in &rows {
+        eprintln!("{m:>4} {was:>5.1} -> {now:>5.1}");
+    }
+    let worst = rows.iter().fold(0.0_f64, |w, r| w.max(r.3));
+    let was = rows.iter().fold(0.0_f64, |w, r| w.max(r.2));
+    eprintln!("{fighter}: farthest from the real {own} {was:.1} today, {worst:.1} corrected");
+}
+
+/// The real instruments a reworked voice could be taken for, beside its own (S1's test).
+fn rivals(fighter: &str) -> &'static [&'static str] {
+    match fighter {
+        "TUBA" | "SOUSAPHONE" | "EUPHONIUM" => &["trombone", "bari sax", "bassoon", "french horn"],
+        "TROMBONE" => &["tuba", "bari sax", "french horn", "tenor sax"],
+        "OCTOBASS" | "CONTRABASS" => &["cello", "finger bass", "tuba"],
+        "TIMPANI" => &["marimba", "finger bass", "tuba"],
+        _ => &[],
     }
 }
 
@@ -459,7 +577,7 @@ fn compare(fighter: &str) {
     let refs = committed();
     let ((lo, hi), own, rivals, today, new) = reworked(fighter);
     let measure = |tone: &Tone, m: i32| {
-        let x = bf_sound::voice::pp::to_48k(&tone(bf_sound::voice::pp::midi_hz(f64::from(m)), HELD, 0));
+        let x = tone(bf_sound::voice::pp::midi_hz(f64::from(m)), HELD, 0);
         timbre::fingerprint(&x, m, HELD, true)
     };
     println!(
@@ -478,12 +596,19 @@ fn compare(fighter: &str) {
         ]
     };
     for m in lo..=hi {
+        if !refs[own].contains_key(&m) {
+            continue;
+        }
         let mut line = format!("{m:>4}");
         shape[2].push(of(&refs[own][&m]));
         for (i, tone) in [&today, &new].into_iter().enumerate() {
             let b = measure(tone, m);
             shape[i].push(of(&b));
-            let d = |r: &str| timbre::distance(&b.harmonics, &refs[r][&m].harmonics);
+            let d = |r: &str| {
+                refs[r]
+                    .get(&m)
+                    .map_or(f64::NAN, |x| timbre::distance(&b.harmonics, &x.harmonics))
+            };
             let d_own = d(own);
             if std::env::var_os("BF_SHOW").is_some() {
                 let show = |h: &[f64]| h.iter().take(8).map(|x| format!("{x:>6.1}")).collect::<String>();
@@ -521,6 +646,71 @@ fn compare(fighter: &str) {
     }
 }
 
+/// Today's voices of `fighters` against every reference: for each fighter, how far its notes are from its own
+/// real instrument ([`MAP`]), on how many notes another real instrument is as near or nearer (and which), and its
+/// attack, release and pitch travel against the real one's. The baseline before a family is reworked.
+fn survey(fighters: &[&str]) {
+    let refs = committed();
+    let map: BTreeMap<&str, &str> = MAP.iter().copied().collect();
+    for fighter in fighters {
+        let v = bf_content::fighters::voice(fighter).unwrap_or_else(|| panic!("{fighter} has no voice"));
+        let own = map[fighter];
+        let (lo, hi) = v.register();
+        let (mut best, mut worst, mut wrong) = (f64::INFINITY, 0.0_f64, 0);
+        let mut nearer: BTreeMap<&str, usize> = BTreeMap::new();
+        let mut shape: [Vec<[f64; 3]>; 2] = [Vec::new(), Vec::new()];
+        let of = |f: &timbre::Fingerprint| {
+            [
+                f.attack_ms,
+                f.release_ms.unwrap_or(f64::NAN),
+                f.span.unwrap_or(f64::NAN),
+            ]
+        };
+        for m in lo..=hi {
+            let Some(real) = refs[own].get(&m) else { continue };
+            let mut noise = PpNoise::start();
+            let b = timbre::fingerprint(&v.note(&mut noise, f64::from(m), 0.8, HELD), m, HELD, true);
+            shape[0].push(of(&b));
+            shape[1].push(of(real));
+            let d_own = timbre::distance(&b.harmonics, &real.harmonics);
+            best = best.min(d_own);
+            worst = worst.max(d_own);
+            let mut any = false;
+            for (name, notes) in &refs {
+                if name == own || name == "drum kit" {
+                    continue;
+                }
+                if let Some(r) = notes.get(&m)
+                    && timbre::distance(&b.harmonics, &r.harmonics) <= d_own
+                {
+                    *nearer.entry(name.as_str()).or_insert(0) += 1;
+                    any = true;
+                }
+            }
+            wrong += usize::from(any);
+        }
+        let mut top: Vec<(&str, usize)> = nearer.into_iter().collect();
+        top.sort_by_key(|a| std::cmp::Reverse(a.1));
+        let top: Vec<String> = top.iter().take(4).map(|(n, c)| format!("{n} {c}")).collect();
+        let median = |rows: &[[f64; 3]], k: usize| {
+            let mut v: Vec<f64> = rows.iter().map(|r| r[k]).filter(|x| x.is_finite()).collect();
+            v.sort_by(f64::total_cmp);
+            v.get(v.len() / 2).copied().unwrap_or(f64::NAN)
+        };
+        println!(
+            "{fighter} ({own}, {} notes): {best:.1} to {worst:.1} dB; another as near on {wrong} ({}); attack {:.0}/{:.0} ms, release {:.0}/{:.0} ms, travel {:.2}/{:.2} (today/real)",
+            shape[0].len(),
+            top.join(", "),
+            median(&shape[0], 0),
+            median(&shape[1], 0),
+            median(&shape[0], 1),
+            median(&shape[1], 1),
+            median(&shape[0], 2),
+            median(&shape[1], 2),
+        );
+    }
+}
+
 /// A short riff through a reworked fighter's voice alone, today's and reworked, as `<dir>/<fighter>_today.wav` and
 /// `_reworked.wav` (48 kHz): the low notes of its register, a repeated note and a run, for the listening page.
 fn phrase(fighter: &str, dir: &Path) {
@@ -551,7 +741,7 @@ fn phrase(fighter: &str, dir: &Path) {
             let m = lo + 4 + step;
             let repeat = seen.entry(m).or_insert(0);
             let dur = beats * 0.5 * 0.92;
-            let x = bf_sound::voice::pp::to_48k(&tone(bf_sound::voice::pp::midi_hz(f64::from(m)), dur, *repeat));
+            let x = tone(bf_sound::voice::pp::midi_hz(f64::from(m)), dur, *repeat);
             *repeat += 1;
             let start = (at * SR) as usize;
             for (i, v) in x.iter().enumerate() {
@@ -578,9 +768,11 @@ fn main() {
         ["profile", name, lo, hi] => profile(name, lo.parse().expect("lo"), hi.parse().expect("hi")),
         ["compare", fighter] => compare(fighter),
         ["phrase", fighter, dir] => phrase(fighter, &PathBuf::from(dir)),
+        ["correct", fighter] => correct(fighter),
+        ["survey", fighters @ ..] if !fighters.is_empty() => survey(fighters),
         _ => {
             eprintln!(
-                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>\n       references profile <reference> <lo> <hi>\n       references compare <FIGHTER>\n       references phrase <FIGHTER> <dir>"
+                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>\n       references profile <reference> <lo> <hi>\n       references compare <FIGHTER>\n       references phrase <FIGHTER> <dir>\n       references survey <FIGHTER>...\n       references correct <FIGHTER>"
             );
             std::process::exit(2);
         }
