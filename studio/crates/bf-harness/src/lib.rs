@@ -43,6 +43,7 @@ pub mod refs;
 pub mod scan;
 pub mod sound;
 pub mod theme;
+pub mod timbre;
 pub mod voice;
 
 /// The engine's test entries a suite needs: the traced run (`bf_sim::run_traced`) and the margin of a knife-edge

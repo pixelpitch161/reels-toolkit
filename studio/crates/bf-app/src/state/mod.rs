@@ -385,6 +385,9 @@ pub enum Action {
     SetArrangement(String),
     /// The Music screen's "Melody style": a `music.melody_style` word, or `None` for Auto.
     SetMelodyStyle(Option<String>),
+    /// The Music screen's "Band" slider let go of: the band this many dB louder (or, below 0, quieter) under the
+    /// fighters than the usual mix; 0 is the usual mix.
+    SetBandLevel(f64),
     /// "Re-roll music": a new music seed, nothing else.
     RerollMusic,
     /// "Keep this fighter's line": the fighter on `side` keeps its written line and solo under Composed.
@@ -477,6 +480,7 @@ pub(crate) struct MusicKey {
     pub music_seed: u64,
     pub arrangement: Option<String>,
     pub melody_style: Option<String>,
+    pub band_level: Option<f64>,
     pub pinned: Option<Vec<String>>,
 }
 
@@ -634,6 +638,7 @@ impl AppState {
             Action::SetBass(side) => self.set_bass(side),
             Action::SetArrangement(name) => self.set_arrangement(&name),
             Action::SetMelodyStyle(style) => self.set_melody_style(style),
+            Action::SetBandLevel(level) => self.set_band_level(level),
             Action::RerollMusic => self.reroll_music(),
             Action::SetPinned { side, keep } => self.set_pinned(side, keep),
             Action::SetCaptionTab(platform) => self.vm.caption_tab = platform,
@@ -796,6 +801,7 @@ fn empty_draft() -> Draft {
         captions_edited: false,
         arrangement: None,
         melody_style: None,
+        band_level: None,
         pinned: None,
         base: None,
     }

@@ -626,6 +626,7 @@ fn make_this_versions_files() {
         captions_edited: false,
         arrangement: None,
         melody_style: None,
+        band_level: None,
         pinned: None,
         base: None,
     };

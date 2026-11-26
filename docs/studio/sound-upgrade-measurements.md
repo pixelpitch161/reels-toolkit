@@ -20,6 +20,13 @@ Design: `2026-11-25-sound-upgrade-design.md`. Plan: `2026-11-25-sound-upgrade-pl
 | C6 | Violin vs Contrabass: the contrabass holds at least 70% of the lows | 77% (today 30% on Classic) | pass |
 | C2, C10 | no clash, no note out of register, no repeat in a moving style | 0, 0, 0 (survey of the melody test) | pass |
 
+**The band level, changed 2026-11-26 (after stage 2).** Aedan heard the stage 2 bands as "way too quiet" (M1 kept
+each fighter 5 dB over its band). At 1 dB some fights sounded better and some worse, so the default is now halfway,
+3 dB (`polish::OVER_BAND`), with the level table written again for it, and the Music screen's Band slider
+(`music.band_level`, -6 to +6 dB) moves it for one fight. On the ten stage 2 page fights every fighter measures 2.6 to
+3.2 dB over its band at the default and 0.7 to 1.5 dB with the slider at +2; the loudness stays -14.0 to -14.4 LUFS.
+Listening page: https://claude.ai/artifact/T9wSx4NN6uZBjatv75KSF9.
+
 Three settings moved from the plan while measuring (also noted in the plan):
 
 - **M1 trim, ±9 dB instead of ±6.** In Violin vs Contrabass both fighters stood 13.2 and 13.4 dB over that fight's

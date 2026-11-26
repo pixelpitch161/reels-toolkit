@@ -36,6 +36,10 @@ pub struct Draft {
     /// is Auto: the theme and the music seed choose one (`bf_content::composer::pick_style`). Only Composed plays it.
     #[serde(default)]
     pub melody_style: Option<String>,
+    /// The Music screen's "Band" slider: how many dB louder (above 0) or quieter (below 0) the band sits under the
+    /// fighters than the usual mix (a `music.band_level`, -6 to +6); `None` is the usual mix. Only Composed plays it.
+    #[serde(default)]
+    pub band_level: Option<f64>,
     /// The fighters (roster names) whose lines and solos are kept as written under Composed, when the owner has
     /// said; `None` keeps the fight file's own list.
     #[serde(default)]
@@ -77,6 +81,7 @@ mod tests {
             captions_edited: false,
             arrangement: None,
             melody_style: None,
+            band_level: None,
             pinned: None,
             base: None,
         }

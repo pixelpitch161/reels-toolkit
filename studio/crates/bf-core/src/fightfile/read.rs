@@ -84,7 +84,7 @@ const TOP_KEYS: [(&str, u32); 13] = [
 ];
 
 /// The `[music]` keys, in the canonical order, each with the format it came in.
-const MUSIC_KEYS: [(&str, u32); 16] = [
+const MUSIC_KEYS: [(&str, u32); 17] = [
     ("theme", 1),
     ("arrangement", 1),
     ("pinned", 2),
@@ -95,6 +95,7 @@ const MUSIC_KEYS: [(&str, u32); 16] = [
     ("chords_tail", 2),
     ("music_seed", 1),
     ("melody_style", 2),
+    ("band_level", 2),
     ("roles", 1),
     ("lines", 1),
     ("solos", 1),
@@ -256,6 +257,7 @@ impl Music {
             },
             music_seed: as_u64(required(t, p, "music_seed")?, "music.music_seed")?,
             melody_style: opt_str(t, p, "melody_style")?,
+            band_level: opt_f64(t, p, "band_level")?,
             roles,
             lines,
             solos,

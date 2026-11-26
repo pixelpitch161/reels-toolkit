@@ -5,8 +5,9 @@
 //! 1. every bus times its gain: a fighter's is its saved level where the level table has one (M1, first layer);
 //! 2. a low fighter's bus gets overtones a phone can play ([`lows`], M2), a piercing fighter's loses its sting
 //!    ([`highs`], M3); the winner's solo bus is treated as the winner's;
-//! 3. each fighter is trimmed to stand [`OVER_BAND`] dB over this fight's band to the ear, by at most [`TRIM`] dB
-//!    either way (M1, second layer); the solo bus takes the winner's trim;
+//! 3. each fighter is trimmed to stand [`OVER_BAND`] dB over this fight's band to the ear, less the Band slider's
+//!    [`Plan::band_level`], by at most [`TRIM`] dB either way (M1, second layer); the solo bus takes the winner's
+//!    trim;
 //! 4. the room ([`room`], F3): each bus sends by the kind of instrument, and the room lies [`room::UNDER`] LU
 //!    under the dry mix;
 //! 5. the fold onto the loop;
@@ -29,8 +30,11 @@ pub mod loud;
 pub mod lows;
 pub mod room;
 
-/// How far over the band a fighter stands to the ear, in dB, and the most a render moves it to get there.
-pub const OVER_BAND: f64 = 5.0;
+/// How far over the band a fighter stands to the ear by default, in dB, and the most a render moves it to get there.
+/// It was 5 dB at first; with every theme playing its own band (stage 2) the owner found the bands "way too quiet"
+/// (2026-11-26). 1 dB was better on some fights and worse on others, so the default is halfway and the Music
+/// screen's Band slider moves it by ear for a fight ([`Plan::band_level`], `music.band_level`).
+pub const OVER_BAND: f64 = 3.0;
 pub const TRIM: f64 = 9.0;
 
 /// The shared bus the winner's solo plays on.
@@ -64,6 +68,16 @@ pub struct Plan {
     /// The band's buses that get M2's overtones (M6, sound upgrade stage 2: a theme's deep bass or drums that a
     /// phone would otherwise lose; the theme's groove names them, [`crate::music::groove::Groove::lows`]).
     pub band_lows: Vec<String>,
+    /// How much louder than the default the band plays against the fighters, in dB (the Music screen's Band slider,
+    /// `music.band_level`; 0 by default): each fighter stands [`OVER_BAND`] less this over the band.
+    pub band_level: f64,
+}
+
+impl Plan {
+    /// How far over the band each fighter is trimmed to stand, in dB.
+    pub fn over_band(&self) -> f64 {
+        OVER_BAND - self.band_level
+    }
 }
 
 /// What the master did and reached.
@@ -175,14 +189,15 @@ pub fn master_detail(mix: &Mix, levels: &Levels, plan: &Plan, detail: bool) -> (
     let mut buses = treated(mix, levels, plan);
     let len = buses.values().map(Vec::len).max().unwrap_or(0);
 
-    // M1: each fighter to OVER_BAND over this fight's band, by at most TRIM either way.
+    // M1: each fighter to OVER_BAND (less the Band slider) over this fight's band, by at most TRIM either way.
     let band = band(&buses, plan);
     let over_band = [0, 1].map(|k| {
         buses
             .get(&plan.parts[k].bus)
             .and_then(|x| heard::over_band(x, &band, from, to))
     });
-    let trims = over_band.map(|o| o.map_or(0.0, |o| (OVER_BAND - o).clamp(-TRIM, TRIM)));
+    let target = plan.over_band();
+    let trims = over_band.map(|o| o.map_or(0.0, |o| (target - o).clamp(-TRIM, TRIM)));
     for (k, &trim) in trims.iter().enumerate() {
         let g = heard::gain(trim);
         let solo = (k == plan.winner).then_some(SOLO);
@@ -345,5 +360,34 @@ pub fn pull(before: &[[f64; 2]], after: &[[f64; 2]], other: &[[f64; 2]]) -> f64 
     match (mean(&|t| t < median), mean(&|t| t >= loud)) {
         (Some(q), Some(l)) => q - l,
         _ => 0.0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The Band slider moves the fighters' target against the band, dB for dB.
+    #[test]
+    fn the_band_level_lowers_the_fighters_against_the_band() {
+        let part = |bus: &str| Part {
+            bus: bus.to_string(),
+            saved: None,
+            low: false,
+            piercing: false,
+        };
+        let mut plan = Plan {
+            parts: [part("flute"), part("tuba")],
+            window: (5.0, 50.0),
+            winner: 0,
+            bass_room: false,
+            band_lows: Vec::new(),
+            band_level: 0.0,
+        };
+        assert_eq!(plan.over_band(), OVER_BAND);
+        plan.band_level = 4.0;
+        assert_eq!(plan.over_band(), OVER_BAND - 4.0);
+        plan.band_level = -2.5;
+        assert_eq!(plan.over_band(), OVER_BAND + 2.5);
     }
 }
