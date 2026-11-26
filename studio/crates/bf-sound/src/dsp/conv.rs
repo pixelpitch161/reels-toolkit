@@ -35,6 +35,45 @@ pub fn fftconvolve(a: &[f64], b: &[f64]) -> Vec<f64> {
     re
 }
 
+/// The full convolution of `a` and `b`, as [`fftconvolve`], by overlap-add: the longer signal is cut into blocks,
+/// each convolved through a transform about four times the shorter one's length, and the results added where they
+/// overlap. Far quicker than one transform of the whole when one signal is much longer than the other (a fight's
+/// bus through a room); equal to [`fftconvolve`] to rounding. Empty if either operand is empty.
+pub fn oaconvolve(a: &[f64], b: &[f64]) -> Vec<f64> {
+    let (long, short) = if a.len() >= b.len() { (a, b) } else { (b, a) };
+    if short.is_empty() {
+        return Vec::new();
+    }
+    let n = long.len() + short.len() - 1;
+    let size = (4 * short.len()).next_power_of_two().max(1024);
+    if size >= n.next_power_of_two() {
+        return fftconvolve(a, b);
+    }
+    let step = size - short.len() + 1;
+    let fft = Fft::new(size);
+    let (mut sr, mut si) = (vec![0.0; size], vec![0.0; size]);
+    sr[..short.len()].copy_from_slice(short);
+    fft.forward(&mut sr, &mut si);
+    let mut out = vec![0.0; n];
+    let (mut re, mut im) = (vec![0.0; size], vec![0.0; size]);
+    for start in (0..long.len()).step_by(step) {
+        let block = &long[start..(start + step).min(long.len())];
+        re.fill(0.0);
+        im.fill(0.0);
+        re[..block.len()].copy_from_slice(block);
+        fft.forward(&mut re, &mut im);
+        for (((xr, xi), br), bi) in re.iter_mut().zip(&mut im).zip(&sr).zip(&si) {
+            (*xr, *xi) = (*xr * br - *xi * bi, *xr * bi + *xi * br);
+        }
+        fft.inverse(&mut re, &mut im);
+        let m = block.len() + short.len() - 1;
+        for (o, v) in out[start..start + m].iter_mut().zip(&re) {
+            *o += v;
+        }
+    }
+    out
+}
+
 /// numpy's `np.convolve(a, v, 'same')`: the middle `max(len(a), len(v))` samples of the full convolution (it
 /// starts `(len(shorter) - 1) / 2` samples in, rounded down), added in numpy's order ([`correlate`]).
 ///
@@ -185,6 +224,32 @@ mod tests {
         assert_eq!(fftconvolve(&[2.0], &[3.0]), [6.0]);
         assert!(fftconvolve(&[], &[1.0]).is_empty());
         assert!(fftconvolve(&[1.0], &[]).is_empty());
+    }
+
+    /// The overlap-add convolution is the full convolution, for a long signal in many blocks (its length no
+    /// multiple of the block), a signal shorter than a block, and the operands swapped.
+    #[test]
+    fn oaconvolve_agrees_with_fftconvolve() {
+        let a: Vec<f64> = (0..20_011).map(|i| ((i * 29 + 3) % 17) as f64 / 8.0 - 1.0).collect();
+        let b: Vec<f64> = (0..700).map(|i| ((i * 13 + 5) % 11) as f64 / 5.0 - 1.0).collect();
+        let want = fftconvolve(&a, &b);
+        let got = oaconvolve(&a, &b);
+        assert_eq!(got.len(), want.len());
+        for (g, w) in got.iter().zip(&want) {
+            assert!((g - w).abs() < 1e-9, "{g} against {w}");
+        }
+        let got = oaconvolve(&b, &a);
+        assert_eq!(got.len(), want.len());
+        assert!(got.iter().zip(&want).all(|(g, w)| (g - w).abs() < 1e-9));
+        let short = direct(&a[..300], &b[..40]);
+        assert!(
+            oaconvolve(&a[..300], &b[..40])
+                .iter()
+                .zip(&short)
+                .all(|(g, w)| (g - w).abs() < 1e-12)
+        );
+        assert!(oaconvolve(&[], &[1.0]).is_empty());
+        assert!(oaconvolve(&[1.0], &[]).is_empty());
     }
 
     #[test]

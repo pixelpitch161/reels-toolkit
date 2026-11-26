@@ -86,9 +86,29 @@ pub fn widen(x: &[[f64; 2]], width: f64, tilt: f64, seed: u64) -> Vec<[f64; 2]> 
 /// `x` with its own room added: a room `h.length` seconds long (its middle fading by 60 dB in 0.55 of that),
 /// high-passed at `h.hp` Hz (fourth order: the pedal stays out of it), `h.under` LU under `x`. Silence stays silence.
 pub fn home(x: &[[f64; 2]], h: &Home, seed: u64) -> Vec<[f64; 2]> {
-    let wet = room::wet_with(x, seed, h.length, h.length * 0.55);
-    let wet = dsp::sosfilt_stereo(&butter_sos(FilterKind::Hp, &[h.hp], 4, SRF), &wet);
-    let (dry_level, wet_level) = (heard::integrated(x), heard::integrated(&wet));
+    // the shared room's sound at this room's length, high-passed before it is used (the same as filtering what
+    // comes out, to the filter's own few milliseconds past the room's end, and far cheaper than filtering a whole
+    // fight's bus), then convolved by overlap-add, the two sides and the dry level at once (a fight's bus is
+    // minutes long: one transform of the whole, or one side after the other, costs seconds a bus)
+    let hp = butter_sos(FilterKind::Hp, &[h.hp], 4, SRF);
+    let ir = room::ir_with(seed, h.length, h.length * 0.55);
+    let channel = |c: usize| {
+        let dry: Vec<f64> = x.iter().map(|f| f[c]).collect();
+        let r: Vec<f64> = ir.iter().map(|f| f[c]).collect();
+        dsp::oaconvolve(&dry, &dsp::sosfilt(&hp, &r))
+    };
+    let (l, r, dry_level) = std::thread::scope(|s| {
+        let l = s.spawn(|| channel(0));
+        let r = s.spawn(|| channel(1));
+        let dry_level = heard::integrated(x);
+        (
+            l.join().expect("the room's left side"),
+            r.join().expect("the room's right side"),
+            dry_level,
+        )
+    });
+    let wet: Vec<[f64; 2]> = (0..x.len()).map(|i| [l[i], r[i]]).collect();
+    let wet_level = heard::integrated(&wet);
     if dry_level <= -70.0 || wet_level <= -70.0 {
         return x.to_vec();
     }
