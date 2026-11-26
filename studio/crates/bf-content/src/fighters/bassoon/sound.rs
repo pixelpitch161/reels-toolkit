@@ -29,8 +29,9 @@ use bf_sound::music::{
 use bf_sound::synth::{self, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
-use super::voice::bassoon_reed;
+use super::voice::{REWORK, bassoon_reed};
 
 /// The name the part's errors carry.
 const H: &str = "BASSOON";
@@ -75,6 +76,8 @@ pub struct BassoonSound {
     k: usize,
     /// `_vc`: the notes made so far, by [`key`].
     vc: Mutex<BTreeMap<[u64; 4], Arc<[f64]>>>,
+    /// The Composed arrangement's notes, reworked toward the real bassoon (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl BassoonSound {
@@ -83,6 +86,7 @@ impl BassoonSound {
         BassoonSound {
             k,
             vc: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -97,8 +101,21 @@ impl BassoonSound {
     /// # Errors
     /// Where Python raises: a `dur` the reed has no note for (below -0.14 s, or not a number), or one `fit` has no
     /// room for.
+    /// Under Composed (sound upgrade, stage 3, S1) the note is reworked toward the real bassoon ([`REWORK`]), its
+    /// repeats taking turns; under Classic it is the reed's own.
     pub fn bsn(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, growl: f64) -> Result<Arc<[f64]>, MusicError> {
-        let _ = ctx;
+        let x = self.own(m, dur, vel, growl)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let k = key(m, dur, vel, growl);
+        Ok(self
+            .real
+            .get(&k, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
+    }
+
+    /// The reed's own note of [`Self::bsn`], kept by [`key`].
+    fn own(&self, m: f64, dur: f64, vel: f64, growl: f64) -> Result<Arc<[f64]>, MusicError> {
         let key = key(m, dur, vel, growl);
         let mut vc = self
             .vc

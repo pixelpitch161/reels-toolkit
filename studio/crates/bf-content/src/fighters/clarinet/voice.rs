@@ -19,7 +19,7 @@
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The CLARINET's register in `pp_bridge`'s roster (`('CLARINET', 'clarinet60_lowpoly', None, (55, 79), ...)`).
@@ -144,6 +144,37 @@ pub const CORRECTION: &Correction = &[
     (79, [-0.0, 10.7, 0.0, 0.3, 10.1, 5.3, -8.7, -0.7]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (55, [-2.8, -11.9, -4.6, -21.9]),
+    (56, [-3.0, -11.7, -4.7, -21.9]),
+    (57, [-3.1, -5.6, -18.1, -36.4]),
+    (58, [-3.1, -5.8, -18.2, -35.0]),
+    (59, [-3.1, -6.0, -18.2, -33.3]),
+    (60, [-10.0, -15.2, -10.5, -29.3]),
+    (61, [-10.0, -15.2, -10.5, -29.3]),
+    (62, [-10.1, -15.2, -10.5, -29.4]),
+    (63, [-6.3, -18.6, -16.3, -15.6]),
+    (64, [-6.3, -18.6, -16.3, -15.6]),
+    (65, [-6.3, -18.6, -16.3, -15.6]),
+    (66, [-19.3, -24.7, -30.3, -50.8]),
+    (67, [-19.2, -24.7, -30.2, -50.9]),
+    (68, [-19.2, -24.6, -30.2, -50.9]),
+    (69, [-29.0, -27.9, -44.2, -46.6]),
+    (70, [-29.0, -27.9, -44.2, -46.6]),
+    (71, [-26.3, -31.1, -41.3, -41.3]),
+    (72, [-26.4, -31.1, -41.3, -41.3]),
+    (73, [-49.4, -50.1, -50.1, -50.1]),
+    (74, [-49.4, -50.1, -50.1, -50.1]),
+    (75, [-32.6, -32.6, -32.6, -32.6]),
+    (76, [-32.6, -32.6, -32.6, -32.6]),
+    (77, [-25.4, -25.4, -25.4, -25.4]),
+    (78, [-25.4, -25.4, -25.4, -25.4]),
+    (79, [-26.7, -26.7, -26.7, -26.7]),
+];
+
 /// The Composed arrangement's CLARINET (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added, a slower start (45 ms to full level) and a quicker stop (a 40 ms fade after its length), nearer the real one's.
 pub const REWORK: Rework = Rework {
@@ -151,6 +182,8 @@ pub const REWORK: Rework = Rework {
     correction: CORRECTION,
     speak: 0.045,
     stop: 0.04,
+    keep_shape: false,
+    tail: TAIL,
 };
 
 /// The CLARINET's Pixel Pitch voice.

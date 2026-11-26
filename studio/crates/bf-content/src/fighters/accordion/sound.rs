@@ -8,9 +8,11 @@
 //! Buses: its own `accordion` (`self.bus`), the shared `fx` and `solo`. Its own noise: every random draw is a
 //! generator of its own seed.
 
+use std::sync::Arc;
+
 use bf_core::dmath;
 use bf_core::event::{Event, Value};
-use bf_core::py::py_max;
+use bf_core::py::{py_max, round_nd};
 use bf_sound::SRF;
 use bf_sound::dsp;
 use bf_sound::mix::{Mix, Sig};
@@ -18,8 +20,9 @@ use bf_sound::music::{MusicCtx, MusicError, noise_seed};
 use bf_sound::synth::{self, FILTER_O, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
-use super::voice::reed;
+use super::voice::{REWORK, reed};
 
 /// The name the part's errors carry.
 const H: &str = "ACCORDION";
@@ -55,11 +58,25 @@ fn reed_gain() -> f64 {
 /// `reeds(ms, dur, vel, swell, wheeze, seed)`: an accordion chord in the golden reeds; `swell` is the pull's inhale
 /// (the chord fades in), `wheeze` the bellows' air noise on top.
 pub fn reeds(ms: &[f64], dur: f64, vel: f64, swell: bool, wheeze: f64, seed: u64) -> Vec<f64> {
+    reeds_of(ms, dur, swell, wheeze, seed, &|m, s| {
+        reed(pp::midi_hz(m), dur, vel, s).into()
+    })
+}
+
+/// [`reeds`] with each reed of MIDI note `m` and seed `s` made by `one(m, s)`.
+fn reeds_of(
+    ms: &[f64],
+    dur: f64,
+    swell: bool,
+    wheeze: f64,
+    seed: u64,
+    one: &dyn Fn(f64, u64) -> Arc<[f64]>,
+) -> Vec<f64> {
     let n = n_of(dur + 0.3);
     let mut x = vec![0.0; n];
     for &m in ms {
-        let y = reed(pp::midi_hz(m), dur, vel, (m as u64) * 3 + seed);
-        for (o, v) in x.iter_mut().zip(y) {
+        let y = one(m, (m as u64) * 3 + seed);
+        for (o, v) in x.iter_mut().zip(y.iter()) {
             *o += v;
         }
     }
@@ -132,15 +149,36 @@ fn how(e: &Event) -> &str {
 }
 
 /// ACCORDION's part.
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub struct AccordionSound {
     k: usize,
+    /// The Composed arrangement's reeds, reworked toward the real accordion (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl AccordionSound {
     /// The part of the fighter on side `k` (0 is the left corner).
     pub fn new(k: usize) -> AccordionSound {
-        AccordionSound { k }
+        AccordionSound {
+            k,
+            real: RealNotes::default(),
+        }
+    }
+
+    /// [`reeds`] as the arrangement plays them: its own under Classic; under Composed (sound upgrade, stage 3, S1)
+    /// each reed reworked toward the real accordion ([`REWORK`]), its repeats taking turns.
+    #[allow(clippy::too_many_arguments)]
+    fn chord(&self, ctx: &MusicCtx, ms: &[f64], dur: f64, vel: f64, swell: bool, wheeze: f64, seed: u64) -> Vec<f64> {
+        if !ctx.composed_on() {
+            return reeds(ms, dur, vel, swell, wheeze, seed);
+        }
+        reeds_of(ms, dur, swell, wheeze, seed, &|m, s| {
+            let key = [round_nd(m, 3), round_nd(dur, 3), round_nd(vel, 2)].map(|v| (v + 0.0).to_bits());
+            let key = [key[0], key[1], key[2], s];
+            self.real.get(&key, |v| {
+                real::rework(&reed(pp::midi_hz(m), dur, vel, s), m, dur, SRF, &REWORK, v)
+            })
+        })
     }
 
     /// The chord at `t` as four reeds from G3 up (`VOICING`), and its bass button (`OOM`), from the theme's harmony.
@@ -219,7 +257,13 @@ impl Sound for AccordionSound {
         let mut ms = vec![oom, oom + 12.0];
         ms.extend(vo.iter().copied());
         ms.push(vo[0] + 12.0);
-        mix.place(&bus, &Sig::Mono(reeds(&ms, 0.62, 1.0, false, 0.8, 77)), t, 0.44, 0.15);
+        mix.place(
+            &bus,
+            &Sig::Mono(self.chord(ctx, &ms, 0.62, 1.0, false, 0.8, 77)),
+            t,
+            0.44,
+            0.15,
+        );
         Ok(())
     }
 
@@ -229,7 +273,7 @@ impl Sound for AccordionSound {
             let (vo, _) = self.voicing(ctx, tc)?;
             mix.place(
                 &bus,
-                &Sig::Mono(reeds(&vo, 0.22, 0.9, false, 0.4, j as u64)),
+                &Sig::Mono(self.chord(ctx, &vo, 0.22, 0.9, false, 0.4, j as u64)),
                 tc,
                 0.38,
                 0.25,
@@ -262,7 +306,12 @@ impl Sound for AccordionSound {
                     let line = self.line(ctx, t0)?;
                     let oom = line.map_or(oom, |m| f64::from(40 + (m - 40).rem_euclid(12)));
                     let x = self
-                        .tone(ctx, &reeds(&[oom - 12.0, oom], 0.20, 0.85, false, 0.0, 3), t0, 1.0)?
+                        .tone(
+                            ctx,
+                            &self.chord(ctx, &[oom - 12.0, oom], 0.20, 0.85, false, 0.0, 3),
+                            t0,
+                            1.0,
+                        )?
                         .0;
                     mix.place(&bus, &Sig::Mono(x), t0, if main_open { 0.24 } else { 0.16 }, 0.1);
                     let vo = match line {
@@ -273,7 +322,13 @@ impl Sound for AccordionSound {
                             vo
                         }
                     };
-                    mix.place(&bus, &Sig::Mono(reeds(&vo, 0.12, 0.6, true, 0.5, 5)), t0, 0.06, 0.2);
+                    mix.place(
+                        &bus,
+                        &Sig::Mono(self.chord(ctx, &vo, 0.12, 0.6, true, 0.5, 5)),
+                        t0,
+                        0.06,
+                        0.2,
+                    );
                 }
                 "snap" => {
                     let tq = ctx.q16(t);
@@ -287,7 +342,7 @@ impl Sound for AccordionSound {
                         None => self.acc_chord(ctx, tq, hp, lead)?,
                     };
                     let seed = noise_seed(H, tq * 10.0)?;
-                    let x = reeds(&vo, 0.16, if landed { 0.95 } else { 0.8 }, false, wz, seed);
+                    let x = self.chord(ctx, &vo, 0.16, if landed { 0.95 } else { 0.8 }, false, wz, seed);
                     let (sig, gg, _) = self.tone(ctx, &x, tq, 0.8)?;
                     let g = if landed { 0.36 } else { 0.24 } * if main_open { 1.0 } else { 0.8 };
                     mix.place(&bus, &Sig::Mono(sig), tq, g * gg, 0.2);
@@ -311,7 +366,7 @@ impl Sound for AccordionSound {
                     let tq = ctx.q16(t);
                     let (vo, _) = self.voicing(ctx, tq)?;
                     let top = vo[vo.len() - 1] + 12.0;
-                    let sq = reeds(&[top - 7.0, top - 6.0, top - 5.0, top], 0.26, 0.9, false, 0.9, 41);
+                    let sq = self.chord(ctx, &[top - 7.0, top - 6.0, top - 5.0, top], 0.26, 0.9, false, 0.9, 41);
                     mix.place(&bus, &Sig::Mono(sq), tq, 0.22, 0.2);
                     mix.place(
                         "fx",
@@ -328,7 +383,13 @@ impl Sound for AccordionSound {
                     let (vo, oom) = self.voicing(ctx, tq)?;
                     let mut ms = vec![oom];
                     ms.extend(vo.iter().take(3).copied());
-                    mix.place(&bus, &Sig::Mono(reeds(&ms, d, 0.9, true, 1.2, 43)), tq, 0.30, 0.1);
+                    mix.place(
+                        &bus,
+                        &Sig::Mono(self.chord(ctx, &ms, d, 0.9, true, 1.2, 43)),
+                        tq,
+                        0.30,
+                        0.1,
+                    );
                     let w = synth::whoosh(d, 3000.0, 300.0, false, WHOOSH_SEED);
                     mix.place("fx", &Sig::Mono(w), tq, 0.12, 0.0);
                 }
@@ -339,7 +400,7 @@ impl Sound for AccordionSound {
                     let mut ms = vec![oom - 12.0, oom, oom + 7.0];
                     ms.extend(vo.iter().copied());
                     ms.extend(vo.iter().take(2).map(|m| m + 12.0));
-                    let x = reeds(&ms, 0.55, 1.0, false, 1.4, 45);
+                    let x = self.chord(ctx, &ms, 0.55, 1.0, false, 1.4, 45);
                     mix.place(&bus, &Sig::Mono(x), t, if landed { 0.42 } else { 0.30 }, 0.0);
                     let th = synth::thud(0.7, 90.0, 30.0, 51);
                     mix.place("fx", &Sig::Mono(th), t, if landed { 0.55 } else { 0.32 }, 0.0);
@@ -364,7 +425,13 @@ impl Sound for AccordionSound {
         let mut ms = vec![oom + 12.0];
         ms.extend(vo.iter().copied());
         ms.push(vo[0] + 12.0);
-        mix.place("solo", &Sig::Mono(reeds(&ms, 1.0, 1.0, false, 0.4, 51)), tw, 0.36, 0.0);
+        mix.place(
+            "solo",
+            &Sig::Mono(self.chord(ctx, &ms, 1.0, 1.0, false, 0.4, 51)),
+            tw,
+            0.36,
+            0.0,
+        );
         Ok(())
     }
 
@@ -380,7 +447,7 @@ impl Sound for AccordionSound {
             let seed = noise_seed(H, bt * 4.0)?;
             mix.place(
                 "solo",
-                &Sig::Mono(reeds(&[m, m - 12.0], dur, 0.95, false, 0.2, seed)),
+                &Sig::Mono(self.chord(ctx, &[m, m - 12.0], dur, 0.95, false, 0.2, seed)),
                 ts,
                 0.44,
                 0.0,
@@ -400,7 +467,7 @@ impl Sound for AccordionSound {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / n);
             mix.place(
                 &bus,
-                &Sig::Mono(reeds(&[m], grid.s16 * 1.6, 0.6, false, 0.0, j as u64)),
+                &Sig::Mono(self.chord(ctx, &[m], grid.s16 * 1.6, 0.6, false, 0.0, j as u64)),
                 tj,
                 0.20,
                 0.0,

@@ -9,6 +9,7 @@
 use bf_core::dmath::{self, PI};
 use bf_sound::SRF;
 use bf_sound::synth;
+use bf_sound::voice::real::Rework;
 use bf_sound::voice::{PpNoise, Voice};
 
 /// DRUMS's register in `pp_bridge`'s roster (`('DRUMS', 'drums60_lowpoly', None, (36, 50), 0, 1.0)`).
@@ -16,6 +17,17 @@ pub const REGISTER: (i32, i32) = (36, 50);
 
 /// `DRUM_KEYS`: the kit's drums, as GM numbers.
 pub const DRUM_KEYS: [i32; 6] = [36, 38, 41, 45, 48, 49];
+
+/// The Composed arrangement's DRUMS (sound upgrade, stage 3, S1): a kit has no overtones to set, so only the small
+/// differences between its repeated strokes (a hair of pitch, a little level), so a fill never sounds like a loop.
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+    keep_shape: false,
+    tail: &[],
+};
 
 /// DRUMS's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -121,6 +133,10 @@ impl Voice for DrumsVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

@@ -11,9 +11,10 @@ use bf_core::py::round_nd;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::real::{self, RealNotes};
 
 use super::state;
-use super::voice::{Stroke, hit, roll};
+use super::voice::{REWORK, Stroke, hit, roll};
 
 /// The name the part's errors carry.
 const H: &str = "SNARE DRUM";
@@ -33,6 +34,8 @@ fn bits(x: f64, nd: i32) -> u64 {
 pub struct SnareDrumSound {
     k: usize,
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's strokes, their repeats taking turns (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl SnareDrumSound {
@@ -41,6 +44,7 @@ impl SnareDrumSound {
         SnareDrumSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -64,6 +68,22 @@ impl SnareDrumSound {
         };
         notes.insert(key, Arc::clone(&x));
         Ok(x)
+    }
+
+    /// The stroke as the arrangement plays it: [`Self::sn`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) its repeats take turns among small differences ([`REWORK`]), so a roll of taps never sounds like a loop.
+    ///
+    /// # Errors
+    /// As [`Self::sn`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, rim: bool) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.sn(m, dur, vel, rim)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = [bits(m, 2), bits(dur, 3), bits(vel, 2), u64::from(rim)];
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
     }
 
     /// `x` through its tone at `t` on its bus, panned `pan`.
@@ -114,16 +134,16 @@ impl Sound for SnareDrumSound {
         }
     }
 
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.sn(m, if dur > 0.3 { dur } else { 0.0 }, vel, false)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, if dur > 0.3 { dur } else { 0.0 }, vel, false)
     }
 
     /// A flam and a rimshot.
     fn title_blast(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, t: f64) -> Played {
         let bus = self.bus(ctx);
-        let grace = self.sn(HEAD, 0.0, 0.4, false)?;
+        let grace = self.played(ctx, HEAD, 0.0, 0.4, false)?;
         mix.place(&bus, &Sig::Mono(grace.to_vec()), (t - 0.03).max(0.0), 0.25, 0.0);
-        let rim = self.sn(HEAD, 0.0, 1.0, true)?;
+        let rim = self.played(ctx, HEAD, 0.0, 1.0, true)?;
         mix.place(&bus, &Sig::Mono(rim.to_vec()), t, 0.55, 0.0);
         Ok(())
     }
@@ -142,9 +162,9 @@ impl Sound for SnareDrumSound {
             let tq = ctx.q16(s.t);
             let vel = if s.accent { 0.95 } else { 0.6 };
             let pan = if s.side == 0 { -0.2 } else { 0.2 };
-            self.put(ctx, mix, &self.sn(HEAD, 0.0, vel, false)?, tq, 0.34, pan)?;
+            self.put(ctx, mix, &self.played(ctx, HEAD, 0.0, vel, false)?, tq, 0.34, pan)?;
             if state::within(&flams, s.t) {
-                let g = self.sn(HEAD, 0.0, 0.4, false)?;
+                let g = self.played(ctx, HEAD, 0.0, 0.4, false)?;
                 self.put(ctx, mix, &g, (tq - 0.028).max(0.0), 0.2, -pan)?;
             }
         }
@@ -153,14 +173,14 @@ impl Sound for SnareDrumSound {
             if t > t_ko {
                 break;
             }
-            let click = self.sn(HEAD + 12.0, 0.0, 0.35, false)?;
+            let click = self.played(ctx, HEAD + 12.0, 0.0, 0.35, false)?;
             self.put(ctx, mix, &click, ctx.q16(t), 0.12, 0.0)?;
         }
         for (t, _) in state::rimshots(ev, k) {
             if t > t_ko {
                 break;
             }
-            self.put(ctx, mix, &self.sn(HEAD, 0.0, 1.0, true)?, t, 0.6, 0.0)?;
+            self.put(ctx, mix, &self.played(ctx, HEAD, 0.0, 1.0, true)?, t, 0.6, 0.0)?;
         }
         // BUZZ ROLL: a press roll as long as the disc
         for (t0, t1) in buzz {
@@ -169,7 +189,7 @@ impl Sound for SnareDrumSound {
             }
             let tq = ctx.q16(t0);
             let dur = round_nd((t1.min(t_ko) - tq).max(0.1), 2);
-            self.put(ctx, mix, &self.sn(HEAD, dur, 0.85, false)?, tq, 0.4, 0.0)?;
+            self.put(ctx, mix, &self.played(ctx, HEAD, dur, 0.85, false)?, tq, 0.4, 0.0)?;
         }
         Ok(())
     }
@@ -181,12 +201,12 @@ impl Sound for SnareDrumSound {
     }
 
     /// A flam, a diddle and a rimshot.
-    fn stinger(&self, _ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
+    fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         for (dt, v) in [(-0.09, 0.4), (-0.06, 0.6), (-0.03, 0.4)] {
-            let x = self.sn(HEAD, 0.0, v, false)?;
+            let x = self.played(ctx, HEAD, 0.0, v, false)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), (tw + dt).max(0.0), 0.3, 0.0);
         }
-        let rim = self.sn(HEAD, 0.0, 1.0, true)?;
+        let rim = self.played(ctx, HEAD, 0.0, 1.0, true)?;
         mix.place("solo", &Sig::Mono(rim.to_vec()), tw, 0.5, 0.0);
         Ok(())
     }
@@ -203,9 +223,9 @@ impl Sound for SnareDrumSound {
                 break;
             }
             let x = if d * grid.beat > 0.3 {
-                self.sn(f64::from(m), round_nd(d * grid.beat, 2), 0.85, false)?
+                self.played(ctx, f64::from(m), round_nd(d * grid.beat, 2), 0.85, false)?
             } else {
-                self.sn(f64::from(m), 0.0, 0.85, m == top)?
+                self.played(ctx, f64::from(m), 0.0, 0.85, m == top)?
             };
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.5, 0.0);
         }
@@ -228,7 +248,7 @@ impl Sound for SnareDrumSound {
         for j in 4..32 {
             let tb = t30 + f64::from(j) * grid.beat / 4.0;
             let v = if j % 4 == 0 { 0.9 } else { 0.5 };
-            let x = self.sn(HEAD, 0.0, v, false)?;
+            let x = self.played(ctx, HEAD, 0.0, v, false)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tb, 0.28, 0.0);
         }
         Ok(())

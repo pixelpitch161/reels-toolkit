@@ -502,6 +502,36 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
     }
 }
 
+/// How much brighter (dB per harmonic, positive) or mellower (negative) a fighter is aimed than the real instrument
+/// it is measured against, for one measured against a relative FluidR3 lacks: the cornet and flugelhorn against the
+/// trumpet (a cornet is a little mellower, a flugelhorn more so) and the mellophone against the horn (a little
+/// brighter), so the family stays three voices, not one. The bass guitar is aimed a little brighter than FluidR3's
+/// finger bass, whose overtones nearly stop at the fourth harmonic: so its notes still speak on a phone.
+fn tilt(fighter: &str) -> f64 {
+    match fighter {
+        "CORNET" => -0.5,
+        "FLUGELHORN" => -1.0,
+        "MELLOPHONE" => 0.5,
+        "BASS GUITAR" => 1.0,
+        "EUPHONIUM" => 1.5,
+        _ => 0.0,
+    }
+}
+
+/// The real levels `real` a fighter is aimed at: every harmonic tilted by [`tilt`] per harmonic, the strongest of the
+/// first eight back at 0 dB.
+fn shaded(fighter: &str, real: &[f64]) -> Vec<f64> {
+    let t = tilt(fighter);
+    if t == 0.0 {
+        return real.to_vec();
+    }
+    let n = real.len().min(bf_sound::voice::real::SET);
+    let mut h: Vec<f64> = real.iter().enumerate().map(|(k, v)| v + t * k as f64).collect();
+    let top = h[..n].iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    h.iter_mut().for_each(|v| *v -= top);
+    h
+}
+
 /// The note a fighter's part plays at MIDI `m`, held, for the measures: its voice's, but the BAGPIPES' chanter alone
 /// (the voice's note carries the drones, which the part plays apart).
 fn own_note(fighter: &str, v: &dyn bf_sound::voice::Voice, m: i32) -> Vec<f64> {
@@ -509,6 +539,33 @@ fn own_note(fighter: &str, v: &dyn bf_sound::voice::Voice, m: i32) -> Vec<f64> {
         return bf_content::fighters::bagpipes::sound::chanter(f64::from(m), HELD, 0.8, false);
     }
     v.note(&mut PpNoise::start(), f64::from(m), 0.8, HELD)
+}
+
+/// The gains, refined from none, that bring the overtones `measure` gives for them nearest `real` (or stop
+/// improving), with their distance; `before` is the distance with none.
+fn refine(
+    measure: &dyn Fn(&[f64; bf_sound::voice::real::SET]) -> Vec<f64>,
+    real: &[f64],
+    before: f64,
+) -> (f64, [f64; bf_sound::voice::real::SET]) {
+    use bf_sound::voice::real::SET;
+    let mut g = [0.0; SET];
+    let (mut best, mut best_g) = (before, g);
+    for _ in 0..8 {
+        let h = measure(&g);
+        for k in 0..SET {
+            // levels under the floor count as the floor, as the distance has them: a harmonic both real and built
+            // have too weak to hear is left alone (the eighth's gain turns everything above it, the breath between
+            // the harmonics too)
+            let gap = real[k].max(timbre::FLOOR) - h[k].max(timbre::FLOOR);
+            g[k] = (g[k] + 0.85 * gap).clamp(-30.0, 24.0);
+        }
+        let d = timbre::distance(&measure(&g), real);
+        if d < best {
+            (best, best_g) = (d, g);
+        }
+    }
+    (best, best_g)
 }
 
 /// A voice's overtone [`Correction`](bf_sound::voice::real::Correction) toward its real instrument, printed as the
@@ -532,7 +589,7 @@ fn correct(fighter: &str) {
                 let v = &v;
                 let refs = &refs;
                 sc.spawn(move || {
-                    let real = &refs[own].get(&m)?.harmonics;
+                    let real = &shaded(fighter, &refs[own].get(&m)?.harmonics);
                     let x = own_note(fighter, &**v, m);
                     let f = bf_sound::voice::pp::midi_hz(f64::from(m));
                     // the overtones the voice barely has (15 dB or more under the real balance, beside its
@@ -545,26 +602,32 @@ fn correct(fighter: &str) {
                             add[k] = want;
                         }
                     }
-                    let x = real::fill(&x, f, bf_sound::SRF, &add);
-                    let measure = |g: &[f64; SET]| {
-                        let y = real::correct(&x, f, bf_sound::SRF, g);
-                        timbre::fingerprint(&y, m, HELD, true).harmonics
-                    };
-                    let mut g = [0.0; SET];
                     let before = timbre::distance(&was, real);
-                    let (mut best, mut best_g) = (before, g);
-                    for _ in 0..8 {
-                        let h = measure(&g);
-                        for k in 0..SET {
-                            // levels under the floor count as the floor, as the distance has them: a harmonic
-                            // both real and built have too weak to hear is left alone (the eighth's gain turns
-                            // everything above it, the breath between the harmonics too)
-                            let gap = real[k].max(timbre::FLOOR) - h[k].max(timbre::FLOOR);
-                            g[k] = (g[k] + 0.85 * gap).clamp(-30.0, 24.0);
+                    let attempt = |add: &[f64; SET]| {
+                        let x = real::fill(&x, f, bf_sound::SRF, add);
+                        let measure = |g: &[f64; SET]| {
+                            let y = real::correct(&x, f, bf_sound::SRF, g);
+                            timbre::fingerprint(&y, m, HELD, true).harmonics
+                        };
+                        let (d, g) = refine(&measure, real, before);
+                        (d, g, measure(&g))
+                    };
+                    let (mut best, mut best_g, mut now) = attempt(&add);
+                    if best > 5.0 {
+                        // a note whose own fundamental is weak (a pickup's notch, say) has the overtones it lacks
+                        // against its strongest laid in too, as loud beside its fundamental as the real balance
+                        // has them beside the strongest
+                        let mut more = add;
+                        for k in 1..SET {
+                            if more[k] == real::NONE && real[k] > timbre::FLOOR && was[k] < real[k] - 15.0 {
+                                more[k] = real[k] - was[0];
+                            }
                         }
-                        let d = timbre::distance(&measure(&g), real);
-                        if d < best {
-                            (best, best_g) = (d, g);
+                        if more != add {
+                            let (d, g, n) = attempt(&more);
+                            if d < best {
+                                (best, best_g, now, add) = (d, g, n, more);
+                            }
                         }
                     }
                     if std::env::var_os("BF_SHOW").is_some() {
@@ -573,7 +636,7 @@ fn correct(fighter: &str) {
                             "{m} real {}\n{m} was  {}\n{m} now  {}\n{m} gain {}",
                             show(real),
                             show(&was),
-                            show(&measure(&best_g)),
+                            show(&now),
                             show(&best_g)
                         );
                     }
@@ -607,6 +670,39 @@ fn correct(fighter: &str) {
     eprintln!("{fighter}: farthest from the real {own} {was:.1} today, {worst:.1} corrected");
 }
 
+/// How far a note's 9th to 12th harmonics sit under its 5th to 8th, in dB of their summed powers (each level floored
+/// at [`timbre::FLOOR`]).
+fn fall(h: &[f64]) -> f64 {
+    let power = |s: &[f64]| s.iter().map(|&d| 10f64.powf(d.max(timbre::FLOOR) / 10.0)).sum::<f64>();
+    10.0 * (power(&h[4..8]) / power(&h[8..12])).log10()
+}
+
+/// Prints a fighter's [`Tail`](bf_sound::voice::real::Tail) table: at each note of its register that its real
+/// instrument has, the real (shaded) 9th to 12th harmonics in dB beside its 5th to 8th together.
+fn tail(fighter: &str) {
+    let refs = committed();
+    let v = bf_content::fighters::voice(fighter).unwrap_or_else(|| panic!("{fighter} has no voice"));
+    let own = MAP
+        .iter()
+        .find(|(f, _)| *f == fighter)
+        .map(|(_, r)| *r)
+        .expect("a reference");
+    let (lo, hi) = v.register();
+    let power = |db: f64| 10f64.powf(db.max(timbre::FLOOR) / 10.0);
+    println!("pub const TAIL: &Tail = &[");
+    for m in lo..=hi {
+        let Some(r) = refs[own].get(&m) else { continue };
+        let real = shaded(fighter, &r.harmonics);
+        let base: f64 = real[4..8].iter().map(|&d| power(d)).sum();
+        let row: Vec<String> = real[8..12]
+            .iter()
+            .map(|&d| format!("{:.1}", 10.0 * (power(d) / base).log10()))
+            .collect();
+        println!("    ({m}, [{}]),", row.join(", "));
+    }
+    println!("];");
+}
+
 /// The real instruments a reworked voice could be taken for, beside its own (S1's test).
 fn rivals(fighter: &str) -> &'static [&'static str] {
     match fighter {
@@ -620,6 +716,23 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "CLARINET" => &["oboe", "french horn", "bassoon", "flute"],
         "BASS CLARINET" | "CONTRABASS CLARINET" => &["bassoon", "tuba", "french horn"],
         "BAGPIPES" => &["trumpet", "muted trumpet", "oboe"],
+        "TRUMPET" => &["trombone", "french horn", "alto sax", "soprano sax"],
+        "CORNET" | "FLUGELHORN" => &["french horn", "trombone", "alto sax"],
+        "HORN" => &["trombone", "trumpet", "alto sax", "bassoon"],
+        "MELLOPHONE" => &["trumpet", "trombone", "alto sax"],
+        "VIOLIN" => &["viola", "cello", "french horn", "trumpet"],
+        "VIOLA" => &["violin", "cello", "french horn", "english horn"],
+        "CELLO" => &["viola", "contrabass", "french horn", "bassoon"],
+        "BASSOON" | "CONTRABASSOON" => &["bari sax", "clarinet", "tuba", "french horn"],
+        "PIANO" => &["harp", "marimba", "nylon guitar", "steel guitar"],
+        "ORGAN" => &["accordion", "drawbar organ", "flute", "clarinet"],
+        "ACCORDION" => &["church organ", "drawbar organ", "oboe", "bagpipe"],
+        "ACOUSTIC" => &["nylon guitar", "clean guitar", "harp", "piano"],
+        "ELECTRIC" => &["clean guitar", "steel guitar", "trumpet"],
+        "BASS GUITAR" => &["contrabass", "tuba", "cello"],
+        "UKULELE" => &["steel guitar", "harp", "marimba"],
+        "HARP" => &["piano", "nylon guitar", "marimba"],
+        "MARIMBA" => &["piano", "harp", "timpani"],
         _ => &[],
     }
 }
@@ -637,6 +750,8 @@ fn compare(fighter: &str) {
         rivals.join(" ")
     );
     let (mut worst, mut wrong) = (0.0_f64, 0);
+    // how much further the 9th to 12th sit under the 5th to 8th than the real one's: today's worst, reworked's worst
+    let mut darker = [f64::NEG_INFINITY; 2];
     // attack, release and pitch travel: today's, reworked and the real instrument's, note by note
     let mut shape: [Vec<[f64; 3]>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let of = |f: &timbre::Fingerprint| {
@@ -661,6 +776,7 @@ fn compare(fighter: &str) {
                     .map_or(f64::NAN, |x| timbre::distance(&b.harmonics, &x.harmonics))
             };
             let d_own = d(own);
+            darker[i] = darker[i].max(fall(&b.harmonics) - fall(&refs[own][&m].harmonics));
             if std::env::var_os("BF_SHOW").is_some() {
                 let show = |h: &[f64]| h.iter().take(8).map(|x| format!("{x:>6.1}")).collect::<String>();
                 eprintln!(
@@ -682,6 +798,10 @@ fn compare(fighter: &str) {
         println!("{line}");
     }
     println!("reworked: farthest from the real {own} {worst:.1}; notes nearer a rival {wrong}");
+    println!(
+        "above the eighth: the 9th to 12th at most {:.1} dB further under the 5th to 8th than the real {own}'s (today {:.1})",
+        darker[1], darker[0]
+    );
     for (name, rows) in ["today", "reworked", "real"].iter().zip(&shape) {
         let median = |k: usize| {
             let mut v: Vec<f64> = rows.iter().map(|r| r[k]).filter(|x| x.is_finite()).collect();
@@ -819,10 +939,11 @@ fn main() {
         ["compare", fighter] => compare(fighter),
         ["phrase", fighter, dir] => phrase(fighter, &PathBuf::from(dir)),
         ["correct", fighter] => correct(fighter),
+        ["tail", fighter] => tail(fighter),
         ["survey", fighters @ ..] if !fighters.is_empty() => survey(fighters),
         _ => {
             eprintln!(
-                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>\n       references profile <reference> <lo> <hi>\n       references compare <FIGHTER>\n       references phrase <FIGHTER> <dir>\n       references survey <FIGHTER>...\n       references correct <FIGHTER>"
+                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>\n       references profile <reference> <lo> <hi>\n       references compare <FIGHTER>\n       references phrase <FIGHTER> <dir>\n       references survey <FIGHTER>...\n       references correct <FIGHTER>\n       references tail <FIGHTER>"
             );
             std::process::exit(2);
         }
