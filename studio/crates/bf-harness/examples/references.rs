@@ -3,13 +3,19 @@
 //! ```text
 //! cargo run --release -p bf-harness --example references -- render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>
 //! cargo run --release -p bf-harness --example references -- built <out.json>
+//! cargo run --release -p bf-harness --example references -- profile "<reference>" <lo> <hi>
+//! cargo run --release -p bf-harness --example references -- compare "<FIGHTER>"
+//! cargo run --release -p bf-harness --example references -- phrase "<FIGHTER>" <dir>
 //! ```
 //!
 //! `render` plays every reference instrument (a General MIDI program of FluidR3, or a drum of its kit) through
 //! fluidsynth, one note of 1 s at velocity 100 every 2.5 s across the instrument's range, and writes each note's
 //! fingerprint ([`bf_harness::timbre`]). The recordings stay in the work folder: they are a development measure
 //! only and are never committed (the fingerprints are). `built` writes the same fingerprints of each fighter's built
-//! voice, one note of 1 s at velocity 0.8 at every note of its register.
+//! voice, one note of 1 s at velocity 0.8 at every note of its register. `profile` prints a reference's first eight
+//! overtones from `lo` to `hi` as a `bf_sound::voice::real::Profile` (from the committed fingerprints). `compare`
+//! prints, note by note, how far a reworked fighter's voice is from its real instrument and from the rivals it could be
+//! taken for, today (its ported voice) and reworked (the fingerprint distance, as `tests/real_voices.rs` tests it).
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -351,14 +357,199 @@ fn write(path: &Path, v: Value) {
     eprintln!("wrote {}", path.display());
 }
 
+/// The committed fingerprints.
+const FLUIDR3: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/reference/fluidr3.json");
+
+fn profile(name: &str, lo: i32, hi: i32) {
+    let text = std::fs::read_to_string(FLUIDR3).unwrap_or_else(|e| panic!("{FLUIDR3}: {e}"));
+    let v: Value = serde_json::from_str(&text).expect("the fingerprints' JSON");
+    let notes = v["references"][name]["notes"]
+        .as_array()
+        .unwrap_or_else(|| panic!("no reference {name:?}"));
+    println!("pub const PROFILE: &Profile = &[");
+    for n in notes {
+        let Some(f) = timbre::Fingerprint::from_json(n) else {
+            continue;
+        };
+        if f.midi < lo || f.midi > hi {
+            continue;
+        }
+        let h: Vec<String> = f
+            .harmonics
+            .iter()
+            .take(8)
+            .map(|x| format!("{:.1}", x.clamp(timbre::FLOOR, 0.0)))
+            .collect();
+        println!("    ({}, [{}]),", f.midi, h.join(", "));
+    }
+    println!("];");
+}
+
+/// Each reference's fingerprints, by MIDI note, from the committed file.
+fn committed() -> BTreeMap<String, BTreeMap<i32, timbre::Fingerprint>> {
+    let text = std::fs::read_to_string(FLUIDR3).unwrap_or_else(|e| panic!("{FLUIDR3}: {e}"));
+    let v: Value = serde_json::from_str(&text).expect("the fingerprints' JSON");
+    v["references"]
+        .as_object()
+        .expect("the references")
+        .iter()
+        .map(|(name, r)| {
+            let notes = r["notes"]
+                .as_array()
+                .expect("its notes")
+                .iter()
+                .filter_map(timbre::Fingerprint::from_json)
+                .map(|f| (f.midi, f))
+                .collect();
+            (name.clone(), notes)
+        })
+        .collect()
+}
+
+/// A voice's note at 44.1 kHz, from its frequency, its length in seconds and which repeat of the note it is.
+type Tone = Box<dyn Fn(f64, f64, u64) -> Vec<f64>>;
+
+/// A reworked fighter: its register, its real instrument, its rivals, and its note today and reworked.
+fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str], Tone, Tone) {
+    use bf_content::fighters::bari_sax::voice as bari;
+    match fighter {
+        "BARI SAX" => (
+            bari::REGISTER,
+            "bari sax",
+            &["trombone", "tuba"],
+            Box::new(|f, dur, _| bari::bari_tone_scooped(f, dur, 0.8, 0.0, Some(bari::STEADY_SCOOP))),
+            Box::new(|f, dur, repeat| bari::bari_tone_real(f, dur, 0.8, 0.0, repeat % 3)),
+        ),
+        _ => panic!("{fighter} has no reworked voice yet"),
+    }
+}
+
+fn compare(fighter: &str) {
+    let refs = committed();
+    let ((lo, hi), own, rivals, today, new) = reworked(fighter);
+    let measure = |tone: &Tone, m: i32| {
+        let x = bf_sound::voice::pp::to_48k(&tone(bf_sound::voice::pp::midi_hz(f64::from(m)), HELD, 0));
+        timbre::fingerprint(&x, m, HELD, true)
+    };
+    println!(
+        "note  today: {own} {}   reworked: {own} {}",
+        rivals.join(" "),
+        rivals.join(" ")
+    );
+    let (mut worst, mut wrong) = (0.0_f64, 0);
+    // attack, release and pitch travel: today's, reworked and the real instrument's, note by note
+    let mut shape: [Vec<[f64; 3]>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    let of = |f: &timbre::Fingerprint| {
+        [
+            f.attack_ms,
+            f.release_ms.unwrap_or(f64::NAN),
+            f.span.unwrap_or(f64::NAN),
+        ]
+    };
+    for m in lo..=hi {
+        let mut line = format!("{m:>4}");
+        shape[2].push(of(&refs[own][&m]));
+        for (i, tone) in [&today, &new].into_iter().enumerate() {
+            let b = measure(tone, m);
+            shape[i].push(of(&b));
+            let d = |r: &str| timbre::distance(&b.harmonics, &refs[r][&m].harmonics);
+            let d_own = d(own);
+            if std::env::var_os("BF_SHOW").is_some() {
+                let show = |h: &[f64]| h.iter().take(8).map(|x| format!("{x:>6.1}")).collect::<String>();
+                eprintln!(
+                    "{m} {i} built {}\n{m} {i} real  {}",
+                    show(&b.harmonics),
+                    show(&refs[own][&m].harmonics)
+                );
+            }
+            let ds: Vec<f64> = rivals.iter().map(|r| d(r)).collect();
+            if i == 1 {
+                worst = worst.max(d_own);
+                wrong += usize::from(ds.iter().any(|&x| x <= d_own));
+            }
+            line += &format!(
+                "   {d_own:>5.1} {}",
+                ds.iter().map(|x| format!("{x:>5.1}")).collect::<Vec<_>>().join(" ")
+            );
+        }
+        println!("{line}");
+    }
+    println!("reworked: farthest from the real {own} {worst:.1}; notes nearer a rival {wrong}");
+    for (name, rows) in ["today", "reworked", "real"].iter().zip(&shape) {
+        let median = |k: usize| {
+            let mut v: Vec<f64> = rows.iter().map(|r| r[k]).filter(|x| x.is_finite()).collect();
+            v.sort_by(f64::total_cmp);
+            v.get(v.len() / 2).copied().unwrap_or(f64::NAN)
+        };
+        println!(
+            "{name:>9}: attack {:.0} ms, release {:.0} ms, pitch travel {:.2} semitones (medians)",
+            median(0),
+            median(1),
+            median(2)
+        );
+    }
+}
+
+/// A short riff through a reworked fighter's voice alone, today's and reworked, as `<dir>/<fighter>_today.wav` and
+/// `_reworked.wav` (48 kHz): the low notes of its register, a repeated note and a run, for the listening page.
+fn phrase(fighter: &str, dir: &Path) {
+    let ((lo, _), _, _, today, new) = reworked(fighter);
+    // (semitones over the register's foot, beats); 0.5 s a beat
+    const RIFF: [(i32, f64); 14] = [
+        (0, 1.0),
+        (0, 0.5),
+        (0, 0.5),
+        (7, 1.0),
+        (5, 0.5),
+        (3, 0.5),
+        (0, 2.0),
+        (12, 0.5),
+        (10, 0.5),
+        (7, 0.5),
+        (5, 0.5),
+        (3, 0.5),
+        (5, 0.5),
+        (0, 2.0),
+    ];
+    std::fs::create_dir_all(dir).ok();
+    for (name, tone) in [("today", &today), ("reworked", &new)] {
+        let mut out = vec![0.0; (SR * 13.0) as usize];
+        let mut at = 0.25;
+        let mut seen: BTreeMap<i32, u64> = BTreeMap::new();
+        for (step, beats) in RIFF {
+            let m = lo + 4 + step;
+            let repeat = seen.entry(m).or_insert(0);
+            let dur = beats * 0.5 * 0.92;
+            let x = bf_sound::voice::pp::to_48k(&tone(bf_sound::voice::pp::midi_hz(f64::from(m)), dur, *repeat));
+            *repeat += 1;
+            let start = (at * SR) as usize;
+            for (i, v) in x.iter().enumerate() {
+                if let Some(o) = out.get_mut(start + i) {
+                    *o += 0.5 * v;
+                }
+            }
+            at += beats * 0.5;
+        }
+        let peak = out.iter().fold(0.0_f64, |p, v| p.max(v.abs())).max(1e-9);
+        let stereo: Vec<[f64; 2]> = out.iter().map(|v| [0.8 * v / peak; 2]).collect();
+        let path = dir.join(format!("{}_{name}.wav", fighter.to_lowercase().replace(' ', "_")));
+        std::fs::write(&path, bf_harness::checks::wav_bytes(&stereo))
+            .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+        eprintln!("wrote {}", path.display());
+    }
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().skip(1).collect();
     match a.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
         ["render", fs, font, work, out] => render(fs, font, &PathBuf::from(work), &PathBuf::from(out)),
         ["built", out] => built(&PathBuf::from(out)),
+        ["profile", name, lo, hi] => profile(name, lo.parse().expect("lo"), hi.parse().expect("hi")),
+        ["compare", fighter] => compare(fighter),
+        ["phrase", fighter, dir] => phrase(fighter, &PathBuf::from(dir)),
         _ => {
             eprintln!(
-                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>"
+                "usage: references render <fluidsynth> <FluidR3_GM.sf2> <work dir> <out.json>\n       references built <out.json>\n       references profile <reference> <lo> <hi>\n       references compare <FIGHTER>\n       references phrase <FIGHTER> <dir>"
             );
             std::process::exit(2);
         }

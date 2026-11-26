@@ -33,8 +33,10 @@ use bf_sound::traits::{Bed, BedHook, Played, Sound};
 use bf_sound::voice::pp;
 
 use super::state::{RecSrc, Wreckage, wobbles};
-use super::voice::{STEADY_SCOOP, bari_tone_scooped};
+use super::voice::{bari_tone_real, bari_tone_scooped};
 
+/// How many variants a repeated Composed note takes turns among (sound upgrade, stage 3: no two repeats alike).
+const REPEATS: u64 = 3;
 /// The name the part's errors carry.
 const H: &str = "BARI SAX";
 /// #39's clank: `(frequency ratio, decay in seconds)`.
@@ -156,7 +158,7 @@ fn doppler(x: &[f64], t_bot: f64, up: f64, down: f64, width: f64) -> Vec<f64> {
 }
 
 /// The key of a note in the part's cache: [`key`], and whether the note is a steady one ([`BariSaxSound::bari`]).
-type NoteKey = ([u64; 4], bool);
+type NoteKey = ([u64; 4], bool, u64);
 
 /// BARI SAX's part.
 #[derive(Debug)]
@@ -164,6 +166,8 @@ pub struct BariSaxSound {
     k: usize,
     /// `_vc`: the notes made so far, by their [`NoteKey`].
     vc: Mutex<BTreeMap<NoteKey, Arc<[f64]>>>,
+    /// How many times each Composed note has been asked for (its repeats take turns among [`REPEATS`] variants).
+    uses: Mutex<BTreeMap<[u64; 4], u64>>,
     /// `_bc`: the rope twangs made so far, by `(round(m, 2), seed % 3, round(dur, 2))`.
     bc: Mutex<BTreeMap<[u64; 3], Arc<[f64]>>>,
 }
@@ -174,6 +178,7 @@ impl BariSaxSound {
         BariSaxSound {
             k,
             vc: Mutex::new(BTreeMap::new()),
+            uses: Mutex::new(BTreeMap::new()),
             bc: Mutex::new(BTreeMap::new()),
         }
     }
@@ -219,11 +224,22 @@ impl BariSaxSound {
 
     /// `bari(m, dur, vel=0.9, honk=0.0)`: one bari note, fitted to `dur + 0.12` s with a 20 ms fade, levelled.
     ///
-    /// `steady` is the sound upgrade's "no slide": the part passes `ctx.composed_on()`, and the note's scoop is
-    /// then held to [`STEADY_SCOOP`] (the tone's own scoop starts a honk over a semitone flat). With it false the
-    /// note is the kit's, to the sample.
+    /// `steady` is the Composed arrangement's bari: the part passes `ctx.composed_on()`, and the note is then
+    /// [`bari_tone_real`] (no slide, a real bari's overtones, and each repeat of the same note a little different, in
+    /// turns of [`REPEATS`]). With it false the note is the kit's, to the sample.
     fn bari(&self, m: f64, dur: f64, vel: f64, honk: f64, steady: bool) -> Result<Arc<[f64]>, MusicError> {
-        let key = (key(m, dur, vel, honk), steady);
+        let variant = if steady {
+            let mut uses = self
+                .uses
+                .lock()
+                .map_err(|_| MusicError::new(H, "a note panicked earlier in this build"))?;
+            let u = uses.entry(key(m, dur, vel, honk)).or_insert(0);
+            *u += 1;
+            (*u - 1) % REPEATS
+        } else {
+            0
+        };
+        let key = (key(m, dur, vel, honk), steady, variant);
         let mut vc = self
             .vc
             .lock()
@@ -238,12 +254,12 @@ impl BariSaxSound {
         if !(f * 10.0).is_finite() {
             return Err(MusicError::new(H, format!("{m} is not a pitch")));
         }
-        let scoop = if steady { Some(STEADY_SCOOP) } else { None };
-        let x = fit(
-            &pp::to_48k(&bari_tone_scooped(f, dur, vel, honk, scoop)),
-            dur + 0.12,
-            0.02,
-        )?;
+        let tone = if steady {
+            bari_tone_real(f, dur, vel, honk, variant)
+        } else {
+            bari_tone_scooped(f, dur, vel, honk, None)
+        };
+        let x = fit(&pp::to_48k(&tone), dur + 0.12, 0.02)?;
         let head = ((0.12 * bf_sound::SRF) as usize).min(x.len());
         let sq: Vec<f64> = x[..head].iter().map(|&v| v * v).collect();
         let level = 0.16 / (dsp::mean(&sq).sqrt() + 1e-9);

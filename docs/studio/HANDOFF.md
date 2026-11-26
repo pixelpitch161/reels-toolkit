@@ -63,6 +63,12 @@ arrangement, switched on the Music screen:
   does the same. A louder band lowers the render band check's floor by as much, so its fix never undoes the slider.
   After changing `OVER_BAND`, write the level table again (`ballfight levels fights/dev/bold_<fighter>.toml ...`,
   one per fighter, `--write crates/bf-content/src/levels_table.rs`).
+  Stage 3 (S1) gives fighters a voice toward the real instrument, under Composed only (Classic keeps the ported
+  tone bit for bit): the bari sax first (`bari_sax/voice.rs` `bari_tone_real`). The real instruments' fingerprints are
+  `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in
+  `F:\bf-refs`, `references -- render`); `references -- profile` prints a voice's overtone table from them and
+  `references -- compare "<FIGHTER>"` measures a reworked voice note by note. `tests/real_voices.rs` is S1's test:
+  every note nearer its own real instrument than its rivals, and at most 6 dB from it.
 - **Classic**: each theme's ported bed with the fighters' kit lines and solos. The series' own match-ups (a kit pair,
   an older episode's pair, and every imported episode) keep Classic, so they sound as they always did. Classic is
   one click away for any other fight.

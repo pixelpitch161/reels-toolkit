@@ -140,6 +140,7 @@ pub trait Voice: Send + Sync {
 }
 
 pub mod pp;
+pub mod real;
 
 #[cfg(test)]
 mod tests {
