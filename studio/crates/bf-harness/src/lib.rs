@@ -34,6 +34,7 @@
 
 pub mod band;
 pub mod checks;
+pub mod e2measure;
 pub mod episode;
 pub mod fight;
 pub mod golden;
