@@ -104,7 +104,8 @@ fn heterodyne(x: &[f64], c: isize, f: f64, w: &[f64]) -> (f64, (f64, f64)) {
 
 /// The note's fundamental and string stiffness: `(f0, b)`, fitted on its first 20 overtones in a 0.68 s frame from
 /// 50 ms in. Partial k is taken to sit at `k f0 sqrt(1 + b k^2)`; each round looks for it within 2% / sqrt(k) of
-/// where the last round put it (at least three bins) and fits `(f_k / k)^2 = f0^2 + f0^2 b k^2` by least squares.
+/// where the last round put it (at least three bins), keeps the overtones within 40 dB of the strongest, and fits
+/// `(f_k / k)^2 = f0^2 + f0^2 b k^2` by least squares weighted by their strength.
 /// Without `stretched`, `b` is 0 and `f0` is the overtones' amplitude-weighted mean of `f_k / k`.
 pub fn pitch(x: &[f64], nominal: f64, stretched: bool) -> (f64, f64) {
     const N: usize = 1 << 16;
@@ -135,7 +136,9 @@ pub fn pitch(x: &[f64], nominal: f64, stretched: bool) -> (f64, f64) {
             let Some(p) = (a.max(1)..z.min(N / 2 - 1)).max_by(|&i, &j| mag[i].total_cmp(&mag[j])) else {
                 continue;
             };
-            if mag[p] < top - 2.0 * 50.0 * std::f64::consts::LN_10 / 20.0 {
+            // a peak, not the skirt of one just outside the search
+            let edge = p <= a.max(1) || p + 1 >= z.min(N / 2 - 1);
+            if edge || mag[p] < top - 2.0 * 40.0 * std::f64::consts::LN_10 / 20.0 {
                 continue;
             }
             let (l, m, r) = (mag[p - 1], mag[p], mag[p + 1]);
@@ -147,14 +150,15 @@ pub fn pitch(x: &[f64], nominal: f64, stretched: bool) -> (f64, f64) {
             break;
         }
         if stretched && pts.len() >= 3 {
-            let ys: Vec<(f64, f64)> = pts.iter().map(|&(k, f, _)| (k * k, (f / k) * (f / k))).collect();
-            let n = ys.len() as f64;
-            let (sx, sy) = ys.iter().fold((0.0, 0.0), |(a, c), &(x, y)| (a + x, c + y));
+            // weighted by each overtone's strength, so a weak, noisy fundamental counts for little
+            let ys: Vec<(f64, f64, f64)> = pts.iter().map(|&(k, f, a)| (k * k, (f / k) * (f / k), a)).collect();
+            let n: f64 = ys.iter().map(|p| p.2).sum();
+            let (sx, sy) = ys.iter().fold((0.0, 0.0), |(a, c), &(x, y, w)| (a + w * x, c + w * y));
             let (mx, my) = (sx / n, sy / n);
             let (mut sxx, mut sxy) = (0.0, 0.0);
-            for &(x, y) in &ys {
-                sxx += (x - mx) * (x - mx);
-                sxy += (x - mx) * (y - my);
+            for &(x, y, w) in &ys {
+                sxx += w * (x - mx) * (x - mx);
+                sxy += w * (x - mx) * (y - my);
             }
             let slope = if sxx > 0.0 { sxy / sxx } else { 0.0 };
             let a0 = my - slope * mx;
@@ -186,6 +190,8 @@ pub struct Opts {
     pub floor_db: f64,
     /// Take the recording's steady hiss out of the noise and stop each overtone where it sinks into the hiss.
     pub dehiss: bool,
+    /// No overtone above this frequency, Hz.
+    pub top_hz: f64,
 }
 
 /// A frame of the noise between the overtones: the band levels (dB, mean power of the band) of a 2,048-sample Hann
@@ -281,6 +287,7 @@ pub fn measure(x: &[f64], nominal_midi: f64, layer: usize, o: &Opts) -> Note {
     let ms = 48_isize;
     // the overtones: frequency, then per point (amplitude, complex sum, cents)
     let mut freqs = Vec::new();
+    let mut numbers = Vec::new();
     for k in 1..=o.max_partials {
         let kf = k as f64;
         let f = if o.sub {
@@ -288,10 +295,15 @@ pub fn measure(x: &[f64], nominal_midi: f64, layer: usize, o: &Opts) -> Note {
         } else {
             kf * f0 * (1.0 + b * kf * kf).sqrt()
         };
-        if f > 18_000.0 {
+        if f > o.top_hz.min(18_000.0) {
             break;
         }
+        // the sub-octave's own overtones matter only low down; above 2 kHz an organ chorus is its 8' row
+        if o.sub && k % 2 == 1 && f > 2_000.0 {
+            continue;
+        }
         freqs.push(f);
+        numbers.push(k);
     }
     let mut amp = vec![vec![0.0; g.len()]; freqs.len()];
     let mut sum = vec![vec![(0.0, 0.0); g.len()]; freqs.len()];
@@ -371,6 +383,7 @@ pub fn measure(x: &[f64], nominal_midi: f64, layer: usize, o: &Opts) -> Note {
         };
         let last = (0..g.len()).rev().find(|&i| keep(i)).unwrap_or(first);
         partials.push(Partial {
+            number: numbers[k] as u16,
             ratio: f / f0,
             first,
             level: lv[first..=last].iter().map(|&v| v as f32).collect(),
@@ -405,12 +418,36 @@ fn fundamental_track(x: &[f64], f0: f64) -> Vec<f64> {
         .collect()
 }
 
-/// How fast a note dies when its key comes up: the time constant of the fall of its fundamental, fitted from 20 to
-/// 150 ms after `from` seconds (or, when `from` is `None`, after the first moment past 0.3 s where the fundamental
-/// starts falling faster than 40 dB a second and three times faster than over the 0.3 s before). `None` if there is
-/// no fall.
+/// How fast a note dies when its key comes up, as a time constant in seconds. With `from` (seconds after the onset:
+/// a release recording, `Some(0.0)`), from the whole sound's level: the time it takes from 3 dB under its loudest in
+/// the 30 ms after `from` to 20 dB under (or as deep as it gets above its own noise, at least 12 dB). Without, from
+/// the fundamental's fall, fitted from 20 to 150 ms after the first moment past 0.3 s where it starts falling faster
+/// than 40 dB a second and three times faster than over the 0.3 s before. `None` if there is no fall.
 pub fn release(x: &[f64], f0: f64, from: Option<f64>) -> Option<f64> {
     let x = &x[onset(x)..];
+    if let Some(t) = from {
+        let env: Vec<f64> = rms_env(x).iter().map(|&v| db(v)).collect();
+        let a = (t * SRF / 240.0) as usize;
+        let (peak_i, peak) = env
+            .iter()
+            .enumerate()
+            .skip(a)
+            .take(6)
+            .fold((a, f64::NEG_INFINITY), |m, (i, &v)| if v > m.1 { (i, v) } else { m });
+        let floor = median_of(env.iter().rev().take(40).copied().collect());
+        let depth = (peak - floor - 6.0).min(20.0);
+        if !peak.is_finite() || depth < 12.0 {
+            return None;
+        }
+        let cross = |d: f64| {
+            env[peak_i..]
+                .iter()
+                .position(|&v| v < peak - d)
+                .map(|i| (peak_i + i) as f64 * 240.0 / SRF)
+        };
+        let (t3, td) = (cross(3.0)?, cross(depth)?);
+        return (td > t3).then(|| (td - t3) / ((depth - 3.0) / (20.0 * dmath::log10(std::f64::consts::E))));
+    }
     let tr = fundamental_track(x, f0);
     let at = |t: f64| (t * SRF / 240.0) as usize;
     let start = match from {
@@ -466,6 +503,16 @@ pub struct Yard {
     pub bright_late: f64,
     /// The fundamental's slope from 0.3 to 2.5 s, dB per second.
     pub fall: f64,
+}
+
+fn median_of(mut v: Vec<f64>) -> f64 {
+    v.retain(|x| x.is_finite());
+    v.sort_by(f64::total_cmp);
+    if v.is_empty() {
+        f64::NEG_INFINITY
+    } else {
+        v[v.len() / 2]
+    }
 }
 
 fn rms_env(x: &[f64]) -> Vec<f64> {
@@ -642,6 +689,7 @@ mod tests {
             end: 2.0,
             floor_db: -90.0,
             dehiss: false,
+            top_hz: 18_000.0,
         }
     }
 
