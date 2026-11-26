@@ -19,6 +19,7 @@ use bf_core::py;
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{Correction, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The SOUSAPHONE's register in `pp_bridge`'s roster (`('SOUSAPHONE', 'sousaphone_lowpoly', 'ball', (28, 58), ...)`).
@@ -29,6 +30,53 @@ pub const VOICE_BLAT: f64 = 0.25;
 
 /// `sousa_tone`'s default `bright`.
 const BRIGHT: f64 = 0.9;
+
+/// The SOUSAPHONE's overtone correction toward a real tuba: gains in dB for its first eight harmonics, note by
+/// note (FluidR3, `bf-harness/tests/reference/fluidr3.json`; the reference is the tuba). Written by
+/// `cargo run --release -p bf-harness --example references -- correct "SOUSAPHONE"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (28, [-17.3, 7.0, 12.0, 9.4, 16.2, 16.2, 14.8, 15.5]),
+    (29, [-17.2, 7.0, 12.1, 9.8, 16.5, 16.2, 14.7, 15.5]),
+    (30, [-11.1, 9.6, 6.3, 12.1, 8.5, 14.1, 6.2, 5.6]),
+    (31, [-11.1, 9.6, 6.4, 12.1, 8.5, 14.1, 6.2, 5.7]),
+    (32, [-11.1, 9.6, 6.4, 12.1, 8.5, 14.2, 6.2, 5.7]),
+    (33, [-11.1, 9.6, 6.4, 12.1, 8.5, 14.1, 6.2, 5.8]),
+    (34, [-11.1, 9.6, 6.4, 12.1, 8.5, 14.2, 6.2, 5.8]),
+    (35, [-13.1, 9.6, 10.9, 7.2, 11.9, 9.7, 6.0, 1.1]),
+    (36, [-13.1, 9.6, 10.9, 7.2, 11.9, 9.6, 6.0, 1.1]),
+    (37, [-13.1, 9.6, 10.9, 7.2, 11.9, 9.7, 6.1, 1.1]),
+    (38, [-13.1, 9.6, 10.9, 7.2, 12.0, 9.6, 6.0, 1.1]),
+    (39, [-13.1, 9.6, 10.9, 7.2, 12.0, 9.7, 6.1, 1.1]),
+    (40, [0.0, 4.0, 6.1, 2.7, -0.2, -1.9, -5.5, -8.6]),
+    (41, [0.0, 3.9, 6.1, 2.7, -0.2, -1.9, -5.5, -8.6]),
+    (42, [0.0, 4.0, 6.1, 2.7, -0.2, -1.9, -5.5, -8.6]),
+    (43, [0.0, 4.0, 6.1, 2.7, -0.2, -1.9, -5.5, -8.6]),
+    (44, [0.0, 3.9, 6.1, 2.7, -0.2, -1.9, -5.5, -8.6]),
+    (45, [0.0, -7.9, 0.4, -5.9, -13.1, -17.2, -30.0, -30.0]),
+    (46, [0.0, -7.9, 0.4, -5.9, -13.1, -17.2, -30.0, -30.0]),
+    (47, [0.0, -7.9, 0.4, -5.9, -13.1, -17.2, -30.0, -30.0]),
+    (48, [0.0, -7.9, 0.4, -5.9, -13.1, -17.2, -30.0, -30.0]),
+    (49, [0.0, -7.9, 0.4, -5.9, -13.1, -17.2, -30.0, -30.0]),
+    (50, [0.5, 7.5, -2.2, -7.0, -23.2, -30.0, -24.9, -30.0]),
+    (51, [0.5, 7.5, -2.2, -7.0, -23.2, -30.0, -24.9, -30.0]),
+    (52, [0.5, 7.5, -2.2, -7.0, -23.2, -30.0, -24.9, -30.0]),
+    (53, [0.5, 7.5, -2.2, -7.0, -23.2, -30.0, -24.9, -30.0]),
+    (54, [0.5, 7.5, -2.2, -7.0, -23.2, -30.0, -25.0, -30.0]),
+    (55, [0.0, -11.1, -20.7, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (56, [0.0, -11.1, -20.7, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (57, [0.0, -11.1, -20.7, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (58, [0.0, -11.2, -20.7, -30.0, -30.0, -30.0, -30.0, -30.0]),
+];
+
+/// The Composed arrangement's SOUSAPHONE (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, a slower start (50 ms to full level) and a quicker stop, nearer the real one's.
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: CORRECTION,
+    speak: 0.05,
+    stop: 0.073,
+};
 
 /// SOUSAPHONE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -41,6 +89,10 @@ impl Voice for SousaphoneVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

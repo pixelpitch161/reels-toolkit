@@ -14,7 +14,7 @@
 
 use bf_core::dmath::{self, PI};
 use bf_core::event::{Event, Value};
-use bf_core::py::{py_min, round_half_even};
+use bf_core::py::{py_min, round_half_even, round_nd};
 use bf_core::recording::Array;
 use bf_picture::scene::R_BALL as R;
 use bf_sound::SRF;
@@ -24,6 +24,7 @@ use bf_sound::music::{MusicCtx, MusicError, noise_seed};
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, WHOOSH_SEED, clip};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
 use super::voice::{self as bag, GHB_DRONES, HIGHLAND, look_up};
 
@@ -73,6 +74,19 @@ pub fn chanter(m: f64, dur: f64, vel: f64, grace: bool) -> Vec<f64> {
     let x = fit(&pp::to_48k(&x), dur + 0.12);
     let gain = chanter_gain();
     x.into_iter().map(|v| v * gain).collect()
+}
+
+/// [`chanter`]'s note as the Composed arrangement plays it (sound upgrade, stage 3, S1): reworked toward the real
+/// bagpipe ([`REWORK`](super::voice::REWORK)), the `variant`th of its repeats ([`real::rework`]).
+pub fn chanter_real(m: f64, dur: f64, vel: f64, grace: bool, variant: u64) -> Vec<f64> {
+    real::rework(
+        &chanter(m, dur, vel, grace),
+        m,
+        dur,
+        SRF,
+        &super::voice::REWORK,
+        variant,
+    )
 }
 
 /// `drone_layer(ms_amps, n)`: the Highland drones as wavetables at frequencies nudged (< 0.01 Hz) to whole cycles
@@ -210,15 +224,32 @@ struct Cycle {
 }
 
 /// BAGPIPES's part.
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub struct BagpipesSound {
     k: usize,
+    /// The Composed arrangement's chanter notes, reworked toward the real bagpipe (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl BagpipesSound {
     /// The part of the fighter on side `k` (0 is the left corner).
     pub fn new(k: usize) -> BagpipesSound {
-        BagpipesSound { k }
+        BagpipesSound {
+            k,
+            real: RealNotes::default(),
+        }
+    }
+
+    /// A chanter note as the arrangement plays it: [`chanter`]'s own under Classic; under Composed (sound upgrade,
+    /// stage 3, S1) reworked toward the real bagpipe ([`chanter_real`]), its repeats taking turns.
+    fn ch(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, grace: bool) -> Vec<f64> {
+        if !ctx.composed_on() {
+            return chanter(m, dur, vel, grace);
+        }
+        let [a, b, c] = [m, dur, vel].map(|v| (round_nd(v, 3) + 0.0).to_bits());
+        self.real
+            .get(&[a, b, c, u64::from(grace)], |v| chanter_real(m, dur, vel, grace, v))
+            .to_vec()
     }
 
     /// `_cycles()`: its cycles from the run's events, a cycle the K.O. interrupted ending 10 s after it.
@@ -324,8 +355,8 @@ impl Sound for BagpipesSound {
             })
             .collect();
         mix.place("drone", &Sig::Stereo(blast), t, 0.55, 0.0);
-        mix.place(&bus, &Sig::Mono(chanter(81.0, 0.62, 1.0, true)), t, 0.46, 0.0);
-        mix.place(&bus, &Sig::Mono(chanter(69.0, 0.62, 0.9, false)), t, 0.26, 0.0);
+        mix.place(&bus, &Sig::Mono(self.ch(ctx, 81.0, 0.62, 1.0, true)), t, 0.46, 0.0);
+        mix.place(&bus, &Sig::Mono(self.ch(ctx, 69.0, 0.62, 0.9, false)), t, 0.26, 0.0);
         Ok(())
     }
 
@@ -333,7 +364,7 @@ impl Sound for BagpipesSound {
         let bus = self.bus(ctx);
         for (j, &(tc, _)) in ctx.show.grid.count[..3].iter().enumerate() {
             let m = [71.0, 74.0, 76.0][j];
-            mix.place(&bus, &Sig::Mono(chanter(m, 0.30, 0.9, true)), tc, 0.40, 0.0);
+            mix.place(&bus, &Sig::Mono(self.ch(ctx, m, 0.30, 0.9, true)), tc, 0.40, 0.0);
         }
         Ok(())
     }
@@ -427,7 +458,7 @@ impl Sound for BagpipesSound {
                     // a squealing grace note + the hit
                     let ml = self.melody_at(ctx, tq)?;
                     let m = if ml < 72.0 { ml + 12.0 } else { ml };
-                    let (sig, gg, _) = self.tone(ctx, &chanter(m, 0.22, 1.0, true), tq, 1.0)?;
+                    let (sig, gg, _) = self.tone(ctx, &self.ch(ctx, m, 0.22, 1.0, true), tq, 1.0)?;
                     let soft = ctx.soften(name, m as i32);
                     mix.note(&bus, &Sig::Mono(sig), tq, 0.34 * gg * soft, pan, one);
                     let th = synth::thud(0.32, 150.0, 55.0, noise_seed(H, t * 7.0)?);
@@ -449,7 +480,7 @@ impl Sound for BagpipesSound {
                     } else {
                         57.0
                     };
-                    let blat = self.tone(ctx, &chanter(low, 0.3, 1.0, false), tq, 1.0)?.0;
+                    let blat = self.tone(ctx, &self.ch(ctx, low, 0.3, 1.0, false), tq, 1.0)?.0;
                     mix.note(&bus, &Sig::Mono(synth::lp(&blat, 1800.0, FILTER_O)), tq, 0.30, pan, one);
                     mix.place(STOMP, &Sig::Mono(stomp(1.0, noise_seed(H, t * 3.0)?)), tq, 0.40, 0.0);
                     let th = synth::thud(0.4, 110.0, 40.0, noise_seed(H, t * 5.0)?);
@@ -480,16 +511,18 @@ impl Sound for BagpipesSound {
                     "WAR CRY" => {
                         // the skirl: a run up to high A, held
                         for (j, m) in [69.0, 71.0, 72.0, 74.0, 76.0, 79.0].into_iter().enumerate() {
-                            let x = self.tone(ctx, &chanter(m, s16 * 0.9, 1.0, j == 0), t, 1.0)?.0;
+                            let x = self.tone(ctx, &self.ch(ctx, m, s16 * 0.9, 1.0, j == 0), t, 1.0)?.0;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16 / 2.0, 0.26, 0.0);
                         }
-                        let x = self.tone(ctx, &chanter(81.0, 2.0 * beat, 1.0, true), t, 1.0)?.0;
+                        let x = self.tone(ctx, &self.ch(ctx, 81.0, 2.0 * beat, 1.0, true), t, 1.0)?.0;
                         mix.place(&bus, &Sig::Mono(x), tq + 3.0 * s16, 0.34, 0.0);
                     }
                     "HIGHLAND FLING" => {
                         // a reel flourish
                         for (j, m) in [76.0, 74.0, 72.0, 74.0, 76.0, 79.0, 81.0, 79.0].into_iter().enumerate() {
-                            let x = self.tone(ctx, &chanter(m, s16 * 0.85, 0.95, j % 4 == 0), t, 1.0)?.0;
+                            let x = self
+                                .tone(ctx, &self.ch(ctx, m, s16 * 0.85, 0.95, j % 4 == 0), t, 1.0)?
+                                .0;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16, 0.22, 0.0);
                         }
                         mix.place(
@@ -536,9 +569,9 @@ impl Sound for BagpipesSound {
     }
 
     /// On "(WINNER) WINS" at the kit's `tw` (ruling M4-R11).
-    fn stinger(&self, _: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
-        mix.place("solo", &Sig::Mono(chanter(81.0, 1.2, 1.0, true)), tw, 0.36, 0.0);
-        mix.place("solo", &Sig::Mono(chanter(69.0, 1.2, 0.8, false)), tw, 0.18, 0.0);
+    fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
+        mix.place("solo", &Sig::Mono(self.ch(ctx, 81.0, 1.2, 1.0, true)), tw, 0.36, 0.0);
+        mix.place("solo", &Sig::Mono(self.ch(ctx, 69.0, 1.2, 0.8, false)), tw, 0.18, 0.0);
         Ok(())
     }
 
@@ -552,7 +585,7 @@ impl Sound for BagpipesSound {
             let dur = d * grid.beat * 0.95;
             mix.place(
                 "solo",
-                &Sig::Mono(chanter(f64::from(m), dur, 0.95, d >= 0.75)),
+                &Sig::Mono(self.ch(ctx, f64::from(m), dur, 0.95, d >= 0.75)),
                 ts,
                 0.46,
                 0.0,
@@ -569,7 +602,7 @@ impl Sound for BagpipesSound {
         let n = run.len() as f64;
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / n);
-            let x = chanter(if m < 67.0 { m + 12.0 } else { m }, grid.s16 * 1.6, 0.6, false);
+            let x = self.ch(ctx, if m < 67.0 { m + 12.0 } else { m }, grid.s16 * 1.6, 0.6, false);
             mix.place(&bus, &Sig::Mono(x), tj, 0.16, 0.0);
         }
         Ok(())

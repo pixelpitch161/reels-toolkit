@@ -25,8 +25,9 @@ use bf_sound::music::{
 use bf_sound::synth::{self, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
-use super::voice::{BOEHM, GOODMAN, Tone, reed};
+use super::voice::{BOEHM, GOODMAN, REWORK, Tone, reed};
 
 /// The name the part's errors carry.
 const H: &str = "CLARINET";
@@ -63,6 +64,8 @@ pub struct ClarinetSound {
     k: usize,
     /// `self._vc`: every note made so far, by its rounded pitch, length, velocity and tone.
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's notes, reworked toward the real clarinet (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 /// A rest where the clarinet needs a note (Python hands `None` to arithmetic there).
@@ -79,6 +82,7 @@ impl ClarinetSound {
         ClarinetSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -116,6 +120,22 @@ impl ClarinetSound {
         Ok(x)
     }
 
+    /// The note as the arrangement plays it: [`Self::clar`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) reworked toward the real clarinet ([`REWORK`]), its repeats taking turns (the Goodman squeal stays its own).
+    ///
+    /// # Errors
+    /// As [`Self::clar`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, tone: Reed) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.clar(m, dur, vel, tone)?;
+        if !ctx.composed_on() || tone != Reed::Boehm {
+            return Ok(x);
+        }
+        let key = [round_nd(m, 3), round_nd(dur, 3), round_nd(vel, 2)].map(|v| (v + 0.0).to_bits());
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
+    }
+
     /// `note(m, dur, vel, t)`: the clarinet as the run has it at `t`: flat by up to a quarter-tone while OUT OF
     /// TUNE, with a beating second reed (sour), thinner as it is hurt. Returns `(signal, gain, lead)`.
     ///
@@ -123,9 +143,9 @@ impl ClarinetSound {
     /// As [`ClarinetSound::clar`] and [`Sound::colour`].
     pub fn note(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, t: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         let dep = self.detune(ctx, t)?;
-        let mut x = self.clar(m - 0.5 * dep, dur, vel, Reed::Boehm)?.to_vec();
+        let mut x = self.played(ctx, m - 0.5 * dep, dur, vel, Reed::Boehm)?.to_vec();
         if dep > 0.25 {
-            let sour = self.clar(m - 0.5 * dep - 0.22, dur, vel * 0.9, Reed::Boehm)?;
+            let sour = self.played(ctx, m - 0.5 * dep - 0.22, dur, vel * 0.9, Reed::Boehm)?;
             // x + 0.32 * dep * sour
             let k = 0.32 * dep;
             for (v, s) in x.iter_mut().zip(sour.iter()) {
@@ -251,7 +271,7 @@ impl ClarinetSound {
                 let is = |name: &str| event_is_str(H, e, 3, name);
                 if is(&cfg.unlock1.name)? {
                     // SQUEAK: a shrill, wobbling squeal
-                    let x = self.clar(93.0, 0.22, 1.0, Reed::Goodman)?;
+                    let x = self.played(ctx, 93.0, 0.22, 1.0, Reed::Goodman)?;
                     // np.tanh(3.0 * M.gliss(x, -1.5, 0.05) / (np.abs(x).max() + 1e-9)) * 0.5
                     let top = x.iter().fold(0.0f64, |p, v| if v.abs() > p { v.abs() } else { p }) + 1e-9;
                     let squeal: Vec<f64> = gliss(&x, -1.5, 0.05)?
@@ -296,8 +316,8 @@ impl Sound for ClarinetSound {
     }
 
     /// `voice(m, dur, vel=0.85)`: one note in its voice: its own reed, not the Pixel Pitch entry.
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.clar(m, dur, vel, Reed::Boehm)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel, Reed::Boehm)
     }
 
     /// A glissando blast up through the registers (the fight file's title hits).
@@ -310,7 +330,8 @@ impl Sound for ClarinetSound {
             .get(self.name(ctx))
             .map_or(&TITLE_HITS[..], Vec::as_slice);
         for (j, &m) in hits.iter().enumerate() {
-            let x = self.clar(
+            let x = self.played(
+                ctx,
                 f64::from(m),
                 if j + 1 < hits.len() { 0.10 } else { 0.5 },
                 1.0,
@@ -330,7 +351,7 @@ impl Sound for ClarinetSound {
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let bus = self.bus(ctx);
         let t_hs = ctx.show.t_hs;
-        let x = self.clar(62.0, 1.0, 1.0, Reed::Boehm)?;
+        let x = self.played(ctx, 62.0, 1.0, 1.0, Reed::Boehm)?;
         // M.bend(x, -8.0, 0.05, 1.0) * np.linspace(1, 0.4, len(x))
         let fall: Vec<f64> = bend(&x, -8.0, 0.05, 1.0)?
             .iter()
@@ -356,7 +377,7 @@ impl Sound for ClarinetSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let _ = ctx;
         for (j, m) in [50.0, 53.0, 57.0, 62.0].into_iter().enumerate() {
-            let x = self.clar(m, 0.9 - 0.06 * j as f64, 1.0, Reed::Boehm)?;
+            let x = self.played(ctx, m, 0.9 - 0.06 * j as f64, 1.0, Reed::Boehm)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), tw + j as f64 * 0.03, 0.30, 0.0);
         }
         Ok(())
@@ -370,7 +391,7 @@ impl Sound for ClarinetSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.clar(f64::from(m), d * grid.beat * 0.95, 0.95, Reed::Boehm)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat * 0.95, 0.95, Reed::Boehm)?;
             mix.place("solo", &Sig::Mono(gliss(&x, 1.0, 0.03)?), ts, 0.50, 0.0);
         }
         Ok(())
@@ -382,7 +403,7 @@ impl Sound for ClarinetSound {
         let run = [62.0, 65.0, 69.0, 74.0, 77.0, 81.0];
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.clar(m - 12.0, 0.12, 0.7, Reed::Boehm)?;
+            let x = self.played(ctx, m - 12.0, 0.12, 0.7, Reed::Boehm)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), tj, 0.22, 0.0);
         }
         Ok(())

@@ -17,9 +17,10 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError};
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::real::{self, Repeats};
 
 use super::state;
-use super::voice::stroke;
+use super::voice::{REWORK, stroke};
 
 /// The name the part's errors carry.
 const H: &str = "TIMPANI";
@@ -35,11 +36,17 @@ fn bits(x: f64, nd: i32) -> u64 {
     (round_nd(x, nd) + 0.0).to_bits()
 }
 
+/// A Composed stroke's key: [`Key`], and which of its repeats.
+type RealKey = (Key, u64);
+
 /// TIMPANI's part.
 #[derive(Debug)]
 pub struct TimpaniSound {
     k: usize,
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's strokes, by [`Key`] and which repeat, and how often each has been asked for.
+    real: Mutex<BTreeMap<RealKey, Arc<[f64]>>>,
+    repeats: Repeats,
 }
 
 impl TimpaniSound {
@@ -48,6 +55,8 @@ impl TimpaniSound {
         TimpaniSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -67,6 +76,30 @@ impl TimpaniSound {
         let x: Arc<[f64]> = stroke(m, vel, dur, gliss).into();
         notes.insert(key, Arc::clone(&x));
         Ok(x)
+    }
+
+    /// [`TimpaniSound::tim`] as the build plays it: under the Composed arrangement a stroke's repeats take turns
+    /// among a few small variants ([`REWORK`], sound upgrade, stage 3); under Classic it is the kit's, to the sample.
+    ///
+    /// # Errors
+    /// As [`TimpaniSound::tim`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, gliss: f64) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.tim(m, dur, vel, gliss)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = (bits(m, 2), bits(dur, 3), bits(vel, 2), bits(gliss, 2));
+        let variant = self.repeats.next(&[key.0, key.1, key.2, key.3]);
+        let mut made = self
+            .real
+            .lock()
+            .map_err(|_| MusicError::new(H, "an earlier note panicked"))?;
+        if let Some(y) = made.get(&(key, variant)) {
+            return Ok(Arc::clone(y));
+        }
+        let y: Arc<[f64]> = real::rework(&x, m, dur, bf_sound::SRF, &REWORK, variant).into();
+        made.insert((key, variant), Arc::clone(&y));
+        Ok(y)
     }
 
     /// The low kettle's note at `t`: the chord's root in the lower part of its register.
@@ -158,8 +191,8 @@ impl Sound for TimpaniSound {
         }
     }
 
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.tim(m, dur, vel, 0.0)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel, 0.0)
     }
 
     fn title_blast(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, t: f64) -> Played {
@@ -170,7 +203,7 @@ impl Sound for TimpaniSound {
             None => vec![home, home + 7, home - 5, home + 12],
         };
         for (j, (m, g)) in hits.iter().zip([0.55, 0.42, 0.36, 0.30, 0.26]).enumerate() {
-            let x = self.tim(f64::from(*m), 1.4, 1.0, 0.0)?;
+            let x = self.played(ctx, f64::from(*m), 1.4, 1.0, 0.0)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), t + j as f64 * 0.012, g, 0.1);
         }
         Ok(())
@@ -201,7 +234,13 @@ impl Sound for TimpaniSound {
                 1 => (0.85, 0.36),
                 _ => (0.8, 0.30),
             };
-            self.put(ctx, mix, &self.tim(f64::from(m), 1.2 * beat, vel, 0.0)?, tq, gain)?;
+            self.put(
+                ctx,
+                mix,
+                &self.played(ctx, f64::from(m), 1.2 * beat, vel, 0.0)?,
+                tq,
+                gain,
+            )?;
         }
         // the interval hit: root and fifth together with a crack
         for (t, _, _) in state::hits(ev, k, "interval") {
@@ -218,7 +257,7 @@ impl Sound for TimpaniSound {
                 }
             };
             for (m, g) in [(r, 0.34), (fifth, 0.30), (r + 12, 0.18)] {
-                self.put(ctx, mix, &self.tim(f64::from(m), beat, 1.0, 0.0)?, tq, g)?;
+                self.put(ctx, mix, &self.played(ctx, f64::from(m), beat, 1.0, 0.0)?, tq, g)?;
             }
             let crack = synth::thud(0.08, 1800.0, 900.0, 29);
             mix.place("fx", &Sig::Mono(crack), tq, 0.07, 0.0);
@@ -231,7 +270,7 @@ impl Sound for TimpaniSound {
             let tq = ctx.q16(t0);
             let r = self.low(ctx, tq)?;
             let dur = (t1.min(t_ko) - tq).max(0.2);
-            let x = self.tim(f64::from(r - 5), dur, 0.9, 5.0)?;
+            let x = self.played(ctx, f64::from(r - 5), dur, 0.9, 5.0)?;
             self.put(ctx, mix, &x, tq, 0.40)?;
         }
         // a squeeze: a dull thud of copper
@@ -252,7 +291,7 @@ impl Sound for TimpaniSound {
             let tq = ctx.q16(t);
             let r = self.low(ctx, tq)?;
             for (j, d) in [0, 7, 12, 7, 0].into_iter().enumerate() {
-                let x = self.tim(f64::from(r + d), 0.5 * beat, 1.0, 0.0)?;
+                let x = self.played(ctx, f64::from(r + d), 0.5 * beat, 1.0, 0.0)?;
                 self.put(ctx, mix, &x, tq + j as f64 * beat / 4.0, 0.34)?;
             }
         }
@@ -262,7 +301,7 @@ impl Sound for TimpaniSound {
     /// The kettles fall over: a long glissando down on the low drum.
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let home = self.home(ctx);
-        let x = self.tim(f64::from(home + 7), 1.2, 1.0, -9.0)?;
+        let x = self.played(ctx, f64::from(home + 7), 1.2, 1.0, -9.0)?;
         mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), ctx.show.t_hs, 0.40, 0.0);
         Ok(())
     }
@@ -270,7 +309,7 @@ impl Sound for TimpaniSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let home = f64::from(self.home(ctx));
         for (j, d) in [0.0, 7.0, 0.0, 12.0].into_iter().enumerate() {
-            let x = self.tim(home + d, 0.9, 1.0, 0.0)?;
+            let x = self.played(ctx, home + d, 0.9, 1.0, 0.0)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), tw + j as f64 * 0.09, 0.40, 0.0);
         }
         Ok(())
@@ -283,13 +322,13 @@ impl Sound for TimpaniSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.tim(f64::from(m), d * grid.beat, 0.95, 0.0)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat, 0.95, 0.0)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.52, 0.0);
             if d * grid.beat > 0.4 {
                 // a long note is rolled, as a timpanist holds one
                 let n = (d * 4.0) as usize;
                 for i in 1..n {
-                    let xi = self.tim(f64::from(m), 0.1, 0.5, 0.0)?;
+                    let xi = self.played(ctx, f64::from(m), 0.1, 0.5, 0.0)?;
                     mix.place(
                         "solo",
                         &Sig::Mono(xi.to_vec()),
@@ -311,7 +350,7 @@ impl Sound for TimpaniSound {
         for j in 0..n {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * f64::from(j) / f64::from(n));
             let m = if j % 2 == 0 { home } else { home + 7 };
-            let x = self.tim(f64::from(m), 0.2, 0.45 + 0.04 * f64::from(j), 0.0)?;
+            let x = self.played(ctx, f64::from(m), 0.2, 0.45 + 0.04 * f64::from(j), 0.0)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tj, 0.24, 0.0);
         }
         Ok(())
@@ -325,7 +364,7 @@ impl Sound for TimpaniSound {
             let tb = t30 + f64::from(j) * grid.beat;
             let r = self.low(ctx, tb)?;
             let m = if j % 2 == 0 { r + 7 } else { r };
-            let x = self.tim(f64::from(m), 0.8 * grid.beat, 0.85, 0.0)?;
+            let x = self.played(ctx, f64::from(m), 0.8 * grid.beat, 0.85, 0.0)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tb, 0.34, 0.1);
         }
         Ok(())

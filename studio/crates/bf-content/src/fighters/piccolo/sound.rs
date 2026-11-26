@@ -13,9 +13,10 @@ use bf_core::py::round_nd;
 use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::real::{self, RealNotes};
 
 use super::state;
-use super::voice::tone;
+use super::voice::{REWORK, tone};
 
 /// The name the part's errors carry.
 const H: &str = "PICCOLO";
@@ -36,6 +37,8 @@ fn bits(x: f64, nd: i32) -> u64 {
 pub struct PiccoloSound {
     k: usize,
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's notes, reworked toward the real piccolo (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl PiccoloSound {
@@ -44,6 +47,7 @@ impl PiccoloSound {
         PiccoloSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -63,6 +67,22 @@ impl PiccoloSound {
         let x: Arc<[f64]> = tone(m, vel, dur).into();
         notes.insert(key, Arc::clone(&x));
         Ok(x)
+    }
+
+    /// The note as the arrangement plays it: [`Self::pic`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) reworked toward the real piccolo ([`REWORK`]), its repeats taking turns.
+    ///
+    /// # Errors
+    /// As [`Self::pic`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.pic(m, dur, vel)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = [round_nd(m, 2), round_nd(dur, 3), round_nd(vel, 2)].map(|v| (v + 0.0).to_bits());
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
     }
 
     /// The key's tonic at the top of its register.
@@ -135,8 +155,8 @@ impl Sound for PiccoloSound {
         }
     }
 
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.pic(m, dur, vel)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel)
     }
 
     fn title_blast(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, t: f64) -> Played {
@@ -147,7 +167,7 @@ impl Sound for PiccoloSound {
             None => vec![top - 12, top - 5, top - 24, top],
         };
         for (m, g) in hits.iter().zip([0.40, 0.30, 0.26, 0.22, 0.18]) {
-            let x = self.pic(f64::from(*m), 1.0, 1.0)?;
+            let x = self.played(ctx, f64::from(*m), 1.0, 1.0)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), t, g, 0.15);
         }
         Ok(())
@@ -182,7 +202,7 @@ impl Sound for PiccoloSound {
                 let m = fall.get(i).copied().unwrap_or(last);
                 base.insert(w.id, m);
                 shards.insert(w.id);
-                self.put(ctx, mix, &self.pic(f64::from(m), 0.08, 0.6)?, w.t, 0.12)?;
+                self.put(ctx, mix, &self.played(ctx, f64::from(m), 0.08, 0.6)?, w.t, 0.12)?;
                 continue;
             }
             let tq = ctx.q16(w.t);
@@ -192,9 +212,9 @@ impl Sound for PiccoloSound {
             base.insert(w.id, m);
             // the grace stays ahead of the note and does not end the note before it
             let grace = self.step_up(ctx, m, 1, tq)?;
-            let x = self.pic(f64::from(grace), 0.03, 0.6)?;
+            let x = self.played(ctx, f64::from(grace), 0.03, 0.6)?;
             self.put(ctx, mix, &x, tq - 0.035, 0.16 * ctx.soften(name, grace))?;
-            let x = self.pic(f64::from(m), 0.45 * beat, 0.85)?;
+            let x = self.played(ctx, f64::from(m), 0.45 * beat, 0.85)?;
             self.sing(ctx, mix, &x, tq, 0.30 * ctx.soften(name, m))?;
         }
         // the bounces: quick high ticks up the scale, a rope at a time
@@ -210,7 +230,7 @@ impl Sound for PiccoloSound {
                 n -= 12;
                 soft = ctx.soften(name, n);
             }
-            self.put(ctx, mix, &self.pic(f64::from(n), 0.02, 0.5)?, b.t, 0.07 * soft)?;
+            self.put(ctx, mix, &self.played(ctx, f64::from(n), 0.02, 0.5)?, b.t, 0.07 * soft)?;
         }
         // a pierce: a bright chord tone above the line
         for h in state::pierces(ev, k) {
@@ -228,12 +248,12 @@ impl Sound for PiccoloSound {
                 && let Some(own) = ctx.play_line(name, tq)?
             {
                 // the line's note at the pierce, not a chord tone above the needle's
-                let x = self.pic(f64::from(own), 0.3 * beat, 1.0)?;
+                let x = self.played(ctx, f64::from(own), 0.3 * beat, 1.0)?;
                 self.sing(ctx, mix, &x, tq, 0.22 * ctx.soften(name, own))?;
             } else if let Some(&u) = tones.first() {
                 let hi = ctx.cfg[k].register.1;
                 let u = if u > hi { u - 12 } else { u };
-                self.put(ctx, mix, &self.pic(f64::from(u), 0.3 * beat, 1.0)?, tq, 0.22)?;
+                self.put(ctx, mix, &self.played(ctx, f64::from(u), 0.3 * beat, 1.0)?, tq, 0.22)?;
             }
         }
         // TRILL: the line's note trilled with its upper neighbour in 32nds for a beat
@@ -244,7 +264,10 @@ impl Sound for PiccoloSound {
             let tq = ctx.q16(t0);
             let m = self.line(ctx, tq, last)?;
             let up = self.step_up(ctx, m, 1, tq)?;
-            let (x, xu) = (self.pic(f64::from(m), 0.04, 0.6)?, self.pic(f64::from(up), 0.04, 0.6)?);
+            let (x, xu) = (
+                self.played(ctx, f64::from(m), 0.04, 0.6)?,
+                self.played(ctx, f64::from(up), 0.04, 0.6)?,
+            );
             for i in 0..8 {
                 let ti = tq + i as f64 * beat / 8.0;
                 self.put(ctx, mix, if i % 2 == 0 { &x } else { &xu }, ti, 0.12)?;
@@ -256,7 +279,7 @@ impl Sound for PiccoloSound {
                 break;
             }
             let tq = ctx.q16(t0);
-            self.put(ctx, mix, &self.pic(f64::from(top), 4.0 * beat, 0.9)?, tq, 0.18)?;
+            self.put(ctx, mix, &self.played(ctx, f64::from(top), 4.0 * beat, 0.9)?, tq, 0.18)?;
         }
         Ok(())
     }
@@ -266,7 +289,7 @@ impl Sound for PiccoloSound {
         let top = self.top(ctx);
         let notes = ctx.harmony.scale_notes(top - 12, top, None).map_err(bad)?;
         for (j, m) in notes.iter().rev().enumerate() {
-            let x = self.pic(f64::from(*m), 0.06, 0.8 - 0.04 * j as f64)?;
+            let x = self.played(ctx, f64::from(*m), 0.06, 0.8 - 0.04 * j as f64)?;
             mix.place(
                 &self.bus(ctx),
                 &Sig::Mono(x.to_vec()),
@@ -281,7 +304,7 @@ impl Sound for PiccoloSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let top = f64::from(self.top(ctx));
         for (j, d) in [-12.0, -8.0, -5.0, 0.0].into_iter().enumerate() {
-            let x = self.pic(top + d, if j == 3 { 0.8 } else { 0.08 }, 1.0)?;
+            let x = self.played(ctx, top + d, if j == 3 { 0.8 } else { 0.08 }, 1.0)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), tw + j as f64 * 0.06, 0.28, 0.0);
         }
         Ok(())
@@ -294,7 +317,7 @@ impl Sound for PiccoloSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.pic(f64::from(m), d * grid.beat * 0.9, 0.95)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat * 0.9, 0.95)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.40, 0.0);
         }
         Ok(())
@@ -307,7 +330,7 @@ impl Sound for PiccoloSound {
         let run = ctx.harmony.scale_notes(top - 12, top, None).map_err(bad)?;
         for (j, m) in run.iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.pic(f64::from(*m), 0.12, 0.7)?;
+            let x = self.played(ctx, f64::from(*m), 0.12, 0.7)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tj, 0.18, 0.0);
         }
         Ok(())
@@ -322,7 +345,7 @@ impl Sound for PiccoloSound {
             let tb = t30 + f64::from(j) * grid.beat / 2.0;
             let m = self.line(ctx, tb, last)?;
             last = m;
-            let x = self.pic(f64::from(m), 0.4 * grid.beat, 0.8)?;
+            let x = self.played(ctx, f64::from(m), 0.4 * grid.beat, 0.8)?;
             mix.place(&self.bus(ctx), &Sig::Mono(x.to_vec()), tb, 0.26, 0.15);
         }
         Ok(())

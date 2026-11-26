@@ -19,6 +19,7 @@ use bf_core::py;
 use bf_core::rng::Generator;
 use bf_sound::dsp::{self, FilterKind};
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{self, Correction, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The CONTRABASS's register in `pp_bridge`'s roster (`('CONTRABASS', 'contrabass_lowpoly', 'ball', (28, 60), ...)`).
@@ -33,6 +34,61 @@ const FORM: [(f64, f64, f64); 5] = [
     (1100.0, 0.35, 0.45),
 ];
 
+/// The CONTRABASS's overtone correction toward a real contrabass: gains in dB for its first eight harmonics, note by
+/// note, for its bowed notes (FluidR3, `bf-harness/tests/reference/fluidr3.json`). Written by
+/// `cargo run --release -p bf-harness --example references -- correct "CONTRABASS"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (28, [-17.4, 0.0, -10.7, 2.6, -3.3, -19.2, -0.8, -10.0]),
+    (29, [-19.8, 0.0, -10.2, 2.5, -3.0, -18.5, -0.2, -9.6]),
+    (30, [-16.6, 0.0, -14.0, 1.4, -18.7, -25.2, -4.8, -8.1]),
+    (31, [-17.8, 0.0, -13.5, 1.6, -18.0, -22.3, -3.8, -7.7]),
+    (32, [-18.9, 0.0, -13.2, 1.8, -17.2, -19.3, -3.6, -7.9]),
+    (33, [-0.4, 0.0, 0.6, -13.8, 1.4, -5.0, 7.7, -11.3]),
+    (34, [-1.4, 0.0, 0.5, -14.0, 2.1, -4.9, 7.0, -11.9]),
+    (35, [-5.3, 4.2, 3.9, -10.3, 6.3, -1.6, 10.1, -9.1]),
+    (36, [0.0, -13.0, -2.0, -11.0, -4.4, -5.4, -14.3, -12.7]),
+    (37, [0.0, -12.3, -2.1, -9.6, -4.7, -5.7, -14.0, -12.0]),
+    (38, [0.0, -11.9, -2.2, -8.4, -5.4, -5.7, -12.7, -12.0]),
+    (39, [-0.5, 6.1, -7.9, -10.2, 8.8, -0.8, -9.9, -12.2]),
+    (40, [-0.3, 6.3, -7.4, -9.3, 8.8, -0.7, -9.6, -11.7]),
+    (41, [-0.2, 6.5, -6.6, -8.5, 8.8, -0.4, -9.4, -11.6]),
+    (42, [0.0, 2.5, -3.9, 0.7, -15.6, -13.7, -8.6, -6.9]),
+    (43, [0.0, 2.4, -2.9, 1.2, -15.1, -13.2, -8.0, -6.2]),
+    (44, [0.0, 2.3, -2.0, 1.3, -14.8, -12.6, -7.2, -5.7]),
+    (45, [0.0, -14.5, -1.1, -14.2, -8.8, -2.1, -10.9, 7.5]),
+    (46, [0.0, -15.2, -0.9, -12.8, -9.4, -1.6, -10.2, 6.9]),
+    (47, [0.0, -16.0, -1.3, -11.3, -10.1, -1.3, -9.5, 5.8]),
+    (48, [0.0, -16.7, -2.0, -9.8, -10.3, -1.1, -9.0, 4.7]),
+    (49, [-6.4, -3.6, 10.8, 6.4, 16.3, 18.6, 11.2, 7.3]),
+    (50, [-6.3, -2.7, 10.0, 6.3, 16.2, 18.3, 11.0, 6.5]),
+    (51, [-6.3, -1.9, 9.2, 6.3, 16.3, 18.1, 10.7, 5.6]),
+    (52, [-6.4, -1.0, 8.8, 6.6, 16.4, 18.4, 10.7, 5.9]),
+    (53, [-6.8, -0.2, 8.4, 6.9, 16.6, 18.2, 11.2, 6.4]),
+    (54, [-7.1, 0.6, 8.4, 7.4, 16.7, 18.6, 12.0, 7.2]),
+    (55, [-7.4, 1.2, 8.3, 7.7, 16.7, 19.5, 13.3, 8.7]),
+    (56, [-7.7, 1.8, 8.7, 8.1, 17.0, 20.1, 14.7, 10.7]),
+    (57, [-7.9, 1.9, 8.6, 8.3, 17.4, 21.0, 15.9, 11.5]),
+];
+
+/// The Composed arrangement's CONTRABASS (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, a slower start (80 ms to full level) and a quicker stop, nearer the real one's.
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: CORRECTION,
+    speak: 0.08,
+    stop: 0.056,
+};
+
+/// A plucked note's rework (its notes under 0.5 s): no overtones to set against a bowed reference, so only the small
+/// differences between its repeats.
+pub const PLUCKED: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+};
+
 /// CONTRABASS's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ContrabassVoice;
@@ -44,6 +100,17 @@ impl Voice for ContrabassVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
+    }
+
+    /// A bowed note (0.5 s or more) takes [`REWORK`]; a plucked one only its repeats' differences.
+    fn note_real(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64, variant: u64) -> Vec<f64> {
+        let x = self.note(noise, midi, vel, dur);
+        let how = if dur >= 0.5 { &REWORK } else { &PLUCKED };
+        real::rework(&x, midi, dur, bf_sound::SRF, how, variant)
     }
 
     fn name(&self) -> &str {

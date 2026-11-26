@@ -6,6 +6,7 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::synth;
+use bf_sound::voice::real::Rework;
 use bf_sound::voice::{PpNoise, Voice};
 
 /// A four-drum concert set from the 32" drum's D2 to the 23" drum's A3, with a little pedal room each way.
@@ -13,6 +14,16 @@ pub const REGISTER: (i32, i32) = (36, 60);
 
 /// Samples a second.
 const SR: f64 = 48_000.0;
+
+/// The Composed arrangement's TIMPANI (sound upgrade, stage 3, S1): a drum's overtones are not a note's harmonics,
+/// so there are none to set against the real timpani (the overtone measure does not fit it); only the small
+/// differences between its repeated strokes (a hair of pitch, a little level).
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+};
 
 /// TIMPANI's voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -25,6 +36,10 @@ impl Voice for TimpaniVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

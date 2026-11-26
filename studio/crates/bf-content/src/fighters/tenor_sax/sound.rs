@@ -24,9 +24,10 @@ use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, bend, clank, fi
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::Repeats;
 
 use super::state;
-use super::voice::{VOICE_HONK, midi_hz, tenor_tone};
+use super::voice::{VOICE_HONK, midi_hz, tenor_tone, tenor_tone_real};
 
 /// The name the part's errors carry.
 const H: &str = "TENOR SAX";
@@ -35,8 +36,8 @@ const H: &str = "TENOR SAX";
 const CLANK_DECAYS: [(f64, f64); 3] = [(1.0, 0.12), (2.76, 0.06), (5.4, 0.03)];
 
 /// The key `tone` caches by: `(int(m), round(dur, 3), round(vel, 2), round(honk, 2), round(sub, 2))`, the floats by
-/// their bits.
-type ToneKey = (i32, u64, u64, u64, u64);
+/// their bits; then whether it is the Composed arrangement's real tenor, and which of its repeats ([`Repeats`]).
+type ToneKey = (i32, u64, u64, u64, u64, bool, u64);
 
 fn bits(x: f64) -> u64 {
     if x == 0.0 { 0 } else { x.to_bits() }
@@ -89,6 +90,8 @@ pub struct TenorSaxSound {
     k: usize,
     /// `self._c`: the tones made so far.
     tones: Mutex<BTreeMap<ToneKey, Arc<[f64]>>>,
+    /// How often each Composed tone has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl TenorSaxSound {
@@ -97,6 +100,7 @@ impl TenorSaxSound {
         TenorSaxSound {
             k,
             tones: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -113,6 +117,9 @@ impl TenorSaxSound {
     /// `tone(m, dur, vel=0.85, honk=0.35, sub=0.0)`: one note of its voice, at 48 kHz, `dur + 0.25` s long and at
     /// the series' level: `M.fit(_resample(tenor_tone(_midi_hz(int(m)), dur, vel, honk=honk, sub=sub)), dur + 0.25)
     /// * g0`, kept by `(int(m), round(dur, 3), round(vel, 2), round(honk, 2), round(sub, 2))`.
+    ///
+    /// Under the Composed arrangement the note is the real tenor's ([`tenor_tone_real`], sound upgrade, stage 3),
+    /// its repeats taking turns among a few variants; under Classic it is the kit's, to the sample.
     ///
     /// # Errors
     /// An argument is not a number, or the note would have a negative number of samples (Python raises there); the
@@ -133,13 +140,16 @@ impl TenorSaxSound {
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
-        let key = (
-            m,
+        let first = [
+            m as u64,
             bits(round_nd(dur, 3)),
             bits(round_nd(vel, 2)),
             bits(round_nd(honk, 2)),
             bits(round_nd(sub, 2)),
-        );
+        ];
+        let real = ctx.composed_on();
+        let variant = if real { self.repeats.next(&first) } else { 0 };
+        let key = (m, first[1], first[2], first[3], first[4], real, variant);
         let mut tones = self
             .tones
             .lock()
@@ -153,7 +163,11 @@ impl TenorSaxSound {
                 format!("no tone for a held length (dur) of {dur} s: it would end before it starts"),
             ));
         }
-        let x = tenor_tone(midi_hz(f64::from(m)), dur, vel, honk, sub);
+        let x = if real {
+            tenor_tone_real(midi_hz(f64::from(m)), dur, vel, honk, sub, variant)
+        } else {
+            tenor_tone(midi_hz(f64::from(m)), dur, vel, honk, sub)
+        };
         let fitted = fit(&pp::to_48k(&x), dur + 0.25, 0.04)?;
         let out: Arc<[f64]> = fitted.iter().map(|v| v * g0).collect();
         tones.insert(key, Arc::clone(&out));

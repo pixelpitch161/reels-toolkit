@@ -28,9 +28,10 @@ use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, noise_seed, thu
 use bf_sound::synth::{self, clip};
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, Repeats};
 
 use super::state::{self, Seg};
-use super::voice::{bd_hit, bd_roll};
+use super::voice::{REWORK, bd_hit, bd_roll};
 
 /// The name the part's errors carry.
 const H: &str = "BASS DRUM";
@@ -64,6 +65,8 @@ fn bits(x: f64) -> u64 {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Key {
     Hit(i32, u64, bool, u64),
+    /// A Composed stroke: [`Key::Hit`]'s numbers and which of its repeats ([`Repeats`]).
+    Real(i32, u64, bool, u64, u64),
     Roll(i32, u64, u64),
     Bell(i32),
 }
@@ -107,6 +110,8 @@ pub struct BassDrumSound {
     k: usize,
     /// `self._c`: the strokes made so far.
     cache: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// How often each Composed stroke has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl BassDrumSound {
@@ -115,6 +120,7 @@ impl BassDrumSound {
         BassDrumSound {
             k,
             cache: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -143,7 +149,9 @@ impl BassDrumSound {
     }
 
     /// `hit(m, vel=0.75, boom=False, dur=0.2)`: one stroke of its voice, at 48 kHz and the series' level:
-    /// `_resample(bd_hit(midi_hz(int(m)), vel, boom=boom, dur=None if boom else dur)) * g0`.
+    /// `_resample(bd_hit(midi_hz(int(m)), vel, boom=boom, dur=None if boom else dur)) * g0`. Under the Composed
+    /// arrangement a stroke's repeats take turns among a few small variants ([`REWORK`], sound upgrade, stage 3);
+    /// under Classic it is the kit's, to the sample.
     ///
     /// # Errors
     /// An argument is not a number; the voice's level cannot be measured.
@@ -156,7 +164,14 @@ impl BassDrumSound {
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
-        let key = Key::Hit(m, bits(round_nd(vel, 2)), boom, bits(round_nd(dur, 3)));
+        let (v, d) = (bits(round_nd(vel, 2)), bits(round_nd(dur, 3)));
+        let composed = ctx.composed_on();
+        let (key, variant) = if composed {
+            let variant = self.repeats.next(&[m as u64, v, u64::from(boom), d]);
+            (Key::Real(m, v, boom, d, variant), variant)
+        } else {
+            (Key::Hit(m, v, boom, d), 0)
+        };
         self.kept(key, || {
             let x = bd_hit(
                 pp::midi_hz(f64::from(m)),
@@ -165,7 +180,13 @@ impl BassDrumSound {
                 0,
                 if boom { None } else { Some(dur) },
             );
-            pp::to_48k(&x).iter().map(|v| v * g0).collect()
+            let x = pp::to_48k(&x);
+            let x = if composed {
+                real::rework(&x, f64::from(m), dur, bf_sound::SRF, &REWORK, variant)
+            } else {
+                x
+            };
+            x.iter().map(|v| v * g0).collect()
         })
     }
 

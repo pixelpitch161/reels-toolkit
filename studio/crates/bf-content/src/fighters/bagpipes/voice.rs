@@ -24,6 +24,7 @@ use bf_core::py::{fmod_py, py_max, py_min};
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// BAGPIPES's register in `pp_bridge`'s roster (`('BAGPIPES', 'bagpipes60_lowpoly', None, (67, 81), ...)`).
@@ -250,6 +251,59 @@ pub fn synth(midi: f64, vel: f64, dur: f64) -> Vec<f64> {
     }
     y
 }
+
+/// The BAGPIPES chanter's added overtones: the harmonics its own note barely has, laid in at a real bagpipe's
+/// level (dB under the fundamental, `NONE` for none), note by note. Written with the [`CORRECTION`].
+#[rustfmt::skip]
+pub const FILL: &Fill = &[
+    (67, [-99.0, -99.0, 17.3, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (68, [-99.0, -99.0, 16.8, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (69, [-99.0, -99.0, 16.1, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (70, [-99.0, -99.0, 15.4, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (71, [-99.0, -99.0, 14.6, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (72, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
+    (73, [-99.0, -99.0, 18.0, 15.7, 15.3, -99.0, -99.0, 6.0]),
+    (74, [-99.0, -99.0, 17.9, 16.3, 15.5, -99.0, -99.0, 6.1]),
+    (75, [-99.0, -99.0, 17.9, 17.0, 15.9, -99.0, -99.0, 6.1]),
+    (76, [-99.0, -99.0, -99.0, 18.1, 15.1, -99.0, -99.0, 1.1]),
+    (77, [-99.0, -99.0, -99.0, 18.3, 14.8, -99.0, -99.0, 1.4]),
+    (78, [-99.0, -99.0, -99.0, 18.6, 14.2, -99.0, -99.0, 1.6]),
+    (79, [-99.0, -99.0, -99.0, 19.0, 13.4, -99.0, -99.0, 1.9]),
+    (80, [-99.0, -99.0, 22.3, 18.2, 15.8, 2.0, -99.0, -99.0]),
+    (81, [-99.0, -99.0, 23.3, 18.7, 16.8, 2.9, -99.0, -0.5]),
+];
+
+/// The BAGPIPES chanter's overtone correction toward a real bagpipe: gains in dB for its first eight harmonics, note
+/// by note (FluidR3, `bf-harness/tests/reference/fluidr3.json`), measured on the chanter alone (the part's
+/// `chanter`, no drones). Written by `cargo run --release -p bf-harness --example references -- correct "BAGPIPES"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (67, [0.2, 7.4, 0.0, 13.0, 15.2, 0.1, -5.6, 7.8]),
+    (68, [0.0, 6.5, 0.0, 13.5, 13.9, 0.4, -3.9, 9.2]),
+    (69, [-0.1, 5.6, 0.0, 14.0, 12.5, 0.8, -2.0, 10.7]),
+    (70, [-0.2, 4.8, 0.0, 14.5, 11.2, 1.3, 0.0, 12.2]),
+    (71, [-0.3, 4.0, 0.0, 14.9, 10.5, 1.9, 1.9, 13.6]),
+    (72, [-14.7, -11.3, 0.8, 0.3, -4.0, -11.9, -10.7, 0.2]),
+    (73, [0.3, 1.7, 0.0, -1.0, -0.3, 9.5, 7.5, -0.6]),
+    (74, [0.4, 3.4, 0.0, -0.9, -0.2, 10.9, 8.9, -0.5]),
+    (75, [0.4, 5.3, 0.0, -0.7, -0.2, 12.4, 9.9, -0.5]),
+    (76, [1.6, 3.5, 14.3, 0.0, 1.0, 10.5, 8.6, 0.4]),
+    (77, [1.5, 3.2, 13.5, 0.0, 0.8, 12.0, 9.0, 0.3]),
+    (78, [1.4, 3.1, 13.2, 0.0, 0.7, 13.2, 9.6, 0.2]),
+    (79, [1.3, 3.3, 13.4, 0.0, 0.6, 14.2, 10.5, 0.1]),
+    (80, [-1.0, 4.1, 0.0, -0.2, 0.3, -1.4, 13.7, 13.9]),
+    (81, [0.3, 5.3, 0.0, -0.2, 0.2, -1.2, 14.9, -1.1]),
+];
+
+/// The Composed arrangement's chanter (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, the ones it lacks added. Its start and stop stay its own: the high-G grace in front is the pipe's, and a slower start would
+/// smother it.
+pub const REWORK: Rework = Rework {
+    fill: FILL,
+    correction: CORRECTION,
+    speak: 0.0,
+    stop: 0.0,
+};
 
 /// BAGPIPES's Pixel Pitch voice (`pp_bridge.voice('BAGPIPES', ...)`).
 #[derive(Clone, Copy, Debug, Default)]

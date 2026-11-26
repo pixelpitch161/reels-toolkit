@@ -29,9 +29,10 @@ use bf_sound::music::{
 use bf_sound::synth::{self, WHOOSH_SEED};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
 use super::state;
-use super::voice::bass_reed;
+use super::voice::{REWORK, bass_reed};
 use crate::fighters::shared::slap::{self, DUR as SLAP_DUR};
 
 /// The name the part's errors carry.
@@ -62,6 +63,8 @@ pub struct BassClarinetSound {
     bass: bool,
     /// `_VC`: every note made so far, by its key.
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
+    /// The Composed arrangement's notes, reworked toward the real clarinet (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 impl BassClarinetSound {
@@ -71,6 +74,7 @@ impl BassClarinetSound {
             k,
             bass,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -121,6 +125,22 @@ impl BassClarinetSound {
             let level = 0.16 / r;
             Ok(x.iter().map(|v| v * level).collect())
         })
+    }
+
+    /// The note as the arrangement plays it: [`Self::bcl`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) reworked toward the real clarinet (FluidR3 has no bass clarinet) ([`REWORK`]), its repeats taking turns.
+    ///
+    /// # Errors
+    /// As [`Self::bcl`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, growl: f64) -> Result<Arc<[f64]>, MusicError> {
+        let x = self.bcl(m, dur, vel, growl)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = [round_nd(m, 3), round_nd(dur, 3), round_nd(vel, 2), round_nd(growl, 2)].map(|v| (v + 0.0).to_bits());
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
     }
 
     /// `slap(m, vel=1.0)`: the slap-tongue pop at `m`: `_resample(slap(_midi_hz(m), vel)) * 0.9`, kept by
@@ -215,7 +235,8 @@ impl BassClarinetSound {
         let one = ctx.one_voice(self.name(ctx));
         // first = min(a[0] for a in ANCH): FIGHT!: it rolls out of its corner, growling
         let first = anch.iter().map(|a| a.t).fold(f64::INFINITY, py_min);
-        let x = self.bcl(
+        let x = self.played(
+            ctx,
             f64::from(self.step(ctx, grid.t_fight, 0)?),
             first - grid.t_fight - 0.05,
             0.75,
@@ -231,7 +252,7 @@ impl BassClarinetSound {
             let tq = ctx.q16(t0);
             // the peg goes in: the bar's root, growling
             let root = self.step(ctx, tq, 0)?;
-            let (sig, g, _) = self.col(ctx, &self.bcl(f64::from(root), 0.9 * beat, 0.95, 0.35)?, t0)?;
+            let (sig, g, _) = self.col(ctx, &self.played(ctx, f64::from(root), 0.9 * beat, 0.95, 0.35)?, t0)?;
             mix.note(&bus, &Sig::Mono(sig), tq, 0.46 * g, -0.2, one);
             let clink = clank(84.0, noise_seed(H, t0 * 10.0)?, CLANK_DUR, &CLANK_DECAYS)?;
             mix.place("fx", &Sig::Mono(clink), tq, 0.05, -0.2);
@@ -244,7 +265,8 @@ impl BassClarinetSound {
                 .chain([t_ko])
                 .fold(f64::INFINITY, py_min);
             if nxt - tr > 0.3 {
-                let x = self.bcl(
+                let x = self.played(
+                    ctx,
                     f64::from(self.step(ctx, tr, 7)?),
                     py_min(nxt - tr, 2.2 * beat) - 0.05,
                     0.7,
@@ -261,16 +283,16 @@ impl BassClarinetSound {
                 dropped = thin_37(slot, 3.0, hp, dropped);
                 if !dropped {
                     let m = f64::from(self.line_at(ctx, e8)?);
-                    let (sig, g, lead) = self.col(ctx, &self.bcl(m, 0.42 * beat, 0.8, 0.25)?, e8)?;
+                    let (sig, g, lead) = self.col(ctx, &self.played(ctx, m, 0.42 * beat, 0.8, 0.25)?, e8)?;
                     mix.note(&bus, &Sig::Mono(sig), e8, 0.42 * g, -0.2, one);
                     if self.twin_on(ctx, e8)? {
                         // MULTIPHONICS: the twelfth above at once
-                        let (sig, _, _) = self.col(ctx, &self.bcl(m + 19.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
+                        let (sig, _, _) = self.col(ctx, &self.played(ctx, m + 19.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
                         mix.note(&bus, &Sig::Mono(sig), e8, 0.16 * g, -0.1, one);
                     }
                     if lead > 0.04 && imod_py(slot as i64, 4) == 0 {
                         // the leader: the octave under (fuller)
-                        let (sig, _, _) = self.col(ctx, &self.bcl(m - 12.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
+                        let (sig, _, _) = self.col(ctx, &self.played(ctx, m - 12.0, 0.42 * beat, 0.6, 0.0)?, e8)?;
                         mix.note(&bus, &Sig::Mono(sig), e8, 0.10 * g, 0.0, one);
                     }
                 }
@@ -328,14 +350,15 @@ impl BassClarinetSound {
                     let tq = ctx.q16(t);
                     let root = f64::from(self.root(ctx, tq)?);
                     for (m, g) in [(root, 0.34), (root + 19.0, 0.20), (root + 17.5, 0.11)] {
-                        let x = self.bcl(m, 1.5 * grid.beat, 0.9, 0.2)?;
+                        let x = self.played(ctx, m, 1.5 * grid.beat, 0.9, 0.2)?;
                         mix.place(&bus, &Sig::Mono(x.to_vec()), tq, g, -0.2);
                     }
                 }
                 "lights_out" if event_is(H, e, 2, k)? => {
                     // LIGHTS OUT: a low growl swelling in the dark
                     let tq = ctx.q16(t);
-                    let x = self.bcl(
+                    let x = self.played(
+                        ctx,
                         f64::from(ctx.harmony.key_root + 3),
                         event_number(H, e, 3)? - t,
                         1.0,
@@ -406,8 +429,8 @@ impl Sound for BassClarinetSound {
     }
 
     /// `voice(m, dur, vel=0.85)`: `bcl(m, dur, vel)`.
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.bcl(m, dur, vel, 0.0)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel, 0.0)
     }
 
     /// A growl, its fifth and a slap (the fight file's title hits, else the tonic, its fifth and its octave).
@@ -427,9 +450,9 @@ impl Sound for BassClarinetSound {
                 format!("its title hits {hits:?} need three notes: a growl, its fifth and a slap"),
             ));
         }
-        let x = self.bcl(f64::from(hits[0]), 0.9 * beat, 1.0, 0.7)?;
+        let x = self.played(ctx, f64::from(hits[0]), 0.9 * beat, 1.0, 0.7)?;
         mix.place(&bus, &Sig::Mono(x.to_vec()), t, 0.50, -0.2);
-        let x = self.bcl(f64::from(hits[1]), 0.9 * beat, 0.8, 0.4)?;
+        let x = self.played(ctx, f64::from(hits[1]), 0.9 * beat, 0.8, 0.4)?;
         mix.place(&bus, &Sig::Mono(x.to_vec()), t, 0.22, -0.2);
         let x = self.slap(f64::from(hits[2]), 1.0)?;
         mix.place(&bus, &Sig::Mono(x.to_vec()), t + 0.004, 0.50, -0.2);
@@ -443,7 +466,7 @@ impl Sound for BassClarinetSound {
 
     /// A falling growl.
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
-        let x = self.bcl(f64::from(self.tonic(ctx)?), 1.0, 1.0, 0.5)?;
+        let x = self.played(ctx, f64::from(self.tonic(ctx)?), 1.0, 1.0, 0.5)?;
         // M.bend(x, -9.0, 0.05, 1.0) * np.linspace(1, 0.4, len(x))
         let fall: Vec<f64> = bend(&x, -9.0, 0.05, 1.0)?
             .iter()
@@ -457,7 +480,7 @@ impl Sound for BassClarinetSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let t0 = self.tonic(ctx)?;
         for (j, m) in [t0, t0 + 7, t0 + 12].into_iter().enumerate() {
-            let x = self.bcl(f64::from(m), 0.9 - 0.06 * j as f64, 1.0, 0.2)?;
+            let x = self.played(ctx, f64::from(m), 0.9 - 0.06 * j as f64, 1.0, 0.2)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), tw + j as f64 * 0.03, 0.30, 0.0);
         }
         let x = self.slap(f64::from(t0 + 12), 1.0)?;
@@ -472,7 +495,7 @@ impl Sound for BassClarinetSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.bcl(f64::from(m), d * grid.beat * 0.95, 0.95, 0.15)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat * 0.95, 0.95, 0.15)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.62, 0.0);
         }
         Ok(())
@@ -485,7 +508,7 @@ impl Sound for BassClarinetSound {
         let run = [0, 3, 7, 10, 12, 15].map(|d| t0 + d);
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self.bcl(f64::from(m), 0.12, 0.7, 0.0)?;
+            let x = self.played(ctx, f64::from(m), 0.12, 0.7, 0.0)?;
             mix.place(&bus, &Sig::Mono(x.to_vec()), tj, 0.24, -0.2);
         }
         Ok(())
@@ -505,7 +528,13 @@ impl Sound for BassClarinetSound {
                     continue;
                 }
                 let m = self.root(ctx, tb)? + if bt == 2 { 7 } else { 0 };
-                let x = self.bcl(f64::from(m), 0.42 * grid.beat, 0.9, if bt == 0 { 0.4 } else { 0.25 })?;
+                let x = self.played(
+                    ctx,
+                    f64::from(m),
+                    0.42 * grid.beat,
+                    0.9,
+                    if bt == 0 { 0.4 } else { 0.25 },
+                )?;
                 mix.place(
                     &bus,
                     &Sig::Mono(x.to_vec()),

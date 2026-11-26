@@ -30,8 +30,9 @@ use bf_sound::music::{
 use bf_sound::synth::{self, FILTER_O, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, SOUND_VOICE_VEL, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, RealNotes};
 
-use super::voice::double_reed;
+use super::voice::{REWORK, double_reed};
 
 /// The name the part's errors carry.
 const H: &str = "OBOE";
@@ -51,6 +52,8 @@ pub struct OboeSound {
     k: usize,
     /// `self._vc`: the notes made so far.
     notes: Mutex<BTreeMap<NoteKey, Arc<[f64]>>>,
+    /// The Composed arrangement's notes, reworked toward the real oboe (sound upgrade, stage 3, S1).
+    real: RealNotes,
 }
 
 /// `scissor(seed)`: DOUBLE REED's snip: two bright metallic scrapes a few milliseconds apart. One generator of
@@ -86,6 +89,7 @@ impl OboeSound {
         OboeSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            real: RealNotes::default(),
         }
     }
 
@@ -118,9 +122,25 @@ impl OboeSound {
         Ok(x)
     }
 
-    /// `note(m, dur, vel, t)`: `self.colour(self.oboe(m, dur, vel), t)`: `(signal, gain, lead)`.
-    fn note(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, t: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
+    /// The note as the arrangement plays it: [`Self::oboe`]'s own under Classic; under Composed (sound upgrade, stage 3,
+    /// S1) reworked toward the real oboe ([`REWORK`]), its repeats taking turns.
+    ///
+    /// # Errors
+    /// As [`Self::oboe`].
+    fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
         let x = self.oboe(m, dur, vel)?;
+        if !ctx.composed_on() {
+            return Ok(x);
+        }
+        let key = [round_nd(m, 3), round_nd(dur, 3), round_nd(vel, 2)].map(|v| (v + 0.0).to_bits());
+        Ok(self
+            .real
+            .get(&key, |v| real::rework(&x, m, dur, bf_sound::SRF, &REWORK, v)))
+    }
+
+    /// `note(m, dur, vel, t)`: `self.colour(self.played(ctx, m, dur, vel), t)`: `(signal, gain, lead)`.
+    fn note(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, t: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
+        let x = self.played(ctx, m, dur, vel)?;
         self.colour(ctx, &x, t, 1.0, &self.colour_args())
     }
 
@@ -207,7 +227,7 @@ impl OboeSound {
                 mix.place(&bus, &Sig::Mono(under), tq, 0.14 * g, 0.2);
             } else if mine(e, "snip_open")? {
                 // DOUBLE REED: a reed crow as the blades open
-                let crow = gliss(&self.oboe(86.0, 0.12, 1.0)?, 3.0, 0.06)?;
+                let crow = gliss(&self.played(ctx, 86.0, 0.12, 1.0)?, 3.0, 0.06)?;
                 mix.place(&bus, &Sig::Mono(crow), ctx.q16(t), 0.22, 0.25);
             } else if mine(e, "snip")? {
                 let landed = event_int(H, e, 3)? != 0;
@@ -227,8 +247,8 @@ impl OboeSound {
                 // ILL WIND: a bent, beating A
                 let tq = ctx.q16(t);
                 let dur = 2.0 * beat;
-                let y = bend(&self.oboe(A4 + 12.0, dur, 1.0)?, -1.5, 0.05, dur)?;
-                let y2 = bend(&self.oboe(A4 + 11.5, dur, 0.8)?, -1.8, 0.05, dur)?;
+                let y = bend(&self.played(ctx, A4 + 12.0, dur, 1.0)?, -1.5, 0.05, dur)?;
+                let y2 = bend(&self.played(ctx, A4 + 11.5, dur, 0.8)?, -1.8, 0.05, dur)?;
                 if y.len() != y2.len() {
                     return Err(MusicError::new(H, "the two bent notes of ILL WIND differ in length"));
                 }
@@ -272,8 +292,8 @@ impl Sound for OboeSound {
     }
 
     /// `voice(m, dur, vel=0.85)`: its own note ([`OboeSound::oboe`]), not the roster voice's.
-    fn voice(&self, _ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.oboe(m, dur, vel)
+    fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        self.played(ctx, m, dur, vel)
     }
 
     /// Its A, held (the tuning note), with the octave.
@@ -288,8 +308,20 @@ impl Sound for OboeSound {
             None => (A4, A4 + 12.0),
         };
         let a_hold = 1.6 * ctx.show.grid.beat;
-        mix.place(&bus, &Sig::Mono(self.oboe(first, a_hold, 1.0)?.to_vec()), t, 0.52, 0.0);
-        mix.place(&bus, &Sig::Mono(self.oboe(last, a_hold, 0.9)?.to_vec()), t, 0.30, 0.0);
+        mix.place(
+            &bus,
+            &Sig::Mono(self.played(ctx, first, a_hold, 1.0)?.to_vec()),
+            t,
+            0.52,
+            0.0,
+        );
+        mix.place(
+            &bus,
+            &Sig::Mono(self.played(ctx, last, a_hold, 0.9)?.to_vec()),
+            t,
+            0.30,
+            0.0,
+        );
         Ok(())
     }
 
@@ -308,7 +340,7 @@ impl Sound for OboeSound {
     /// A falling, sour A, keys clattering.
     fn fall_apart(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let t_hs = ctx.show.t_hs;
-        let x = self.oboe(A4, 1.0, 1.0)?;
+        let x = self.played(ctx, A4, 1.0, 1.0)?;
         let fall = ramp(&bend(&x, -8.0, 0.05, 1.0)?, 1.0, 0.4);
         mix.place(&self.bus(ctx), &Sig::Mono(fall), t_hs, 0.40, 0.0);
         for (j, m) in [86.0, 81.0, 91.0, 77.0, 84.0].into_iter().enumerate() {
@@ -321,10 +353,16 @@ impl Sound for OboeSound {
 
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let _ = ctx;
-        mix.place("solo", &Sig::Mono(self.oboe(A4, 0.9, 1.0)?.to_vec()), tw, 0.45, 0.0);
         mix.place(
             "solo",
-            &Sig::Mono(self.oboe(A4 + 5.0, 0.9, 0.9)?.to_vec()),
+            &Sig::Mono(self.played(ctx, A4, 0.9, 1.0)?.to_vec()),
+            tw,
+            0.45,
+            0.0,
+        );
+        mix.place(
+            "solo",
+            &Sig::Mono(self.played(ctx, A4 + 5.0, 0.9, 0.9)?.to_vec()),
             tw,
             0.30,
             0.0,
@@ -339,7 +377,7 @@ impl Sound for OboeSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.oboe(f64::from(m), d * grid.beat * 0.95, 0.95)?;
+            let x = self.played(ctx, f64::from(m), d * grid.beat * 0.95, 0.95)?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.52, 0.0);
         }
         Ok(())
@@ -351,7 +389,13 @@ impl Sound for OboeSound {
         let run = [62.0, 65.0, 69.0, 74.0, 77.0, 81.0];
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            mix.place(&bus, &Sig::Mono(self.oboe(m, 0.12, 0.7)?.to_vec()), tj, 0.20, 0.0);
+            mix.place(
+                &bus,
+                &Sig::Mono(self.played(ctx, m, 0.12, 0.7)?.to_vec()),
+                tj,
+                0.20,
+                0.0,
+            );
         }
         Ok(())
     }

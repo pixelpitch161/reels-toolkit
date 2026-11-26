@@ -63,6 +63,26 @@ arrangement, switched on the Music screen:
   does the same. A louder band lowers the render band check's floor by as much, so its fix never undoes the slider.
   After changing `OVER_BAND`, write the level table again (`ballfight levels fights/dev/bold_<fighter>.toml ...`,
   one per fighter, `--write crates/bf-content/src/levels_table.rs`).
+  Stage 3 (S1) gives fighters a voice toward the real instrument, under Composed only (Classic keeps the ported
+  tone bit for bit): the saxes first (`bari_tone_real`, the alto's and soprano's `tone_real`, `tenor_tone_real`).
+  A voice that plays through `ctx.note` opts in with `Voice::reworked` and `Voice::note_real`; parts with their own
+  tone functions (alto, bari, tenor) choose the real tone under `ctx.composed_on()`. Repeats of one note take turns
+  among three variants (`voice::real::Repeats`). The shared pieces are in `bf-sound/src/voice/real.rs` (`levels`,
+  `reshape`, `buzz`, `wobble`). From the low instruments on, a voice is reworked from the outside instead: its own
+  note through an overtone `Correction` (a peak or dip at each of the first seven harmonics, `real::correct`), a
+  slower start and a quicker stop (`real::Rework`, `Voice::rework`). `references -- correct "<FIGHTER>"` writes
+  the table, refining it until the corrected notes match the real ones. A peak can only lift an overtone that is
+  there, so overtones a voice barely has (15 dB or more under the real balance) are first added (`real::Fill`,
+  `real::fill`: the note's own fundamental as an analytic signal, raised to each harmonic, so the added partials
+  follow its vibrato and bends); the reworked note keeps the voice's own loudness. Parts that make their own notes
+  (piccolo, oboe, clarinet, bass clarinet, the bagpipes' chanter) keep their Classic function and add a `played`
+  (or `ch`) that reworks it under Composed through `real::RealNotes`. Drums (timpani, bass drum) get only the
+  repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and
+  the contrabass above 57; those notes keep the table's last row. The real instruments' fingerprints are
+  `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in
+  `F:\bf-refs`, `references -- render`); `references -- profile` prints a voice's overtone table from them and
+  `references -- compare "<FIGHTER>"` measures a reworked voice note by note. `tests/real_voices.rs` is S1's test:
+  every note nearer its own real instrument than its rivals, and at most 6 dB from it.
 - **Classic**: each theme's ported bed with the fighters' kit lines and solos. The series' own match-ups (a kit pair,
   an older episode's pair, and every imported episode) keep Classic, so they sound as they always did. Classic is
   one click away for any other fight.

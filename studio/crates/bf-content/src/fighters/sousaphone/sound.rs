@@ -30,9 +30,10 @@ use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, bend, noise_see
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, Repeats};
 
 use super::state;
-use super::voice::{VOICE_BLAT, sousa_tone};
+use super::voice::{REWORK, VOICE_BLAT, sousa_tone};
 
 /// The name the part's errors carry.
 const H: &str = "SOUSAPHONE";
@@ -65,7 +66,7 @@ pub const TRIO: [(f64, i32, f64); 18] = [
 pub type Obbligato = Vec<(f64, Option<i32>, f64)>;
 
 /// The key `tone` caches by: `(int(m), round(dur, 3), round(vel, 2), round(blat, 2))`, the floats by their bits.
-type ToneKey = (i32, u64, u64, u64);
+type ToneKey = (i32, u64, u64, u64, bool, u64);
 
 fn bits(x: f64) -> u64 {
     if x == 0.0 { 0 } else { x.to_bits() }
@@ -131,6 +132,8 @@ pub struct SousaphoneSound {
     obbligato: Option<Obbligato>,
     /// `self._c`: the tones made so far.
     tones: Mutex<BTreeMap<ToneKey, Arc<[f64]>>>,
+    /// How often each Composed tone has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl SousaphoneSound {
@@ -140,6 +143,7 @@ impl SousaphoneSound {
             k,
             obbligato: None,
             tones: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -165,6 +169,9 @@ impl SousaphoneSound {
     /// series' level: `_resample(sousa_tone(midi_hz(int(m)), dur, vel, blat=blat)) * g0`, kept by
     /// `(int(m), round(dur, 3), round(vel, 2), round(blat, 2))`.
     ///
+    /// Under the Composed arrangement the tone is reworked toward the real instrument ([`REWORK`], sound upgrade,
+    /// stage 3), its repeats taking turns among a few variants; under Classic it is the kit's, to the sample.
+    ///
     /// # Errors
     /// An argument is not a number, or the note would have no samples (Python raises there); the voice's level
     /// cannot be measured.
@@ -176,12 +183,15 @@ impl SousaphoneSound {
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
-        let key = (
-            m,
+        let first = [
+            m as u64,
             bits(round_nd(dur, 3)),
             bits(round_nd(vel, 2)),
             bits(round_nd(blat, 2)),
-        );
+        ];
+        let composed = ctx.composed_on();
+        let variant = if composed { self.repeats.next(&first) } else { 0 };
+        let key = (m, first[1], first[2], first[3], composed, variant);
         let mut tones = self
             .tones
             .lock()
@@ -195,8 +205,13 @@ impl SousaphoneSound {
                 format!("no tone for a held length (dur) of {dur} s: it would end before it starts"),
             ));
         }
-        let x = sousa_tone(pp::midi_hz(f64::from(m)), dur, vel, blat);
-        let out: Arc<[f64]> = pp::to_48k(&x).iter().map(|v| v * g0).collect();
+        let x = pp::to_48k(&sousa_tone(pp::midi_hz(f64::from(m)), dur, vel, blat));
+        let x = if composed {
+            real::rework(&x, f64::from(m), dur, bf_sound::SRF, &REWORK, variant)
+        } else {
+            x
+        };
+        let out: Arc<[f64]> = x.iter().map(|v| v * g0).collect();
         tones.insert(key, Arc::clone(&out));
         Ok(out)
     }

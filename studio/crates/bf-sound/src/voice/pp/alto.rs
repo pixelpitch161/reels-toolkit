@@ -22,6 +22,7 @@ use bf_core::rng::Generator;
 
 use super::{SRF, bp, clip01, len, min1, tt};
 use crate::dsp;
+use crate::voice::real::{self, Shape};
 
 /// [`alto_tone`]'s tone arguments with their Python defaults ([`AltoTone::default`]). The ones Python tests for truth
 /// (`if gl:`, `if growl:`, `if breath:`, `if slap:`) are off at `None` or 0.
@@ -97,14 +98,31 @@ pub fn part_seed(m: f64, dur: f64) -> u64 {
 /// Where Python raises: `dur` is not a number or gives a negative number of samples, or a slap on a note shorter
 /// than 30 ms (`dur` below -0.13 s: numpy cannot add the 1,323 slap samples to fewer).
 pub fn alto_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone) -> Vec<f64> {
+    alto(rn, f, dur, v, tone, None)
+}
+
+/// [`alto_tone`] toward the real instrument (sound upgrade, stage 3, S1; the Composed arrangement's alto and soprano
+/// sax): the first eight overtones of both its dark and its bright blend take `real`'s levels (the higher ones keep
+/// the tone's own slope), the note speaks and stops in `real`'s times, and a reed buzz flickers it (seeded by the
+/// pitch, so `rn` is drawn from exactly as [`alto_tone`] draws).
+///
+/// # Panics
+/// As [`alto_tone`].
+pub fn alto_tone_real(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone, real: &Shape) -> Vec<f64> {
+    alto(rn, f, dur, v, tone, Some(real))
+}
+
+/// [`alto_tone`], and [`alto_tone_real`] with `real`.
+fn alto(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone, real: Option<&Shape>) -> Vec<f64> {
     let n = len(dur + 0.16);
     let t = tt(n);
+    let (att, rel) = real.map_or((tone.att, 0.05), |r| (r.speak, r.release));
     // env = minimum(1, t / att) ** 1.4 * where(t < dur, 1, exp(-(t - dur) / .05)) * (.86 + .14 * exp(-t * 5))
     let env: Vec<f64> = t
         .iter()
         .map(|&t| {
-            let hold = if t < dur { 1.0 } else { dmath::exp(-(t - dur) / 0.05) };
-            dmath::pow(min1(t / tone.att), 1.4) * hold * (0.86 + 0.14 * dmath::exp(-t * 5.0))
+            let hold = if t < dur { 1.0 } else { dmath::exp(-(t - dur) / rel) };
+            dmath::pow(min1(t / att), 1.4) * hold * (0.86 + 0.14 * dmath::exp(-t * 5.0))
         })
         .collect();
     // fr = f * (1 - scoop * exp(-t / .05)) * (1 + vib * sin(2 pi vrate t) * clip((t - .16) / .3, 0, 1))
@@ -126,6 +144,7 @@ pub fn alto_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone) 
     let ph: Vec<f64> = dsp::cumsum(&fr).iter().map(|&c| 2.0 * PI * c / SRF).collect();
     let (mut dark, mut brt) = (vec![0.0; n], vec![0.0; n]);
     let (mut sd, mut sb) = (0.0, 0.0);
+    let (mut a1s, mut a2s) = (Vec::new(), Vec::new());
     for k in 1..48i32 {
         let kf = f64::from(k);
         let fk = f * kf;
@@ -138,8 +157,15 @@ pub fn alto_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone) 
         let q1 = (fk - tone.formant) / 650.0;
         let q2 = (fk - 2.4 * tone.formant) / 900.0;
         base *= 1.0 + tone.fboost * dmath::exp(-(q1 * q1)) + 0.6 * tone.bright * dmath::exp(-(q2 * q2));
-        let a1 = base * dmath::exp(-kf / 3.0);
-        let a2 = base * dmath::exp(-kf / (5.0 + 11.0 * tone.bright));
+        a1s.push(base * dmath::exp(-kf / 3.0));
+        a2s.push(base * dmath::exp(-kf / (5.0 + 11.0 * tone.bright)));
+    }
+    if let Some(r) = real {
+        real::reshape(&mut a1s, &r.levels);
+        real::reshape(&mut a2s, &r.levels);
+    }
+    for (k, (&a1, &a2)) in a1s.iter().zip(&a2s).enumerate() {
+        let kf = (k + 1) as f64;
         let off = 0.4 * kf;
         for i in 0..n {
             let s = dmath::sin(kf * ph[i] + off);
@@ -156,6 +182,9 @@ pub fn alto_tone(rn: &mut Generator, f: f64, dur: f64, v: f64, tone: &AltoTone) 
             (dark[i] / sd * (1.0 - mb) + brt[i] / sb * mb) * env[i]
         })
         .collect();
+    if let Some(r) = real {
+        real::buzz(&mut x, real::pitch_seed(f) ^ 0x5EED, r.buzz);
+    }
     if tone.growl != 0.0 {
         // x = x * (1 + growl * sin(2 pi 29 t + 3 sin(2 pi 7 t)))
         let (w29, w7) = (2.0 * PI * 29.0, 2.0 * PI * 7.0);

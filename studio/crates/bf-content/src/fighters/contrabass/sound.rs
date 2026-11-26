@@ -21,8 +21,9 @@ use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, bend, noise_see
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::{self, Repeats};
 
-use super::voice::{bowed, midi_hz, pizz, slap};
+use super::voice::{PLUCKED, REWORK, bowed, midi_hz, pizz, slap};
 
 /// The name the part's errors carry.
 const H: &str = "CONTRABASS";
@@ -56,7 +57,7 @@ pub enum How {
 }
 
 /// The key `art` caches by: `(how, None or int(m), round(dur, 3), round(vel, 2))`, the floats by their bits.
-type ArtKey = (How, Option<i32>, u64, u64);
+type ArtKey = (How, Option<i32>, u64, u64, bool, u64);
 
 fn bits(x: f64) -> u64 {
     if x == 0.0 { 0 } else { x.to_bits() }
@@ -83,6 +84,8 @@ pub struct ContrabassSound {
     k: usize,
     /// `self._c`: the notes made so far.
     notes: Mutex<BTreeMap<ArtKey, Arc<[f64]>>>,
+    /// How often each Composed note has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl ContrabassSound {
@@ -91,6 +94,7 @@ impl ContrabassSound {
         ContrabassSound {
             k,
             notes: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -108,6 +112,10 @@ impl ContrabassSound {
     /// ghost slap), at 48 kHz and at the series' level: `_resample(<how>(_midi_hz(int(m)), dur, vel)) * g0`, kept by
     /// `(how, int(m), round(dur, 3), round(vel, 2))`.
     ///
+    /// Under the Composed arrangement a bowed note is reworked toward the real instrument ([`REWORK`], sound upgrade,
+    /// stage 3) and a plucked one only takes its repeats' small differences ([`PLUCKED`]); the slap stays. Under
+    /// Classic every note is the kit's, to the sample.
+    ///
     /// # Errors
     /// An argument is not a number (Python raises there); the voice's level cannot be measured.
     pub fn art(&self, ctx: &MusicCtx, how: How, m: Option<i32>, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
@@ -118,7 +126,17 @@ impl ContrabassSound {
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;
-        let key = (how, m, bits(round_nd(dur, 3)), bits(round_nd(vel, 2)));
+        let (d, v) = (bits(round_nd(dur, 3)), bits(round_nd(vel, 2)));
+        let rework = match (ctx.composed_on(), how, m) {
+            (true, How::Arco, Some(m)) => Some((&REWORK, m)),
+            (true, How::Pizz, Some(m)) => Some((&PLUCKED, m)),
+            _ => None,
+        };
+        let variant = match rework {
+            Some((_, m)) => self.repeats.next(&[how as u64, m as u64, d, v]),
+            None => 0,
+        };
+        let key = (how, m, d, v, rework.is_some(), variant);
         let mut notes = self
             .notes
             .lock()
@@ -135,7 +153,12 @@ impl ContrabassSound {
                 return Err(MusicError::new(H, "only a slap has no note"));
             }
         };
-        let out: Arc<[f64]> = pp::to_48k(&x).iter().map(|v| v * g0).collect();
+        let x = pp::to_48k(&x);
+        let x = match rework {
+            Some((r, m)) => real::rework(&x, f64::from(m), dur, bf_sound::SRF, r, variant),
+            None => x,
+        };
+        let out: Arc<[f64]> = x.iter().map(|v| v * g0).collect();
         notes.insert(key, Arc::clone(&out));
         Ok(out)
     }

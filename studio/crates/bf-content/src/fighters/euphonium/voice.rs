@@ -10,11 +10,56 @@
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{Correction, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The EUPHONIUM's register in `pp_bridge`'s roster (`('EUPHONIUM', 'euphonium_lowpoly', 'ball', (46, 77), 0,
 /// 1.0)`). As a fighter it plays from 50 to 74; `kit.music.inst_gain` measures the voice on the middle of this one.
 pub const REGISTER: (i32, i32) = (46, 77);
+
+/// The EUPHONIUM's overtone correction toward a real tuba: gains in dB for its first eight harmonics, note by
+/// note (FluidR3, `bf-harness/tests/reference/fluidr3.json`; FluidR3 has no euphonium, so the reference is its
+/// nearest relative). Written by
+/// `cargo run --release -p bf-harness --example references -- correct "EUPHONIUM"`.
+#[rustfmt::skip]
+pub const CORRECTION: &Correction = &[
+    (46, [0.0, -10.4, -0.6, -6.1, -11.6, -15.8, -30.0, -30.0]),
+    (47, [0.0, -10.4, -0.6, -6.1, -11.7, -15.9, -30.0, -30.0]),
+    (48, [0.0, -10.4, -0.7, -6.2, -11.8, -16.1, -30.0, -30.0]),
+    (49, [0.0, -10.4, -0.7, -6.3, -12.0, -16.3, -30.0, -30.0]),
+    (50, [1.0, 4.9, -2.7, -7.1, -22.0, -30.0, -23.7, -30.0]),
+    (51, [1.0, 5.0, -2.8, -7.2, -22.1, -30.0, -23.7, -30.0]),
+    (52, [1.0, 4.9, -2.8, -7.3, -22.3, -30.0, -23.6, -30.0]),
+    (53, [1.0, 4.9, -2.9, -7.5, -22.5, -30.0, -23.4, -30.0]),
+    (54, [1.0, 4.9, -3.0, -7.7, -22.6, -30.0, -23.2, -30.0]),
+    (55, [0.0, -13.8, -22.3, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (56, [0.0, -13.8, -22.4, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (57, [0.0, -13.9, -22.5, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (58, [0.0, -13.9, -22.7, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (59, [0.0, -14.0, -22.9, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (60, [0.0, -14.1, -23.0, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (61, [0.0, -14.1, -23.2, -30.0, -30.0, -30.0, -30.0, -30.0]),
+    (62, [0.0, -14.2, -23.3, -30.0, -29.7, -30.0, -30.0, -30.0]),
+    (63, [0.0, -14.3, -23.5, -30.0, -29.2, -30.0, -30.0, -30.0]),
+    (64, [0.0, -14.5, -23.6, -30.0, -28.7, -30.0, -30.0, -30.0]),
+    (65, [0.0, -14.6, -23.6, -30.0, -28.2, -30.0, -30.0, -30.0]),
+    (66, [0.0, -14.7, -23.6, -30.0, -27.9, -30.0, -30.0, -30.0]),
+    (67, [0.0, -14.9, -23.5, -30.0, -27.6, -30.0, -30.0, -30.0]),
+    (68, [0.0, -15.0, -23.3, -30.0, -27.4, -30.0, -30.0, -30.0]),
+    (69, [0.0, -15.1, -23.0, -30.0, -27.3, -30.0, -30.0, -30.0]),
+    (70, [0.0, -15.2, -22.6, -30.0, -27.1, -30.0, -30.0, -30.0]),
+    (71, [0.0, -15.3, -22.1, -30.0, -27.0, -30.0, -30.0, -30.0]),
+    (72, [0.0, -15.3, -21.6, -30.0, -26.8, -30.0, -30.0, -30.0]),
+];
+
+/// The Composed arrangement's EUPHONIUM (sound upgrade, stage 3, S1): its own note with the overtones of the real
+/// instrument, a slower start (50 ms to full level) and a quicker stop, nearer the real one's.
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: CORRECTION,
+    speak: 0.05,
+    stop: 0.045,
+};
 
 /// The EUPHONIUM's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -27,6 +72,10 @@ impl Voice for EuphoniumVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

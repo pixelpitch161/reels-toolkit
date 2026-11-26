@@ -18,6 +18,7 @@ use bf_core::dmath::{self, PI};
 use bf_core::rng::Generator;
 use bf_sound::dsp::{self, FilterKind};
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{self, Profile};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The BARI SAX's register in `pp_bridge`'s roster (`('BARI SAX', 'barisax_lowpoly', 'ball', (36, 69), ...)`).
@@ -32,6 +33,52 @@ const TAIL: f64 = 0.16;
 /// The widest scoop of a steady note ([`bari_tone_scooped`]): 1.2 % flat, about a fifth of a semitone, as a real
 /// bari sax's (sound upgrade, "Bari sax: no slide").
 pub const STEADY_SCOOP: f64 = 0.012;
+
+/// The depth of the reed's buzz under the Composed arrangement ([`bari_tone_real`]).
+const BUZZ: f64 = 0.06;
+/// How long [`bari_tone_real`]'s note takes to reach full level, and its release's time constant, in seconds.
+const REAL_SPEAK: f64 = 0.03;
+const REAL_RELEASE: f64 = 0.027;
+
+/// A real bari sax's first eight overtones, dB under the strongest (FluidR3, `bf-harness/tests/reference/fluidr3.json`,
+/// written by `cargo run --release -p bf-harness --example references -- profile "bari sax" 36 69`).
+#[rustfmt::skip]
+pub const PROFILE: &Profile = &[
+    (36, [-21.9, 0.0, -8.7, -7.5, -18.0, -3.0, -9.3, -13.3]),
+    (37, [-21.9, 0.0, -8.7, -7.5, -17.8, -3.1, -9.5, -13.4]),
+    (38, [-19.5, -1.8, -1.6, -1.1, -14.3, 0.0, -11.0, -21.3]),
+    (39, [-19.6, -1.8, -1.6, -1.2, -14.3, 0.0, -11.0, -21.3]),
+    (40, [-29.6, -26.4, 0.0, -6.6, -8.4, -12.5, -9.3, -15.2]),
+    (41, [-29.7, -26.5, 0.0, -6.6, -8.4, -12.5, -9.3, -15.2]),
+    (42, [-24.4, -8.5, -11.9, -3.8, -21.1, -11.9, 0.0, -8.1]),
+    (43, [-24.5, -8.6, -11.9, -3.8, -21.0, -12.1, 0.0, -8.4]),
+    (44, [-12.4, -17.2, 0.0, -8.8, -18.8, -14.0, -8.8, -13.0]),
+    (45, [-12.4, -17.1, 0.0, -8.7, -18.6, -13.9, -8.6, -12.7]),
+    (46, [-6.7, 0.0, -16.8, -11.1, -10.8, -15.2, -21.8, -18.1]),
+    (47, [-6.7, 0.0, -16.8, -11.1, -10.9, -15.4, -21.8, -18.1]),
+    (48, [0.0, -4.9, -17.1, -19.3, -15.2, -9.8, -20.6, -26.9]),
+    (49, [0.0, -5.0, -17.2, -19.5, -15.1, -9.8, -20.8, -27.0]),
+    (50, [-7.0, -3.5, -4.6, -13.2, -9.7, -19.3, -13.6, -13.2]),
+    (51, [-7.1, -3.7, -4.7, -13.4, -9.8, -18.6, -13.8, -13.1]),
+    (52, [-8.9, -5.7, -15.4, -9.2, -12.7, -4.2, 0.0, -13.8]),
+    (53, [0.0, -5.3, -10.5, -1.5, -27.9, -3.9, -5.3, -12.8]),
+    (54, [0.0, -5.4, -10.3, -1.6, -27.7, -4.0, -5.6, -12.7]),
+    (55, [-3.9, 0.0, -1.5, -12.0, -13.6, -6.3, -4.5, -8.0]),
+    (56, [-4.0, 0.0, -1.5, -11.7, -13.8, -6.2, -4.6, -8.0]),
+    (57, [-7.8, -9.8, 0.0, -8.2, -5.1, -4.7, -11.8, -21.3]),
+    (58, [-7.8, -9.8, 0.0, -8.3, -5.0, -4.8, -11.8, -21.2]),
+    (59, [0.0, -18.9, -20.6, -24.4, -20.5, -19.9, -34.6, -20.5]),
+    (60, [0.0, -18.9, -20.5, -23.9, -20.2, -19.8, -34.9, -21.1]),
+    (61, [-3.8, -15.1, -14.2, -4.5, -20.4, 0.0, -13.7, -13.3]),
+    (62, [-4.2, -15.9, -15.0, -4.6, -20.9, 0.0, -14.3, -13.0]),
+    (63, [-0.6, -21.6, -0.0, -2.4, -11.5, 0.0, -14.6, -9.0]),
+    (64, [-0.7, -20.6, 0.0, -2.8, -11.9, -0.9, -14.2, -9.8]),
+    (65, [-2.7, -18.6, 0.0, -10.3, -15.2, -10.2, -19.1, -20.4]),
+    (66, [-2.8, -18.4, 0.0, -10.6, -15.3, -10.2, -19.1, -19.9]),
+    (67, [0.0, -11.5, -13.8, -6.3, -2.4, -11.7, -20.2, -17.2]),
+    (68, [0.0, -11.5, -13.3, -4.8, -1.9, -12.5, -19.2, -15.2]),
+    (69, [0.0, -11.4, -12.8, -3.6, -1.4, -12.1, -18.2, -13.7]),
+];
 
 /// The BARI SAX's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -74,14 +121,46 @@ pub fn bari_tone(f: f64, dur: f64, v: f64, honk: f64) -> Vec<f64> {
 /// # Panics
 /// As [`bari_tone`].
 pub fn bari_tone_scooped(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<f64>) -> Vec<f64> {
+    tone(f, dur, v, honk, max_scoop, None)
+}
+
+/// The bari under the Composed arrangement (sound upgrade, stage 3, S1): [`bari_tone_scooped`] with
+/// [`STEADY_SCOOP`], its first eight overtones moved to a real bari sax's at that pitch ([`PROFILE`], the uneven
+/// make-up a trombone has not: a weak fundamental on the low notes, strong and weak overtones side by side), a reed
+/// buzz on the tone, and the small differences of the `variant`th repeat of the note (a few cents, a little level).
+pub fn bari_tone_real(f: f64, dur: f64, v: f64, honk: f64, variant: u64) -> Vec<f64> {
+    let (pitch, level) = if variant == 0 {
+        (1.0, 1.0)
+    } else {
+        real::wobble((f * 10.0) as u64 ^ (variant << 32), 4.0, 0.04)
+    };
+    let midi = 69.0 + 12.0 * dmath::log2(f / 440.0);
+    tone(
+        f * pitch,
+        dur,
+        v * level,
+        honk,
+        Some(STEADY_SCOOP),
+        Some(real::levels(PROFILE, midi)),
+    )
+}
+
+/// [`bari_tone_scooped`], and [`bari_tone_real`] where `real` gives the overtones' levels.
+fn tone(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<f64>, real: Option<[f64; real::SET]>) -> Vec<f64> {
     let n = pp::len(dur + TAIL);
     let t = pp::tt(n);
-    let rel = if dur < 0.15 { 0.035 } else { 0.06 };
+    let rel: f64 = if dur < 0.15 { 0.035 } else { 0.06 };
+    // the real bari speaks more slowly and stops sooner (FluidR3: 28 ms to speak, 63 ms to a tenth after the release)
+    let (speak, rel) = if real.is_some() {
+        (REAL_SPEAK, rel.min(REAL_RELEASE))
+    } else {
+        (0.016, rel)
+    };
     // env = np.minimum(1, t / .016) ** 1.3 * np.where(t < dur, 1, np.exp(-(t - dur) / rel)) * (1 + .2 * exp(-t / .04))
     let env: Vec<f64> = t
         .iter()
         .map(|&t| {
-            let rise = if t / 0.016 < 1.0 { t / 0.016 } else { 1.0 };
+            let rise = if t / speak < 1.0 { t / speak } else { 1.0 };
             let hold = if t < dur { 1.0 } else { dmath::exp(-(t - dur) / rel) };
             dmath::pow(rise, 1.3) * hold * (1.0 + 0.2 * dmath::exp(-t / 0.04))
         })
@@ -107,6 +186,7 @@ pub fn bari_tone_scooped(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<
     let mut x = vec![0.0; n];
     let mut tot = 0.0;
     let br = BRIGHT + 0.25 * honk;
+    let mut amps = Vec::new();
     for k in 1..90 {
         let kf = f64::from(k);
         let fk = f * kf;
@@ -121,6 +201,13 @@ pub fn bari_tone_scooped(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<
         }
         let mut a = dmath::pow(kf, -0.7) * (0.3 + formants);
         a *= dmath::exp(-fk / (1300.0 + 3200.0 * br * v));
+        amps.push(a);
+    }
+    if let Some(target) = &real {
+        real::reshape(&mut amps, target);
+    }
+    for (i, &a) in amps.iter().enumerate() {
+        let kf = (i + 1) as f64;
         // x += a * np.sin(k * ph + .4 * k)
         let shift = 0.4 * kf;
         for (o, &p) in x.iter_mut().zip(&ph) {
@@ -137,6 +224,10 @@ pub fn bari_tone_scooped(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<
     let (w29, w7) = (2.0 * PI * 29.0, 2.0 * PI * 7.0);
     for (o, &t) in x.iter_mut().zip(&t) {
         *o *= 1.0 + gr * dmath::sin(w29 * t + 3.0 * dmath::sin(w7 * t));
+    }
+    if real.is_some() {
+        // the reed's buzz, from the note's own seed
+        real::buzz(&mut x, real::pitch_seed(f) ^ 0x5EED, BUZZ);
     }
     // rng = np.random.default_rng(int(f * 10) % 100003)
     let tenth = f * 10.0;
@@ -180,6 +271,23 @@ mod tests {
             "the noise is the pitch's own"
         );
         assert_ne!(x, bari_tone(pp::midi_hz(40.0), 0.3, 0.9, 1.0));
+    }
+
+    /// The Composed tone is its own (Classic's is untouched), the same every time for the same repeat, a little
+    /// different for the next repeat, and its real bari's levels cover the whole register.
+    #[test]
+    fn the_real_tone_is_its_own_and_its_repeats_differ() {
+        let f = pp::midi_hz(40.0);
+        let steady = bari_tone_scooped(f, 0.5, 0.8, 0.0, Some(STEADY_SCOOP));
+        let real0 = bari_tone_real(f, 0.5, 0.8, 0.0, 0);
+        assert_eq!(real0.len(), steady.len());
+        assert_ne!(real0, steady);
+        assert_eq!(real0, bari_tone_real(f, 0.5, 0.8, 0.0, 0));
+        assert_ne!(real0, bari_tone_real(f, 0.5, 0.8, 0.0, 1));
+        assert_ne!(bari_tone_real(f, 0.5, 0.8, 0.0, 1), bari_tone_real(f, 0.5, 0.8, 0.0, 2));
+        assert_eq!(steady, bari_tone_scooped(f, 0.5, 0.8, 0.0, Some(STEADY_SCOOP)));
+        let notes: Vec<i32> = PROFILE.iter().map(|(m, _)| *m).collect();
+        assert_eq!(notes, (REGISTER.0..=REGISTER.1).collect::<Vec<_>>());
     }
 
     #[test]

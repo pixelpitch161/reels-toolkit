@@ -19,6 +19,7 @@ use bf_core::py;
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::Rework;
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The BASS DRUM's register in `pp_bridge`'s roster (`('BASS DRUM', 'bassdrum_lowpoly', 'ball', (28, 50), ...)`).
@@ -37,6 +38,15 @@ const MODES: [(f64, f64, f64); 6] = [
     (2.92, 0.14, 0.16),
 ];
 
+/// The Composed arrangement's BASS DRUM (sound upgrade, stage 3, S1): a drum has no overtones to set, so only the
+/// small differences between its repeated strokes (a hair of pitch, a little level).
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+};
+
 /// BASS DRUM's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BassDrumVoice;
@@ -48,6 +58,10 @@ impl Voice for BassDrumVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {
