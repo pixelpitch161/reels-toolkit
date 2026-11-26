@@ -105,6 +105,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.04,
     stop: 0.0,
     keep_shape: false,
+    tail: &[],
 };
 
 /// PICCOLO's voice.

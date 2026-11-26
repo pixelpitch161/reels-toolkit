@@ -22,8 +22,14 @@ pub type Profile = [(i32, [f64; SET])];
 /// The profile's levels at MIDI note `midi`: interpolated in dB between the two nearest notes of the table, the
 /// table's end note beyond its range. An empty table gives a flat profile.
 pub fn levels(p: &Profile, midi: f64) -> [f64; SET] {
+    interpolate(p, midi)
+}
+
+/// A per-note table's row at MIDI note `midi`, as [`levels`] reads a [`Profile`]: in dB between the two nearest
+/// notes, the end note beyond the table, all zeros for an empty table.
+fn interpolate<const N: usize>(p: &[(i32, [f64; N])], midi: f64) -> [f64; N] {
     let Some(first) = p.first() else {
-        return [0.0; SET];
+        return [0.0; N];
     };
     if midi <= f64::from(first.0) {
         return first.1;
@@ -32,7 +38,7 @@ pub fn levels(p: &Profile, midi: f64) -> [f64; SET] {
         let (a, b) = (&w[0], &w[1]);
         if midi <= f64::from(b.0) {
             let t = (midi - f64::from(a.0)) / f64::from(b.0 - a.0).max(1.0);
-            let mut out = [0.0; SET];
+            let mut out = [0.0; N];
             for (k, o) in out.iter_mut().enumerate() {
                 *o = a.1[k] + t * (b.1[k] - a.1[k]);
             }
@@ -143,12 +149,22 @@ pub type Fill = [(i32, [f64; SET])];
 /// A [`Fill`] level that adds nothing.
 pub const NONE: f64 = -99.0;
 
+/// A voice's real instrument above the eighth harmonic, in rising MIDI order: the 9th to 12th harmonics' levels in dB
+/// beside its 5th to 8th together (their summed power), as [`tail`] lays them in. Written by
+/// `references -- tail "<FIGHTER>"` from the same recordings as the [`Correction`].
+pub type Tail = [(i32, [f64; 4])];
+
+/// The highest harmonic a [`tail`] reaches.
+pub const TAIL_TOP: usize = 24;
+
 /// How a voice is reworked from its own notes, for a voice whose make-up is not opened up as the saxes' are: the
 /// overtones it barely has added ([`Fill`], empty for none), an overtone [`Correction`], the real instrument's slower
 /// start (`speak`, seconds to full level, 0 to keep the voice's own) and quicker stop (`stop`, an extra time constant
 /// after the held length, 0 to keep the voice's own). A plucked or struck voice keeps its own loudness moment by
 /// moment (`keep_shape`, [`follow`]): the correction's narrow peaks restore its low harmonics over tens of
-/// milliseconds, which would soften its snap into a swell.
+/// milliseconds, which would soften its snap into a swell. A voice whose overtones the [`Fill`] lays in up to the
+/// eighth carries on above it as the real instrument does (`tail`, [`tail`], empty for none), so its brightness does
+/// not stop dead at the eighth.
 #[derive(Clone, Copy, Debug)]
 pub struct Rework {
     pub fill: &'static Fill,
@@ -156,6 +172,7 @@ pub struct Rework {
     pub speak: f64,
     pub stop: f64,
     pub keep_shape: bool,
+    pub tail: &'static Tail,
 }
 
 /// `x` (a note at `f` Hz, `sr` Hz) with partials added at `db` (dB beside its fundamental, under it when negative,
@@ -164,17 +181,27 @@ pub struct Rework {
 /// phase times `k` (plus a fixed offset of its own) at its level, so the partials follow the note's vibrato, bends
 /// and swells.
 pub fn fill(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
-    let want: Vec<(usize, f64, f64, f64)> = db
+    let want: Vec<(usize, f64)> = db
         .iter()
         .enumerate()
         .skip(1)
         .filter(|&(k, &d)| d > NONE + 1.0 && f * ((k + 1) as f64) < 0.45 * sr)
-        .map(|(k, &d)| {
+        .map(|(k, &d)| (k + 1, dmath::pow(10.0, d / 20.0)))
+        .collect();
+    partials(x, f, sr, &want)
+}
+
+/// `x` (a note at `f` Hz, `sr` Hz) with a partial at each `(harmonic, amplitude beside the fundamental)` of `want`
+/// (in rising order), made from the note's own fundamental as [`fill`] says.
+fn partials(x: &[f64], f: f64, sr: f64, want: &[(usize, f64)]) -> Vec<f64> {
+    let want: Vec<(usize, f64, f64, f64)> = want
+        .iter()
+        .map(|&(k, g)| {
             // Schroeder's phases (pi k (k - 1) / 8 for harmonic k): the added partials do not all peak together,
             // so the note stays no peakier than a played one
-            let h = (k + 1) as f64;
+            let h = k as f64;
             let phase = dmath::PI * h * (h - 1.0) / SET as f64;
-            (k + 1, dmath::pow(10.0, d / 20.0), dmath::cos(phase), dmath::sin(phase))
+            (k, g, dmath::cos(phase), dmath::sin(phase))
         })
         .collect();
     if want.is_empty() || x.is_empty() || f <= 0.0 {
@@ -226,6 +253,59 @@ pub fn fill(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
     y
 }
 
+/// `x` (a note at `f` Hz, `sr` Hz) carried on above its eighth harmonic as its real instrument is: the 9th to 12th
+/// harmonics at `db` beside the 5th to 8th together (a [`Tail`] row), and on up to the [`TAIL_TOP`]th at the real
+/// one's own fall over two harmonics (at least 4 dB every two, and 1 dB more each further two). A partial is laid in
+/// (from the note's fundamental, as [`fill`] makes them) only where the note's own harmonic is 6 dB or more short of
+/// it, at the power it lacks; each harmonic is measured as the power within half a pitch of it, under a Hann window
+/// over the whole note.
+pub fn tail(x: &[f64], f: f64, sr: f64, db: &[f64; 4]) -> Vec<f64> {
+    if x.is_empty() || f <= 0.0 {
+        return x.to_vec();
+    }
+    let top = TAIL_TOP.min((0.45 * sr / f) as usize);
+    if top < 9 {
+        return x.to_vec();
+    }
+    let n = x.len().next_power_of_two();
+    let fft = crate::dsp::fft::Fft::new(n);
+    let mut re = vec![0.0; n];
+    let span = (x.len().max(2) - 1) as f64;
+    for (i, v) in x.iter().enumerate() {
+        re[i] = v * (0.5 - 0.5 * dmath::cos(2.0 * dmath::PI * i as f64 / span));
+    }
+    let mut im = vec![0.0; n];
+    fft.forward(&mut re, &mut im);
+    let bin = sr / n as f64;
+    // the power of each harmonic, 1 to top
+    let mut p = vec![0.0; top];
+    for i in 1..n / 2 {
+        let k = (i as f64 * bin / f).round();
+        if k >= 1.0 && k <= top as f64 && (i as f64 * bin - k * f).abs() < 0.5 * f {
+            p[k as usize - 1] += re[i] * re[i] + im[i] * im[i];
+        }
+    }
+    let base: f64 = p[4..8].iter().sum();
+    if base <= 0.0 || p[0] <= 0.0 {
+        return x.to_vec();
+    }
+    // dB beside the 5th to 8th, by harmonic number
+    let mut t = vec![0.0; top + 1];
+    t[9..=12].copy_from_slice(db);
+    let fall = (0.5 * ((db[2] - db[0]) + (db[3] - db[1]))).min(-4.0);
+    for k in 13..=top {
+        t[k] = t[k - 2] + fall - ((k - 11) / 2 - 1) as f64;
+    }
+    let want: Vec<(usize, f64)> = (9..=top)
+        .filter_map(|k| {
+            let goal = base * dmath::pow(10.0, t[k] / 10.0);
+            let own = p[k - 1];
+            (goal > 4.0 * own).then(|| (k, ((goal - own) / p[0]).sqrt()))
+        })
+        .collect();
+    partials(x, f, sr, &want)
+}
+
 /// A peaking filter (a biquad) over `x` at `sr` Hz: `db` of gain at `fc`, `q` its quality, 0 dB far from it.
 fn peak(x: &[f64], fc: f64, q: f64, db: f64, sr: f64) -> Vec<f64> {
     let a = dmath::pow(10.0, db / 40.0);
@@ -272,20 +352,25 @@ pub fn correct(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
 }
 
 /// The reworked note of MIDI `midi`, held `dur` s, from the voice's own note `x` at `sr` Hz: the overtones it lacks
-/// added ([`fill`]) and its overtones corrected ([`correct`]), its start slowed and its stop quickened as `r` says, and the `variant`th repeat ([`wobble`]) a few
+/// added ([`fill`]) and its overtones corrected ([`correct`]) and carried on above the eighth ([`tail`]), its start slowed and its stop quickened as `r` says, and the `variant`th repeat ([`wobble`]) a few
 /// cents off (read through a hair faster or slower) and a little louder or quieter.
 pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64) -> Vec<f64> {
     let f = 440.0 * dmath::pow(2.0, (midi - 69.0) / 12.0);
     let mut y = if r.fill.is_empty() {
         correct(x, f, sr, &levels(r.correction, midi))
     } else {
-        // at the voice's own loudness, not the louder filled note's
-        let mut y = correct(
+        correct(
             &fill(x, f, sr, &levels(r.fill, midi)),
             f,
             sr,
             &levels(r.correction, midi),
-        );
+        )
+    };
+    if !r.tail.is_empty() {
+        y = tail(&y, f, sr, &interpolate(r.tail, midi));
+    }
+    if !r.fill.is_empty() || !r.tail.is_empty() {
+        // at the voice's own loudness, not the louder filled note's
         let (a, b) = (
             x.iter().map(|v| v * v).sum::<f64>(),
             y.iter().map(|v| v * v).sum::<f64>(),
@@ -294,8 +379,7 @@ pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64)
             let k = (a / b).sqrt();
             y.iter_mut().for_each(|v| *v *= k);
         }
-        y
-    };
+    }
     if r.keep_shape {
         y = follow(&y, x, f, sr);
         let (a, b) = (
@@ -517,6 +601,7 @@ mod tests {
             speak: 0.0,
             stop: 0.0,
             keep_shape: false,
+            tail: &[],
         };
         const SHAPED: Rework = Rework {
             fill: &[],
@@ -524,6 +609,7 @@ mod tests {
             speak: 0.05,
             stop: 0.02,
             keep_shape: false,
+            tail: &[],
         };
         let x = even_note(220.0, 24_000);
         assert_eq!(rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 0), x);
@@ -587,6 +673,43 @@ mod tests {
     }
 
     #[test]
+    fn a_tail_carries_the_note_on_above_its_eighth() {
+        // eight equal harmonics and nothing above: the 9th to 12th laid in at their levels beside the 5th to 8th
+        // together, and on falling past the 12th (4 dB every two here, and 1 dB more from the 15th)
+        let f = 220.0;
+        let x = even_note(f, 48_000);
+        let db = [-10.0, -12.0, -14.0, -16.0];
+        let y = tail(&x, f, 48_000.0, &db);
+        assert_eq!(y.len(), x.len());
+        let (ys, xs) = (&y[4_800..43_200], &x[4_800..43_200]);
+        let at = |k: usize| level_at(ys, f * k as f64, 48_000.0);
+        // the 5th to 8th together: four equal harmonics, 6 dB over one
+        let base = at(5) + 10.0 * dmath::log10(4.0);
+        for (k, want) in (9..=16).zip([-10.0, -12.0, -14.0, -16.0, -18.0, -20.0, -23.0, -25.0]) {
+            let got = at(k) - base;
+            assert!((got - want).abs() < 0.5, "harmonic {k}: {got:.2} dB, wanted {want}");
+        }
+        // the first eight stay the note's own
+        for k in 1..=SET {
+            assert!(
+                (at(k) - level_at(xs, f * k as f64, 48_000.0)).abs() < 0.1,
+                "harmonic {k}"
+            );
+        }
+        // a note that already has its harmonics (24 equal ones) is left as it is: none is 6 dB short
+        let full: Vec<f64> = (0..48_000)
+            .map(|i| {
+                let t = i as f64 / 48_000.0;
+                (1..=24)
+                    .map(|k| dmath::sin(2.0 * dmath::PI * f * k as f64 * t))
+                    .sum::<f64>()
+                    / 24.0
+            })
+            .collect();
+        assert_eq!(tail(&full, f, 48_000.0, &db), full);
+    }
+
+    #[test]
     fn a_rework_that_keeps_its_shape_keeps_the_plucks_snap() {
         // a low pluck: every harmonic at once, dying away; the correction cuts everything above the eighth and
         // lifts the first three back with narrow peaks, which take tens of milliseconds to build up
@@ -603,9 +726,11 @@ mod tests {
             speak: 0.0,
             stop: 0.0,
             keep_shape: false,
+            tail: &[],
         };
         let snap = Rework {
             keep_shape: true,
+            tail: &[],
             ..soft
         };
         // the level over the first 5 ms against the strongest 5 ms of the first half second, in dB

@@ -95,6 +95,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.02,
     keep_shape: true,
+    tail: &[],
 };
 
 /// ELECTRIC's Pixel Pitch voice.

@@ -3,7 +3,7 @@
 //! each flap is heard (the "motorboat").
 
 use bf_sound::voice::pp;
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 use crate::fighters::bass_clarinet::voice::bass_reed;
@@ -99,6 +99,45 @@ pub const CORRECTION: &Correction = &[
     (58, [-0.5, -8.0, -21.2, -5.5, 0.2, 0.2, -0.8, -0.2]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (26, [-7.6, -22.2, -9.7, -18.5]),
+    (27, [-7.2, -21.9, -8.9, -19.4]),
+    (28, [-6.9, -21.7, -8.1, -19.5]),
+    (29, [-6.7, -21.6, -7.5, -18.8]),
+    (30, [-6.6, -21.6, -7.0, -17.6]),
+    (31, [-6.5, -21.8, -6.6, -16.6]),
+    (32, [-6.5, -21.9, -6.2, -15.9]),
+    (33, [-6.4, -22.1, -5.9, -15.2]),
+    (34, [-6.3, -22.2, -5.7, -14.7]),
+    (35, [-6.3, -22.3, -5.5, -14.2]),
+    (36, [-6.2, -22.4, -5.3, -13.8]),
+    (37, [-6.2, -22.4, -5.1, -13.4]),
+    (38, [-6.1, -22.4, -4.9, -13.0]),
+    (39, [-6.1, -22.5, -4.8, -12.8]),
+    (40, [-6.1, -22.7, -4.8, -12.6]),
+    (41, [-6.1, -23.0, -4.8, -12.5]),
+    (42, [-6.1, -23.4, -4.9, -12.5]),
+    (43, [-6.2, -23.7, -5.1, -12.6]),
+    (44, [-6.4, -24.0, -5.4, -12.9]),
+    (45, [-6.6, -24.2, -5.7, -13.3]),
+    (46, [-6.8, -24.3, -6.1, -13.7]),
+    (47, [-7.1, -24.4, -6.6, -14.1]),
+    (48, [-7.5, -24.3, -7.1, -14.6]),
+    (49, [-7.9, -24.2, -7.6, -15.1]),
+    (50, [-8.2, -24.0, -8.1, -15.6]),
+    (51, [-8.6, -23.9, -8.5, -16.1]),
+    (52, [-8.9, -23.8, -8.9, -16.6]),
+    (53, [-9.2, -23.8, -9.3, -17.0]),
+    (54, [-2.6, -12.2, -4.4, -22.0]),
+    (55, [-2.8, -11.9, -4.6, -21.9]),
+    (56, [-3.0, -11.7, -4.7, -21.9]),
+    (57, [-3.1, -5.6, -18.1, -36.4]),
+    (58, [-3.1, -5.8, -18.2, -35.0]),
+];
+
 /// The Composed arrangement's CONTRABASS CLARINET (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added, a slower start (70 ms to full level) and a quicker stop (a 50 ms fade after its length), nearer the real one's.
 pub const REWORK: Rework = Rework {
@@ -107,6 +146,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.07,
     stop: 0.05,
     keep_shape: false,
+    tail: TAIL,
 };
 
 /// CONTRABASS CLARINET's voice.

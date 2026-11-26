@@ -5,7 +5,7 @@
 
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// CORNET's register (B-flat cornet, written F#3 to C6, played here from G3 to G5).
@@ -83,6 +83,37 @@ pub const CORRECTION: &Correction = &[
     (79, [-5.6, 9.1, 6.4, -3.9, 7.7, 2.1, 2.6, -4.7]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (55, [-12.9, -15.0, -18.1, -19.3]),
+    (56, [-12.9, -14.9, -18.1, -19.2]),
+    (57, [-12.9, -14.9, -18.0, -19.1]),
+    (58, [-12.9, -14.8, -17.9, -18.9]),
+    (59, [-13.0, -14.8, -17.9, -18.9]),
+    (60, [-13.1, -14.8, -18.0, -18.9]),
+    (61, [-13.2, -15.0, -18.3, -19.2]),
+    (62, [-13.5, -15.4, -18.7, -19.5]),
+    (63, [-14.1, -16.2, -19.4, -20.0]),
+    (64, [-14.2, -16.0, -19.7, -20.7]),
+    (65, [-14.0, -15.6, -19.3, -20.2]),
+    (66, [-14.1, -15.6, -19.3, -20.3]),
+    (67, [-12.6, -15.7, -18.2, -21.4]),
+    (68, [-12.8, -15.9, -18.6, -21.8]),
+    (69, [-13.1, -16.3, -19.1, -22.6]),
+    (70, [-13.2, -16.6, -19.5, -23.1]),
+    (71, [-13.3, -16.6, -19.6, -23.2]),
+    (72, [-22.2, -27.3, -26.2, -27.3]),
+    (73, [-22.7, -27.6, -26.4, -27.8]),
+    (74, [-23.4, -28.0, -26.9, -28.5]),
+    (75, [-23.8, -28.5, -27.6, -29.3]),
+    (76, [-17.4, -26.0, -23.0, -33.7]),
+    (77, [-17.5, -26.2, -23.6, -34.4]),
+    (78, [-19.1, -27.6, -24.9, -35.9]),
+    (79, [-19.5, -28.6, -25.8, -36.2]),
+];
+
 /// The Composed arrangement's CORNET (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added; its own start and stop, already near the real one's.
 pub const REWORK: Rework = Rework {
@@ -91,6 +122,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: false,
+    tail: TAIL,
 };
 
 /// CORNET's voice.

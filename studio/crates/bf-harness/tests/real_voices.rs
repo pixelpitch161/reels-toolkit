@@ -84,6 +84,34 @@ fn nearer_at_48k(fighter: &str, (lo, hi): (i32, i32), own: &str, rivals: &[&str]
     assert!(bad.is_empty(), "{fighter}:\n{}", bad.join("\n"));
 }
 
+/// The farthest a reworked voice's 9th to 12th harmonics may sit further under its 5th to 8th than its real
+/// instrument's, in dB: a voice whose brightness stopped dead at the eighth sat 19 to 31 dB further.
+const DARKER_AT_MOST: f64 = 12.0;
+
+/// How far a note's 9th to 12th harmonics sit under its 5th to 8th, in dB of their summed powers (each level floored
+/// at [`timbre::FLOOR`]).
+fn fall(h: &[f64]) -> f64 {
+    let power = |s: &[f64]| s.iter().map(|&d| 10f64.powf(d.max(timbre::FLOOR) / 10.0)).sum::<f64>();
+    10.0 * (power(&h[4..8]) / power(&h[8..12])).log10()
+}
+
+/// Every note from `lo` to `hi` that `own` has a reference for, held a second at 48 kHz by `note`, carries on above
+/// its eighth harmonic: its 9th to 12th sit at most [`DARKER_AT_MOST`] further under its 5th to 8th than the real
+/// one's.
+fn carries_on_above_the_eighth(fighter: &str, (lo, hi): (i32, i32), own: &str, note: impl Fn(i32) -> Vec<f64>) {
+    let refs = references();
+    let mut bad = Vec::new();
+    for m in lo..=hi {
+        let Some(real) = refs[own].get(&m) else { continue };
+        let b = timbre::fingerprint(&note(m), m, 1.0, true);
+        let darker = fall(&b.harmonics) - fall(&real.harmonics);
+        if darker > DARKER_AT_MOST {
+            bad.push(format!("{m}: {darker:.1} dB further under than the real {own}'s"));
+        }
+    }
+    assert!(bad.is_empty(), "{fighter}:\n{}", bad.join("\n"));
+}
+
 /// Every note from `lo` to `hi` of `tone` is nearer to reference `own` than to each of `rivals`, and within
 /// [`AT_MOST`] of `own`.
 fn nearer_its_own(name: &str, (lo, hi): (i32, i32), own: &str, rivals: &[&str], tone: impl Fn(f64) -> Vec<f64>) {
@@ -185,6 +213,29 @@ fn the_clarinets_are_clarinets_not_bassoons_or_horns() {
     for fighter in ["BASS CLARINET", "CONTRABASS CLARINET"] {
         reworked_nearer_its_own(fighter, "clarinet", &["bassoon", "tuba", "french horn"]);
     }
+}
+
+#[test]
+fn the_brass_clarinets_and_chanter_carry_on_above_the_eighth() {
+    // their added overtones stop at the eighth; above it they carry on as the real ones do (Rework::tail)
+    for (fighter, own) in [
+        ("TRUMPET", "trumpet"),
+        ("CORNET", "trumpet"),
+        ("FLUGELHORN", "trumpet"),
+        ("HORN", "french horn"),
+        ("CLARINET", "clarinet"),
+        ("BASS CLARINET", "clarinet"),
+        ("CONTRABASS CLARINET", "clarinet"),
+    ] {
+        let v = bf_content::fighters::voice(fighter).expect("a voice");
+        carries_on_above_the_eighth(fighter, v.register(), own, |m| {
+            v.note_real(&mut bf_sound::voice::PpNoise::start(), f64::from(m), 0.8, 1.0, 0)
+        });
+    }
+    use bf_content::fighters::bagpipes::{sound::chanter_real, voice::REGISTER};
+    carries_on_above_the_eighth("BAGPIPES", REGISTER, "bagpipe", |m| {
+        chanter_real(f64::from(m), 1.0, 0.8, false, 0)
+    });
 }
 
 #[test]

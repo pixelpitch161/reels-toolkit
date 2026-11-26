@@ -83,7 +83,15 @@ arrangement, switched on the Music screen:
   reeds) keep their Classic function and add a `played` (or `ch`, `bsn`, `chord`) that reworks it under Composed
   through `real::RealNotes`. A fighter measured against a relative FluidR3
   lacks is aimed at it shaded (`references.rs` `tilt`: cornet 0.5 and flugelhorn 1 dB per harmonic mellower than the
-  trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart. Drums (timpani, bass drum, the kit, the
+  trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart; the euphonium is aimed 1.5 dB
+  per harmonic brighter than FluidR3's tuba, which is nearly pure at the euphonium's pitches and left it muffled. A
+  `Fill` lays overtones in only up to the eighth, so a filled voice's brightness stopped dead there (the final
+  spectrogram review, Nov 26: the brass and clarinets 19 to 31 dB darker above the eighth than the real ones, with
+  only breath noise left). `Rework::tail` (`real::tail`, tables from `references -- tail "<FIGHTER>"`) carries the
+  trumpet, cornet, flugelhorn, horn, the three clarinets and the chanter on above it: the real 9th to 12th (beside
+  the 5th to 8th together), then falling on to the 24th, adding only what a note's own harmonics lack.
+  `references -- compare` prints it ("above the eighth") and `real_voices.rs` holds those voices to at most 12 dB
+  darker there than the real ones. Drums (timpani, bass drum, the kit, the
   snare drum) and the synth get only the repeats' differences: a drum's overtones are not a note's harmonics, and
   the synth has no real instrument (the snare's strokes take turns through its own `played`). The turntables are
   left as they are: every scratch already follows the floor's own curve and noise. FluidR3 is silent for the tuba above 72 and

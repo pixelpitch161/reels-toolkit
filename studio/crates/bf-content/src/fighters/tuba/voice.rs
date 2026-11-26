@@ -66,6 +66,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.05,
     stop: 0.0,
     keep_shape: false,
+    tail: &[],
 };
 
 /// The TUBA's Pixel Pitch voice.

@@ -157,6 +157,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: true,
+    tail: &[],
 };
 
 /// MARIMBA's voice.

@@ -5,7 +5,7 @@
 
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// FLUGELHORN's register (B-flat flugelhorn, played here from E3 to F5).
@@ -85,6 +85,38 @@ pub const CORRECTION: &Correction = &[
     (77, [-5.3, 9.1, -3.6, -3.4, 9.2, 5.0, 6.3, -1.5]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (52, [-14.1, -16.6, -20.2, -21.9]),
+    (53, [-14.2, -16.8, -20.4, -22.1]),
+    (54, [-14.3, -16.9, -20.5, -22.2]),
+    (55, [-14.3, -16.9, -20.5, -22.2]),
+    (56, [-14.3, -16.9, -20.5, -22.1]),
+    (57, [-14.3, -16.8, -20.5, -22.0]),
+    (58, [-14.3, -16.8, -20.4, -21.9]),
+    (59, [-14.4, -16.7, -20.3, -21.8]),
+    (60, [-14.5, -16.8, -20.5, -21.9]),
+    (61, [-14.7, -16.9, -20.7, -22.1]),
+    (62, [-15.0, -17.3, -21.1, -22.4]),
+    (63, [-15.5, -18.1, -21.8, -22.9]),
+    (64, [-15.6, -17.9, -22.2, -23.6]),
+    (65, [-15.4, -17.5, -21.7, -23.1]),
+    (66, [-15.5, -17.6, -21.8, -23.2]),
+    (67, [-14.4, -17.9, -21.0, -24.7]),
+    (68, [-14.5, -18.2, -21.3, -25.1]),
+    (69, [-14.8, -18.6, -21.9, -25.8]),
+    (70, [-15.0, -18.8, -22.2, -26.3]),
+    (71, [-15.0, -18.9, -22.3, -26.5]),
+    (72, [-23.9, -29.5, -28.9, -30.5]),
+    (73, [-24.3, -29.8, -29.1, -30.9]),
+    (74, [-25.1, -30.2, -29.6, -31.7]),
+    (75, [-25.5, -30.7, -30.2, -32.5]),
+    (76, [-19.3, -28.4, -25.9, -35.2]),
+    (77, [-19.4, -28.6, -26.4, -33.6]),
+];
+
 /// The Composed arrangement's FLUGELHORN (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added; its own start and stop, already near the real one's.
 pub const REWORK: Rework = Rework {
@@ -93,6 +125,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: false,
+    tail: TAIL,
 };
 
 /// FLUGELHORN's voice.

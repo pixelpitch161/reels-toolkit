@@ -77,6 +77,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.05,
     stop: 0.073,
     keep_shape: false,
+    tail: &[],
 };
 
 /// SOUSAPHONE's Pixel Pitch voice.

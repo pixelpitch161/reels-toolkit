@@ -31,6 +31,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: false,
+    tail: &[],
 };
 
 /// SNARE DRUM's voice.

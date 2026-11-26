@@ -55,6 +55,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.08,
     stop: 0.055,
     keep_shape: false,
+    tail: &[],
 };
 
 /// OCTOBASS's voice.

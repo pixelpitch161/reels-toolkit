@@ -46,6 +46,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: false,
+    tail: &[],
 };
 
 /// BASS DRUM's Pixel Pitch voice.

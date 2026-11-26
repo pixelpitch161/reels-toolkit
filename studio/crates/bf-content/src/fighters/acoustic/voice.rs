@@ -113,6 +113,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: true,
+    tail: &[],
 };
 
 /// The ACOUSTIC's Pixel Pitch voice.

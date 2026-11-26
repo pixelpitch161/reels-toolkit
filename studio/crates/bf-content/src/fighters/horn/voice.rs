@@ -10,7 +10,7 @@
 
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The HORN's register in `pp_bridge`'s roster (`('HORN', 'horn60_lowpoly', None, (48, 70), 0, 1.0)`). As a
@@ -85,6 +85,35 @@ pub const CORRECTION: &Correction = &[
     (70, [0.0, 2.1, -1.4, -3.7, -6.0, -7.2, -5.9, -6.2]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (48, [-23.2, -20.3, -17.4, -29.0]),
+    (49, [-23.7, -19.9, -17.5, -27.6]),
+    (50, [-22.7, -19.4, -17.9, -25.9]),
+    (51, [-21.3, -18.8, -18.4, -24.0]),
+    (52, [-20.1, -18.2, -19.1, -22.3]),
+    (53, [-16.0, -24.1, -21.4, -28.7]),
+    (54, [-16.4, -23.7, -22.3, -28.3]),
+    (55, [-17.1, -22.9, -22.7, -27.7]),
+    (56, [-17.7, -22.1, -22.5, -26.3]),
+    (57, [-17.4, -21.3, -21.9, -24.8]),
+    (58, [-16.9, -21.1, -21.0, -23.5]),
+    (59, [-7.4, -15.9, -18.4, -22.5]),
+    (60, [-6.6, -14.2, -17.4, -22.5]),
+    (61, [-5.8, -12.6, -16.5, -22.4]),
+    (62, [-5.4, -12.0, -16.3, -22.5]),
+    (63, [-5.5, -12.1, -16.8, -22.8]),
+    (64, [-6.0, -12.3, -18.0, -23.0]),
+    (65, [-15.4, -17.1, -23.8, -24.5]),
+    (66, [-15.1, -17.3, -24.2, -24.9]),
+    (67, [-15.3, -18.0, -25.0, -25.4]),
+    (68, [-15.5, -18.6, -25.6, -25.6]),
+    (69, [-15.7, -19.1, -25.3, -24.7]),
+    (70, [-16.4, -20.1, -24.0, -24.0]),
+];
+
 /// The Composed arrangement's HORN (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added, and a slower start (70 ms to full level), nearer the real one's.
 pub const REWORK: Rework = Rework {
@@ -93,6 +122,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.07,
     stop: 0.0,
     keep_shape: false,
+    tail: TAIL,
 };
 
 /// The HORN's Pixel Pitch voice.

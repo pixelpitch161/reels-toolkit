@@ -12,7 +12,7 @@
 
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
-use bf_sound::voice::real::{Correction, Fill, Rework};
+use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The TRUMPET's register in `pp_bridge`'s roster (`('TRUMPET', 'trumpet_lowpoly', None, (60, 82), 0, 1.0)`). As a
@@ -87,6 +87,35 @@ pub const CORRECTION: &Correction = &[
     (82, [-3.7, 7.4, 6.9, 8.6, 7.6, 1.5, 1.4, 2.0]),
 ];
 
+/// Its real instrument above the eighth harmonic (sound upgrade, stage 3, S1): the 9th to 12th harmonics beside the
+/// 5th to 8th, which [`REWORK`] carries its notes on with (`references -- tail`).
+#[rustfmt::skip]
+pub const TAIL: &Tail = &[
+    (60, [-11.7, -13.0, -15.7, -16.1]),
+    (61, [-11.9, -13.1, -15.9, -16.3]),
+    (62, [-12.2, -13.5, -16.3, -16.6]),
+    (63, [-12.7, -14.3, -17.0, -17.1]),
+    (64, [-12.8, -14.1, -17.3, -17.8]),
+    (65, [-12.6, -13.7, -16.9, -17.3]),
+    (66, [-12.7, -13.7, -17.0, -17.4]),
+    (67, [-11.0, -13.5, -15.6, -18.2]),
+    (68, [-11.1, -13.7, -15.9, -18.6]),
+    (69, [-11.4, -14.1, -16.4, -19.4]),
+    (70, [-11.5, -14.4, -16.8, -19.9]),
+    (71, [-11.6, -14.4, -16.9, -20.0]),
+    (72, [-20.5, -25.1, -23.5, -24.1]),
+    (73, [-21.0, -25.4, -23.8, -24.6]),
+    (74, [-21.7, -25.8, -24.2, -25.3]),
+    (75, [-22.2, -26.4, -24.9, -26.1]),
+    (76, [-15.5, -23.6, -20.2, -30.4]),
+    (77, [-15.7, -23.9, -20.7, -31.0]),
+    (78, [-17.2, -25.3, -22.0, -33.3]),
+    (79, [-17.6, -26.2, -22.9, -34.4]),
+    (80, [-18.0, -26.9, -23.7, -35.3]),
+    (81, [-18.4, -27.4, -24.3, -36.1]),
+    (82, [-19.1, -28.1, -25.3, -36.8]),
+];
+
 /// The Composed arrangement's TRUMPET (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, the ones it lacks added; its own start and stop, already near the real one's.
 pub const REWORK: Rework = Rework {
@@ -95,6 +124,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.0,
     stop: 0.0,
     keep_shape: false,
+    tail: TAIL,
 };
 
 /// The TRUMPET's Pixel Pitch voice.

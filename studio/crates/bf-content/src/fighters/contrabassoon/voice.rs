@@ -130,6 +130,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.07,
     stop: 0.04,
     keep_shape: false,
+    tail: &[],
 };
 
 /// The CONTRABASSOON's voice.

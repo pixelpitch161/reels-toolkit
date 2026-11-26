@@ -152,6 +152,7 @@ pub const REWORK: Rework = Rework {
     speak: 0.07,
     stop: 0.05,
     keep_shape: false,
+    tail: &[],
 };
 
 /// The BASSOON's Pixel Pitch voice.
