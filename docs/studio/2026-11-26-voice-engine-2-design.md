@@ -401,3 +401,28 @@ listening page):
   pedalled note never hangs on as a drone.
 - **The credits** thank the recording makers in the app's guide only (About the sounds); no ABOUT.txt is added, as
   the guide is where the app's other credits are read.
+
+## Revision: built engines (2026-11-26)
+
+Aedan heard stage 1 at 19:40Z: both voices "pretty thin and dull, especially the organ", and close to their
+recordings, but "the recordings themselves are also thin and dull". His rule from then on (19:50Z): **build each
+instrument from how it works and its parts, aiming to sound good**. Recordings and the literature give the ranges
+(decay, brightening with strength, how a note speaks, stretch, noise), not a target to copy, and his ear is the judge.
+
+- **Picks by ear.** Four listening rounds (pages built1 to built4 in the project files) offered versions by code.
+  The organ is **O8**: the grand registration (16' stops and the pedal), each stop fixed in one place in the stereo
+  (no note panning), a light room and the studio polish. The piano is **P16**: simulated strings struck by a felt
+  hammer, through a damped soundboard, with no polish. Each pick's listening sketch is its reference.
+- **One engine per instrument family** (Aedan's idea, 21:01Z): a struck-string engine (piano; later the hammered
+  and plucked strings), a pipe engine (organ), then plucked, bowed, reeds, brass, flutes, and bars and drums, each on
+  the shared parts (room, stereo, the playing interface, the range checks). Each family gets a **voice lab**: a grid
+  of versions of its controls (hammer softer or harder, fewer or more stops, room size) that Aedan picks from by ear;
+  the picks are saved as the fighter's settings. This replaces "a recipe measured from recordings" as the main
+  approach for every later stage.
+- **The recipe engine stays** (its format, player and the two `.ve2` files with their unit tests), because a family
+  may still want a measured part, such as a body's resonance. No fighter plays a recipe after stage 1b.
+- **The yardstick** for a built voice is the range of real instruments, not one recording: the piano's octave bands
+  within the four real pianos' (VCSL, Splendid, Salamander, Headroom), its high notes' overtone balance within their
+  range; the organ against its own sketch, as no free organ recording sounded the way Aedan wanted.
+- Stage 1b (`2026-11-26-voice-engine-2-plan-stage1-built.md`) builds P16 and O8 into the engine. It stops at a
+  fights and bands page for Aedan's review, like every family.
