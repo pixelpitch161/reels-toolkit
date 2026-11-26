@@ -9,7 +9,7 @@ use bf_app::model::queue::Queue;
 use bf_app::model::shortlist::{SearchState, Shortlist};
 use bf_app::model::take::CheckLine;
 use bf_app::model::{EncodeChoice, Settings, Step, View};
-use bf_app::screens::music::{AUTO_STYLE_LINE, CONTROLS_W, NAMES_W};
+use bf_app::screens::music::{AUTO_STYLE_LINE, BAND_LINE, CONTROLS_W, NAMES_W, band_words};
 use bf_app::seam::{Command, Event};
 use bf_app::state::{Action, AppState, ViewModel};
 use bf_app::store::Paths;
@@ -469,6 +469,77 @@ fn the_melody_style_menu_is_composed_only() {
     let ff = convert::fight_file(draft).expect("a fight file");
     assert_eq!(ff.music.melody_style.as_deref(), Some("climbing"));
     assert!(!has(&harness, AUTO_STYLE_LINE), "the Auto line goes with Auto");
+}
+
+/// The Band slider shows only on Composed, at the usual mix in the middle. A drag shows the level it would set
+/// and asks for it once, when it is let go of; it reaches the fight file. An arrow key moves it half a dB.
+#[test]
+fn the_band_slider_is_composed_only_and_asks_once_on_release() {
+    let _gpu = gpu();
+    let harness = showing(REF, music::vm());
+    assert!(
+        harness
+            .query_all_by_label("Band")
+            .all(|n| n.accesskit_node().role() != Role::Slider),
+        "no Band slider on Classic"
+    );
+    assert!(!has(&harness, BAND_LINE));
+    drop(harness);
+    let mut harness = showing(REF, music::composed());
+    by_role(&harness, "Band", Role::Slider).scroll_to_me();
+    harness.run();
+    assert!(has(&harness, BAND_LINE));
+    assert!(has(&harness, "Usual"), "the middle is the usual mix");
+    let slider = by_role(&harness, "Band", Role::Slider).rect();
+    let y = slider.center().y;
+    harness.drag_at(egui::pos2(slider.center().x, y));
+    harness.run();
+    harness.hover_at(egui::pos2(slider.min.x + 0.6 * slider.width(), y));
+    harness.run();
+    harness.hover_at(egui::pos2(slider.min.x + 0.75 * slider.width(), y));
+    harness.run();
+    assert!(
+        harness.state().log.is_empty(),
+        "nothing is asked for while it is dragged"
+    );
+    let shown: Vec<String> = ["+2.5 dB", "+3 dB", "+3.5 dB"]
+        .into_iter()
+        .filter(|w| has(&harness, w))
+        .map(str::to_string)
+        .collect();
+    assert_eq!(shown.len(), 1, "the dragged level is shown: {shown:?}");
+    harness.drop_at(egui::pos2(slider.min.x + 0.75 * slider.width(), y));
+    harness.run();
+    let asked: Vec<f64> = harness
+        .state()
+        .log
+        .iter()
+        .filter_map(|a| match a {
+            Action::SetBandLevel(level) => Some(*level),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(asked.len(), 1, "asked once: {:?}", harness.state().log);
+    assert!(
+        (2.5..=3.5).contains(&asked[0]),
+        "three quarters of -6 to +6: {}",
+        asked[0]
+    );
+    assert!(has(&harness, &band_words(asked[0])), "the level stays shown");
+    let draft = &harness.state().state.vm.draft;
+    assert_eq!(draft.band_level, Some(asked[0]));
+    let ff = convert::fight_file(draft).expect("a fight file");
+    assert_eq!(ff.music.band_level, Some(asked[0]));
+
+    by_role(&harness, "Band", Role::Slider).focus();
+    harness.run();
+    harness.key_press(egui::Key::ArrowRight);
+    harness.run();
+    assert_eq!(
+        harness.state().log.last(),
+        Some(&Action::SetBandLevel(asked[0] + 0.5)),
+        "an arrow key moves it half a dB"
+    );
 }
 
 #[test]

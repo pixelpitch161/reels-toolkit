@@ -181,8 +181,10 @@ pub fn band(st: &Soundtrack, show: &Show, sounds: [(&str, (f64, f64)); 2], bed_b
 /// low treatment moves a low fighter's sound out of its band on purpose). The sections and the numbers' names
 /// are [`band`]'s: `<bus> section <n>` is the fighter's mean heard level less the bed's over the section, and
 /// `<bus> while it sounds <n>` the same over the blocks where the fighter sounds
-/// ([`bf_sound::heard::over_band`]). It passes when every "while it sounds" number is above 0.
-pub fn band_heard(st: &Soundtrack, show: &Show, buses: [&str; 2], bed_buses: &[&str]) -> CheckResult {
+/// ([`bf_sound::heard::over_band`]). It passes when every "while it sounds" number is above `floor`: 0, or under
+/// it by as much as the Band slider brought the band up (`music.band_level`, [`super::BandPlan::floor`]), so the
+/// check never undoes a louder band the owner asked for.
+pub fn band_heard(st: &Soundtrack, show: &Show, buses: [&str; 2], bed_buses: &[&str], floor: f64) -> CheckResult {
     let fail = |text: String| CheckResult::failed(NAME, format!("{TITLE}: {text}"));
     let n = st.master.len();
     if n == 0 {
@@ -263,11 +265,19 @@ pub fn band_heard(st: &Soundtrack, show: &Show, buses: [&str; 2], bed_buses: &[&
             None => faults.push(format!(
                 "the {name} is silent for the whole fight, so check that its part plays"
             )),
-            Some((g, i)) if g <= 0.0 || g.is_nan() => faults.push(format!(
-                "the {name} is {:.1} dB under the band to the ear between {:.0} and {:.0} s while it plays, so \
-                 turn the {name} up or thin the band there",
-                -g, spans[i].0, spans[i].1
-            )),
+            Some((g, i)) if g <= floor || g.is_nan() => faults.push(if floor < 0.0 {
+                format!(
+                    "the {name} is {:.1} dB under the band to the ear between {:.0} and {:.0} s while it plays, \
+                     more than the {:.1} dB the Band slider allows, so turn the {name} up or thin the band there",
+                    -g, spans[i].0, spans[i].1, -floor
+                )
+            } else {
+                format!(
+                    "the {name} is {:.1} dB under the band to the ear between {:.0} and {:.0} s while it plays, so \
+                     turn the {name} up or thin the band there",
+                    -g, spans[i].0, spans[i].1
+                )
+            }),
             Some((g, _)) => ranges.push(format!("the {name} by {g:.1} to {most:.1} dB")),
         }
     }
@@ -320,10 +330,17 @@ mod tests {
             &show,
             ["flute", "trombone"],
             &["drums", "fx"],
+            0.0,
         );
         assert!(pass.pass, "{}", pass.summary);
         assert!(pass.numbers["flute while it sounds 1"] > 5.0, "{:?}", pass.numbers);
-        let fail = band_heard(&soundtrack(n, 0.3, 0.01, 0.2), &show, ["flute", "trombone"], &["drums"]);
+        let fail = band_heard(
+            &soundtrack(n, 0.3, 0.01, 0.2),
+            &show,
+            ["flute", "trombone"],
+            &["drums"],
+            0.0,
+        );
         assert!(!fail.pass);
         assert!(
             fail.summary.contains("TROMBONE is") && fail.summary.contains("under the band"),
@@ -331,8 +348,39 @@ mod tests {
             fail.summary
         );
         assert!(fail.numbers["trombone while it sounds 1"] < 0.0);
-        let missing = band_heard(&soundtrack(n, 0.3, 0.3, 0.05), &show, ["flute", "tuba"], &["drums"]);
+        let missing = band_heard(
+            &soundtrack(n, 0.3, 0.3, 0.05),
+            &show,
+            ["flute", "tuba"],
+            &["drums"],
+            0.0,
+        );
         assert!(!missing.pass && missing.numbers.is_empty());
+    }
+
+    /// With the band turned up on the Band slider, a fighter may sit under the band by as much as it was turned up.
+    #[test]
+    fn a_louder_band_moves_the_heard_floor() {
+        let show = show();
+        let n = bf_sound::NA;
+        // the trombone under the band: refused at the default, passed with the band turned up past it
+        let st = soundtrack(n, 0.3, 0.01, 0.2);
+        let at_default = band_heard(&st, &show, ["flute", "trombone"], &["drums"], 0.0);
+        let g = at_default
+            .numbers
+            .iter()
+            .filter(|(k, _)| k.starts_with("trombone while it sounds"))
+            .map(|(_, v)| *v)
+            .fold(f64::INFINITY, f64::min);
+        assert!(g < -1.0 && !at_default.pass, "{:?}", at_default.numbers);
+        let louder = band_heard(&st, &show, ["flute", "trombone"], &["drums"], g - 1.0);
+        assert!(louder.pass, "{}", louder.summary);
+        let too_far = band_heard(&st, &show, ["flute", "trombone"], &["drums"], g + 0.5);
+        assert!(
+            !too_far.pass && too_far.summary.contains("Band slider allows"),
+            "{}",
+            too_far.summary
+        );
     }
 
     fn soundtrack(n: usize, flute: f64, trombone: f64, bed: f64) -> Soundtrack {

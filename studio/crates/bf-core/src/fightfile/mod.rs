@@ -75,6 +75,8 @@ pub const LOOP_LENGTHS: [usize; 2] = [4, 8];
 
 /// The most chords the tail may hold (the kit's configs have 0 to 6 bars after their last whole loop).
 pub const TAIL_MAX: usize = 8;
+/// The most the Band slider moves the band against the fighters, in dB, either way (`music.band_level`).
+pub const BAND_LEVEL: f64 = 6.0;
 
 /// The tempos a fight file may ask for, in beats a minute (both ends included).
 pub const TEMPO_RANGE: (f64, f64) = (30.0, 300.0);
@@ -190,6 +192,10 @@ pub struct Music {
     /// `broken_chords` or `anchor`). A file without one plays `signature`, as does a word this app does not know;
     /// the `classic` arrangement has no styles.
     pub melody_style: Option<String>,
+    /// How much louder the band plays against the fighters than the `composed` master's default, in dB (format 2,
+    /// optional: the Music screen's Band slider, [`BAND_LEVEL`] at most either way). A file without one plays the
+    /// default; the `classic` arrangement ignores it.
+    pub band_level: Option<f64>,
     /// Who plays what (`bass`, `melody`, ...), by fighter.
     pub roles: BTreeMap<String, String>,
     /// Hand-written lines over the loop (8 notes a bar = 8ths, 4 = beats), by fighter, or by an extra line a
@@ -490,6 +496,14 @@ impl Music {
             if !fighters.iter().any(|f| f == name) {
                 return Err(err("music.pinned", format!("{name:?} is not one of the fighters")));
             }
+        }
+        if let Some(level) = self.band_level
+            && !(-BAND_LEVEL..=BAND_LEVEL).contains(&level)
+        {
+            return Err(err(
+                "music.band_level",
+                format!("{level} dB is outside -{BAND_LEVEL} to +{BAND_LEVEL}"),
+            ));
         }
         harmony::pitch_class(&self.key).map_err(|e| err("music.key", e.to_string()))?;
         harmony::scale(&self.scale).map_err(|e| err("music.scale", e.to_string()))?;

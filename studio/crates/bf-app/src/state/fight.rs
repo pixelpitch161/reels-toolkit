@@ -78,6 +78,7 @@ impl AppState {
             music_seed: d.music_seed,
             arrangement: d.arrangement.clone(),
             melody_style: d.melody_style.clone(),
+            band_level: d.band_level,
             pinned: d.pinned.clone(),
         }
     }
@@ -426,6 +427,17 @@ impl AppState {
         {
             self.vm.draft.melody_style = style;
         }
+    }
+
+    /// The band's level under the fighters, kept in -6 to +6 dB and moved to the nearest half dB; 0 (the usual mix)
+    /// is held as `None`, so a draft at the usual mix writes no `music.band_level`.
+    pub(super) fn set_band_level(&mut self, level: f64) {
+        if !level.is_finite() {
+            return;
+        }
+        let most = bf_core::fightfile::BAND_LEVEL;
+        let level = (level.clamp(-most, most) * 2.0).round() / 2.0;
+        self.vm.draft.band_level = (level != 0.0).then_some(level);
     }
 
     /// A new music seed; everything else stays.

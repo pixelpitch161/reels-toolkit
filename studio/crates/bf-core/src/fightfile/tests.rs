@@ -1178,3 +1178,24 @@ fn the_melody_style_is_optional_and_written_back() {
     let wrong = parse_err(&with("music_seed = 1", "music_seed = 1\nmelody_style = 3"));
     assert!(wrong.starts_with("music.melody_style: must be a text"), "{wrong}");
 }
+
+/// The Band slider (2026-11-26): an optional number of dB after the melody style, written back only when set, never
+/// feeding the fight, and within BAND_LEVEL either way.
+#[test]
+fn the_band_level_is_optional_bounded_and_written_back() {
+    let plain = FightFile::parse(EPISODE).expect("the example parses");
+    assert_eq!(plain.music.band_level, None);
+    assert!(!plain.to_toml().contains("band_level"));
+    let text = with("music_seed = 1", "music_seed = 1\nband_level = -2.5");
+    let ff = FightFile::parse(&text).expect("a fight with a band level parses");
+    assert_eq!(ff.music.band_level, Some(-2.5));
+    assert_eq!(ff.to_toml(), text);
+    assert_eq!(FightFile::parse(&ff.to_toml()), Ok(ff.clone()));
+    assert_eq!(ff.search_key(&[true, true]), plain.search_key(&[true, true]));
+    let mut far = ff.clone();
+    far.music.band_level = Some(BAND_LEVEL + 0.5);
+    let e = validate_err(&far);
+    assert!(e.starts_with("music.band_level:"), "{e}");
+    let wrong = parse_err(&with("music_seed = 1", "music_seed = 1\nband_level = \"loud\""));
+    assert!(wrong.starts_with("music.band_level:"), "{wrong}");
+}

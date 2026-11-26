@@ -231,6 +231,9 @@ pub struct BandPlan {
     /// The fight is under the Composed arrangement: the band check measures by ear ([`band::band_heard`]), the
     /// sound fixes end with the loudness target again, and no measured sound check stops the render.
     pub composed: bool,
+    /// The heard level a fighter must stay above against the band under Composed, in dB: 0, or as far under it as
+    /// the Band slider brought the band up (`music.band_level`, when it is above 0).
+    pub floor: f64,
 }
 
 impl BandPlan {
@@ -259,6 +262,7 @@ impl BandPlan {
             sounds: [part(0)?, part(1)?],
             bed_buses,
             composed: ff.music.arrangement == bf_content::themes::COMPOSED,
+            floor: -ff.music.band_level.unwrap_or(0.0).max(0.0),
         })
     }
 }
@@ -268,7 +272,7 @@ impl BandPlan {
 pub fn band_of(st: &Soundtrack, show: &Show, plan: &BandPlan) -> CheckResult {
     let bed: Vec<&str> = plan.bed_buses.iter().map(String::as_str).collect();
     if plan.composed {
-        band::band_heard(st, show, [&plan.sounds[0].0, &plan.sounds[1].0], &bed)
+        band::band_heard(st, show, [&plan.sounds[0].0, &plan.sounds[1].0], &bed, plan.floor)
     } else {
         let sounds = [
             (plan.sounds[0].0.as_str(), plan.sounds[0].1),

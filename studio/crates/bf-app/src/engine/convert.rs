@@ -154,6 +154,8 @@ pub(crate) fn build(draft: &Draft) -> Result<FightFile, Unusable> {
         if bf_content::composed_parts::style_of(ff.music.melody_style.as_deref()) != chosen {
             ff.music.melody_style = Some(chosen.key().to_string());
         }
+        // the Band slider (the usual mix writes nothing)
+        ff.music.band_level = draft.band_level.filter(|level| *level != 0.0);
     }
     if let Some(pinned) = &draft.pinned {
         ff.music.pinned = pinned.iter().filter(|p| draft.fighters.contains(p)).cloned().collect();
@@ -234,6 +236,7 @@ pub fn draft_of(ff: &FightFile, toml: &str) -> Draft {
                 .key()
                 .to_string(),
         ),
+        band_level: ff.music.band_level.filter(|level| *level != 0.0),
         pinned: None,
         base: Some(toml.to_string()),
         fighters,
@@ -620,6 +623,30 @@ mod tests {
         d.arrangement = Some("classic".to_string());
         d.melody_style = Some("runs".to_string());
         assert_eq!(fight_file(&d).expect("classic").music.melody_style, None);
+    }
+
+    /// Under Composed the Band slider's level is written to the fight file and read back from it; the usual mix
+    /// writes nothing, and Classic leaves the file's own.
+    #[test]
+    fn the_band_level_reaches_the_fight_file() {
+        let mut d = starting_draft();
+        d.arrangement = Some(bf_content::themes::COMPOSED.to_string());
+        assert_eq!(fight_file(&d).expect("usual").music.band_level, None);
+        d.band_level = Some(2.5);
+        let ff = fight_file(&d).expect("louder band");
+        assert_eq!(ff.music.band_level, Some(2.5));
+        let text = ff.to_toml();
+        assert!(text.contains("band_level = 2.5"), "{text}");
+        let opened = draft_of(&FightFile::parse(&text).expect("read back"), &text);
+        assert_eq!(opened.band_level, Some(2.5));
+        assert_eq!(fight_file(&opened).expect("written again").to_toml(), text);
+        d.band_level = Some(-1.5);
+        assert_eq!(fight_file(&d).expect("quieter band").music.band_level, Some(-1.5));
+        d.band_level = Some(0.0);
+        assert_eq!(fight_file(&d).expect("zero").music.band_level, None);
+        d.arrangement = Some("classic".to_string());
+        d.band_level = Some(3.0);
+        assert_eq!(fight_file(&d).expect("classic").music.band_level, None);
     }
 
     #[test]

@@ -37,6 +37,10 @@ pub struct Args {
     /// or auto for the pick the theme and the music seed give (default: the fight file's).
     #[arg(long, value_name = "NAME", value_parser = melody_style)]
     melody_style: Option<String>,
+    /// The Band slider of the Composed arrangement: how much louder than the default the band plays against the
+    /// fighters, in dB, from -6 to 6 (default: the fight file's).
+    #[arg(long, value_name = "DB", allow_negative_numbers = true, value_parser = band_level)]
+    band_level: Option<f64>,
     /// Also save the notes each fighter sounded, as JSON (a new file).
     #[arg(long, value_name = "FILE")]
     played: Option<PathBuf>,
@@ -60,6 +64,17 @@ fn melody_style(text: &str) -> Result<String, String> {
     }
 }
 
+/// `--band-level <dB>`.
+fn band_level(text: &str) -> Result<f64, String> {
+    use bf_core::fightfile::BAND_LEVEL;
+    match text.trim().parse::<f64>() {
+        Ok(v) if (-BAND_LEVEL..=BAND_LEVEL).contains(&v) => Ok(v),
+        _ => Err(format!(
+            "{text} is not a band level; give a number of dB from -{BAND_LEVEL} to {BAND_LEVEL}"
+        )),
+    }
+}
+
 pub fn run(a: &Args, ctx: &Ctx) -> Done {
     let mut ff = load_fight(&a.fight)?;
     crate::music_flags(&mut ff, &a.fight, a.arrangement.as_ref(), a.music_seed)?;
@@ -71,6 +86,9 @@ pub fn run(a: &Args, ctx: &Ctx) -> Done {
         } else {
             style.clone()
         });
+    }
+    if let Some(level) = a.band_level {
+        ff.music.band_level = Some(level);
     }
     new_file(&a.out)?;
     if let Some(path) = &a.played {

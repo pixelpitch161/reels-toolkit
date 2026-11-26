@@ -12,11 +12,6 @@ Design: `2026-11-25-sound-upgrade-design.md`. Plan: `2026-11-25-sound-upgrade-pl
 | Pick | Done when | Measured | |
 |---|---|---|---|
 | M1 | every fighter 4 to 6 dB over the band by the heard measure | 4.97 to 5.28 dB (today -6.4 to +14.6) | pass |
-
-**Changed 2026-11-26 (after stage 2):** Aedan heard the bands as "way too quiet". The target is now 1 dB over the band
-(`polish::OVER_BAND`), and the level table was written again with it. On the ten stage 2 page fights every fighter
-measures 0.7 to 1.2 dB over its band; the loudness stays -14 LUFS. Listening page: https://claude.ai/artifact/T9wSx4NN6uZBjatv75KSF9.
-
 | M2 | a low instrument loses at most 9 dB on a phone, rumble share at most 70% | 6.8 to 7.7 dB (today 10.3 to 16.6), 55 to 68% | pass |
 | M3 | a piercing instrument's 2 to 6 kHz at most 3 dB over the other fighter | -4.4 to -16.9 dB (today -4.0 to +0.8) | pass |
 | F1 | -14 LUFS (within 0.5), true peak at or under -1 dB | -14.0 to -14.1 LUFS, -1.02 to -1.85 dB | pass |
@@ -24,6 +19,13 @@ measures 0.7 to 1.2 dB over its band; the loudness stays -14 LUFS. Listening pag
 | F3 | the room's rumble share under 10% (today 82%) | 0 to 8% | pass |
 | C6 | Violin vs Contrabass: the contrabass holds at least 70% of the lows | 77% (today 30% on Classic) | pass |
 | C2, C10 | no clash, no note out of register, no repeat in a moving style | 0, 0, 0 (survey of the melody test) | pass |
+
+**The band level, changed 2026-11-26 (after stage 2).** Aedan heard the stage 2 bands as "way too quiet" (M1 kept
+each fighter 5 dB over its band). At 1 dB some fights sounded better and some worse, so the default is now halfway,
+3 dB (`polish::OVER_BAND`), with the level table written again for it, and the Music screen's Band slider
+(`music.band_level`, -6 to +6 dB) moves it for one fight. On the ten stage 2 page fights every fighter measures 2.6 to
+3.2 dB over its band at the default and 0.7 to 1.5 dB with the slider at +2; the loudness stays -14.0 to -14.4 LUFS.
+Listening page: https://claude.ai/artifact/T9wSx4NN6uZBjatv75KSF9.
 
 Three settings moved from the plan while measuring (also noted in the plan):
 

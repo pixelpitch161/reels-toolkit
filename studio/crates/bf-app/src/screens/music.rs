@@ -37,6 +37,7 @@ use crate::widgets::chips::{fighter_bar, paint_selected};
 use crate::widgets::fields::{self, ReadLook};
 use crate::widgets::icons::{self, Icon};
 use crate::widgets::ribbon::{DUR, x_of};
+use crate::widgets::slider::bar_slider;
 
 /// The controls column's width.
 pub const CONTROLS_W: f32 = 300.0;
@@ -100,6 +101,11 @@ pub const CLASSIC_LINE: &str = "The theme's own band part, and each fighter play
 pub const COMPOSED_LINE: &str = "The band follows the fight, and each fighter gets a line written for this take.";
 /// Under the melody style on Composed, while it is Auto.
 pub const AUTO_STYLE_LINE: &str = "Auto picks a style that suits the theme, new with each re-roll.";
+/// Under the Band slider on Composed.
+pub const BAND_LINE: &str = "Right turns the band up under the fighters, left turns it down. The middle is the usual \
+                             mix.";
+/// The Band slider's step, in dB.
+const BAND_STEP: f64 = 0.5;
 /// Under the music seed on Composed.
 pub const REROLL_LINE: &str = "Re-roll music writes new lines and solos for the same fight.";
 /// Under the music seed on Composed, when a fighter's notes are its weapon.
@@ -314,6 +320,7 @@ fn controls(ui: &mut Ui, vm: &ViewModel, inner_h: f32, out: &mut Vec<Action>) {
     ui.add_space(GROUP_GAP);
     if composed {
         melody_style(ui, vm, width, out);
+        band_level(ui, vm, width, out);
     }
 
     group_label(ui, "This take");
@@ -425,6 +432,54 @@ fn melody_style(ui: &mut Ui, vm: &ViewModel, width: f32, out: &mut Vec<Action>) 
         hint(ui, AUTO_STYLE_LINE);
     }
     ui.add_space(GROUP_GAP);
+}
+
+/// The "Band" slider (Composed only): the band louder or quieter under the fighters than the usual mix, -6 to +6 dB
+/// in half dB, with its level beside it ("Usual", "+2.5 dB", "-1 dB"). While it is dragged the level it would be is
+/// shown and held here; it is pushed once, when it is let go of, so a drag asks for one new take, not one a frame.
+fn band_level(ui: &mut Ui, vm: &ViewModel, width: f32, out: &mut Vec<Action>) {
+    let most = bf_core::fightfile::BAND_LEVEL;
+    let kept = vm.draft.band_level.unwrap_or(0.0);
+    let held = ui.scope_id().with("band level while dragged");
+    let mut level = ui.data(|d| d.get_temp::<f64>(held)).unwrap_or(kept);
+    group_label(ui, "Band");
+    ui.horizontal(|ui| {
+        let slider = bar_slider(
+            ui,
+            "Band",
+            &mut level,
+            (-most, most),
+            BAND_STEP,
+            width - VALUE_W - ROW_GAP,
+        );
+        if slider.released {
+            ui.data_mut(|d| d.remove::<f64>(held));
+            if level.to_bits() != kept.to_bits() {
+                out.push(Action::SetBandLevel(level));
+            }
+        } else if slider.changed {
+            ui.data_mut(|d| d.insert_temp(held, level));
+        }
+        plain(ui, RichText::new(band_words(level)).font(mono()).color(TEXT));
+    });
+    ui.add_space(LABEL_GAP);
+    hint(ui, BAND_LINE);
+    ui.add_space(GROUP_GAP);
+}
+
+/// The Band slider's level in words: "Usual" at 0, else signed dB to the half ("+2.5 dB", "-1 dB").
+pub fn band_words(level: f64) -> String {
+    let half = (level * 2.0).round() / 2.0;
+    if half == 0.0 || !half.is_finite() {
+        return "Usual".to_string();
+    }
+    let sign = if half > 0.0 { "+" } else { "-" };
+    let size = half.abs();
+    if size.fract() == 0.0 {
+        format!("{sign}{size:.0} dB")
+    } else {
+        format!("{sign}{size:.1} dB")
+    }
 }
 
 // The arrangement
@@ -724,6 +779,17 @@ fn footer_row(ui: &mut Ui, inside: Rect, out: &mut Vec<Action>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_band_level_in_words() {
+        assert_eq!(band_words(0.0), "Usual");
+        assert_eq!(band_words(0.2), "Usual", "to the half dB");
+        assert_eq!(band_words(2.5), "+2.5 dB");
+        assert_eq!(band_words(3.0), "+3 dB");
+        assert_eq!(band_words(-1.0), "-1 dB");
+        assert_eq!(band_words(-6.0), "-6 dB");
+        assert_eq!(band_words(f64::NAN), "Usual");
+    }
 
     #[test]
     fn clips_are_whole_pixels_inside_the_video() {

@@ -136,8 +136,9 @@ pub fn lift_fighters(st: &mut Soundtrack, show: &Show, plan: &BandPlan) -> Optio
                 let Some(&g) = r.numbers.get(&format!("{bus} while it sounds {}", i + 1)) else {
                     continue;
                 };
-                if g <= 0.0 && *total < LIFT_MOST_DB {
-                    *total = (*total + LIFT_SPARE_DB - g).min(LIFT_MOST_DB);
+                let floor = if plan.composed { plan.floor } else { 0.0 };
+                if g <= floor && *total < LIFT_MOST_DB {
+                    *total = (*total + LIFT_SPARE_DB + floor - g).min(LIFT_MOST_DB);
                     changed = true;
                 }
             }
@@ -671,6 +672,7 @@ mod tests {
             ],
             bed_buses: vec!["drums".to_string(), "fx".to_string()],
             composed: false,
+            floor: 0.0,
         };
         let sounds = [("flute", (600.0, 3200.0)), ("trombone", (70.0, 700.0))];
         assert!(!band(&st, &show, sounds, &["drums", "fx"]).pass);
@@ -713,6 +715,7 @@ mod tests {
             ],
             bed_buses: vec!["drums".to_string()],
             composed: false,
+            floor: 0.0,
         };
         let sounds = [("flute", (600.0, 3200.0)), ("trombone", (70.0, 700.0))];
         assert!(!band(&st, &show, sounds, &["drums"]).pass);

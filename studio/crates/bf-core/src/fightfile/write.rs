@@ -47,6 +47,9 @@ impl FightFile {
         if let Some(style) = &m.melody_style {
             let _ = writeln!(o, "melody_style = {}", w_str(style));
         }
+        if let Some(level) = m.band_level {
+            let _ = writeln!(o, "band_level = {}", w_f64(level));
+        }
         o.push_str("\n[music.roles]\n");
         for (k, v) in &m.roles {
             let _ = writeln!(o, "{} = {}", w_key(k), w_str(v));

@@ -285,6 +285,35 @@ fn music_settings_keep_the_generation() {
     ));
 }
 
+/// The Band slider, let go of: the level is kept in -6 to +6 dB at the nearest half dB (0 is the usual mix, held as
+/// none), and with a seed chosen it asks for a new take of the same seed, as any music setting does.
+#[test]
+fn the_band_level_is_kept_in_range_and_asks_for_a_take() {
+    let mut s = ready();
+    let before = s.generation();
+    for (level, held) in [
+        (2.3, Some(2.5)),
+        (-1.2, Some(-1.0)),
+        (9.0, Some(6.0)),
+        (-9.0, Some(-6.0)),
+        (0.2, None),
+    ] {
+        s.dispatch(Action::SetBandLevel(level));
+        assert_eq!(s.vm.draft.band_level, held, "{level}");
+    }
+    s.dispatch(Action::SetBandLevel(f64::NAN));
+    assert_eq!(s.vm.draft.band_level, None, "not a number changes nothing");
+    s.dispatch(Action::SelectSeed(18433));
+    let fx = s.dispatch(Action::SetBandLevel(3.0));
+    assert_eq!(s.generation(), before);
+    assert!(matches!(
+        &sent(&fx)[..],
+        [Command::LoadTake { take: 2, draft }] if draft.seed == Some(18433) && draft.band_level == Some(3.0)
+    ));
+    let fx = s.dispatch(Action::SetBandLevel(3.0));
+    assert!(sent(&fx).is_empty(), "the same level again asks for nothing");
+}
+
 #[test]
 fn notes_that_are_a_weapon_feed_the_fight() {
     let mut s = ready();
