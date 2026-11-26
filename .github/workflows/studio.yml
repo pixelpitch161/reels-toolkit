@@ -13,8 +13,8 @@ on:
       - ".github/workflows/studio.yml"
   workflow_dispatch:
     inputs:
-      github_machines:
-        description: Run on GitHub's machines even when the owner's PC runner is switched on
+      owners_pc:
+        description: Run on the owner's PC (needs the PC runner switched on); otherwise GitHub's machines
         type: boolean
         default: false
 
@@ -30,10 +30,12 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
-  # Where the two jobs below run. The owner's PC (the runner labelled bf-pc, set up by tools/pc-runner) when the
-  # repository variable BF_PC_RUNNER is "on"; GitHub's Windows machines when it isn't, for a pull request from a fork
-  # (whose code must never run on the PC), and when a manual run asks for them. With the PC chosen and the PC off,
-  # the jobs wait in the queue until it is on again. See tools/pc-runner/README.md.
+  # Where the two jobs below run. GitHub's Windows machines for every push and pull request (Aedan, 2026-11-26: the
+  # full checks on each push kept the PC busy for other work; GitHub's machines are free for this public repository,
+  # and nobody waits for these checks). The owner's PC (the runner labelled bf-pc, set up by tools/pc-runner) only for
+  # a manual run that asks for it while the repository variable BF_PC_RUNNER is "on"; a pull request from a fork
+  # never runs there. The PC keeps the named tests (pc-tests.yml). With the PC chosen and the PC off, the jobs wait in
+  # the queue until it is on again. See tools/pc-runner/README.md.
   where:
     name: Pick the machine
     runs-on: ubuntu-latest
@@ -45,19 +47,17 @@ jobs:
         id: pick
         env:
           PC: ${{ vars.BF_PC_RUNNER }}
-          FORCE_GITHUB: ${{ inputs.github_machines || false }}
+          ASK_PC: ${{ inputs.owners_pc || false }}
           EVENT: ${{ github.event_name }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          REPO: ${{ github.repository }}
         run: |
-          if [ "$FORCE_GITHUB" = true ]; then
-            why="asked for when the run was started"; pc=false
-          elif [ "$EVENT" = pull_request ] && [ "$HEAD_REPO" != "$REPO" ]; then
-            why="a pull request from a fork"; pc=false
+          if [ "$EVENT" != workflow_dispatch ]; then
+            why="pushes and pull requests run there, to keep the PC free"; pc=false
+          elif [ "$ASK_PC" != true ]; then
+            why="the run did not ask for the owner's PC"; pc=false
           elif [ "$PC" = on ]; then
-            why="BF_PC_RUNNER is on"; pc=true
+            why="the run asked for the owner's PC and BF_PC_RUNNER is on"; pc=true
           else
-            why="BF_PC_RUNNER is not on"; pc=false
+            why="the run asked for the owner's PC, but BF_PC_RUNNER is not on"; pc=false
           fi
           if $pc; then
             echo 'runner=["self-hosted","Windows","bf-pc"]' >> "$GITHUB_OUTPUT"

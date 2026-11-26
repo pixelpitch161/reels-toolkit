@@ -153,8 +153,9 @@ version on this PC; no download, no token in the app).
 3. Run the **quick install check** (below), commit and push. Don't wait for CI (`.github/workflows/studio.yml`):
    it runs in the background, and anything it catches is fixed in the next version. Before tagging, open the last
    GitHub run of the previous tag (Actions, workflow `studio`) and fix what it caught: nobody else looks (lesson of
-   1.8.0 and 1.8.1, whose checks were red for two releases). The two jobs run on this PC's runner when the
-   repository variable `BF_PC_RUNNER` is `on` (`tools/pc-runner/README.md`), otherwise on GitHub's Windows machines.
+   1.8.0 and 1.8.1, whose checks were red for two releases). The two jobs run on GitHub's Windows machines for every push and
+   pull request (since 2026-11-26, to keep this PC free); a manual run can ask for this PC's runner instead
+   (`tools/pc-runner/README.md`).
    The first builds the
    command line and the app, tests bf-core, bf-sim and bf-pack, renders and encodes the example episode, tests the
    app without a window and checks the package (each step runs even when an earlier one failed, unless it needs

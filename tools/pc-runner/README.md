@@ -1,15 +1,18 @@
 # BALLFIGHT Studio's test runner on the owner's PC
 
-The checks run on the owner's PC instead of GitHub's machines or a cloud container: a GitHub Actions runner on this
+The named tests run on the owner's PC instead of GitHub's machines or a cloud container: a GitHub Actions runner on this
 PC, registered to `pixelpitch161/reels-toolkit`, running as its own locked-down Windows user. It mirrors the
 BallPhysicsEngine GPU runner (`F:\bpe-gpu`, same design: its own user, its own folder, the owner's drives locked) and
 shares nothing with it.
 
 What runs there once it is switched on:
 
-- **`.github/workflows/studio.yml`** (every push or pull request that changes `studio/`): both jobs, the same steps as
-  on GitHub's machines. Build files and the pinned ffmpeg are kept between runs, so a warm run builds only what
-  changed. A pull request from a fork always runs on GitHub's machines, never on the PC.
+- **`.github/workflows/studio.yml`** only when a manual run asks for it (Actions, `studio`, Run workflow, "Run on the
+  owner's PC"), for example one full run before a big merge. Every push and pull request runs it on GitHub's
+  machines instead (Aedan, 2026-11-26: each push started the full checks on the PC twice, once for the push and once
+  for the pull request, and kept it busy for other work; GitHub's machines are free for this public repository). On
+  the PC, build files and the pinned ffmpeg are kept between runs, so a warm run builds only what changed. A pull
+  request from a fork never runs on the PC.
 - **`.github/workflows/pc-tests.yml`**: the tests a change names, with the PC's copy of the reference cache (so
   bf-harness's fighter checks run) and DirectX 12 (so the interface tests run). Put a line in the last commit's message
   before pushing:
@@ -27,12 +30,10 @@ What runs there once it is switched on:
 
 The repository variable **`BF_PC_RUNNER`** (GitHub: Settings, Secrets and variables, Actions, Variables) decides:
 
-- `on`: both workflows run on the PC. If the PC is off, the jobs wait in GitHub's queue until it is on again (GitHub
-  gives up after 24 hours).
-- anything else, or not set: `studio.yml` runs on GitHub's machines as before, and `pc-tests` fails with "the PC
-  runner is switched off".
-
-A manual run of `studio` can also choose GitHub's machines ("Run on GitHub's machines").
+- `on`: `pc-tests` runs on the PC, and so does a manual run of `studio` that asks for the PC. If the PC is off, the
+  jobs wait in GitHub's queue until it is on again (GitHub gives up after 24 hours).
+- anything else, or not set: `pc-tests` fails with "the PC runner is switched off", and every `studio` run goes to
+  GitHub's machines.
 
 ## Setting it up (once)
 
