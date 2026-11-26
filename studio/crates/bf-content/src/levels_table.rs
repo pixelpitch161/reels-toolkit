@@ -53,7 +53,7 @@ pub fn row(name: &str, saved: Saved) -> String {
 /// `(fighter, gain, rumble, piercing)`, in roster order.
 #[rustfmt::skip]
 pub const LEVELS: &[(&str, f64, f64, f64)] = &[
-    ("PIANO", 2.1245, 0.003, 0.009),
+    ("PIANO", 2.1364, 0.003, 0.009),
     ("DRUMS", 4.1099, 0.677, 0.019),
     ("VIOLIN", 1.9553, 0.000, 0.260),
     ("BAGPIPES", 3.6904, 0.000, 0.660),

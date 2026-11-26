@@ -10,20 +10,24 @@ literature and the measurements disagree, the measurements win and the sheet say
 recording of every studied set the same way the yardstick does (`bf-harness/src/e2measure.rs`), and prints the medians
 by register (low: under C3 = MIDI 48; middle: C3 to B4; high: C5 and up), set and strength:
 
-- *loudness*: the note's level against the same key's loudest recording in that set, dB;
-- *brightness*: the tone's centre of gravity (spectral centroid) as a multiple of the note's pitch, early (the first
-  0.1 s) and late (around 1 s); 1.0 is a pure tone, higher is brighter;
-- *fall*: how fast the note dies while held, dB per second, over its first two and a half seconds;
-- *start*: how long the note takes to come within 10 dB of its loudest, ms;
-- *noise*: the part of the sound that is not the overtones (the hammer's knock, the wind's breath), early and in the
-  held tone, %.
+- *loudness*: the note's level over its first 0.3 s against the same key's loudest recording in that set, dB;
+- *brightness*: the tone's centre of gravity (spectral centroid) as a multiple of the note's pitch, early (0.05 to
+  0.5 s) and late (0.8 to 1.2 s); 1.0 is a pure tone, higher is brighter;
+- *fall*: how fast the fundamental dies while held, from 0.3 to 2.5 s, dB per second;
+- *start*: how long the note takes to reach 90% of its loudest (about 1 dB under it), ms;
+- *noise*: the part of the sound that lies between the overtones (the hammer's knock, the wind's breath, a
+  recording's room noise), early (0 to 0.1 s) and in the held tone (0.3 to 1 s), %.
+
+The PC-only sets were measured on the owner's PC: the Iowa piano recordings keep the room before each note, so each
+was first cut 10 ms before its note begins (the tool's `lead_in`); Lars Palo's 4' and 2' ranks are filed by key and
+sound one and two octaves over it, so their pitches were moved up (the tool now does both).
 
 ---
 
 ## Piano (fighter PIANO)
 
-**Ships from:** VCSL Steinway B (CC0), strengths vl2, vl3, vl4. **Studied:** VCSL Steinway B, Salamander Yamaha C5,
-Headroom Yamaha C3, Iowa Steinway B (PC). **Code:** `bf-sound/src/voice/engine2/piano.rs`, recipe
+**Ships from:** VCSL Steinway B (CC0), strengths vl2, vl3, vl4. **Studied:** VCSL Steinway B, Iowa Steinway B (PC),
+Salamander Yamaha C5, Headroom Yamaha C3. **Code:** `bf-sound/src/voice/engine2/piano.rs`, recipe
 `bf-content/data/voices/PIANO.ve2`.
 
 ### Working parts
@@ -53,7 +57,7 @@ Headroom Yamaha C3, Iowa Steinway B (PC). **Code:** `bf-sound/src/voice/engine2/
 
 ### How the tone changes with strength and pitch
 
-Measured (cloud sets; Iowa rows are added when the PC study reports):
+Measured:
 
 | register | set | strength | loudness dB | bright early | bright late | fall dB/s | start ms | noise early % | noise held % |
 |---|---|---|---|---|---|---|---|---|---|
@@ -66,6 +70,9 @@ Measured (cloud sets; Iowa rows are added when the PC study reports):
 | low | salamander | 0.50 | -6.1 | 3.03 | 2.77 | -2.6 | 38 | 3.9 | 0.1 |
 | low | salamander | 0.75 | -3.9 | 3.21 | 2.98 | -2.5 | 30 | 4.8 | 0.1 |
 | low | salamander | 1.00 | 0.0 | 3.77 | 3.21 | -2.3 | 38 | 4.8 | 0.3 |
+| low | iowa-piano | 0.30 pp | -26.3 | 4.74 | 5.01 | -3.1 | 220 | 47.4 | 0.1 |
+| low | iowa-piano | 0.60 mf | -9.7 | 6.89 | 7.45 | -3.0 | 25 | 7.3 | 0.1 |
+| low | iowa-piano | 0.90 ff | 0.0 | 9.50 | 9.86 | -3.2 | 20 | 8.6 | 0.9 |
 | low | vcsl | 0.45 (vl2) | -0.6 | 3.29 | 3.50 | -2.8 | 32 | 2.9 | 0.1 |
 | low | vcsl | 0.70 (vl3) | -0.4 | 5.64 | 5.50 | -3.7 | 20 | 3.1 | 0.2 |
 | low | vcsl | 0.95 (vl4) | 0.0 | 6.48 | 5.79 | -3.5 | 18 | 4.5 | 0.8 |
@@ -78,6 +85,9 @@ Measured (cloud sets; Iowa rows are added when the PC study reports):
 | middle | salamander | 0.50 | -7.7 | 1.78 | 1.65 | -10.8 | 15 | 4.5 | 0.1 |
 | middle | salamander | 0.75 | -4.8 | 1.87 | 2.22 | -11.1 | 15 | 4.4 | 0.1 |
 | middle | salamander | 1.00 | 0.0 | 1.94 | 2.26 | -11.3 | 20 | 5.5 | 0.0 |
+| middle | iowa-piano | 0.30 pp | -25.0 | 1.43 | 1.70 | -9.4 | 70 | 52.3 | 0.2 |
+| middle | iowa-piano | 0.60 mf | -10.7 | 2.30 | 2.29 | -9.4 | 20 | 7.0 | 0.1 |
+| middle | iowa-piano | 0.90 ff | 0.0 | 2.48 | 2.87 | -11.9 | 20 | 6.3 | 0.1 |
 | middle | vcsl | 0.45 (vl2) | -1.0 | 1.25 | 1.21 | -9.5 | 15 | 5.1 | 0.3 |
 | middle | vcsl | 0.70 (vl3) | -0.4 | 1.76 | 1.63 | -11.1 | 15 | 4.7 | 0.1 |
 | middle | vcsl | 0.95 (vl4) | 0.0 | 1.84 | 1.85 | -10.6 | 15 | 4.6 | 0.1 |
@@ -90,27 +100,33 @@ Measured (cloud sets; Iowa rows are added when the PC study reports):
 | high | salamander | 0.50 | -11.1 | 0.99 | 0.84 | -15.0 | 10 | 15.0 | 2.8 |
 | high | salamander | 0.75 | -6.9 | 1.01 | 1.00 | -15.8 | 10 | 18.1 | 3.5 |
 | high | salamander | 1.00 | 0.0 | 1.03 | 1.00 | -14.7 | 10 | 12.8 | 2.8 |
+| high | iowa-piano | 0.30 pp | -29.2 | 0.90 | 0.90 | -9.4 | 65 | 100.0 | 11.2 |
+| high | iowa-piano | 0.60 mf | -13.3 | 1.00 | 1.00 | -12.3 | 15 | 15.5 | 0.9 |
+| high | iowa-piano | 0.90 ff | 0.0 | 1.00 | 1.00 | -14.4 | 10 | 13.6 | 0.8 |
 | high | vcsl | 0.45 (vl2) | -0.3 | 0.97 | 0.25 | -18.1 | 10 | 22.8 | 2.8 |
 | high | vcsl | 0.70 (vl3) | -0.7 | 1.00 | 0.95 | -17.8 | 5 | 18.3 | 2.2 |
 | high | vcsl | 0.95 (vl4) | -0.2 | 1.00 | 0.93 | -19.1 | 5 | 22.5 | 3.0 |
 
-(Notes per cell: VCSL 14/12/16 by register, Salamander 10/7/13, Headroom 9/8/13. A late brightness under 1.0 in the
-high register means the note's fundamental has died into the noise floor by 1 s.)
+(Notes per cell: VCSL 14/12/16 by register, Salamander 10/7/13, Headroom 9/8/13, Iowa 44, 42 and 44 recordings in
+all for pp, mf and ff. A late brightness under 1.0 in the high register means the note has died into the recording's
+noise floor by 1 s. Iowa's pp start and noise are the room: its soft notes, the high ones most, are only 15 to 45 dB
+over the room's noise.)
 
 What every piano agrees on:
 
 - **Harder is brighter and louder, in every register** (every set, every row) [3][4]. From the softest to the hardest
-  recording a piano gets 10 to 18 dB louder (Headroom 17-18 dB, Salamander 10-16 dB) and its early tone's centre
-  rises by 20 to 50% in the low and middle registers. At the top the tone is nearly a pure fundamental at any
+  recording a piano gets 10 to 29 dB louder (Iowa's pianissimo 25-29 dB, Headroom 17-18 dB, Salamander 10-16 dB:
+  how soft each player's softest was) and its early tone's centre rises by 20 to 100% in the low and middle
+  registers. At the top the tone is nearly a pure fundamental at any
   strength (bright early about 1.0).
 - **Low notes are darker in proportion but far richer**: a bass note's tone centre sits 3 to 6 overtones up, a middle
   note's under 2.
-- **Higher dies faster** (every set): about 2-4 dB/s held in the bass, 10-13 dB/s in the middle, 15-19 dB/s at the
-  top [2][5].
-- **The attack is quick and quicker at the top**: within 10 dB of the loudest in 20-40 ms in the bass, about 15 ms in
-  the middle and 5-10 ms at the top.
-- **The hammer's knock is a bigger share of the top notes**: the noise is 3-5% of an early bass or middle note and
-  13-23% of a top note [4].
+- **Higher dies faster** (every set): about 2-4 dB/s held in the bass, 9-13 dB/s in the middle, 9-19 dB/s at the
+  top (Iowa's Steinway the slowest at the top) [2][5].
+- **The attack is quick and quicker at the top**: at 90% of its loudest in 20-40 ms in the bass, 10-25 ms in the
+  middle and 5-15 ms at the top (Iowa's pp aside, which starts in its room's noise).
+- **The hammer's knock is a bigger share of the top notes**: the noise is 3-9% of an early bass or middle note and
+  13-23% of a top note [4] (Iowa's softer notes again aside).
 
 ### Start, life and stop
 
@@ -139,13 +155,14 @@ slides (a piano cannot bend). A repeated key re-strikes a string that is still r
 - **The strength steps.** VCSL evened its three strengths out to one loudness (its loudness column reads 0 to -1 dB),
   so the shipped piano's loudness steps are taken from what the other pianos agree on, matched by brightness: each
   VCSL strength's early brightness against its hardest is matched to the strength of each other piano that is as
-  bright, and that piano's loudness there is read off (`recipes measure`, `piano_gains`). vl2 is darker than any other
-  piano's softest (0.68 of vl4's brightness in the middle register against Headroom's 0.77 and Salamander's 0.78),
-  so it takes their softest loudness. The median over the sets and registers:
+  bright, and that piano's loudness there is read off (`recipes measure`, `piano_gains`). vl2 is darker than
+  Headroom's and Salamander's softest (0.68 of vl4's brightness in the middle register against their 0.77 and 0.78),
+  so it takes their softest loudness there; Iowa's pianissimo is darker still (0.58), so vl2 falls between Iowa's pp
+  and mf. The median over the four sets and the low and middle registers:
 
   | VCSL strength | played at | brightness against vl4 (low / middle) | loudness under vl4 |
   |---|---|---|---|
-  | vl2 | 0.45 | 0.51 / 0.68 | -15.0 dB |
+  | vl2 | 0.45 | 0.51 / 0.68 | -17.4 dB |
   | vl3 | 0.70 | 0.87 / 0.96 | -5.3 dB |
   | vl4 | 0.95 | 1 / 1 | 0 dB |
 
@@ -192,7 +209,7 @@ slides (a piano cannot bend). A repeated key re-strikes a string that is still r
 ## Organ (fighter ORGAN)
 
 **Ships from:** VSCO 2 CE pipe organ (CC0), main chorus, quiet and loud. **Studied:** VSCO 2 CE, VCSL Renaissance organ
-(Full), Lars Palo's Bureå and Piteå organs' principals (PC). **Code:** `bf-sound/src/voice/engine2/organ.rs`, recipe
+(Full), Lars Palo's Bureå and Piteå organs' principals, one rank at a time (PC). **Code:** `bf-sound/src/voice/engine2/organ.rs`, recipe
 `bf-content/data/voices/ORGAN.ve2`.
 
 ### Working parts
@@ -213,7 +230,7 @@ slides (a piano cannot bend). A repeated key re-strikes a string that is still r
 
 ### How the tone changes with setting and pitch
 
-Measured (cloud sets; Bureå and Piteå rows are added when the PC study reports):
+Measured:
 
 | register | set | setting | loudness dB | bright early | bright late | fall dB/s | start ms | noise early % | noise held % |
 |---|---|---|---|---|---|---|---|---|---|
@@ -226,17 +243,25 @@ Measured (cloud sets; Bureå and Piteå rows are added when the PC study reports
 | high | vcsl (Renaissance, Full) | 1.00 | 0.0 | 7.03 | 6.75 | 3.0 | 75 | 9.9 | 4.4 |
 | high | vsco | 0.50 quiet | 0.0 | 1.00 | 1.01 | 0.3 | 295 | 9.1 | 0.3 |
 | high | vsco | 1.00 loud | -3.3 | 1.70 | 1.71 | -0.1 | 605 | 12.3 | 1.6 |
+| low | palo-burea | principal | 0.0 | 2.02 | 1.50 | -0.9 | 445 | 19.0 | 0.1 |
+| low | palo-pitea | principal | 0.0 | 1.71 | 1.51 | -3.1 | 320 | 5.1 | 0.0 |
+| middle | palo-burea | principal | -4.7 | 1.72 | 1.66 | -0.0 | 170 | 3.3 | 0.0 |
+| middle | palo-pitea | principal | 0.0 | 1.08 | 1.09 | 0.6 | 150 | 2.5 | 0.0 |
+| high | palo-burea | principal | -3.8 | 1.23 | 1.21 | 0.3 | 155 | 2.3 | 0.1 |
+| high | palo-pitea | principal | 0.0 | 1.05 | 1.03 | -0.0 | 125 | 3.4 | 0.1 |
 
-(Notes per cell: VCSL 12/12/3, VSCO 13/11/8. Brightness is against the written note's pitch; the loud chorus's 16'
-sounds an octave under it.)
+(Notes per cell: VCSL 12/12/3, VSCO 13/11/8; Bureå 239 and Piteå 146 recordings in all, its 8', 4' and 2'
+principals and Bureå's pedal 8' one rank at a time, so their loudness compares ranks, not settings. Brightness is
+against the written note's pitch; VSCO's loud chorus has a 16' an octave under it.)
 
 What the organs agree on:
 
-- **A held note does not die** (fall within ±1 dB/s in the low and middle registers of every set; the 3 dB/s of the
-  VCSL top's 3 dB/s rise is three notes only) [10].
+- **A held note does not die** (fall within ±1 dB/s in the middle and high registers of every set; Piteå's low
+  principal's -3 dB/s and the VCSL top's 3 dB/s rise are a few notes only) [10].
 - **The tone does not change while held** (early and late brightness within 10% in every row) [10].
 - **The loud setting is much brighter than the quiet one** (VSCO 1.7-3.3 times), and the full chorus of the
-  Renaissance organ is bright at every pitch: more stops, more high ranks [10].
+  Renaissance organ is bright at every pitch: more stops, more high ranks [10]. One principal rank on its own is
+  mellow (Palo's 1.05-2.0 times the pitch), close to VSCO's quiet setting.
 
 ### Start, life and stop
 
@@ -261,12 +286,13 @@ blast swell from the quiet setting to the loud one (Aedan's "main chorus, buildi
 
 ### Where the literature and the measurements disagree
 
-- **The start.** The literature gives a pipe's speech as tens of milliseconds [11][12]; VSCO's recordings take
-  0.3-0.9 s to reach within 10 dB of full level (42 of 50 notes over 30 ms). The closer-placed VCSL Renaissance organ
-  starts in 45-130 ms, near the literature. So the slow rise in VSCO is the church's echo building up around a
-  distant microphone, not the pipe: here the measurement of the *instrument* is the VCSL organ's and the
-  literature's, and the engine lifts the VSCO recipe to full level within 0.06 s (0.12 s two octaves under C4,
-  `OrganParts.speak`), which also follows Aedan's "the organ probably shouldn't have so much of its own echo".
+- **The start.** The literature gives a pipe's speech as tens of milliseconds [11][12]. The recordings take longer
+  to reach 90% of their full level, and the longer the bigger the room and the farther the microphones: VCSL's small
+  Renaissance organ 45-130 ms, Palo's two church organs 125-445 ms, VSCO's 0.3-0.9 s. What builds up after the pipe
+  has spoken is the room. The engine takes the quick end of the spread: it lifts the VSCO recipe to full level within
+  0.06 s (0.12 s two octaves under C4, `OrganParts.speak`) and adds a light room of its own, so the fights' short
+  stabs are not late and weak; this also follows Aedan's "the organ probably shouldn't have so much of its own
+  echo".
 - **The yardstick** compares the organ's held tone (power over 0.3, 1 and 2.5 s) rather than single moments: the
   chorus's ranks beat against each other by 20 dB and more at any moment, as the shimmer the literature describes
   [10].

@@ -388,4 +388,5 @@ listening page):
   instrument and FluidR3 only for the rivals: FluidR3's own piano and church organ were further from the real ones
   than FluidR3's harp or accordion were.
 - **The piano's strength steps** come from the other pianos, matched by brightness (VCSL evened its strengths out to
-  one loudness): soft -15 dB, medium -5.3 dB, loud 0 (see the PIANO sheet).
+  one loudness): soft -17.4 dB, medium -5.3 dB, loud 0 (see the PIANO sheet; the Iowa Steinway, measured on the
+  PC, moved the soft step from -15 dB).

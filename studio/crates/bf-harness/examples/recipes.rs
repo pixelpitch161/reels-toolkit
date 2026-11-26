@@ -102,7 +102,7 @@ const SETS: &[Set] = &[
         licence: "free for any use, without restrictions (study only)",
         ships: false,
         from: From::Pc {
-            how: "download Piano.<pp|mf|ff>.<note>.aiff from theremin.music.uiowa.edu/MISpiano.html into the folder",
+            how: "download Piano.<pp|mf|ff>.<note>.aiff (Bb0, C1, D1 ... C8: every second key, as VCSL) from theremin.music.uiowa.edu/MISpiano.html into the folder",
         },
     },
     Set {
@@ -111,7 +111,7 @@ const SETS: &[Set] = &[
         licence: "CC BY-SA 2.5 (study only)",
         ships: false,
         from: From::Pc {
-            how: "download and unpack the set from sourceforge.net/p/ourorgan/samplesets into the folder",
+            how: "download the set from familjenpalo.se/vpo/download (listed at sourceforge.net/p/ourorgan/samplesets) and unpack its Principal ranks into the folder",
         },
     },
     Set {
@@ -120,7 +120,7 @@ const SETS: &[Set] = &[
         licence: "CC BY-SA 2.5 (study only)",
         ships: false,
         from: From::Pc {
-            how: "download and unpack the set from sourceforge.net/p/ourorgan/samplesets into the folder",
+            how: "download the set from familjenpalo.se/vpo/download (listed at sourceforge.net/p/ourorgan/samplesets) and unpack its Principal ranks into the folder",
         },
     },
 ];
@@ -327,7 +327,30 @@ fn recordings(set: &str, inst: &str) -> Vec<Rec> {
                 if !(lower.contains("princip") || lower.contains("prestant")) || !lower.ends_with(".wav") {
                     continue;
                 }
-                let m: Option<f64> = s.get(..3).and_then(|n| n.parse().ok());
+                // a rank's release recordings sit in rel* folders beside its notes, named the same: not notes
+                if path.parent().is_some_and(|d| {
+                    d.file_name()
+                        .is_some_and(|n| n.to_string_lossy().to_lowercase().starts_with("rel"))
+                }) {
+                    continue;
+                }
+                // every rank is filed by key; a 4' rank sounds an octave over its key, a 2' two (the sets'
+                // HarmonicNumber 16 and 32 against the 8's 8)
+                let feet = path
+                    .components()
+                    .map(|c| c.as_os_str().to_string_lossy().to_lowercase())
+                    .find(|c| c.contains("princip") || c.contains("prestant"))
+                    .and_then(|c| {
+                        let digits: String = c.chars().rev().take_while(char::is_ascii_digit).collect();
+                        digits.chars().rev().collect::<String>().parse::<f64>().ok()
+                    });
+                let Some(shift) = feet
+                    .filter(|f| [1.0, 2.0, 4.0, 8.0, 16.0].contains(f))
+                    .map(|f| 12.0 * (8.0 / f).log2())
+                else {
+                    continue;
+                };
+                let m: Option<f64> = s.get(..3).and_then(|n| n.parse::<f64>().ok()).map(|m| m + shift);
                 rec(m, "principal", 1.0, false)
             }
             _ => None,
@@ -371,9 +394,30 @@ fn opts(inst: &str) -> Opts {
     }
 }
 
-/// A recording, decoded.
+/// Where an unedited recording's note begins, 10 ms before it: the first 5 ms frame over a tenth of the loudest
+/// frame's level, or over twice the room's noise (the first 50 ms) if that is higher. The Iowa recordings keep the
+/// room before each note, often only 15 to 45 dB under it, so the measuring's own onset (-40 dB of the peak) would
+/// land on the room.
+fn lead_in(x: &[f64]) -> usize {
+    const FRAME: usize = 240;
+    let rms: Vec<f64> = x
+        .chunks(FRAME)
+        .map(|c| (c.iter().map(|v| v * v).sum::<f64>() / c.len() as f64).sqrt())
+        .collect();
+    let loudest = rms.iter().copied().fold(0.0, f64::max);
+    let mut room: Vec<f64> = rms.iter().take(10).copied().collect();
+    room.sort_by(f64::total_cmp);
+    let room = room.get(room.len() / 2).copied().unwrap_or(0.0);
+    let over = (0.1 * loudest).max(2.0 * room);
+    rms.iter()
+        .position(|&v| v > over)
+        .map_or(0, |i| (i * FRAME).saturating_sub(2 * FRAME))
+}
+
+/// A recording, decoded (an unedited one from its note's start: [`lead_in`]).
 fn load(r: &Rec) -> Option<Vec<f64>> {
-    match e2measure::decode(&r.path, &ffmpeg()) {
+    let unedited = r.path.starts_with(cache().join("iowa-piano"));
+    match e2measure::decode(&r.path, &ffmpeg()).map(|x| if unedited { x[lead_in(&x)..].to_vec() } else { x }) {
         Ok(x) if x.len() > 4800 => Some(x),
         Ok(_) => None,
         Err(e) => {
