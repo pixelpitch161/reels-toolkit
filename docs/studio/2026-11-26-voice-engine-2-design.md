@@ -40,6 +40,8 @@ is the recipe for a synth "supersaw". The room is a 1.25 s tail. Every note is a
    play the chorus. Its big moves (CATHEDRAL's held full-organ chord, PULL ALL STOPS' swell through the stops, and the
    title blast) build from the quiet recorded setting up to the full loud chorus, so they still grow without the buzz
    coming back. No reeds are built in this pass.
+7. **Approved** (08:56Z): "The organ probably shouldn't have so much of it's own echo. Other than that, approve". So
+   the organ's own echo is light (see "Rooms").
 
 The sketches behind that page are in the project files under `ballfight-studio/voice-engine-2/approaches/`
 (`sketches/*.py`: `recipe.py` measures and rebuilds, `pianoA.py`/`organA.py` are the physical sketches, `real.py`
@@ -217,9 +219,10 @@ These are the "built" half, added where the recording falls short, each per fami
 ### Rooms and stereo
 
 - **Rooms.** The Composed room (`polish/room.rs`, F3 of the sound upgrade) stays as the shared room of the mix. A
-  voice may also have a **home room** of its own, sent from its bus. The organ's is a church: about 3.5 to 4 s, lows
-  longer than highs, about 30 ms before it starts, nothing under 200 Hz. Its level is set so the echo is heard after a
-  chord but does not wash out a run, and it is checked on a phone. Rooms for whole themes (a club, a hall, a stadium)
+  voice may also have a **home room** of its own, sent from its bus. The organ's is a light one (Aedan: it "probably
+  shouldn't have so much of it's own echo"): a short church tail of about 1.5 to 2 s, nothing under 200 Hz, mixed well
+  under the dry sound, much less than the examples page used. The echo is just heard after a big chord and never
+  blurs a run. It is checked on a phone. Rooms for whole themes (a club, a hall, a stadium)
   belong to the band stage, because the room is shared by everything in the theme.
 - **Stereo.** Notes stay mono, as the parts expect. Width comes from a stereo stage on the bus of each fighter that has
   moved to Voice Engine 2 (only those, so a stage changes only its own fighters), under Composed: a decorrelated side signal added to the panned bus, so that the mono sum is still the dry sound (most
@@ -350,7 +353,8 @@ All through `PC-Tests:` lines, only what changed:
 - Work that needs the PC (fetching the Iowa and Lars Palo recordings, measuring them) goes through a Remote Control
   session on the stage's branch and pushes only recipes and measurements.
 - Speed: a Composed soundtrack build may take at most 25% longer, measured before and after on the same machine.
-- The organ's home room is a church of about 3.5 to 4 s.
+- The organ's home room is a light church tail of about 1.5 to 2 s, after Aedan's note that it shouldn't have so much
+  echo.
 - Eight stages in the order above, each merged after its PC tests, without waiting for approval between them.
 
 ## Left to the builder
