@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::traits::Bed;
 
@@ -96,6 +97,65 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("xylophone", 3), ("riser", 1)],
 );
 
+/// The skeleton gallop's own band (sound upgrade, stage 2): the woodblock's gallop (one, and a-two) over the felt
+/// kick on 1 and 3 and the tambourine on 2 and 4 (on the eighths at the top), the bass clarinet's oom-pah on the
+/// root and the fifth, the pizzicato strings on the off-beats, and the xylophone rattling up and down the chord,
+/// in eighths and then in gallops.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                line(2, Play::Drum(SNARE), "X.oox.ooX.oox.oo"),
+                line(2, Play::Drum(HAT), "....x.......x..."),
+                only(3, Play::Drum(HAT), "..x...x...x...x."),
+                only(3, Play::Drum(KICK), "......x.......x.").maybe(0.6),
+            ],
+            fill: &[line(1, Play::Drum(SNARE), "xoxoxxxX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x.......x......."),
+                line(2, Play::Root, "X.......X......."),
+                line(2, Play::Fifth, "....x.......x..."),
+                only(3, Play::Root, "...x.......x...."),
+                only(3, Play::Octave, "......x.......x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "..x...x...x...x."),
+                only(3, Play::Upper, "...x...x...x...x").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "xylophone",
+            lines: &[
+                upto(2, Play::Tone(0), "X.......x...............x......."),
+                upto(2, Play::Tone(1), "....x.......x.......x.....o....."),
+                upto(2, Play::Tone(2), "..o...o...o...o...o...o.....x..."),
+                upto(2, Play::Tone(3), "................X.............o."),
+                only(3, Play::Tone(0), "X.......X...............X.....x."),
+                only(3, Play::Tone(1), "..x....x..x....x.......x..x.x..."),
+                only(3, Play::Tone(2), "...x..x....x..x....x..x....x...."),
+                only(3, Play::Tone(3), "....x.......x.....x.x..........."),
+                only(3, Play::Tone(4), "................X..............."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bones", 3.0), ("xylo", -1.5)],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -158,5 +218,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("skeleton_gallop", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("skeleton_gallop", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

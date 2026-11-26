@@ -2,6 +2,7 @@
 //! chops and a held string chord, the timpani and the punch keeping the pulse; the harpsichord runs in sixteenths
 //! when the storm breaks.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, KICK, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth;
 
@@ -52,6 +53,90 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("timpani", 3),
         ("riser", 1),
     ],
+};
+
+/// The baroque storm's own band (sound upgrade, stage 2): the continuo in half notes, then walking eighths, then
+/// the storm's repeated sixteenths; the harpsichord's broken chords in quarters, eighths and running sixteenths
+/// (a run up the chord into a lead change); the string chops on the off-beats and then the eighths; the punch on 1
+/// and 3 under the timpani's thunder, rolling on the root and the fifth when everything is in.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "continuo",
+            lines: &[
+                upto(1, Play::Root, "X_______x_______"),
+                only(2, Play::Root, "X.x.....X.x....."),
+                only(2, Play::Octave, "....x.x........."),
+                only(2, Play::Fifth, "............x.x."),
+                only(3, Play::Root, "Xxxx....Xxxx...."),
+                only(3, Play::Fifth, "....xxxx........"),
+                only(3, Play::Octave, "............xxxx"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "harpsi",
+            lines: &[
+                upto(1, Play::Tone(0), "x..............."),
+                upto(1, Play::Tone(1), "........x......."),
+                upto(1, Play::Tone(2), "....o.......o..."),
+                only(2, Play::Tone(0), "X...............X..............."),
+                only(2, Play::Tone(1), "..o...........o.....x.........o."),
+                only(2, Play::Tone(2), "....x.......x.....o.....x......."),
+                only(2, Play::Tone(3), "......o...o...........o.....x..."),
+                only(2, Play::Tone(4), "........x.................o....."),
+                only(3, Play::Tone(0), "X.......X......................."),
+                only(3, Play::Tone(1), ".o.....o.o.....oX.......X......."),
+                only(3, Play::Tone(2), "..x...x...x...x..o.....o.o.....o"),
+                only(3, Play::Tone(3), "...o.o.....o.o....x...x...x...x."),
+                only(3, Play::Tone(4), "....x.......x......o.o.....o.o.."),
+                only(3, Play::Tone(5), "....................x.......x..."),
+            ],
+            fill: &[
+                line(1, Play::Tone(0), "x......."),
+                line(1, Play::Tone(1), ".x......"),
+                line(1, Play::Tone(2), "..x....."),
+                line(1, Play::Tone(3), "...x...."),
+                line(1, Play::Tone(4), "....x..."),
+                line(1, Play::Tone(5), ".....x.."),
+                line(1, Play::Tone(6), "......x."),
+                line(1, Play::Tone(7), ".......X"),
+            ],
+        },
+        Part {
+            layer: "chops",
+            lines: &[
+                upto(1, Play::Chord, "..x...x...x...x."),
+                line(2, Play::Chord, "X.x.x.x.X.x.x.x."),
+                only(3, Play::Chord, ".g.g.g.g.g.g.g.g").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "............x..."),
+                line(2, Play::Drum(SNARE), "....x.......x.xx"),
+                line(2, Play::Drum(KICK), "......x........."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "timpani",
+            lines: &[
+                line(1, Play::Root, "X.......X......."),
+                line(1, Play::Fifth, "......x.....x..."),
+                only(3, Play::Root, "...x.......x..xx"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("drums", -2.0), ("harpsi", 2.5), ("strings", 2.5)],
+    lows: &["drums"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -125,5 +210,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

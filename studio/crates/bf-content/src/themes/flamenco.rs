@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -111,6 +112,73 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The flamenco's own band (sound upgrade, stage 2): a rumba flamenca, the cajón's bass on 1, the and of 2 and 3
+/// with its pushes, claps on 2 and 4 and the palmas on the contratiempo (the off-beats) over stamping feet, the
+/// bass on the cajón's figure, the guitar's rumba strum (accents on 1, the and of 2 and 3, rasgueado flicks at
+/// full fury) and the violin singing a two-bar phrase over it.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.12,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                line(2, Play::Drum(KICK), "X..o..x.X..o..x."),
+                line(1, Play::Drum(SNARE), "....x.......x..."),
+                line(2, Play::Drum(HAT), "..g...g...g...g."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g").maybe(0.8),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "palmas",
+            lines: &[
+                upto(2, Play::Drum(CLAP), "..x...x...x...x."),
+                line(2, Play::Drum(SHAKER), "x.......x......."),
+                only(3, Play::Drum(CLAP), "..X.x.X...X.x.X."),
+                only(3, Play::Drum(SHAKER), "....x.......x..."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x.......x......."),
+                line(2, Play::Root, "x.....x.x......."),
+                line(2, Play::Fifth, "..............x."),
+                only(3, Play::Octave, "...g.......g....").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X.......X......."),
+                upto(1, Play::Upper, "......x.......x."),
+                line(2, Play::Chord, "X..x..X.X..x..X."),
+                line(2, Play::Upper, "..g.......g....."),
+                only(3, Play::Upper, ".g...g...g..gg.g").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "violin",
+            lines: &[
+                upto(1, Play::Top, "x_______x_______"),
+                line(2, Play::Tone(0), "x_......................x_______"),
+                line(2, Play::Tone(1), "..x_................x___........"),
+                line(2, Play::Tone(2), "....x___......o_..x_............"),
+                line(2, Play::Top, "........X_____..x_.............."),
+                only(3, Play::Tone(3), "...........g...............g....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -1.0), ("cajon", 2.5), ("guitar", -3.0), ("palmas", 5.5)],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -196,5 +264,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("flamenco", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("flamenco", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

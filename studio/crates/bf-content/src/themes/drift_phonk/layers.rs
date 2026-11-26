@@ -1,6 +1,7 @@
 //! The drift phonk's Composed arrangement (milestone 5): the hard kick and the clap, rattling hats, the distorted
 //! 808, the cowbell riffing the chord in sixteenths and a dark pad.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth;
 
@@ -33,6 +34,60 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("roll", 1),
         ("riser", 1),
     ],
+};
+
+/// The drift phonk's own band (sound upgrade, stage 2): the hard kick in a two-bar phonk figure, the clap on 2 and
+/// 4, eighth hats and the rattle's sixteenths with a roll into each bar, the distorted 808 following the kick, and
+/// the cowbell riffing the chord in a two-bar 3-3-2 with sixteenth runs at the top; a sixteenth swing.
+pub static GROOVE: Groove = Groove {
+    swing: 0.56,
+    swing16: true,
+    push_ms: 2.5,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.....x...X.....X.....x...X..x.."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "rattle",
+            lines: &[
+                line(1, Play::Drum(HAT), "x.x.x.x.x.x.xxxx"),
+                line(2, Play::Drum(HAT), ".g.g.g.g.g.g...."),
+                only(3, Play::Drum(CLAP), "...............x").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "808",
+            lines: &[
+                upto(1, Play::Root, "X_______________"),
+                line(2, Play::Root, "X_____x___X_____X_____x___X__x__"),
+                only(3, Play::Octave, "..............x.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "cowbell",
+            lines: &[
+                line(1, Play::Tone(0), "x..x......x.....x..x......x..x.."),
+                line(1, Play::Tone(2), "......x........."),
+                line(2, Play::Tone(1), "....x.......x..."),
+                line(2, Play::Top, "........x.....x."),
+                only(3, Play::Tone(0), ".x...x.x.x...x.x").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -0.5), ("cowbell", 8.0), ("drums", -2.0), ("pad", 2.0)],
+    lows: &["bass", "drums"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -110,5 +165,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

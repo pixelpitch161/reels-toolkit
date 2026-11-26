@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,68 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("fiddle", 3), ("riser", 1)],
 );
 
+/// The klezmer's own band (sound upgrade, stage 2): a freylekh in the bulgar's 3-3-2, the tuba's oom on 1 and 3
+/// (root and fifth) answered by the accordion on the 3-3-2's off-accents, the frame drum's beat with the bulgar
+/// on the rim and a tambourine in eighths, and the fiddle running the chord in the 3-3-2 and then in sixteenths
+/// with the same accents.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "....x.......x..."),
+                line(2, Play::Drum(SNARE), "...x..x....x..x."),
+                line(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g").maybe(0.8),
+                only(3, Play::Drum(KICK), "..........................X.X...").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(2, Play::Root, "x..............."),
+                upto(2, Play::Fifth, "........x......."),
+                only(2, Play::Fifth, "..............................g."),
+                only(3, Play::Root, "x.....x.x.......x.....x.x......."),
+                only(3, Play::Fifth, "...x.......x..x....x.......x..x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x.......x..."),
+                line(2, Play::Chord, "...x..x....x..x."),
+                only(3, Play::Upper, ".......g.......g").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "fiddle",
+            lines: &[
+                upto(2, Play::Tone(0), "X..............................."),
+                upto(2, Play::Tone(1), "...x..........x.........X......."),
+                upto(2, Play::Tone(2), "......x....x..........x....x...."),
+                upto(2, Play::Tone(3), "........X..........x..........x."),
+                upto(2, Play::Tone(4), "................X..............."),
+                only(3, Play::Tone(0), "X.......X.......X.......X.....x."),
+                only(3, Play::Tone(1), ".o.....o.o.....o.o.....o.o...o.o"),
+                only(3, Play::Tone(2), "..o...x...o...x...o...x...o.o..."),
+                only(3, Play::Tone(3), "...x.o.....x.o.....x.o.....x...."),
+                only(3, Play::Tone(4), "....o.......o.......o..........."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("accordion", 2.5), ("drum", -1.5), ("fiddle", 6.5), ("tuba", -1.0)],
+    lows: &["drum", "tuba"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -190,5 +253,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("klezmer", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("klezmer", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

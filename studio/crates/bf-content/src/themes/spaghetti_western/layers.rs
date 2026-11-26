@@ -9,6 +9,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -35,6 +36,64 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["bell", "hooves"],
     victory: &[("hooves", 1), ("bass", 2), ("choir", 2), ("strings", 1)],
     build: &[("hooves", 3), ("bass", 2), ("arp", 2), ("strings", 3)],
+};
+
+/// The spaghetti western's own band (sound upgrade, stage 2): the coconut hooves' gallop (a hoof on each beat and
+/// two light ones after it, a full canter at the top) over the frame drum's thump on 1 and 3 and the whip cracking
+/// at the end of the second bar, the baritone guitar's low twang on the root and the fifth, and its high strings
+/// climbing and falling through the chord in quarters, eighths and then a turn.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "hooves",
+            lines: &[
+                line(1, Play::Drum(SNARE), "X...x...X...x..."),
+                line(1, Play::Drum(HAT), "..o...o...o...o."),
+                line(2, Play::Drum(HAT), "...o...o...o...o"),
+                line(2, Play::Drum(KICK), "X.......X......."),
+                only(3, Play::Drum(SHAKER), ".g...g...g...g.."),
+                only(3, Play::Drum(CRASH), "..............................X.").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "x.xxx.x."),
+                line(1, Play::Drum(CRASH), ".......X"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                line(1, Play::Root, "X.....x........."),
+                line(1, Play::Fifth, "........X......."),
+                only(3, Play::Octave, "..........x....."),
+                only(3, Play::Fifth, "..............x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "arp",
+            lines: &[
+                upto(1, Play::Tone(0), "x..............................."),
+                upto(1, Play::Tone(1), "....o.......................o..."),
+                upto(1, Play::Tone(2), "........x...............x......."),
+                upto(1, Play::Tone(3), "............o.......o..........."),
+                upto(1, Play::Tone(4), "................x..............."),
+                only(2, Play::Tone(0), "x..............."),
+                only(2, Play::Tone(1), "..o...........o."),
+                only(2, Play::Tone(2), "....x.......x..."),
+                only(2, Play::Tone(3), "......o...o....."),
+                only(2, Play::Tone(4), "........x......."),
+                only(3, Play::Tone(0), "X.............x."),
+                only(3, Play::Tone(1), "..o.........o..."),
+                only(3, Play::Tone(2), "....x.....x....."),
+                only(3, Play::Tone(3), "......o.o......."),
+                only(3, Play::Tone(4), ".......x........"),
+            ],
+            fill: &[],
+        },
+    ],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -79,7 +138,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

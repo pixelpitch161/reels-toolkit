@@ -20,6 +20,7 @@
 use std::sync::Arc;
 
 use crate::mix::{Mix, Sig};
+use crate::music::groove::Groove;
 use crate::music::signal::{MomentKind, Phase, StorySignal};
 use crate::music::{MusicCtx, MusicError, Samples};
 use crate::traits::{Bed, BedHook, Played};
@@ -326,6 +327,8 @@ pub struct LayeredBed {
     cues: Vec<Cue>,
     seed: u64,
     buses: Vec<(&'static str, (f64, f64))>,
+    /// The theme's own patterns and balance (Composed only; sound upgrade, stage 2).
+    groove: Option<&'static Groove>,
 }
 
 impl LayeredBed {
@@ -381,7 +384,31 @@ impl LayeredBed {
             cues,
             seed,
             buses,
+            groove: None,
         })
+    }
+
+    /// The bed with the theme's own patterns, swing and balance (C4 and M6 of the sound upgrade). Only a
+    /// Composed arrangement is given one.
+    ///
+    /// # Errors
+    /// The groove is badly written for these layers ([`Groove::check`]).
+    pub fn with_groove(mut self, groove: &'static Groove) -> Result<LayeredBed, MusicError> {
+        let layers: Vec<(&str, LayerKind)> = self.layers.iter().map(|l| (l.name, l.kind)).collect();
+        groove.check(&layers).map_err(|e| MusicError::new("groove", e))?;
+        if let Some(b) = groove.lows.iter().find(|b| !self.buses.iter().any(|(n, _)| n == *b)) {
+            return Err(MusicError::new(
+                "groove",
+                format!("overtones for the bus `{b}`, which the bed lacks"),
+            ));
+        }
+        self.groove = Some(groove);
+        Ok(self)
+    }
+
+    /// The layers' names and kinds.
+    pub fn layer_kinds(&self) -> Vec<(&'static str, LayerKind)> {
+        self.layers.iter().map(|l| (l.name, l.kind)).collect()
     }
 
     fn index(&self, name: &str) -> usize {
@@ -438,8 +465,9 @@ impl LayeredBed {
             if hand_bass && layer.kind == LayerKind::Bass {
                 continue;
             }
+            let lift = self.groove.map_or(0, |g| g.lift_of(layer.name));
             let tones = if layer.kind.tonal() {
-                let (lo, hi) = layer.range;
+                let (lo, hi) = (layer.range.0 + lift, layer.range.1 + lift);
                 let tones = ctx
                     .harmony
                     .chord_tones(lo, hi, &chord)
@@ -455,14 +483,27 @@ impl LayeredBed {
             let mut notes = Vec::new();
             if let Some(&(_, d)) = plan.layers.iter().find(|(j, _)| *j == i) {
                 let r = |salt: u64| draw(self.seed, bar, i, salt);
-                notes = pattern(layer.kind, d, &tones, plan.fill.contains(&i), &r);
+                let fill = plan.fill.contains(&i);
+                notes = match self.groove.and_then(|g| g.part(layer.name)) {
+                    Some(part) => part.hits(layer.kind, d, &tones, fill, bar, &r),
+                    None => pattern(layer.kind, d, &tones, fill, &r),
+                };
             }
+            // the band hits land exactly on their sixteenth, the pattern's notes with the groove's feel
+            let played = notes.len();
             for &(_, s) in plan.hits.iter().filter(|(j, _)| *j == i) {
                 notes.extend(band_hit(layer.kind, &tones, s));
             }
-            for h in notes {
-                let t = t0 + h.s16 * grid.s16;
-                let (mut midi, mut vel, mut dur) = (h.midi, h.vel, h.len * grid.s16);
+            let gain = layer.gain * self.groove.map_or(1.0, |g| g.bus_gain(layer.bus));
+            for (n, h) in notes.into_iter().enumerate() {
+                let (mut t, mut vel) = (t0 + h.s16 * grid.s16, h.vel);
+                if let Some(g) = self.groove.filter(|_| n < played) {
+                    let jitter = |salt: u64| 2.0 * draw(self.seed, bar, i, salt + 2 * n as u64) - 1.0;
+                    t = t0 + g.swung(h.s16) * grid.s16 + jitter(10_000) * g.push_ms / 1000.0;
+                    vel = (vel * (1.0 + jitter(10_001) * g.vel_spread)).clamp(0.0, 1.0);
+                    t = t.max(0.0);
+                }
+                let (mut midi, mut dur) = (h.midi, h.len * grid.s16);
                 if let Some(ko) = stop {
                     // nothing at the K.O., and no note so close before it that it would be under a sample long
                     // (a filter on an empty note panics; found on dark_disco's strings, sound upgrade)
@@ -479,7 +520,7 @@ impl LayeredBed {
                     }
                 }
                 let x = layer.inst.strike(ctx, midi, dur, vel)?;
-                mix.place(layer.bus, &Sig::Mono(x), t, layer.gain, layer.pan);
+                mix.place(layer.bus, &Sig::Mono(x), t, gain, layer.pan);
             }
         }
         Ok(())
@@ -537,6 +578,12 @@ impl Bed for LayeredBed {
     }
     fn has_pit(&self) -> bool {
         self.classic.has_pit()
+    }
+    fn band_lows(&self) -> &'static [&'static str] {
+        self.groove.map_or(&[], |g| g.lows)
+    }
+    fn has_groove(&self) -> bool {
+        self.groove.is_some()
     }
     fn timp(&self, m: i32) -> Samples {
         self.classic.timp(m)

@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use bf_core::py::round_nd;
+use bf_sound::music::groove::{Groove, Part, Play, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -40,6 +41,75 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["cellos", "kit"],
     victory: &[("kit", 1), ("sub", 2), ("basses", 2), ("ostinato", 1)],
     build: &[("kit", 3), ("sub", 2), ("cellos", 2), ("ostinato", 3)],
+};
+
+/// The orchestral drill's own band (sound upgrade, stage 2): a UK drill kit in a light sixteenth swing (the kick's
+/// two-bar bounce, the clap on 3 with its late answer in the second bar, ghost claps, hats in threes and threes and
+/// twos with rolls at the top), the 808 bouncing from the root to the fifth and the octave over two bars, the cellos
+/// (an octave up, so a phone carries them) stabbing the same three-three-two, and the cello ostinato in threes
+/// against the beat.
+pub static GROOVE: Groove = Groove {
+    swing: 0.55,
+    swing16: true,
+    push_ms: 3.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "kit",
+            lines: &[
+                line(1, Play::Drum(KICK), "X......x..x.....X.....x.....x..."),
+                line(1, Play::Drum(SNARE), "........X...............X....x.."),
+                line(2, Play::Drum(HAT), "x..x..x.x..x..x."),
+                line(2, Play::Drum(CLAP), "...g.......g...."),
+                only(3, Play::Drum(HAT), "............xx.x").maybe(0.6),
+                only(3, Play::Drum(SHAKER), "......x.......x.").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(HAT), "xgxgxxxx"),
+                line(1, Play::Drum(SNARE), "....X..."),
+            ],
+        },
+        Part {
+            layer: "sub",
+            lines: &[
+                upto(1, Play::Root, "X_____......x__."),
+                line(2, Play::Root, "x___......o_....x___............"),
+                line(2, Play::Fifth, "......................o__......."),
+                line(2, Play::Octave, "............................o_.."),
+                only(3, Play::Octave, ".......g........................"),
+                only(3, Play::Root, "..............x................."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "cellos",
+            lines: &[
+                upto(1, Play::Chord, "x..x..x.x..x..x."),
+                only(2, Play::Chord, "X..x..x.X..x..x."),
+                only(3, Play::Chord, "X..x..x.X..x.xx."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "ostinato",
+            lines: &[
+                upto(1, Play::Tone(0), "x.......x......."),
+                upto(1, Play::Tone(1), "...o.......o...."),
+                upto(1, Play::Tone(2), "......o.......o."),
+                only(2, Play::Tone(0), "X..X..X..X..X..."),
+                only(2, Play::Tone(1), ".o..o..o..o..o.o"),
+                only(2, Play::Tone(2), "..o..o..o..o..X."),
+                only(3, Play::Tone(0), "X..X..X..X..X..................."),
+                only(3, Play::Tone(1), ".o..o..o..o..o.oX..X..X..X..X..."),
+                only(3, Play::Tone(2), "..o..o..o..o..X..o..o..o..o..o.o"),
+                only(3, Play::Tone(3), "..................o..o..o..o..X."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass808", -2.5), ("drums", -2.5), ("cellos", 9.5)],
+    lift: &[("cellos", 12)],
+    lows: &["bass808"],
 };
 
 /// The layers.
@@ -83,7 +153,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

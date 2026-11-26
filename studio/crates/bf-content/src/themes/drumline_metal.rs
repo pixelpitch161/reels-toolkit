@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -115,6 +116,73 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The drumline metal's own band (sound upgrade, stage 2): a marching snare cadence (accents on the backbeat,
+/// taps and grace notes between) over the pitched bass drum, double kicks at full tilt, the quads sweeping round
+/// the drums, the drop-D chug galloping on the root with the fifth on its accents, and the bass locked to it in
+/// short notes.
+pub static GROOVE: Groove = Groove {
+    push_ms: 3.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "....X..g....X.g."),
+                only(2, Play::Drum(KICK), "X.....x.X.....x."),
+                line(2, Play::Drum(SNARE), "o.g.X.g.o.goX.go"),
+                line(2, Play::Drum(HAT), "...g.......g...."),
+                only(3, Play::Drum(KICK), "XxxxXxxxXxxxXxxx"),
+                only(3, Play::Drum(SNARE), ".g...g...g...g..").maybe(0.6),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "xgxgxxxX"),
+                line(1, Play::Drum(KICK), "X...X..X"),
+            ],
+        },
+        Part {
+            layer: "quads",
+            lines: &[
+                line(1, Play::Tone(0), "x.......x......."),
+                line(1, Play::Tone(2), "....x.x.....x.x."),
+                line(2, Play::Tone(1), "..x.......x....."),
+                line(2, Play::Tone(3), "...x.......x...x"),
+                only(3, Play::Tone(1), ".x...x...x...x..").maybe(0.7),
+                only(3, Play::Tone(3), "...............x...x.x.x.x.xxx.x"),
+            ],
+            fill: &[
+                line(1, Play::Tone(3), "xx......"),
+                line(1, Play::Tone(2), "..xx...."),
+                line(1, Play::Tone(1), "....xx.."),
+                line(1, Play::Tone(0), "......xX"),
+            ],
+        },
+        Part {
+            layer: "chug",
+            lines: &[
+                upto(1, Play::Root, "X.......X.x....."),
+                only(2, Play::Root, "X.xxX.xxX.xxX.x."),
+                line(3, Play::Root, "X.xxX.xxX.xxX.xxX.xxX.xxX.X.X.X."),
+                line(2, Play::Fifth, "X.......X......."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X...x...X...x.x."),
+                line(3, Play::Root, "X.xxX.x.X.xxX.x."),
+                only(3, Play::Octave, "..............g.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.0), ("guitar", 4.0), ("brass", 2.0), ("line", 1.5)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -186,5 +254,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("drumline_metal", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("drumline_metal", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

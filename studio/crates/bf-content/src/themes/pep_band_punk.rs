@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -115,6 +116,79 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The pep band punk's own band (sound upgrade, stage 2): a skate beat (the kick on the beat, the snare on every
+/// off-beat eighth, never letting up) with eighth hats, the cheer's claps on the backbeat and a two-bar "let's go"
+/// clap over the tambourine, the bass driving eighths on the root, buzzsaw power chords on downstroke eighths and
+/// the horns' unison stabs on the off-beats, shouting a two-bar hit at the top.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.09,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "....X.......X..."),
+                only(2, Play::Drum(KICK), "X...x...X...x..."),
+                only(2, Play::Drum(SNARE), "..X...X...X...X."),
+                line(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(KICK), "X...X...X...X..."),
+                only(3, Play::Drum(SNARE), "..X..gX...X..gX."),
+                only(3, Play::Drum(SNARE), "...g.......g....").maybe(0.6),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "gxgxxxXX"),
+                line(1, Play::Drum(KICK), "X...X..."),
+            ],
+        },
+        Part {
+            layer: "cheer",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "..x...x...x...x."),
+                upto(2, Play::Drum(CLAP), "....X.......X..."),
+                line(2, Play::Drum(SHAKER), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(CLAP), "....X.......X...X...X...X.X.X..."),
+                only(3, Play::Drum(SHAKER), ".g.g.g.g.g.g.g.g"),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "x.x.xxxX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X...x...X...x.x."),
+                line(3, Play::Root, "X.x.x.x.X.x.x..."),
+                line(3, Play::Octave, "..............x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "guitar",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                upto(1, Play::Fifth, "X_______X_______"),
+                only(2, Play::Root, "X...x.x.X...x.x."),
+                only(2, Play::Fifth, "X...x.x.X...x.x."),
+                line(3, Play::Root, "X.x.x.x.X.x.x.x."),
+                line(3, Play::Fifth, "X.x.x.x.X.x.x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "..x.......x....."),
+                only(2, Play::Chord, "..x...x...x...x."),
+                only(3, Play::Chord, "..X...X...X...X.X..X..X...X.X.X."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.0), ("guitar", 6.0), ("horns", 4.0), ("perc", 2.0)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -190,5 +264,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("pep_band_punk", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("pep_band_punk", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

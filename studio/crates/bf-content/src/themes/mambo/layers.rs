@@ -4,6 +4,7 @@
 
 use bf_core::py::round_nd;
 use bf_sound::music::MusicCtx;
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -53,6 +54,66 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("piano", 3),
         ("montuno", 3),
     ],
+};
+
+/// The mambo's own band (sound upgrade, stage 2): the cascara on the shell and the bombo on the and of 2, the
+/// conga tumbao (heel and toe, the slap on 2, two open tones on 4) with the mambo bell when the band opens up, the
+/// contrabass tumbao (the fifth on the and of 2 and the root on 4, held over the bar line), the piano's comp on the
+/// off-beats and a two-bar montuno.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "timbales",
+            lines: &[
+                line(1, Play::Drum(HAT), "X.x.xx.xX.xx.x.x"),
+                upto(1, Play::Drum(KICK), "......x........."),
+                line(2, Play::Drum(KICK), "......x.....o..."),
+                only(3, Play::Drum(SNARE), "..........x...x.").maybe(0.7),
+            ],
+            fill: &[line(1, Play::Drum(SNARE), "xxxxxxxX")],
+        },
+        Part {
+            layer: "congas",
+            lines: &[
+                line(1, Play::Drum(SHAKER), "g.g...g.g.g.x.x."),
+                line(1, Play::Drum(CLAP), "....X..........."),
+                line(2, Play::Drum(HAT), "X.x.X.x.X.xxX.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                line(1, Play::Fifth, "......x_____...."),
+                line(1, Play::Root, "............x___"),
+                only(3, Play::Octave, "..........g.....").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "piano",
+            lines: &[
+                upto(1, Play::Chord, "..x.....x......."),
+                line(2, Play::Chord, "..x..x....x..x.."),
+                only(3, Play::Chord, "...............x").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "montuno",
+            lines: &[
+                line(1, Play::Tone(0), "x.......x.....x...x.....x.....x."),
+                line(1, Play::Tone(2), "..x...x.....x.....x.x.....x....."),
+                line(2, Play::Tone(1), "....x.....x...........x.....x..."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -5.0), ("perc", 1.0), ("piano", 7.0), ("sax", 1.5)],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// One note of a Pixel Pitch voice at a fixed velocity (so the voice's cache holds it), scaled by `vel`.
@@ -143,5 +204,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

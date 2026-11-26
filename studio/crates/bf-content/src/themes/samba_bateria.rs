@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -102,6 +103,71 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ],
 };
 
+/// The samba bateria's own band (sound upgrade, stage 2): the surdo pair (the high one on 1, the low marcação on 2,
+/// the cutting third surdo at the top), the caixa's sixteenths with their accents and ghosts, the ganzá, the
+/// tamborims' teleco-teco (the carreteiro's sixteenths at the top), the agogô's low and high bells, the bass's root
+/// and pickup into the fifth on the surdo's beat, and the cavaquinho chopping the chord.
+pub static GROOVE: Groove = Groove {
+    swing: 0.54,
+    swing16: true,
+    push_ms: 5.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "x...X...x...X..."),
+                only(3, Play::Drum(KICK), "......o.......o.").maybe(0.7),
+                upto(2, Play::Drum(SNARE), "x.gxx.gxx.gxx.gx"),
+                only(3, Play::Drum(SNARE), "xggxxgxgxggxxgxg"),
+                line(1, Play::Drum(HAT), "g.gxg.gxg.gxg.gx"),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "xxxxxxxX"),
+                line(1, Play::Drum(KICK), "X...X..."),
+            ],
+        },
+        Part {
+            layer: "tamborim",
+            lines: &[
+                line(1, Play::Tone(0), "x.xx.x.x.xx.x.x."),
+                only(3, Play::Tone(1), ".g..g.g.g..g.g.g").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "agogo",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "x.......x......."),
+                upto(1, Play::Drum(CLAP), "....x.......x..."),
+                line(2, Play::Drum(SHAKER), "x.....x...x....."),
+                line(2, Play::Drum(CLAP), "..x.x...x...x.x."),
+                only(3, Play::Drum(CLAP), ".......g.......g").maybe(0.5),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "x.x.x.xX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                line(1, Play::Root, "x..x....x..x...."),
+                line(1, Play::Fifth, "....x___....x___"),
+                only(3, Play::Octave, ".......g.......g").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                line(1, Play::Chord, "x.xx.x.xx.xx.x.x"),
+                only(3, Play::Upper, ".g..g.g..g..g.g.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The Classic arrangement's table: the band at one steady level.
 pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("tamborim", 2), ("bass", 2), ("chords", 2)],
@@ -190,5 +256,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("samba_bateria", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("samba_bateria", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

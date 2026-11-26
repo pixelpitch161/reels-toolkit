@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SHAKER, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -111,6 +112,78 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The funk rock's own band (sound upgrade, stage 2), on a light sixteenth swing: a syncopated kick under a hard
+/// backbeat with ghost notes and sixteenth hats, the tambourine on the off-beats and the sixteenths, the slap bass
+/// (thumb on the root, the octave popped), the wah guitar scratching sixteenths and short horn stabs off the beat.
+pub static GROOVE: Groove = Groove {
+    swing: 0.56,
+    swing16: true,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.........X....."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(KICK), "X..x..x...X..x.."),
+                line(2, Play::Drum(SNARE), ".......g.g.....g").maybe(0.8),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g"),
+                only(3, Play::Drum(KICK), "...........x....").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "x.gxX.xX"),
+                line(1, Play::Drum(KICK), "X.....x."),
+            ],
+        },
+        Part {
+            layer: "tamb",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "..x...x...x...x."),
+                line(2, Play::Drum(SHAKER), "x.xgx.xgx.xgx.xg"),
+                line(2, Play::Drum(CLAP), "....X.......X..."),
+                only(3, Play::Drum(SHAKER), ".g...g...g...g.."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_.....x..X_...."),
+                line(2, Play::Root, "X.....x...X..x.."),
+                line(2, Play::Octave, "...X.......X...."),
+                only(3, Play::Root, "..g.....g......."),
+                only(3, Play::Octave, ".......x.......x").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "wah",
+            lines: &[
+                upto(1, Play::Upper, "..x...x...x...x."),
+                line(2, Play::Upper, "x.gx..gxx.gx..gx"),
+                line(2, Play::Root, "....x.......x..."),
+                only(3, Play::Upper, ".g...g...g...g.."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "......X.......x."),
+                line(2, Play::Chord, "...X..x.......X....X..x...x.X..."),
+                only(3, Play::Chord, "..........X....x").maybe(0.6),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.0), ("horns", 6.0), ("guitar", 5.0), ("kit", -1.5)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -191,5 +264,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("funk_rock", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("funk_rock", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

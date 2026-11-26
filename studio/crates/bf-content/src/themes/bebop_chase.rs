@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,82 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("head", 3), ("riser", 1)],
 );
 
+/// The bebop chase's own band (sound upgrade, stage 2): the ride's spang-a-lang over a feathered kick, the brush
+/// on 2 and 4 where the hi-hat would be and the snare's comping, a walking upright on the quarters (a two-feel when
+/// the band thins out), the piano comping rootless voicings on the Charleston and the off-beats, and a two-bar
+/// unison head in swung eighths that ends on the and of 4.
+pub static GROOVE: Groove = Groove {
+    swing: 0.62,
+    push_ms: 4.0,
+    vel_spread: 0.09,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                upto(1, Play::Drum(HAT), "o...o...o...o..."),
+                only(2, Play::Drum(HAT), "o...o.g.o...o.g."),
+                only(3, Play::Drum(HAT), "o...x.o.o...x.o."),
+                line(1, Play::Drum(KICK), "g...g...g...g..."),
+                only(3, Play::Drum(KICK), "..........x...................x.").maybe(0.5),
+                line(1, Play::Drum(SNARE), "....g.......g..."),
+                line(2, Play::Drum(SNARE), "......o.......x...o.......o.....").maybe(0.6),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "......x."),
+                line(1, Play::Drum(SNARE), "x.xxx.xX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_______........"),
+                upto(1, Play::Fifth, "........x_______"),
+                line(2, Play::Root, "X...............X..............."),
+                line(2, Play::Third, "....x.......................x..."),
+                line(2, Play::Fifth, "........x...........x..........."),
+                line(2, Play::Seventh, "............x..................."),
+                line(2, Play::Octave, "........................x......."),
+                only(3, Play::Fifth, "..............g...............g.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Upper, "x.....x........."),
+                line(2, Play::Upper, "x.....x.......o.......x...x....."),
+                only(3, Play::Upper, "..........x.......o...........o.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "head",
+            lines: &[
+                upto(1, Play::Tone(4), "x.............X."),
+                upto(1, Play::Tone(2), "......x........."),
+                line(2, Play::Tone(0), "........x......................."),
+                line(2, Play::Tone(1), "......x...x....................."),
+                line(2, Play::Tone(2), "....x.......x.......x..........."),
+                line(2, Play::Tone(3), "..x.............x.....x........."),
+                line(2, Play::Tone(4), "X.............x...............X."),
+                line(2, Play::Tone(5), "..........................x....."),
+                only(3, Play::Tone(2), "..................g.............").maybe(0.7),
+                only(3, Play::Tone(4), "........................g.......").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", -2.0),
+        ("drums", 1.5),
+        ("horns", 1.5),
+        ("kit", 3.0),
+        ("piano", 3.5),
+    ],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -164,5 +241,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("bebop_chase", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("bebop_chase", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -130,6 +131,79 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The heroic fanfare's own band (sound upgrade, stage 2): a march on the snare (soft taps on the eighths, the
+/// backbeat and its drags) over the bass drum on 1 and 3, the timpani on the root and the fifth with a roll into
+/// a lead change, the low strings marching in eighths, the strings racing in sixteenths up a two-bar figure, and
+/// the brass calling on the three-three-two.
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......x......."),
+                upto(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(SNARE), "....X..g....X.gg"),
+                line(2, Play::Drum(HAT), "x.o...o.x.o....."),
+                only(3, Play::Drum(SNARE), "...g.......g....").maybe(0.7),
+                only(3, Play::Drum(KICK), "..........x....."),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "X......."),
+                line(1, Play::Drum(SNARE), "gxgxxxxX"),
+            ],
+        },
+        Part {
+            layer: "timpani",
+            lines: &[
+                upto(1, Play::Root, "X_______........"),
+                line(2, Play::Root, "X..........x...."),
+                line(2, Play::Fifth, "........X......."),
+                only(3, Play::Root, "....x.....x.x.xx"),
+            ],
+            fill: &[line(1, Play::Fifth, "x.x.x..."), line(1, Play::Root, ".x.x.xxX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______x_______"),
+                line(2, Play::Root, "X.x.x...X.x.x..."),
+                only(2, Play::Root, "......x.......x."),
+                only(3, Play::Octave, "......x.......x."),
+                only(3, Play::Fifth, ".......g.......g").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "strings",
+            lines: &[
+                only(2, Play::Tone(0), "x.......x......................."),
+                only(2, Play::Tone(1), "..o...o...o...o.x.......x......."),
+                only(2, Play::Tone(2), "....x.......x.....o...o...o...o."),
+                only(2, Play::Tone(3), "....................x.......x..."),
+                only(3, Play::Tone(0), "X...x...x...x..................."),
+                only(3, Play::Tone(1), ".o.o.o.o.o.o.o.oX...x...x...x..."),
+                only(3, Play::Tone(2), "..x...x...x...x..o.o.o.o.o.o.o.o"),
+                only(3, Play::Tone(3), "..................x...x...x...x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "X_______........"),
+                line(2, Play::Chord, "X..x..x.X......."),
+                only(3, Play::Chord, "...........x.x.x").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("brass", 1.0), ("strings", 2.0), ("timp", -1.0)],
+    lows: &["timp"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -210,5 +284,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("heroic_fanfare", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("heroic_fanfare", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

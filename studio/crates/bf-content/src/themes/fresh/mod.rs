@@ -8,6 +8,7 @@
 //! Every Studio theme has all five hooks, so any pair may play it.
 
 use bf_sound::mix::{Mix, Sig};
+use bf_sound::music::groove::Groove;
 use bf_sound::music::layers::{
     ArrangementTable, CRASH, Cue, KICK, Layer, LayerKind, LayeredBed, SNARE, pattern, root_first,
 };
@@ -347,6 +348,25 @@ pub fn bed(
 ) -> Result<Box<dyn Bed>, ContentError> {
     let frame = Frame::new(name, layers(), room);
     Ok(Box::new(LayeredBed::new(Box::new(frame), layers(), table, cues, seed)?))
+}
+
+/// A Studio theme's Composed bed on `table` with its own band, `groove` (sound upgrade, stage 2: the theme's own
+/// patterns, swing and balance). The Classic bed ([`bed`]) never has one.
+///
+/// # Errors
+/// A table naming a layer the theme lacks, or a groove badly written for its layers.
+pub fn grooved(
+    name: &'static str,
+    layers: fn() -> Vec<Layer>,
+    room: Room,
+    table: ArrangementTable,
+    cues: Vec<Cue>,
+    seed: u64,
+    groove: &'static Groove,
+) -> Result<Box<dyn Bed>, ContentError> {
+    let frame = Frame::new(name, layers(), room);
+    let bed = LayeredBed::new(Box::new(frame), layers(), table, cues, seed)?.with_groove(groove)?;
+    Ok(Box::new(bed))
 }
 
 /// The plain table a Studio theme's Classic arrangement plays: its layers at a steady level all through.

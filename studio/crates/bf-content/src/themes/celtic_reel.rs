@@ -3,6 +3,7 @@
 //! arrangements are layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of
 //! the Composed one, with no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -128,6 +129,82 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     ],
 );
 
+/// The celtic reel's own band (sound upgrade, stage 2): driving eighths, the bodhrán's open bass on 1 and 3 under
+/// a running tipper with a triplet roll at the end of the phrase, feet stomping the beat, the bass on root and
+/// fifth, the bouzouki chopping eighths with the lift on 1 and 3, and the dulcimer running the chord up and down
+/// in eighths, a two-bar figure, with grace notes when the session takes off.
+pub static GROOVE: Groove = Groove {
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.......X......."),
+                upto(1, Play::Drum(SNARE), "..x...x...x...x."),
+                line(2, Play::Drum(SNARE), "o.x.X.x.o.x.X.x.o.x.X.x.o.x.X.x."),
+                line(2, Play::Drum(HAT), "...g.......g...........g...ggg.."),
+                only(3, Play::Drum(HAT), ".g...g.g.g...g.g.g...g...g......"),
+                only(3, Play::Drum(KICK), "......g...........g.......g.....").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "stomp",
+            lines: &[
+                line(1, Play::Drum(CLAP), "X.......X......."),
+                line(2, Play::Drum(CLAP), "....x.......x..."),
+                only(3, Play::Drum(CLAP), "..............o.").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(2, Play::Root, "x.......x......."),
+                only(2, Play::Fifth, "....x.......x..."),
+                only(3, Play::Root, "x.x.....x.x....."),
+                only(3, Play::Fifth, "....x.x.....x.x."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "x...x...x...x..."),
+                line(2, Play::Chord, "X...x...X...x..."),
+                line(2, Play::Upper, "..o...o...o...o."),
+                only(3, Play::Upper, "...g.......g...g").maybe(0.7),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "dulcimer",
+            lines: &[
+                upto(1, Play::Tone(0), "x.......x......."),
+                upto(1, Play::Tone(2), "....x.......x..."),
+                upto(1, Play::Top, "..............x."),
+                line(2, Play::Tone(0), "X...............X..............."),
+                line(2, Play::Tone(1), "..x...........x.....x.........x."),
+                line(2, Play::Tone(2), "....x.......x.....x.....x......."),
+                line(2, Play::Tone(3), "......X...x...........X.....x..."),
+                line(2, Play::Tone(4), "........x.................x....."),
+                only(3, Play::Top, ".g.......g.......g.......g......").maybe(0.8),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", -2.0),
+        ("bodhran", 0.0),
+        ("bouzouki", 3.0),
+        ("drone", 1.5),
+        ("dulcimer", 1.0),
+    ],
+    lows: &["bass", "bodhran"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -211,5 +288,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("celtic_reel", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("celtic_reel", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -61,6 +61,9 @@ pub struct Plan {
     /// A bass fighter holds the bottom in the fight (C6, `Polish::hand_bass`): the band's and the hits' buses make
     /// room for it there ([`lows::room_for_bass`]).
     pub bass_room: bool,
+    /// The band's buses that get M2's overtones (M6, sound upgrade stage 2: a theme's deep bass or drums that a
+    /// phone would otherwise lose; the theme's groove names them, [`crate::music::groove::Groove::lows`]).
+    pub band_lows: Vec<String>,
 }
 
 /// What the master did and reached.
@@ -134,8 +137,14 @@ pub fn treated(mix: &Mix, levels: &Levels, plan: &Plan) -> BTreeMap<String, Vec<
             if p.piercing {
                 y = highs::treat(&y);
             }
-        } else if plan.bass_room {
-            y = lows::room_for_bass(&y, from, to);
+        } else {
+            // M6 (stage 2): a band bus the theme names gets the overtones a phone can play
+            if plan.band_lows.iter().any(|b| b == name) {
+                y = lows::treat(&y, from, to);
+            }
+            if plan.bass_room {
+                y = lows::room_for_bass(&y, from, to);
+            }
         }
         buses.insert(name.to_string(), y);
     }

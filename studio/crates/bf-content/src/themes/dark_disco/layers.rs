@@ -1,6 +1,7 @@
 //! The dark disco's Composed arrangement (milestone 5): four on the floor, the clap on 2 and 4, closed hats and
 //! the open hat on the off-beats, the filtered-saw bass in eighths, string stabs, a pad and the mirror-ball glints.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth;
 
@@ -60,6 +61,79 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("glints", 3),
         ("riser", 1),
     ],
+};
+
+/// The dark disco's own band (sound upgrade, stage 2): the four on the floor stays, the clap on 2 and 4, closed
+/// hats on the beat with sixteenths between and the open hat on every off-beat, the saw bass in octave eighths
+/// (with sixteenth pickups at the top), the strings stabbing a two-bar off-beat figure and the glints sparkling
+/// over it.
+pub static GROOVE: Groove = Groove {
+    push_ms: 2.5,
+    vel_spread: 0.08,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(1, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                line(2, Play::Drum(HAT), ".x.o.x.o.x.o.x.o"),
+                only(3, Play::Drum(SNARE), "...........g...g").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "open",
+            lines: &[line(1, Play::Drum(HAT), "..X..xX...X..xX.")],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                line(1, Play::Root, "x...o...x...o..."),
+                line(2, Play::Octave, "..g...g...g...g."),
+                only(3, Play::Root, "...g.......g....").maybe(0.7),
+                only(3, Play::Fifth, ".......g.......g").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "strings",
+            lines: &[
+                line(1, Play::Chord, "X_.X_.X_.X_.X_.X..X_.X_.X_.X_.X_"),
+                line(1, Play::Top, "X..X..X..X..X..X..X..X..X..X..X."),
+                line(2, Play::Upper, ".......x........"),
+                only(3, Play::Top, ".........x......").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "pad",
+            lines: &[
+                upto(1, Play::Chord, "o_______________"),
+                line(2, Play::Chord, "x_______________"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "glints",
+            lines: &[
+                line(1, Play::Top, "x...........x..."),
+                line(1, Play::Tone(1), "......x........."),
+                line(2, Play::Tone(2), "...x.......x...."),
+                only(3, Play::Tone(0), ".x...x...x...x.."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[
+        ("bass", -4.0),
+        ("drums", -4.0),
+        ("pad", 6.0),
+        ("shimmer", 8.0),
+        ("strings", 8.0),
+    ],
+    lows: &["bass", "drums"],
+    ..STRAIGHT
 };
 
 /// The layers, on the classic bed's instruments and buses.
@@ -146,5 +220,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

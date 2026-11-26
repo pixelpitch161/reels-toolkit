@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,62 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("flute", 3), ("riser", 1)],
 );
 
+/// The amapiano's own band (sound upgrade, stage 2): a soft four on the floor under sixteenth shakers and the rim
+/// on the off-beats, the log drum bouncing a two-bar syncopated figure with its octave jumps, the piano's jazzy
+/// chords pushed off the beat and a lazy two-bar flute line, all with a light sixteenth swing.
+pub static GROOVE: Groove = Groove {
+    swing: 0.55,
+    swing16: true,
+    push_ms: 3.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "x...x...x...x..."),
+                upto(1, Play::Drum(HAT), "..o...o...o...o."),
+                line(2, Play::Drum(HAT), "goxggoxggoxggoxg"),
+                line(2, Play::Drum(SNARE), "...x..x...x..x.."),
+                only(3, Play::Drum(SNARE), ".g.......g......").maybe(0.5),
+                only(3, Play::Drum(KICK), "..............g.").maybe(0.4),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_______..x_____"),
+                line(2, Play::Root, "X..x..x.....x...X..x..x...x....."),
+                line(2, Play::Octave, "..............x.............x.x."),
+                only(3, Play::Fifth, "........g...............g.......").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "x_______..x_____"),
+                line(2, Play::Chord, "...x..x...x........x..x...x..x.."),
+                only(3, Play::Upper, ".x.......x......").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "flute",
+            lines: &[
+                upto(1, Play::Top, "x_______........"),
+                line(2, Play::Top, "x_____..........x___....x_______"),
+                line(2, Play::Tone(1), "......x___x_........x_.........."),
+                only(3, Play::Tone(2), "...x.......x.x............x...x."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("flute", 5.5), ("kit", 1.0), ("logdrum", -2.0), ("pad", 1.5)],
+    lows: &["logdrum"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -168,5 +225,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("amapiano", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("amapiano", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

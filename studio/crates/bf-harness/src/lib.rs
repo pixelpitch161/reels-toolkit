@@ -32,6 +32,7 @@
 //! ([`sound::part_is_compared`]): the kit's soundtrack has first-time notes of the part, or (a part that plays only
 //! through its own synth, the kit's count 0) its own bus is a stem sounding above -60 dBFS in at least 100 blocks.
 
+pub mod band;
 pub mod checks;
 pub mod episode;
 pub mod fight;

@@ -3,6 +3,7 @@
 //! layered beds over the Studio themes' [frame](super::fresh): the Classic one a plain cut of the Composed one, with
 //! no story cues.
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CRASH, Cue, HAT, KICK, Layer, LayerKind, SNARE};
 use bf_sound::synth;
 use bf_sound::traits::Bed;
@@ -97,6 +98,65 @@ pub const PLAIN: ArrangementTable = fresh::plain(
     &[("drums", 3), ("bass", 3), ("chords", 3), ("wah", 3), ("riser", 1)],
 );
 
+/// The acid jazz's own band (sound upgrade, stage 2): a swung-sixteenth breakbeat (the kick on 1 and the and of 2,
+/// the snare's backbeat with ghost notes, busy hats), a slap bass on the root and the octave in a two-bar funk line,
+/// the Rhodes stabbing the off-beats and held, and the wah guitar scratching sixteenths with its accents on 2 and 4.
+pub static GROOVE: Groove = Groove {
+    swing: 0.56,
+    swing16: true,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "X.....x...x.....X.....x..x..o..."),
+                only(3, Play::Drum(KICK), ".......g.....x..").maybe(0.6),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(SNARE), ".g.....g..g....g").maybe(0.75),
+                upto(1, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                line(2, Play::Drum(HAT), "xgo.xgogxgo.xgog"),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "x.....x."),
+                line(1, Play::Drum(SNARE), "..gxx.xX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______..o_____"),
+                line(2, Play::Root, "X_.g..x_..x.....X_.g..x_....x..."),
+                line(2, Play::Octave, "........o.....o.........o.x....."),
+                only(3, Play::Fifth, ".............x...............g..").maybe(0.6),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "chords",
+            lines: &[
+                upto(1, Play::Chord, "....x___....x___"),
+                line(2, Play::Chord, "..x_..x_....x_....x_......x_..x."),
+                only(3, Play::Chord, "..............o.......o.........").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "wah",
+            lines: &[
+                upto(1, Play::Tone(1), "....x.......x..."),
+                line(2, Play::Tone(1), "x.gx.gg.x.gx.gg."),
+                line(2, Play::Tone(2), "....X.......X..."),
+                only(3, Play::Tone(3), ".......g.......x").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.5), ("rhodes", 2.0)],
+    lows: &["bass"],
+    ..STRAIGHT
+};
+
 /// The layers.
 pub fn layers() -> Vec<Layer> {
     vec![
@@ -168,5 +228,5 @@ pub fn classic() -> Result<Box<dyn Bed>, ContentError> {
 /// # Errors
 /// As [`classic`].
 pub fn composed(cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
-    fresh::bed("acid_jazz", layers, ROOM, TABLE, cues, seed)
+    fresh::grooved("acid_jazz", layers, ROOM, TABLE, cues, seed, &GROOVE)
 }

@@ -357,6 +357,7 @@ impl<'a> SoundBuild<'a> {
             window: (show.grid.t_fight, show.t_ko),
             winner: show.win,
             bass_room: self.ctx.polish.as_ref().is_some_and(|p| p.hand_bass),
+            band_lows: self.bed.band_lows().iter().map(|b| b.to_string()).collect(),
         })
     }
 }

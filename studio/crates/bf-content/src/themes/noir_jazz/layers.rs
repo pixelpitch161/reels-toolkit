@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use bf_core::py::round_nd;
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -36,6 +37,60 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["comp", "drums"],
     victory: &[("drums", 1), ("bass", 2), ("comp", 1), ("pad", 2)],
     build: &[("drums", 3), ("bass", 2), ("comp", 2), ("pad", 2)],
+};
+
+/// The noir jazz's own band (sound upgrade, stage 2): brushes swirling the swung eighths with a tap on 2 and 4 and
+/// a feathered kick, the ride's spang-a-lang coming in with the fight and the sticks comping on the snare at full
+/// tilt, a walking upright (a two-feel when the band thins out), and the muted piano's rootless voicings on the
+/// and of 2 and the and of 4.
+pub static GROOVE: Groove = Groove {
+    swing: 0.64,
+    push_ms: 5.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "g.......g......."),
+                only(3, Play::Drum(KICK), "..........x...................x.").maybe(0.5),
+                upto(2, Play::Drum(SHAKER), "o.g.o.g.o.g.o.g."),
+                line(1, Play::Drum(SNARE), "....o.......o..."),
+                only(2, Play::Drum(HAT), "o...o.g.o...o.g."),
+                only(3, Play::Drum(HAT), "x...x.o.x...x.o."),
+                only(3, Play::Drum(CLAP), "......o.......x.......o...x.....").maybe(0.8),
+            ],
+            fill: &[
+                line(1, Play::Drum(KICK), "x.....x."),
+                line(1, Play::Drum(CLAP), "..x.x.xX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_______........"),
+                upto(1, Play::Fifth, "........x_______"),
+                line(2, Play::Root, "X...............X..............."),
+                line(2, Play::Fifth, "....x...................x......."),
+                line(2, Play::Octave, "........x......................."),
+                line(2, Play::Seventh, "............x..................."),
+                line(2, Play::Third, "....................x.......x..."),
+                only(3, Play::Fifth, "..............g...............g.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "comp",
+            lines: &[
+                upto(1, Play::Upper, "......x_........"),
+                line(2, Play::Upper, "......x.......x.........x_......"),
+                only(3, Play::Upper, "..x.......x.........x.....x.....").maybe(0.7),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -2.5), ("comp", 8.0), ("drums", 5.0), ("pad", 3.5)],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -79,7 +134,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

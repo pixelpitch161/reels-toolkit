@@ -4,6 +4,7 @@
 
 use bf_core::dmath::{PI, exp, sin};
 use bf_sound::SRF;
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{ArrangementTable, CLAP, CRASH, Cue, HAT, KICK, Layer, LayerKind, LayeredBed, SNARE};
 use bf_sound::synth::{self, FILTER_O, clip};
 
@@ -52,6 +53,73 @@ pub const TABLE: ArrangementTable = ArrangementTable {
         ("arp", 3),
         ("riser", 1),
     ],
+};
+
+/// The bossa noir's own band (sound upgrade, stage 2): the felt kick in the bossa's dotted figure (1, the and of 2,
+/// 3, the and of 4), the cross-stick on the two-bar bossa clave over brushes on the eighths, the upright on the root
+/// and the fifth with the fifth anticipating beat 3, the nylon's two-bar batida, a nylon arpeggio and the shaker on
+/// the sixteenths leaning on the off-beat.
+pub static GROOVE: Groove = Groove {
+    push_ms: 6.0,
+    vel_spread: 0.1,
+    parts: &[
+        Part {
+            layer: "drums",
+            lines: &[
+                line(1, Play::Drum(KICK), "x.....o.x.....o."),
+                line(1, Play::Drum(SNARE), "x.....x.....x.......x.....x....."),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                line(2, Play::Drum(HAT), "x.o.x.o.x.o.x.o."),
+                only(3, Play::Drum(HAT), ".g.g.g.g.g.g.g.g").maybe(0.7),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "..x..x.x"),
+                line(1, Play::Drum(KICK), "x...x..."),
+            ],
+        },
+        Part {
+            layer: "shaker",
+            lines: &[
+                upto(1, Play::Drum(HAT), "o.x.o.x.o.x.o.x."),
+                line(2, Play::Drum(HAT), "ogxgogxgogxgogxg"),
+            ],
+            fill: &[line(1, Play::Drum(CLAP), "x..xx.xX")],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "x_______........"),
+                upto(1, Play::Fifth, "........x_______"),
+                line(2, Play::Root, "x_____........x_"),
+                line(2, Play::Fifth, "......x_______.."),
+                only(3, Play::Octave, "...g............").maybe(0.4),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "nylon",
+            lines: &[
+                upto(1, Play::Upper, "x.......x......."),
+                line(2, Play::Upper, "x...x.....x...x...x.....x...x..."),
+                only(3, Play::Chord, "......g.......g.").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "arp",
+            lines: &[
+                line(1, Play::Tone(0), "x.......x......."),
+                line(1, Play::Tone(2), "....x.......x..."),
+                line(2, Play::Tone(1), "..x.......x....."),
+                line(2, Play::Tone(3), "......x.......x."),
+                only(3, Play::Tone(4), ".g...g...g...g..").maybe(0.5),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("bass", -4.0), ("drums", 6.0), ("guitar", 7.0), ("keys", 5.0)],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// A soft upright: a sine body, a little of the string, darkened.
@@ -162,5 +230,5 @@ pub fn layers() -> Vec<Layer> {
 /// # Errors
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<LayeredBed, ContentError> {
-    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?)
+    Ok(LayeredBed::new((THEME.classic)(options)?, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?)
 }

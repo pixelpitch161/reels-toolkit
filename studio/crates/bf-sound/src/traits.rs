@@ -413,6 +413,18 @@ pub trait Bed: Send + Sync {
         false
     }
 
+    /// The bed's buses the Composed master gives a phone's overtones to (M6 of the sound upgrade; a theme's
+    /// groove names them). Default: none, as every Classic bed.
+    fn band_lows(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    /// Whether the bed plays a theme's own band patterns (a Composed bed with its groove, sound upgrade stage 2).
+    /// Default: false.
+    fn has_groove(&self) -> bool {
+        false
+    }
+
     /// `timp(m)`: the pit's timpani stroke on MIDI note `m` at velocity 1, for [`Bed::has_pit`]. Default: an error
     /// (the bed has no pit).
     fn timp(&self, m: i32) -> Result<Vec<f64>, MusicError> {

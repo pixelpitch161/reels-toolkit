@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -35,6 +36,82 @@ pub const TABLE: ArrangementTable = ArrangementTable {
     ability: &["arp", "kit"],
     victory: &[("kit", 1), ("bass", 2), ("arp", 1)],
     build: &[("kit", 3), ("bass", 3), ("arp", 2), ("toms", 2)],
+};
+
+/// The prog duel's own band (sound upgrade, stage 2): kick, kick, snare pushing three-three-two (and
+/// three-three-three-three-two-two in the second bar) round a straight backbeat, hats on the eighths and the ride
+/// at full tilt, the toms answering the pushes, the bass driving eighths with an octave jump (a held root when it is
+/// alone), and the arpeggio an octave up (so a phone keeps it) running up the chord and back down in sixteenths
+/// over the chord struck on the beats (and on the pushes in the second bar).
+pub static GROOVE: Groove = Groove {
+    push_ms: 4.0,
+    vel_spread: 0.09,
+    parts: &[
+        Part {
+            layer: "kit",
+            lines: &[
+                upto(1, Play::Drum(KICK), "X.....X.X......."),
+                line(2, Play::Drum(KICK), "x..o....x..o....x..o.....o......"),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                line(2, Play::Drum(SNARE), "......o.......o.......o..o....o."),
+                upto(1, Play::Drum(HAT), "x...x...x...x..."),
+                only(2, Play::Drum(HAT), "x.x.x.x.x.x.x.x."),
+                only(3, Play::Drum(SHAKER), "X.x.X.x.X.x.X.x."),
+                line(2, Play::Drum(SNARE), "..g....g.g.g..g.").maybe(0.8),
+                only(3, Play::Drum(SNARE), "...........o...o").maybe(0.5),
+                only(3, Play::Drum(CRASH), "X...............................").maybe(0.5),
+            ],
+            fill: &[
+                line(1, Play::Drum(SNARE), "x.xx...."),
+                line(1, Play::Drum(CLAP), "....xx.."),
+                line(1, Play::Drum(KICK), "......X."),
+            ],
+        },
+        Part {
+            layer: "toms",
+            lines: &[
+                line(1, Play::Drum(CLAP), "...x..x....x..x."),
+                line(1, Play::Drum(SHAKER), "........X......X"),
+                line(2, Play::Drum(SHAKER), ".....x.......x.."),
+                only(3, Play::Drum(CLAP), ".x.......x......").maybe(0.6),
+            ],
+            fill: &[
+                line(1, Play::Drum(CLAP), "xxxx...."),
+                line(1, Play::Drum(SHAKER), "....xxxX"),
+            ],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "X_______X_______"),
+                only(2, Play::Root, "X..o..o.x..o..o."),
+                line(3, Play::Root, "x...o.o.x...o.o."),
+                line(3, Play::Octave, "..o.......o....."),
+                only(3, Play::Fifth, "...............x").maybe(0.5),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "arp",
+            lines: &[
+                line(1, Play::Tone(0), "X.......X......."),
+                line(1, Play::Tone(1), "..x.......x....."),
+                line(1, Play::Tone(2), "....X.......X..."),
+                line(1, Play::Tone(3), "......x.......x."),
+                line(1, Play::Tone(5), ".x.......x......"),
+                line(1, Play::Tone(4), "...x.......x...."),
+                line(1, Play::Tone(3), ".....x.......x.."),
+                line(1, Play::Tone(2), ".......x.......x"),
+                line(1, Play::Upper, "X...x...X...x...X...x...X..x..x."),
+                only(3, Play::Top, "X..X..X.X..X..X."),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("drums", 4.0)],
+    lift: &[("arp", 12)],
+    lows: &["bass"],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -83,7 +160,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled

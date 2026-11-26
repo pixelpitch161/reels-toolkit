@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use bf_sound::music::groove::{Groove, Part, Play, STRAIGHT, line, only, upto};
 use bf_sound::music::layers::{
     ArrangementTable, CLAP, CRASH, Cue, HAT, Instrument, KICK, Layer, LayerKind, LayeredBed, SHAKER, SNARE,
 };
@@ -31,13 +32,80 @@ pub const TEMPOS: (f64, f64) = (108.0, 132.0);
 
 /// Which layers play where.
 pub const TABLE: ArrangementTable = ArrangementTable {
-    fight: &[("deck", 2), ("bass", 2), ("hum", 1), ("hey", 1)],
+    fight: &[("deck", 2), ("drum", 2), ("bass", 2), ("hum", 1), ("hey", 1)],
     fill: &["deck", "drum"],
     breakdown: &[("bass", 1), ("hum", 2)],
     final_exchange: &[("deck", 3), ("drum", 3), ("bass", 3), ("hum", 2), ("hey", 2)],
     ability: &["hey", "deck"],
     victory: &[("deck", 1), ("bass", 2), ("hum", 2)],
     build: &[("deck", 3), ("drum", 2), ("bass", 2), ("hey", 2)],
+};
+
+/// The sea shanty's own band (sound upgrade, stage 2): a capstan sing-along, light boots on 1 and 3 (a push on the
+/// and of 2 at full crew), the gang claps on 2 and 4, the frame drum tapping eighths through the fight (it carries
+/// the crew on a phone, where the boots and the low voices fade) and a boom to open the two-bar phrase at full
+/// crew, the bass voice's short "doom" on root and fifth, and the crew's call and answer on the open "oh", an
+/// octave up, "hey ... ho" at the end of the phrase.
+pub static GROOVE: Groove = Groove {
+    push_ms: 6.0,
+    vel_spread: 0.12,
+    parts: &[
+        Part {
+            layer: "deck",
+            lines: &[
+                upto(1, Play::Drum(KICK), "o.......g......."),
+                only(2, Play::Drum(KICK), "o.......g......."),
+                only(3, Play::Drum(KICK), "o.....g.g......."),
+                only(3, Play::Drum(KICK), "..............o."),
+                line(1, Play::Drum(SNARE), "....X.......X..."),
+                only(3, Play::Drum(HAT), "..g.......g.....").maybe(0.7),
+                // the crew's frame-drum taps and an answering clap carry the stomp on a phone
+                line(2, Play::Drum(SHAKER), "X.x.X.x.X.x.X.x."),
+                line(2, Play::Drum(CLAP), "......x.......x."),
+                only(3, Play::Drum(CLAP), "....X.......X..x"),
+                only(3, Play::Drum(CRASH), "o..............................."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "drum",
+            lines: &[
+                upto(1, Play::Drum(SHAKER), "x...x...x...x..."),
+                line(2, Play::Drum(SHAKER), "X.x.X.x.X.x.X.x."),
+                line(2, Play::Drum(SHAKER), ".g.g.g.g.g.g.g.g").maybe(0.7),
+                line(2, Play::Drum(CLAP), "....x.......x..."),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "bass",
+            lines: &[
+                upto(1, Play::Root, "o___....o___...."),
+                only(2, Play::Root, "o__.............o__............."),
+                only(2, Play::Fifth, "........g_..............g_....g_"),
+                only(3, Play::Root, "x__.o_.o_x__...."),
+                only(3, Play::Fifth, "..............o_"),
+            ],
+            fill: &[],
+        },
+        Part {
+            layer: "hum",
+            lines: &[line(1, Play::Upper, "g_______________")],
+            fill: &[],
+        },
+        Part {
+            layer: "hey",
+            lines: &[
+                upto(1, Play::Chord, "....x_..............x___....x___"),
+                line(2, Play::Chord, "....x_......x_......x___....X___"),
+            ],
+            fill: &[],
+        },
+    ],
+    mix: &[("choir", -8.0), ("drum", 4.0), ("stomp", -8.0)],
+    lift: &[("bass", 12), ("hey", 12)],
+    lows: &["choir", "stomp"],
+    ..STRAIGHT
 };
 
 /// The layers.
@@ -86,7 +154,9 @@ pub fn layers() -> Vec<Layer> {
 /// The classic bed refuses the options.
 pub fn composed(options: &ThemeOptions, cues: Vec<Cue>, seed: u64) -> Result<Box<dyn Bed>, ContentError> {
     let classic = (super::THEME.classic)(options)?;
-    Ok(Box::new(LayeredBed::new(classic, layers(), TABLE, cues, seed)?))
+    Ok(Box::new(
+        LayeredBed::new(classic, layers(), TABLE, cues, seed)?.with_groove(&GROOVE)?,
+    ))
 }
 
 /// One of the bed's sounds: `make(ctx, note, seconds)` at full velocity, made once per note and length and scaled
