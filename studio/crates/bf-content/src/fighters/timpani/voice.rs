@@ -19,6 +19,7 @@ const SR: f64 = 48_000.0;
 /// so there are none to set against the real timpani (the overtone measure does not fit it); only the small
 /// differences between its repeated strokes (a hair of pitch, a little level).
 pub const REWORK: Rework = Rework {
+    fill: &[],
     correction: &[],
     speak: 0.0,
     stop: 0.0,

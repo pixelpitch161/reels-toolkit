@@ -52,14 +52,21 @@ fn built(midi: i32, tone: impl Fn(f64) -> Vec<f64>) -> Fingerprint {
 fn reworked_nearer_its_own(fighter: &str, own: &str, rivals: &[&str]) {
     let v = bf_content::fighters::voice(fighter).expect("a voice");
     assert!(v.reworked(), "{fighter} is not reworked");
+    nearer_at_48k(fighter, v.register(), own, rivals, |m| {
+        v.note_real(&mut bf_sound::voice::PpNoise::start(), f64::from(m), 0.8, 1.0, 0)
+    });
+}
+
+/// Every note from `lo` to `hi` that `own` has a reference for, held a second at 48 kHz by `note` (from its MIDI
+/// note), is nearer to `own` than to each of `rivals` (where they have the note), and within [`AT_MOST`] of `own`.
+fn nearer_at_48k(fighter: &str, (lo, hi): (i32, i32), own: &str, rivals: &[&str], note: impl Fn(i32) -> Vec<f64>) {
     let refs = references();
-    let (lo, hi) = v.register();
     let mut bad = Vec::new();
     let mut seen = 0;
     for m in lo..=hi {
         let Some(real) = refs[own].get(&m) else { continue };
         seen += 1;
-        let x = v.note_real(&mut bf_sound::voice::PpNoise::start(), f64::from(m), 0.8, 1.0, 0);
+        let x = note(m);
         let b = timbre::fingerprint(&x, m, 1.0, true);
         let d_own = timbre::distance(&b.harmonics, &real.harmonics);
         for r in rivals {
@@ -163,6 +170,33 @@ fn the_big_strings_are_contrabasses_not_cellos_or_bass_guitars() {
     for fighter in ["OCTOBASS", "CONTRABASS"] {
         reworked_nearer_its_own(fighter, "contrabass", &["cello", "finger bass", "tuba"]);
     }
+}
+
+#[test]
+fn the_flutes_and_the_oboe_are_their_own_not_each_other() {
+    reworked_nearer_its_own("PICCOLO", "piccolo", &["flute", "oboe", "clarinet"]);
+    reworked_nearer_its_own("FLUTE", "flute", &["piccolo", "oboe", "clarinet", "soprano sax"]);
+    reworked_nearer_its_own("OBOE", "oboe", &["soprano sax", "clarinet", "trumpet", "flute"]);
+}
+
+#[test]
+fn the_clarinets_are_clarinets_not_bassoons_or_horns() {
+    reworked_nearer_its_own("CLARINET", "clarinet", &["oboe", "french horn", "bassoon", "flute"]);
+    for fighter in ["BASS CLARINET", "CONTRABASS CLARINET"] {
+        reworked_nearer_its_own(fighter, "clarinet", &["bassoon", "tuba", "french horn"]);
+    }
+}
+
+#[test]
+fn the_bagpipe_chanter_is_a_bagpipe_not_a_trumpet() {
+    use bf_content::fighters::bagpipes::{sound::chanter_real, voice::REGISTER};
+    nearer_at_48k(
+        "BAGPIPES",
+        REGISTER,
+        "bagpipe",
+        &["trumpet", "muted trumpet", "oboe"],
+        |m| chanter_real(f64::from(m), 1.0, 0.8, false, 0),
+    );
 }
 
 #[test]

@@ -71,7 +71,12 @@ arrangement, switched on the Music screen:
   `reshape`, `buzz`, `wobble`). From the low instruments on, a voice is reworked from the outside instead: its own
   note through an overtone `Correction` (a peak or dip at each of the first seven harmonics, `real::correct`), a
   slower start and a quicker stop (`real::Rework`, `Voice::rework`). `references -- correct "<FIGHTER>"` writes
-  the table, refining it until the corrected notes match the real ones. Drums (timpani, bass drum) get only the
+  the table, refining it until the corrected notes match the real ones. A peak can only lift an overtone that is
+  there, so overtones a voice barely has (15 dB or more under the real balance) are first added (`real::Fill`,
+  `real::fill`: the note's own fundamental as an analytic signal, raised to each harmonic, so the added partials
+  follow its vibrato and bends); the reworked note keeps the voice's own loudness. Parts that make their own notes
+  (piccolo, oboe, clarinet, bass clarinet, the bagpipes' chanter) keep their Classic function and add a `played`
+  (or `ch`) that reworks it under Composed through `real::RealNotes`. Drums (timpani, bass drum) get only the
   repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and
   the contrabass above 57; those notes keep the table's last row. The real instruments' fingerprints are
   `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in

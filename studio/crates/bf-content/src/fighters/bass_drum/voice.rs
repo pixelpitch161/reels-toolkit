@@ -41,6 +41,7 @@ const MODES: [(f64, f64, f64); 6] = [
 /// The Composed arrangement's BASS DRUM (sound upgrade, stage 3, S1): a drum has no overtones to set, so only the
 /// small differences between its repeated strokes (a hair of pitch, a little level).
 pub const REWORK: Rework = Rework {
+    fill: &[],
     correction: &[],
     speak: 0.0,
     stop: 0.0,

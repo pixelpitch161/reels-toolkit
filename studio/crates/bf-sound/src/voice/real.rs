@@ -135,14 +135,92 @@ pub fn wobble(seed: u64, cents: f64, level: f64) -> (f64, f64) {
 /// notes against the real ones and refines the gains until the corrected notes match.
 pub type Correction = [(i32, [f64; SET])];
 
-/// How a voice is reworked from its own notes, for a voice whose make-up is not opened up as the saxes' are: an
-/// overtone [`Correction`], the real instrument's slower start (`speak`, seconds to full level, 0 to keep the voice's
-/// own) and quicker stop (`stop`, an extra time constant after the held length, 0 to keep the voice's own).
+/// A voice's per-note added overtones, in rising MIDI order: for each of its first [`SET`] harmonics, the level in
+/// dB under the fundamental of a partial laid in beside the voice's own, [`NONE`] for none. For the harmonics a voice
+/// barely has, which a [`Correction`]'s peaks cannot lift. Written by `references -- correct` with the correction.
+pub type Fill = [(i32, [f64; SET])];
+
+/// A [`Fill`] level that adds nothing.
+pub const NONE: f64 = -99.0;
+
+/// How a voice is reworked from its own notes, for a voice whose make-up is not opened up as the saxes' are: the
+/// overtones it barely has added ([`Fill`], empty for none), an overtone [`Correction`], the real instrument's slower
+/// start (`speak`, seconds to full level, 0 to keep the voice's own) and quicker stop (`stop`, an extra time constant
+/// after the held length, 0 to keep the voice's own).
 #[derive(Clone, Copy, Debug)]
 pub struct Rework {
+    pub fill: &'static Fill,
     pub correction: &'static Correction,
     pub speak: f64,
     pub stop: f64,
+}
+
+/// `x` (a note at `f` Hz, `sr` Hz) with partials added at `db` (dB under its fundamental, [`NONE`] for none) for its
+/// second to [`SET`]th harmonics. The note's own fundamental is taken out as an analytic signal (the positive band of
+/// its spectrum from half to one and a half times `f`, with soft edges), and each added harmonic is that signal's
+/// phase times `k` (plus a fixed offset of its own) at its level, so the partials follow the note's vibrato, bends
+/// and swells.
+pub fn fill(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
+    let want: Vec<(usize, f64, f64, f64)> = db
+        .iter()
+        .enumerate()
+        .skip(1)
+        .filter(|&(k, &d)| d > NONE + 1.0 && f * ((k + 1) as f64) < 0.45 * sr)
+        .map(|(k, &d)| {
+            // Schroeder's phases (pi k (k - 1) / 8 for harmonic k): the added partials do not all peak together,
+            // so the note stays no peakier than a played one
+            let h = (k + 1) as f64;
+            let phase = dmath::PI * h * (h - 1.0) / SET as f64;
+            (k + 1, dmath::pow(10.0, d / 20.0), dmath::cos(phase), dmath::sin(phase))
+        })
+        .collect();
+    if want.is_empty() || x.is_empty() || f <= 0.0 {
+        return x.to_vec();
+    }
+    let n = (x.len() + (0.1 * sr) as usize).next_power_of_two();
+    let fft = crate::dsp::fft::Fft::new(n);
+    let mut re = vec![0.0; n];
+    re[..x.len()].copy_from_slice(x);
+    let mut im = vec![0.0; n];
+    fft.forward(&mut re, &mut im);
+    let bin = sr / n as f64;
+    for i in 0..n {
+        let nu = i as f64 * bin;
+        // flat from 0.75 f to 1.25 f, a raised cosine down to nothing at 0.5 f and 1.5 f; negative frequencies out
+        let w = if i > n / 2 {
+            0.0
+        } else {
+            let d = (nu - f).abs() / f;
+            if d <= 0.25 {
+                1.0
+            } else if d >= 0.5 {
+                0.0
+            } else {
+                0.5 + 0.5 * dmath::cos(dmath::PI * (d - 0.25) / 0.25)
+            }
+        };
+        re[i] *= 2.0 * w;
+        im[i] *= 2.0 * w;
+    }
+    fft.inverse(&mut re, &mut im);
+    let mut y = x.to_vec();
+    for (i, v) in y.iter_mut().enumerate() {
+        let (a, b) = (re[i], im[i]);
+        let m = (a * a + b * b).sqrt();
+        if m <= 1e-12 {
+            continue;
+        }
+        let (ur, ui) = (a / m, b / m);
+        let (mut pr, mut pi, mut k) = (ur, ui, 1);
+        for &(h, g, c, sn) in &want {
+            while k < h {
+                (pr, pi) = (pr * ur - pi * ui, pr * ui + pi * ur);
+                k += 1;
+            }
+            *v += g * m * (pr * c - pi * sn);
+        }
+    }
+    y
 }
 
 /// A peaking filter (a biquad) over `x` at `sr` Hz: `db` of gain at `fc`, `q` its quality, 0 dB far from it.
@@ -190,12 +268,31 @@ pub fn correct(x: &[f64], f: f64, sr: f64, db: &[f64; SET]) -> Vec<f64> {
     y
 }
 
-/// The reworked note of MIDI `midi`, held `dur` s, from the voice's own note `x` at `sr` Hz: its overtones corrected
-/// ([`correct`]), its start slowed and its stop quickened as `r` says, and the `variant`th repeat ([`wobble`]) a few
+/// The reworked note of MIDI `midi`, held `dur` s, from the voice's own note `x` at `sr` Hz: the overtones it lacks
+/// added ([`fill`]) and its overtones corrected ([`correct`]), its start slowed and its stop quickened as `r` says, and the `variant`th repeat ([`wobble`]) a few
 /// cents off (read through a hair faster or slower) and a little louder or quieter.
 pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64) -> Vec<f64> {
     let f = 440.0 * dmath::pow(2.0, (midi - 69.0) / 12.0);
-    let mut y = correct(x, f, sr, &levels(r.correction, midi));
+    let mut y = if r.fill.is_empty() {
+        correct(x, f, sr, &levels(r.correction, midi))
+    } else {
+        // at the voice's own loudness, not the louder filled note's
+        let mut y = correct(
+            &fill(x, f, sr, &levels(r.fill, midi)),
+            f,
+            sr,
+            &levels(r.correction, midi),
+        );
+        let (a, b) = (
+            x.iter().map(|v| v * v).sum::<f64>(),
+            y.iter().map(|v| v * v).sum::<f64>(),
+        );
+        if a > 0.0 && b > 0.0 {
+            let k = (a / b).sqrt();
+            y.iter_mut().for_each(|v| *v *= k);
+        }
+        y
+    };
     for (i, v) in y.iter_mut().enumerate() {
         let t = i as f64 / sr;
         if r.speak > 0.0 && t < r.speak {
@@ -219,6 +316,33 @@ pub fn rework(x: &[f64], midi: f64, dur: f64, sr: f64, r: &Rework, variant: u64)
             (a + fr * (b - a)) * level
         })
         .collect()
+}
+
+/// A part's notes as the Composed arrangement plays them: each note the part makes itself, reworked ([`rework`]),
+/// its repeats taking turns among [`TURNS`] variants, kept by the part's own key for the note and the variant.
+#[derive(Debug, Default)]
+pub struct RealNotes {
+    repeats: Repeats,
+    notes: Mutex<BTreeMap<RealKey, std::sync::Arc<[f64]>>>,
+}
+
+/// A kept note of [`RealNotes`]: the part's key for the note, and the variant.
+type RealKey = (Vec<u64>, u64);
+
+impl RealNotes {
+    /// The next repeat of the note `key` (whatever the part keeps its note by): made by `make` from the variant
+    /// the first time that variant is asked for, kept after.
+    pub fn get(&self, key: &[u64], make: impl FnOnce(u64) -> Vec<f64>) -> std::sync::Arc<[f64]> {
+        let variant = self.repeats.next(key);
+        let mut notes = self.notes.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let k = (key.to_vec(), variant);
+        if let Some(x) = notes.get(&k) {
+            return std::sync::Arc::clone(x);
+        }
+        let x: std::sync::Arc<[f64]> = make(variant).into();
+        notes.insert(k, std::sync::Arc::clone(&x));
+        x
+    }
 }
 
 #[cfg(test)]
@@ -344,11 +468,13 @@ mod tests {
     #[test]
     fn a_rework_shapes_the_start_and_stop_and_its_repeats_differ() {
         const FLAT: Rework = Rework {
+            fill: &[],
             correction: &[],
             speak: 0.0,
             stop: 0.0,
         };
         const SHAPED: Rework = Rework {
+            fill: &[],
             correction: &[],
             speak: 0.05,
             stop: 0.02,
@@ -368,5 +494,65 @@ mod tests {
         assert_eq!(a.len(), x.len());
         assert!(a != x && a != b && a.iter().all(|v| v.is_finite()));
         assert_eq!(a, rework(&x, 57.0, 0.3, 48_000.0, &FLAT, 1));
+    }
+
+    #[test]
+    fn a_fill_adds_the_missing_harmonics_in_step_with_the_note() {
+        let f = 220.0;
+        // a pure tone, steady, then one sliding up a whole tone over its second half second
+        let steady: Vec<f64> = (0..24_000)
+            .map(|i| 0.5 * dmath::sin(2.0 * dmath::PI * f * i as f64 / 48_000.0))
+            .collect();
+        let mut add = [NONE; SET];
+        (add[2], add[4]) = (-6.0, -20.0);
+        let y = fill(&steady, f, 48_000.0, &add);
+        assert_eq!(y.len(), steady.len());
+        let (ys, xs) = (&y[4_800..19_200], &steady[4_800..19_200]);
+        let under = |k: f64| level_at(ys, k * f, 48_000.0) - level_at(ys, f, 48_000.0);
+        assert!((under(3.0) - -6.0).abs() < 1.0, "third {:.2}", under(3.0));
+        assert!((under(5.0) - -20.0).abs() < 1.0, "fifth {:.2}", under(5.0));
+        assert!(
+            under(2.0) < -60.0 && under(4.0) < -60.0,
+            "{:.1} {:.1}",
+            under(2.0),
+            under(4.0)
+        );
+        assert!((level_at(ys, f, 48_000.0) - level_at(xs, f, 48_000.0)).abs() < 0.1);
+        // nothing to add is the note itself
+        assert_eq!(fill(&steady, f, 48_000.0, &[NONE; SET]), steady);
+        // on a slide the added third climbs with it: its energy sits at three times the pitch of the moment
+        let (mut ph, mut slide) = (0.0, Vec::new());
+        for i in 0..48_000 {
+            let t = i as f64 / 48_000.0;
+            let fi = if t < 0.5 {
+                f
+            } else {
+                f * (1.0 + 0.122 * (t - 0.5) / 0.5)
+            };
+            ph += 2.0 * dmath::PI * fi / 48_000.0;
+            slide.push(0.5 * dmath::sin(ph));
+        }
+        let mut third = [NONE; SET];
+        third[2] = -6.0;
+        let y = fill(&slide, f, 48_000.0, &third);
+        let tail = &y[43_200..46_800];
+        let top = f * 1.122 * (1.0 - 0.1 * 0.122 / 1.122);
+        assert!(level_at(tail, 3.0 * top, 48_000.0) - level_at(tail, 3.0 * f, 48_000.0) > 12.0);
+    }
+
+    #[test]
+    fn real_notes_take_turns_and_are_kept() {
+        let notes = RealNotes::default();
+        let made = std::cell::Cell::new(0);
+        let mut got = Vec::new();
+        for _ in 0..4 {
+            got.push(notes.get(&[60, 1], |v| {
+                made.set(made.get() + 1);
+                vec![v as f64]
+            }));
+        }
+        assert_eq!(got.iter().map(|x| x[0]).collect::<Vec<_>>(), [0.0, 1.0, 2.0, 0.0]);
+        assert_eq!(made.get(), 3, "the fourth is the first again, kept");
+        assert!(std::sync::Arc::ptr_eq(&got[0], &got[3]));
     }
 }

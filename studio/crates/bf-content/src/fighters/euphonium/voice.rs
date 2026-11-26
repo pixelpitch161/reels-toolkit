@@ -55,6 +55,7 @@ pub const CORRECTION: &Correction = &[
 /// The Composed arrangement's EUPHONIUM (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, a slower start (50 ms to full level) and a quicker stop, nearer the real one's.
 pub const REWORK: Rework = Rework {
+    fill: &[],
     correction: CORRECTION,
     speak: 0.05,
     stop: 0.045,

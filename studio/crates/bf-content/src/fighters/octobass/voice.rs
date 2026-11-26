@@ -50,6 +50,7 @@ pub const CORRECTION: &Correction = &[
 /// The Composed arrangement's OCTOBASS (sound upgrade, stage 3, S1): its own note with the overtones of the real
 /// instrument, a slower start (80 ms to full level) and a quicker stop, nearer the real one's.
 pub const REWORK: Rework = Rework {
+    fill: &[],
     correction: CORRECTION,
     speak: 0.08,
     stop: 0.055,

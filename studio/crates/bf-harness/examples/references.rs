@@ -471,6 +471,15 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
             Box::new(|f, dur, _| to_48k(&tenor::tenor_tone(f, dur, 0.8, tenor::VOICE_HONK, 0.0))),
             Box::new(|f, dur, repeat| to_48k(&tenor::tenor_tone_real(f, dur, 0.8, tenor::VOICE_HONK, 0.0, repeat % 3))),
         ),
+        "BAGPIPES" => (
+            bf_content::fighters::bagpipes::voice::REGISTER,
+            "bagpipe",
+            rivals(fighter),
+            Box::new(|f, dur, _| bf_content::fighters::bagpipes::sound::chanter(midi_of(f).round(), dur, 0.8, false)),
+            Box::new(|f, dur, repeat| {
+                bf_content::fighters::bagpipes::sound::chanter_real(midi_of(f).round(), dur, 0.8, false, repeat % 3)
+            }),
+        ),
         _ => {
             // a voice reworked from the outside (Voice::rework): its own note, and its Composed note
             let v = bf_content::fighters::voice(fighter).unwrap_or_else(|| panic!("{fighter} has no voice"));
@@ -493,6 +502,15 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
     }
 }
 
+/// The note a fighter's part plays at MIDI `m`, held, for the measures: its voice's, but the BAGPIPES' chanter alone
+/// (the voice's note carries the drones, which the part plays apart).
+fn own_note(fighter: &str, v: &dyn bf_sound::voice::Voice, m: i32) -> Vec<f64> {
+    if fighter == "BAGPIPES" {
+        return bf_content::fighters::bagpipes::sound::chanter(f64::from(m), HELD, 0.8, false);
+    }
+    v.note(&mut PpNoise::start(), f64::from(m), 0.8, HELD)
+}
+
 /// A voice's overtone [`Correction`](bf_sound::voice::real::Correction) toward its real instrument, printed as the
 /// table its voice file keeps: for each note of its register, gains for its first eight harmonics, refined until the
 /// corrected note's overtones match the real ones (or stop improving).
@@ -506,26 +524,43 @@ fn correct(fighter: &str) {
         .map(|(_, r)| *r)
         .expect("a reference");
     let (lo, hi) = v.register();
-    let rows: Vec<(i32, [f64; SET], f64, f64)> = std::thread::scope(|sc| {
+    // each note: its MIDI note, the added overtones, the correction, and its distance before and after
+    type Row = (i32, [f64; SET], [f64; SET], f64, f64);
+    let rows: Vec<Row> = std::thread::scope(|sc| {
         let hs: Vec<_> = (lo..=hi)
             .map(|m| {
                 let v = &v;
                 let refs = &refs;
                 sc.spawn(move || {
                     let real = &refs[own].get(&m)?.harmonics;
-                    let x = v.note(&mut PpNoise::start(), f64::from(m), 0.8, HELD);
+                    let x = own_note(fighter, &**v, m);
                     let f = bf_sound::voice::pp::midi_hz(f64::from(m));
+                    // the overtones the voice barely has (15 dB or more under the real balance, beside its
+                    // fundamental) are laid in at the real level; the peaks then take the rest
+                    let was = timbre::fingerprint(&x, m, HELD, true).harmonics;
+                    let mut add = [real::NONE; SET];
+                    for k in 1..SET {
+                        let want = real[k] - real[0];
+                        if real[k] > timbre::FLOOR && was[k] - was[0] < want - 15.0 {
+                            add[k] = want;
+                        }
+                    }
+                    let x = real::fill(&x, f, bf_sound::SRF, &add);
                     let measure = |g: &[f64; SET]| {
                         let y = real::correct(&x, f, bf_sound::SRF, g);
                         timbre::fingerprint(&y, m, HELD, true).harmonics
                     };
                     let mut g = [0.0; SET];
-                    let before = timbre::distance(&measure(&g), real);
+                    let before = timbre::distance(&was, real);
                     let (mut best, mut best_g) = (before, g);
                     for _ in 0..8 {
                         let h = measure(&g);
                         for k in 0..SET {
-                            g[k] = (g[k] + 0.85 * (real[k] - h[k])).clamp(-30.0, 24.0);
+                            // levels under the floor count as the floor, as the distance has them: a harmonic
+                            // both real and built have too weak to hear is left alone (the eighth's gain turns
+                            // everything above it, the breath between the harmonics too)
+                            let gap = real[k].max(timbre::FLOOR) - h[k].max(timbre::FLOOR);
+                            g[k] = (g[k] + 0.85 * gap).clamp(-30.0, 24.0);
                         }
                         let d = timbre::distance(&measure(&g), real);
                         if d < best {
@@ -537,28 +572,38 @@ fn correct(fighter: &str) {
                         eprintln!(
                             "{m} real {}\n{m} was  {}\n{m} now  {}\n{m} gain {}",
                             show(real),
-                            show(&measure(&[0.0; SET])),
+                            show(&was),
                             show(&measure(&best_g)),
                             show(&best_g)
                         );
                     }
-                    Some((m, best_g, before, best))
+                    Some((m, add, best_g, before, best))
                 })
             })
             .collect();
         hs.into_iter().filter_map(|h| h.join().expect("a note")).collect()
     });
-    println!("pub const CORRECTION: &Correction = &[");
-    for (m, g, _, _) in &rows {
-        let g: Vec<String> = g.iter().map(|x| format!("{x:.1}")).collect();
-        println!("    ({m}, [{}]),", g.join(", "));
+    let table = |name: &str, ty: &str, pick: &dyn Fn(&Row) -> [f64; SET]| {
+        println!("pub const {name}: &{ty} = &[");
+        for r in &rows {
+            let g: Vec<String> = pick(r).iter().map(|x| format!("{x:.1}")).collect();
+            println!("    ({}, [{}]),", r.0, g.join(", "));
+        }
+        println!("];");
+    };
+    if rows.iter().any(|r| r.1.iter().any(|&d| d > real::NONE)) {
+        table("FILL", "Fill", &|r| r.1);
     }
-    println!("];");
-    for (m, _, was, now) in &rows {
-        eprintln!("{m:>4} {was:>5.1} -> {now:>5.1}");
+    table("CORRECTION", "Correction", &|r| r.2);
+    for (m, add, _, was, now) in &rows {
+        let n = add.iter().filter(|&&d| d > real::NONE).count();
+        eprintln!(
+            "{m:>4} {was:>5.1} -> {now:>5.1}{}",
+            if n > 0 { format!("  ({n} added)") } else { String::new() }
+        );
     }
-    let worst = rows.iter().fold(0.0_f64, |w, r| w.max(r.3));
-    let was = rows.iter().fold(0.0_f64, |w, r| w.max(r.2));
+    let worst = rows.iter().fold(0.0_f64, |w, r| w.max(r.4));
+    let was = rows.iter().fold(0.0_f64, |w, r| w.max(r.3));
     eprintln!("{fighter}: farthest from the real {own} {was:.1} today, {worst:.1} corrected");
 }
 
@@ -569,6 +614,12 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "TROMBONE" => &["tuba", "bari sax", "french horn", "tenor sax"],
         "OCTOBASS" | "CONTRABASS" => &["cello", "finger bass", "tuba"],
         "TIMPANI" => &["marimba", "finger bass", "tuba"],
+        "PICCOLO" => &["flute", "oboe", "clarinet"],
+        "FLUTE" => &["piccolo", "oboe", "clarinet", "soprano sax"],
+        "OBOE" => &["soprano sax", "clarinet", "trumpet", "flute"],
+        "CLARINET" => &["oboe", "french horn", "bassoon", "flute"],
+        "BASS CLARINET" | "CONTRABASS CLARINET" => &["bassoon", "tuba", "french horn"],
+        "BAGPIPES" => &["trumpet", "muted trumpet", "oboe"],
         _ => &[],
     }
 }
@@ -668,8 +719,7 @@ fn survey(fighters: &[&str]) {
         };
         for m in lo..=hi {
             let Some(real) = refs[own].get(&m) else { continue };
-            let mut noise = PpNoise::start();
-            let b = timbre::fingerprint(&v.note(&mut noise, f64::from(m), 0.8, HELD), m, HELD, true);
+            let b = timbre::fingerprint(&own_note(fighter, &*v, m), m, HELD, true);
             shape[0].push(of(&b));
             shape[1].push(of(real));
             let d_own = timbre::distance(&b.harmonics, &real.harmonics);
