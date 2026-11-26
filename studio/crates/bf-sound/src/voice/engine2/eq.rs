@@ -3,7 +3,6 @@
 
 use bf_core::dmath;
 
-use crate::SRF;
 use crate::dsp;
 
 /// One band: what it does, at `hz`, by `db` (up when positive), `q` its width (0.7 a broad shelf, 1 a peak an
@@ -19,13 +18,13 @@ pub enum Band {
 }
 
 impl Band {
-    /// Its filter's `(b, a)`, at 48 kHz.
-    pub fn coeffs(&self) -> ([f64; 3], [f64; 3]) {
+    /// Its filter's `(b, a)` at sample rate `fs`.
+    pub fn coeffs(&self, fs: f64) -> ([f64; 3], [f64; 3]) {
         let (hz, db, q) = match *self {
             Band::Low { hz, db, q } | Band::Peak { hz, db, q } | Band::High { hz, db, q } => (hz, db, q),
         };
         let a = dmath::pow(10.0, db / 40.0);
-        let w = dmath::TAU * hz / SRF;
+        let w = dmath::TAU * hz / fs;
         let (c, s) = (dmath::cos(w), dmath::sin(w));
         let al = s / (2.0 * q.max(1e-3));
         let sq = 2.0 * a.sqrt() * al;
@@ -64,14 +63,14 @@ impl Band {
     }
 }
 
-/// `x` through `bands`, one after another.
-pub fn apply(x: &[f64], bands: &[Band]) -> Vec<f64> {
+/// `x` through `bands`, one after another, at sample rate `fs`.
+pub fn apply(x: &[f64], bands: &[Band], fs: f64) -> Vec<f64> {
     let mut y = x.to_vec();
     for band in bands {
         if y.is_empty() {
             break;
         }
-        let (b, a) = band.coeffs();
+        let (b, a) = band.coeffs(fs);
         y = dsp::lfilter(&b, &a, &y);
     }
     y
@@ -80,12 +79,13 @@ pub fn apply(x: &[f64], bands: &[Band]) -> Vec<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::SRF;
 
     /// The level of a steady sine at `hz` after `bands`, dB against the sine.
     fn gain_at(bands: &[Band], hz: f64) -> f64 {
         let n = 48_000;
         let x: Vec<f64> = (0..n).map(|i| dmath::sin(dmath::TAU * hz * i as f64 / SRF)).collect();
-        let y = apply(&x, bands);
+        let y = apply(&x, bands, SRF);
         let rms = |v: &[f64]| (v[n / 2..].iter().map(|s| s * s).sum::<f64>() / (n / 2) as f64).sqrt();
         20.0 * dmath::log10(rms(&y) / rms(&x))
     }
@@ -113,6 +113,6 @@ mod tests {
         }];
         assert!((gain_at(&high, 16_000.0) - 4.0).abs() < 0.3);
         assert!(gain_at(&high, 100.0).abs() < 0.1);
-        assert!(apply(&[], &high).is_empty());
+        assert!(apply(&[], &high, SRF).is_empty());
     }
 }

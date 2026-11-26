@@ -62,7 +62,9 @@ pub fn response(fs: f64) -> Arc<Vec<f64>> {
     r
 }
 
-/// Each resonance a damped sine, summed; the draws in the sketch's order (one microphone of its two).
+/// Each resonance a damped sine, summed, as the sketch's two microphones heard it (each its own share of each
+/// resonance, the draws in the sketch's order); the board is the middle of the two, what both speakers share
+/// (the voice's own width spreads it again).
 fn make(fs: f64) -> Vec<f64> {
     let len = (LENGTH * fs) as usize;
     let mut rng = Generator::new(SEED);
@@ -74,31 +76,34 @@ fn make(fs: f64) -> Vec<f64> {
         .collect();
     let a0: Vec<f64> = tau.iter().map(|t| rng.standard_normal() / t.sqrt()).collect();
     let ph0: Vec<f64> = (0..MODES).map(|_| rng.uniform(0.0, dmath::TAU)).collect();
-    let a: Vec<f64> = a0.iter().map(|a| a * (1.0 + 0.3 * rng.standard_normal())).collect();
-    let ph: Vec<f64> = ph0.iter().map(|p| p + 0.5 * rng.standard_normal()).collect();
-    let mut ir = vec![0.0; len];
-    for i in 0..MODES {
-        if f[i] >= 0.5 * fs {
-            continue;
+    let mut mid = vec![0.0; len];
+    for _ in 0..2 {
+        let a: Vec<f64> = a0.iter().map(|a| a * (1.0 + 0.3 * rng.standard_normal())).collect();
+        let ph: Vec<f64> = ph0.iter().map(|p| p + 0.5 * rng.standard_normal()).collect();
+        let mut ir = vec![0.0; len];
+        for i in 0..MODES {
+            if f[i] >= 0.5 * fs {
+                continue;
+            }
+            // a sin(2 pi f t + ph) e^(-t / tau), by turning a phasor one sample at a time
+            let r = dmath::exp(-1.0 / (tau[i] * fs));
+            let w = dmath::TAU * f[i] / fs;
+            let (sr, si) = (r * dmath::cos(w), r * dmath::sin(w));
+            let (mut zr, mut zi) = (a[i] * dmath::cos(ph[i]), a[i] * dmath::sin(ph[i]));
+            for v in ir.iter_mut() {
+                *v += zi;
+                (zr, zi) = (zr * sr - zi * si, zr * si + zi * sr);
+            }
         }
-        // a sin(2 pi f t + ph) e^(-t / tau), by turning a phasor one sample at a time
-        let r = dmath::exp(-1.0 / (tau[i] * fs));
-        let w = dmath::TAU * f[i] / fs;
-        let (sr, si) = (r * dmath::cos(w), r * dmath::sin(w));
-        let (mut zr, mut zi) = (a[i] * dmath::cos(ph[i]), a[i] * dmath::sin(ph[i]));
-        for v in ir.iter_mut() {
-            *v += zi;
-            (zr, zi) = (zr * sr - zi * si, zr * si + zi * sr);
+        let energy = ir.iter().map(|v| v * v).sum::<f64>().sqrt().max(1e-30);
+        for (m, v) in mid.iter_mut().zip(&ir) {
+            *m += 0.5 * MODAL * v / energy;
         }
     }
-    let energy = ir.iter().map(|v| v * v).sum::<f64>().sqrt().max(1e-30);
-    for v in ir.iter_mut() {
-        *v *= MODAL / energy;
-    }
-    if let Some(v) = ir.first_mut() {
+    if let Some(v) = mid.first_mut() {
         *v += DIRECT;
     }
-    let shaped = eq::apply(&ir, &BODY);
+    let shaped = eq::apply(&mid, &BODY, fs);
     dsp::sosfilt(&butter_sos(FilterKind::Hp, &[FLOOR_HZ], 2, fs), &shaped)
 }
 

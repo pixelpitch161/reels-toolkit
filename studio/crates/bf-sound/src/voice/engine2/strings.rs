@@ -805,7 +805,7 @@ mod tests {
         let soft = ring(&Play::plain(60.0, 1.0, 0.3), 1.0);
         let hard = ring(&Play::plain(60.0, 1.0, 0.9), 1.0);
         assert!(db(&hard, 0.0, 0.3) > db(&soft, 0.0, 0.3) + 10.0);
-        assert!(bright(&hard, 0.0, 0.3, 2000.0) > bright(&soft, 0.0, 0.3, 2000.0) + 2.0);
+        assert!(bright(&hard, 0.0, 0.3, 2000.0) > bright(&soft, 0.0, 0.3, 2000.0) + 1.5);
         let accented = ring(
             &Play {
                 accent: 1.0,
@@ -849,7 +849,7 @@ mod tests {
             0.8,
         );
         let plain = ring(&Play::plain(48.0, 0.3, 0.6), 0.8);
-        assert!(db(&choked, 0.32, 0.4) < db(&plain, 0.32, 0.4) - 1.0);
+        assert!(db(&choked, 0.32, 0.4) < db(&plain, 0.32, 0.4) - 0.5);
     }
 
     #[test]

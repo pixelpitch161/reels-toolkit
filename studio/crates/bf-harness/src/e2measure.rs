@@ -1,7 +1,7 @@
 //! Measuring a recording of a real instrument for Voice Engine 2 (`bf_sound::voice::engine2`): its pitch and string
 //! stiffness, each overtone's level and pitch over time, the noise between the overtones, how fast it stops, and the
-//! yardstick numbers the engine's notes are checked against. The `recipes` tool uses it on the recordings, and the
-//! `engine2_voices` test on the engine's own notes, so both are measured the same way.
+//! yardstick numbers the engine's notes are checked against. The `recipes` tool uses it on the recordings and on the
+//! recipe engine's own notes, so both are measured the same way.
 //!
 //! An overtone is read by turning the recording down by the overtone's frequency (multiplying by `e^(-i 2 pi f t)`)
 //! and averaging over a Blackman window six of the note's overtone spacings long, which keeps each overtone apart
@@ -669,7 +669,7 @@ impl Yard {
 /// as repeat `variant`.
 pub fn engine2_note(inst: &Instrument, midi: f64, strength: f64, hold: f64, secs: f64, variant: u64) -> Vec<f64> {
     let play = match inst.parts {
-        Parts::Organ(_) => Play {
+        Parts::Organ(_) | Parts::Pipes(_) => Play {
             swell: Some(Swell {
                 from: strength,
                 to: strength,
