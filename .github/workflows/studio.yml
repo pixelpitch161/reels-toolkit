@@ -13,8 +13,12 @@ on:
       - ".github/workflows/studio.yml"
   workflow_dispatch:
     inputs:
+      owners_pc:
+        description: Run on the owner's PC (the full run before a feature branch merges; needs BF_PC_RUNNER on)
+        type: boolean
+        default: false
       github_machines:
-        description: Run on GitHub's machines even when the owner's PC runner is switched on
+        description: Run on GitHub's machines even when this run would go to the owner's PC
         type: boolean
         default: false
 
@@ -30,10 +34,14 @@ env:
   CARGO_INCREMENTAL: "0"
 
 jobs:
-  # Where the two jobs below run. The owner's PC (the runner labelled bf-pc, set up by tools/pc-runner) when the
-  # repository variable BF_PC_RUNNER is "on"; GitHub's Windows machines when it isn't, for a pull request from a fork
-  # (whose code must never run on the PC), and when a manual run asks for them. With the PC chosen and the PC off,
-  # the jobs wait in the queue until it is on again. See tools/pc-runner/README.md.
+  # Where the two jobs below run. The owner's PC (the runner labelled bf-pc, set up by tools/pc-runner) only when the
+  # repository variable BF_PC_RUNNER is "on" and the run is a push to the build branch (the repository variable
+  # BF_BUILD_BRANCH, else claude/project-thread-h102zt), a push of a studio-v* release tag, or a manual run that asks
+  # for the PC (the full run before a feature branch merges). Everything else runs on GitHub's Windows machines:
+  # pushes to feature branches and pull requests (the owner, Nov 26, 2026: the PC is shared with another project,
+  # which should not wait for these), a pull request from a fork (whose code must never run on the PC), and a manual
+  # run that asks for them. With the PC chosen and the PC off, the jobs wait in the queue until it is on again. See
+  # tools/pc-runner/README.md.
   where:
     name: Pick the machine
     runs-on: ubuntu-latest
@@ -45,8 +53,11 @@ jobs:
         id: pick
         env:
           PC: ${{ vars.BF_PC_RUNNER }}
+          BUILD_BRANCH: ${{ vars.BF_BUILD_BRANCH || 'claude/project-thread-h102zt' }}
           FORCE_GITHUB: ${{ inputs.github_machines || false }}
+          ASK_PC: ${{ inputs.owners_pc || false }}
           EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           REPO: ${{ github.repository }}
         run: |
@@ -54,10 +65,16 @@ jobs:
             why="asked for when the run was started"; pc=false
           elif [ "$EVENT" = pull_request ] && [ "$HEAD_REPO" != "$REPO" ]; then
             why="a pull request from a fork"; pc=false
-          elif [ "$PC" = on ]; then
-            why="BF_PC_RUNNER is on"; pc=true
-          else
+          elif [ "$PC" != on ]; then
             why="BF_PC_RUNNER is not on"; pc=false
+          elif [ "$EVENT" = push ] && [ "$REF" = "refs/heads/$BUILD_BRANCH" ]; then
+            why="a push to the build branch ($BUILD_BRANCH)"; pc=true
+          elif [ "$EVENT" = push ] && [[ "$REF" == refs/tags/studio-v* ]]; then
+            why="a release tag (${REF#refs/tags/})"; pc=true
+          elif [ "$EVENT" = workflow_dispatch ] && [ "$ASK_PC" = true ]; then
+            why="asked for when the run was started"; pc=true
+          else
+            why="not the build branch or a release tag (the PC is kept for those, and for runs started by hand with owners_pc)"; pc=false
           fi
           if $pc; then
             echo 'runner=["self-hosted","Windows","bf-pc"]' >> "$GITHUB_OUTPUT"

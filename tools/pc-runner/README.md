@@ -7,9 +7,13 @@ shares nothing with it.
 
 What runs there once it is switched on:
 
-- **`.github/workflows/studio.yml`** (every push or pull request that changes `studio/`): both jobs, the same steps as
-  on GitHub's machines. Build files and the pinned ffmpeg are kept between runs, so a warm run builds only what
-  changed. A pull request from a fork always runs on GitHub's machines, never on the PC.
+- **`.github/workflows/studio.yml`**, only for a push to the build branch (`claude/project-thread-h102zt`, or the
+  repository variable `BF_BUILD_BRANCH`), a push of a `studio-v*` release tag, and a run started by hand with
+  "Run on the owner's PC" (`owners_pc`; the full run before a feature branch merges): both jobs, the same steps as on
+  GitHub's machines. Build files and the pinned ffmpeg are kept between runs, so a warm run builds only what
+  changed. Pushes to feature branches and pull requests run these checks on GitHub's machines instead (the owner,
+  Nov 26, 2026: the PC is shared with another project, which should not wait for them), and a pull request from a
+  fork always does.
 - **`.github/workflows/pc-tests.yml`**: the tests a change names, with the PC's copy of the reference cache (so
   bf-harness's fighter checks run) and DirectX 12 (so the interface tests run). Put a line in the last commit's message
   before pushing:
@@ -27,12 +31,15 @@ What runs there once it is switched on:
 
 The repository variable **`BF_PC_RUNNER`** (GitHub: Settings, Secrets and variables, Actions, Variables) decides:
 
-- `on`: both workflows run on the PC. If the PC is off, the jobs wait in GitHub's queue until it is on again (GitHub
-  gives up after 24 hours).
-- anything else, or not set: `studio.yml` runs on GitHub's machines as before, and `pc-tests` fails with "the PC
-  runner is switched off".
+- `on`: `pc-tests` runs on the PC, and so does `studio.yml` for the runs listed above (the build branch, release
+  tags, runs asked for by hand). If the PC is off, the jobs wait in GitHub's queue until it is on again (GitHub gives
+  up after 24 hours).
+- anything else, or not set: `studio.yml` always runs on GitHub's machines, and `pc-tests` fails with "the PC runner
+  is switched off".
 
-A manual run of `studio` can also choose GitHub's machines ("Run on GitHub's machines").
+A manual run of `studio` can choose either: "Run on the owner's PC" (`owners_pc`) or "Run on GitHub's machines"
+(`github_machines`, which wins when both are ticked). Before a feature branch merges into the build branch, start
+one run of `studio` on it with "Run on the owner's PC" (Actions, `studio`, Run workflow, pick the branch).
 
 ## Setting it up (once)
 

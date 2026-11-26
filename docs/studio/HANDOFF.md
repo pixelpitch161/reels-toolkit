@@ -153,9 +153,10 @@ version on this PC; no download, no token in the app).
 3. Run the **quick install check** (below), commit and push. Don't wait for CI (`.github/workflows/studio.yml`):
    it runs in the background, and anything it catches is fixed in the next version. Before tagging, open the last
    GitHub run of the previous tag (Actions, workflow `studio`) and fix what it caught: nobody else looks (lesson of
-   1.8.0 and 1.8.1, whose checks were red for two releases). The two jobs run on this PC's runner when the
-   repository variable `BF_PC_RUNNER` is `on` (`tools/pc-runner/README.md`), otherwise on GitHub's Windows machines.
-   The first builds the
+   1.8.0 and 1.8.1, whose checks were red for two releases). The two jobs run on this PC's runner, when the
+   repository variable `BF_PC_RUNNER` is `on`, only for a push to the build branch, a `studio-v*` tag and a run
+   started by hand with "Run on the owner's PC"; feature branches and pull requests run them on GitHub's Windows
+   machines (`tools/pc-runner/README.md`). The first builds the
    command line and the app, tests bf-core, bf-sim and bf-pack, renders and encodes the example episode, tests the
    app without a window and checks the package (each step runs even when an earlier one failed, unless it needs
    that step's output); the second runs `cargo fmt --check`, `cargo clippy --workspace --all-targets -- -D
@@ -216,8 +217,11 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
   violin_quick` (what follows `cargo test --release --locked` in `studio/`). The `pc-tests` workflow runs them on
   this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface tests run too; the
   result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what changed, none for a
-  small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
-  (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
+  small change. Every push that touches `studio/` also runs the `studio` checks: on GitHub's machines for a feature
+  branch, on this PC for the build branch and release tags (the owner, Nov 26, 2026: the PC is shared with another
+  project, which should not wait for these checks). Before a feature branch merges, start one `studio` run on it by
+  hand with "Run on the owner's PC" (Actions, `studio`, Run workflow). Setup, the switch (`BF_PC_RUNNER`) and fixes:
+  `tools/pc-runner/README.md`. The runner keeps its own build folder in
   `F:\bf-runner\target` (30 to 95 GB), which counts toward the 150 GB to keep free on F:.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
