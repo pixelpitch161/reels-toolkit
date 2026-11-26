@@ -372,3 +372,67 @@ fn repeats_differ_within_bounds() {
     repeats_differ(&PIANO);
     repeats_differ(&ORGAN);
 }
+
+/// A note's level from `a` to `b` seconds, dB (silence as -300).
+fn level_over(x: &[f64], a: f64, b: f64) -> f64 {
+    let (i, j) = ((a * 48_000.0) as usize, ((b * 48_000.0) as usize).min(x.len()));
+    if j <= i {
+        return -300.0;
+    }
+    let ms = x[i..j].iter().map(|v| v * v).sum::<f64>() / (j - i) as f64;
+    10.0 * ms.max(1e-30).log10()
+}
+
+/// The largest change in level between the 50 ms before and the 50 ms after any moment from `a` to `b` (every 10
+/// ms), dB.
+fn worst_step(x: &[f64], a: f64, b: f64) -> f64 {
+    let mut worst = 0.0f64;
+    let mut t = a;
+    while t < b {
+        worst = worst.max((level_over(x, t, t + 0.05) - level_over(x, t - 0.05, t)).abs());
+        t += 0.01;
+    }
+    worst
+}
+
+/// Every recorded note held past its recipe's end (Review Focus 3 of the stage 1 plan): across the end it moves no
+/// more in 50 ms than it moved in the second before (by 1.5 dB at most), and a piano's tone keeps dying at least as
+/// fast as `decay_floor` (within 20%, for the strings beating against each other).
+fn carries_on(bars: &Bars) {
+    let inst = instrument(bars.name);
+    let set = inst.set();
+    let end = set.grid[set.grid.len() - 1];
+    let piano = bars.name == "PIANO";
+    let notes = recorded(bars.name);
+    let found = par_map(&notes, |n| {
+        let x = e2measure::engine2_note(inst, n.midi, n.strength, end + 6.0, end + 4.5, 0);
+        let (own, across) = (
+            worst_step(&x, end - 1.0, end - 0.1),
+            worst_step(&x, end - 0.05, end + 0.6),
+        );
+        let fall = (level_over(&x, end + 1.0, end + 1.1) - level_over(&x, end + 4.0, end + 4.1)) / 3.0;
+        let heard = level_over(&x, end + 4.0, end + 4.1) > level_over(&x, 0.0, 1.0) - 80.0;
+        (n.midi, n.layer.clone(), own, across, fall, heard)
+    });
+    for (midi, layer, own, across, fall, heard) in found {
+        assert!(
+            across <= own + 1.5,
+            "{} {midi} {layer}: {across:.2} dB in 50 ms across the recipe's end ({own:.2} dB before it)",
+            bars.name
+        );
+        let floor = bf_sound::voice::engine2::player::decay_floor(midi);
+        if piano && heard {
+            assert!(
+                fall >= 0.8 * floor,
+                "{} {midi} {layer}: dies {fall:.2} dB a second past its recipe (at least {floor:.2})",
+                bars.name
+            );
+        }
+    }
+}
+
+#[test]
+fn notes_carry_on_past_their_recipes_without_a_step() {
+    carries_on(&PIANO);
+    carries_on(&ORGAN);
+}

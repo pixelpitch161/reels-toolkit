@@ -290,7 +290,8 @@ pub fn tail(x: &[f64], f: f64, sr: f64, db: &[f64; 4]) -> Vec<f64> {
         return x.to_vec();
     }
     // dB beside the 5th to 8th, by harmonic number
-    let mut t = vec![0.0; top + 1];
+    // room for the 9th to 12th even when the note's top harmonic (under 0.45 of the rate) is the 9th, 10th or 11th
+    let mut t = vec![0.0; top.max(12) + 1];
     t[9..=12].copy_from_slice(db);
     let fall = (0.5 * ((db[2] - db[0]) + (db[3] - db[1]))).min(-4.0);
     for k in 13..=top {
@@ -707,6 +708,20 @@ mod tests {
             })
             .collect();
         assert_eq!(tail(&full, f, 48_000.0, &db), full);
+    }
+
+    #[test]
+    fn a_tail_on_a_high_note_stops_at_its_top_harmonic() {
+        // 2 kHz at 48 kHz: the 10th harmonic is the last under 0.45 of the rate, so only the 9th and 10th are laid
+        // in (this panicked: the 9th-to-12th row did not fit a table cut at the 10th)
+        let f = 2_000.0;
+        let x = even_note(f, 48_000);
+        let y = tail(&x, f, 48_000.0, &[-10.0, -12.0, -14.0, -16.0]);
+        assert_eq!(y.len(), x.len());
+        let ys = &y[4_800..43_200];
+        let base = level_at(ys, 5.0 * f, 48_000.0) + 10.0 * dmath::log10(4.0);
+        assert!((level_at(ys, 9.0 * f, 48_000.0) - base + 10.0).abs() < 0.5);
+        assert!(level_at(ys, 11.0 * f, 48_000.0) < level_at(ys, 10.0 * f, 48_000.0) - 30.0);
     }
 
     #[test]

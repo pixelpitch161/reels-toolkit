@@ -9,7 +9,8 @@
 //! the sample rate. The noise between the overtones is 24 bands of seeded noise, each at its band's recorded level.
 //!
 //! Past the recipe's last moment the note carries on as the instrument does ([`Carry`]): a piano's tone keeps dying
-//! at the rate it was dying, an organ's holds. Repeats of a note ([variants](render)) differ a little in strength,
+//! at the rate it was dying (never slower than [`decay_floor`]), an organ's settles over [`BLEND`] seconds into the
+//! level of the recipe's last half second and keeps its overtones moving as they moved there. Repeats of a note ([variants](render)) differ a little in strength,
 //! brightness, tuning, the overtones' starting phases and the noise, as a player's repeats do.
 
 use std::sync::OnceLock;
@@ -39,10 +40,59 @@ const LN10_20: f64 = std::f64::consts::LN_10 / 20.0;
 /// How a note goes on past its recipe's last moment.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Carry {
-    /// Each overtone keeps falling at its rate over the recipe's last 1.5 s (never rising): a struck string.
+    /// Each overtone keeps falling at its rate over the recipe's last 1.5 s, at least [`decay_floor`] (never
+    /// holding or rising), and the noise fades out at [`NOISE_FALL`]: a struck string.
     Decay,
-    /// Each overtone and noise band holds its level of the recipe's last 0.5 s: a pipe on steady wind.
+    /// Each overtone and noise band moves over [`BLEND`] seconds from its level at the recipe's end to its level of
+    /// the recipe's last 0.5 s, and each overtone keeps wavering by as much as it wavered there: a pipe on steady wind.
     Steady,
+}
+
+/// The seconds a [`Carry::Steady`] note takes to settle past its recipe's end.
+pub const BLEND: f64 = 0.4;
+/// The noise of a [`Carry::Decay`] note fades out at this many dB a second past its recipe's end.
+pub const NOISE_FALL: f64 = 60.0;
+/// The most a held organ overtone wavers past its recipe, dB.
+const WAVER_MAX: f64 = 1.5;
+
+/// The slowest a struck string's tone dies past its recipe, dB a second: 1.5 at C2 (MIDI 36) and below, 4 at C6
+/// (MIDI 84) and above, so a long held or pedalled note never hangs on as a drone. The recorded rate is kept where it
+/// is faster.
+pub fn decay_floor(midi: f64) -> f64 {
+    1.5 + 2.5 * ((midi - 36.0) / 48.0).clamp(0.0, 1.0)
+}
+
+/// How one overtone or noise band goes on past its recipe's end.
+#[derive(Clone, Copy, Debug)]
+struct Past {
+    /// Its level at the recipe's end and the level it settles at, dB.
+    from: f64,
+    to: f64,
+    /// dB a second it falls.
+    fall: f64,
+    /// How far it wavers, dB, how many times a second, and from where (radians).
+    waver: f64,
+    rate: f64,
+    phase: f64,
+}
+
+const SILENT: Past = Past {
+    from: f64::NEG_INFINITY,
+    to: f64::NEG_INFINITY,
+    fall: 0.0,
+    waver: 0.0,
+    rate: 0.0,
+    phase: 0.0,
+};
+
+impl Past {
+    /// Its level `after` seconds past the recipe's end, dB.
+    fn at(&self, after: f64) -> f64 {
+        let x = (after / BLEND).clamp(0.0, 1.0);
+        let w = x * x * (3.0 - 2.0 * x);
+        between(self.from, self.to, w) - self.fall * after
+            + self.waver * w * dmath::sin(dmath::TAU * self.rate * after + self.phase)
+    }
 }
 
 /// What a part does to a note over time, each as a function of seconds into the note.
@@ -75,11 +125,10 @@ struct View<'s> {
     top: f64,
     /// Overtone number to the index of its partial.
     by_number: Vec<Option<usize>>,
-    /// Per partial, past the recipe: its level at the recipe's end and its fall, dB a second (silent if it ended
-    /// before the recipe did).
-    carry: Vec<(f64, f64)>,
-    /// Per band, past the noise's end.
-    noise_carry: [f64; BANDS],
+    /// Per partial, past the recipe (silent if it ended before the recipe did).
+    carry: Vec<Past>,
+    /// Per band, past the recipe.
+    noise_carry: [Past; BANDS],
 }
 
 fn view<'s>(set: &'s RecipeSet, i: usize, carry: Carry) -> View<'s> {
@@ -99,37 +148,67 @@ fn view<'s>(set: &'s RecipeSet, i: usize, carry: Carry) -> View<'s> {
         by_number[usize::from(p.number)] = Some(j);
     }
     let span = |secs: f64| (0..=last).filter(move |&k| g[k] >= end - secs);
-    let carry_of = |p: &super::recipe::Partial| {
-        if p.end() <= last {
-            return (f64::NEG_INFINITY, 0.0);
-        }
-        let at_end = f64::from(p.level_at(last));
+    let floor = decay_floor(note.midi);
+    // how a series of levels over the recipe's end goes on
+    let past = |series: &dyn Fn(usize) -> f64, waver_of: u16| {
+        let from = series(last);
         match carry {
             Carry::Steady => {
-                let v: Vec<f64> = span(0.5)
-                    .map(|k| f64::from(p.level_at(k)))
-                    .filter(|v| v.is_finite())
-                    .collect();
-                (mean_db(&v), 0.0)
+                let v: Vec<f64> = span(0.5).map(series).filter(|v| v.is_finite()).collect();
+                let to = mean_db(&v);
+                let waver = if waver_of == 0 || v.len() < 2 {
+                    0.0
+                } else {
+                    let m = v.iter().sum::<f64>() / v.len() as f64;
+                    (v.iter().map(|x| (x - m) * (x - m)).sum::<f64>() / v.len() as f64)
+                        .sqrt()
+                        .min(WAVER_MAX)
+                };
+                // each overtone its own pace, between 0.35 and 1.55 times a second, from its own place
+                let k = f64::from(waver_of);
+                Past {
+                    from,
+                    to,
+                    fall: 0.0,
+                    waver,
+                    rate: 0.35 + 1.2 * (k * 0.618_034).fract(),
+                    phase: dmath::TAU * (k * 0.381_966).fract(),
+                }
             }
             Carry::Decay => {
                 let pts: Vec<(f64, f64)> = span(1.5)
-                    .map(|k| (g[k], f64::from(p.level_at(k))))
+                    .map(|k| (g[k], series(k)))
                     .filter(|q| q.1.is_finite())
                     .collect();
-                (at_end, slope(&pts).min(0.0))
+                let fall = if waver_of == 0 {
+                    NOISE_FALL
+                } else {
+                    (-slope(&pts)).max(floor)
+                };
+                Past {
+                    from,
+                    to: from,
+                    fall,
+                    ..SILENT
+                }
             }
         }
     };
-    let carry_v = note.partials.iter().map(carry_of).collect();
-    let mut noise_carry = [f64::NEG_INFINITY; BANDS];
-    if carry == Carry::Steady && note.noise.len() == g.len() {
+    let carry_v = note
+        .partials
+        .iter()
+        .map(|p| {
+            if p.end() <= last {
+                SILENT
+            } else {
+                past(&|k| f64::from(p.level_at(k)), p.number.max(1))
+            }
+        })
+        .collect();
+    let mut noise_carry = [SILENT; BANDS];
+    if note.noise.len() == g.len() {
         for (b, c) in noise_carry.iter_mut().enumerate() {
-            let v: Vec<f64> = span(0.5)
-                .map(|k| f64::from(note.noise[k][b]))
-                .filter(|v| v.is_finite())
-                .collect();
-            *c = mean_db(&v);
+            *c = past(&|k| f64::from(note.noise[k][b]), 0);
         }
     }
     View {
@@ -203,10 +282,7 @@ impl View<'_> {
         let p = &self.note.partials[j];
         match at {
             Some((i, f)) => between(f64::from(p.level_at(i)), f64::from(p.level_at(i + 1)), f),
-            None => {
-                let (l, s) = self.carry[j];
-                l + s * (t - end)
-            }
+            None => self.carry[j].at(t - end),
         }
     }
 
@@ -222,14 +298,14 @@ impl View<'_> {
         }
     }
 
-    /// Band `b`'s noise level at `t`, dB.
-    fn noise(&self, b: usize, at: Option<(usize, f64)>) -> f64 {
+    /// Band `b`'s noise level at `t` (where `at` places it), dB.
+    fn noise(&self, b: usize, t: f64, at: Option<(usize, f64)>, end: f64) -> f64 {
         let rows = &self.note.noise;
         match at {
             Some((i, f)) if i + 1 < rows.len() => between(f64::from(rows[i][b]), f64::from(rows[i + 1][b]), f),
             Some((i, _)) if i < rows.len() => f64::from(rows[i][b]),
             Some(_) if rows.len() < usize::MAX => f64::NEG_INFINITY,
-            _ => self.noise_carry[b],
+            _ => self.noise_carry[b].at(t - end),
         }
     }
 }
@@ -294,8 +370,12 @@ pub fn render(set: &RecipeSet, midi: f64, s: &Shaping, len: usize, variant: u64,
         .collect();
     // the noise: only the bands any of the notes has, only for as long as it lasts
     let noise_rows = views.iter().map(|(_, v)| v.note.noise.len()).max().unwrap_or(0);
-    let noise_len = if s.carry == Carry::Steady && noise_rows == set.grid.len() {
-        len
+    let noise_len = if noise_rows == set.grid.len() {
+        match s.carry {
+            Carry::Steady => len,
+            // faded out 60 dB a second later
+            Carry::Decay => ((end + 60.0 / NOISE_FALL) * SRF) as usize,
+        }
     } else {
         let last = noise_rows.min(set.grid.len() - 1);
         ((set.grid[last] + 0.05) * SRF) as usize
@@ -407,7 +487,7 @@ pub fn render(set: &RecipeSet, midi: f64, s: &Shaping, len: usize, variant: u64,
                 let (mut db, mut sounding) = (0.0, false);
                 for (i, w) in corners.iter() {
                     let Some(v) = find(i) else { continue };
-                    let lv = v.noise(b, at);
+                    let lv = v.noise(b, t, at, end);
                     if lv.is_finite() {
                         sounding = true;
                         db += w * lv;
@@ -589,6 +669,47 @@ mod tests {
         assert!(((a - b) - 9.0).abs() < 1.5, "{a} {b}");
         let blk = |x: &[f64], i: usize| x[i * BLOCK..(i + 1) * BLOCK].to_vec();
         assert_ne!(blk(&steady_x, 2000), blk(&steady_x, 2500));
+    }
+
+    #[test]
+    fn a_held_note_settles_past_its_recipe_without_a_step() {
+        // a pipe louder in its recipe's last moments than over its last half second: past the end it moves to the
+        // half second's level over BLEND seconds, never in one step, and wavers as it wavered there
+        let g = grid(1.6);
+        let end = g[g.len() - 1];
+        let mut set = steady(&[60.0], 1, 1.6, |_, _| -10.0);
+        for (j, v) in set.notes[0].partials[0].level.iter_mut().enumerate() {
+            *v = if g[j] > end - 0.12 { 0.0 } else { -10.0 };
+        }
+        let x = render(&set, 60.0, &shaping(Carry::Steady, None), 192_000, 0, 1);
+        let f = 261.625_565;
+        let lv = |t: f64| tone_db_over(&x, f, t, 0.01);
+        let mut t = end - 0.05;
+        while t < end + BLEND + 0.1 {
+            let d = (lv(t + 0.01) - lv(t)).abs();
+            assert!(d < 0.6, "{d} dB in 10 ms at {t} s");
+            t += 0.01;
+        }
+        // the last half second's level, in power: about -5 dB
+        let held: Vec<f64> = g
+            .iter()
+            .filter(|&&t| t >= end - 0.5)
+            .map(|&t| if t > end - 0.12 { 0.0 } else { -10.0 })
+            .collect();
+        let want = mean_db(&held);
+        let got = tone_db_over(&x, f, end + 1.5, 0.5);
+        assert!((got - want).abs() < WAVER_MAX + 0.3, "{got} dB, not {want}");
+    }
+
+    #[test]
+    fn a_struck_note_never_hangs_on_past_its_recipe() {
+        // a recording that had stopped dying by its end (a string ringing on under the pedal): past the recipe the
+        // tone still dies at decay_floor
+        let set = steady(&[60.0], 1, 1.6, |_, _| -10.0);
+        let x = render(&set, 60.0, &shaping(Carry::Decay, None), 192_000, 0, 1);
+        let f = 261.625_565;
+        let fall = (tone_db(&x, f, 2.0) - tone_db(&x, f, 3.5)) / 1.5;
+        assert!((fall - decay_floor(60.0)).abs() < 0.3, "{fall} dB a second");
     }
 
     #[test]

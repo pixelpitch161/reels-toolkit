@@ -15,7 +15,7 @@ brass's mute and fall).
 |---|---|---|---|
 | `midi` | Which note (60 is middle C; a fraction is between two keys). | yes | yes |
 | `dur` | How long the key is held, in seconds. The note goes on sounding after it as the instrument does (a piano's damper, an organ's quick stop). | yes | yes |
-| `vel` | How hard, 0 to 1. | strength: harder is louder **and** brighter, as a real piano | how loud (a pipe sounds the same however the key is pressed, so this is only level) |
+| `vel` | How hard, 0 to 1. | strength: harder is brighter, as a real piano; how much louder follows the old voice (below) | how loud (a pipe sounds the same however the key is pressed, so this is only level) |
 | `accent` | An accent on top of `vel`, 0 to 1: a harder, noisier start. | strikes harder (up to 0.12 more strength) with more of the hammer's knock | no |
 | `slur_from` | Join this note to the one before (at that pitch) without a new start. | no (a piano always strikes) | not yet |
 | `bend` | Slide the pitch by some cents, starting at some point, over some time (a bend, a fall, a scoop). | no | no |
@@ -34,6 +34,10 @@ brass's mute and fall).
   as a real player never plays a note twice the same.
 - The organ fighter's chords pass `together` (the chord's size) and, for CATHEDRAL, PULL ALL STOPS and the title blast,
   a `swell` from the quiet setting to the full chorus.
+- Every note's loudness at its `vel` is the old voice's at that velocity (matched once per voice from 0.1 to 1, in
+  the middle of its register), so the balance today's parts were written for stands; only the tone changes with
+  `vel`. A real piano's soft notes are much quieter than that (velocity 0.6 is about 7 dB under 0.8, the old voice
+  under 2 dB): the composition system can be given that range when it is built.
 
 ## How the composition system would ask for a phrase
 

@@ -1214,6 +1214,28 @@ fn an_engine2_voice_keeps_the_old_voices_level() {
 }
 
 #[test]
+fn an_engine2_voice_keeps_the_old_voices_balance_by_velocity() {
+    // today's parts set their notes' velocities against the old voice's loudness; the engine keeps that balance (the
+    // test voice is as loud as its velocity, the test instrument's one recording the same at every strength), away
+    // from the middle of the register and between the strengths the match is measured at
+    let ep = episode();
+    let heard = |x: &[f64]| {
+        let squares: Vec<f64> = synth::hp(&x[..(0.3 * SRF) as usize], 120.0, FILTER_O)
+            .iter()
+            .map(|v| v * v)
+            .collect();
+        20.0 * dmath::log10(dsp::mean(&squares).sqrt())
+    };
+    let (new, old) = (engine2_ctx(&ep, true, 0), engine2_ctx(&ep, false, 0));
+    let at = |ctx: &MusicCtx, vel: f64| heard(&ctx.note("FLUTE", 70.0, 0.2, 0.6, vel).unwrap());
+    let (new_ref, old_ref) = (at(&new, 0.8), at(&old, 0.8));
+    for vel in [0.05, 0.25, 0.45, 0.65, 0.95] {
+        let d = (at(&new, vel) - new_ref) - (at(&old, vel) - old_ref);
+        assert!(d.abs() < 0.5, "velocity {vel}: {d} dB off the old voice's balance");
+    }
+}
+
+#[test]
 fn the_noise_stream_is_untouched_by_the_level_match() {
     let ep = episode();
     // under Composed the engine's note draws nothing, and its level match draws from a copy: only the gain's

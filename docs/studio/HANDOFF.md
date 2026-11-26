@@ -217,8 +217,8 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
   several test files (`-p bf-harness --test a --test b`) or filters (`--lib -- music:: polish`). The `pc-tests`
   workflow runs them on this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface
   tests run too; the result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what
-  changed, none for a small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
-  (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
+  changed, none for a small change. Every push that touches `studio/` also runs the `studio` checks on this PC.
+  Setup, the switch (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
   `F:\bf-runner\target` (30 to 95 GB), which counts toward the 150 GB to keep free on F:.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`

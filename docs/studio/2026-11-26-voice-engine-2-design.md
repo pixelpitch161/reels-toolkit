@@ -390,3 +390,14 @@ listening page):
 - **The piano's strength steps** come from the other pianos, matched by brightness (VCSL evened its strengths out to
   one loudness): soft -17.4 dB, medium -5.3 dB, loud 0 (see the PIANO sheet; the Iowa Steinway, measured on the
   PC, moved the soft step from -15 dB).
+- **Today's parts keep their loudness by velocity.** The real piano's soft notes are far quieter than the old voice's
+  (velocity 0.6 against 0.8: 7.3 dB down, the old voice 1.7 dB), which pulled today's soft parts down in the mix (the
+  noir jazz comping by 4.4 dB, a chord's lower notes, the mambo montuno's octave). Each Voice Engine 2 voice is now
+  matched to its old voice's level at every velocity from 0.1 to 1, so the balance the parts were written for stands;
+  the tone still follows the strength (a soft note is darker). Real dynamics wait for the composition system.
+- **Past the recipe's end** a held organ note settles over 0.4 s into the level of its recipe's last half second and
+  keeps wavering by as much as it wavered there (it jumped there in one step, up to 5 dB on a quiet low note); a
+  piano's tone keeps dying at least 1.5 dB a second at C2 rising to 4 at C6, and its noise fades out, so a long
+  pedalled note never hangs on as a drone.
+- **The credits** thank the recording makers in the app's guide only (About the sounds); no ABOUT.txt is added, as
+  the guide is where the app's other credits are read.

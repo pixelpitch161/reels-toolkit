@@ -164,13 +164,36 @@ struct State {
     first: Vec<NoteCall>,
     /// How often each note of a reworked voice has been asked for under the Composed arrangement.
     repeats: BTreeMap<NoteKey, u64>,
-    /// The factor that brings each Voice Engine 2 voice to its own voice's level, by name ([`MusicCtx::note`]).
-    levels2: BTreeMap<String, f64>,
+    /// The factors that bring each Voice Engine 2 voice to its own voice's level at the velocities of
+    /// [`LEVEL_VELS`], by name ([`MusicCtx::note_played`]).
+    levels2: BTreeMap<String, Vec<f64>>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
     fighter_stops: Vec<f64>,
     /// The ordinary notes each fighter sounded under the Composed arrangement, by their time in microseconds
     /// ([`MusicCtx::play_line`]).
     played: BTreeMap<String, BTreeMap<i64, played::Hit>>,
+}
+
+/// The velocities a Voice Engine 2 voice's level is matched to its own voice's at ([`MusicCtx::note_played`]).
+const LEVEL_VELS: [f64; 10] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+/// The level factor at `vel` from the factors at [`LEVEL_VELS`]: straight between two of them, in proportion under
+/// the softest, the hardest's over it.
+fn level_at(table: &[f64], vel: f64) -> f64 {
+    let (first, last) = (LEVEL_VELS[0], LEVEL_VELS[LEVEL_VELS.len() - 1]);
+    if table.len() != LEVEL_VELS.len() {
+        return 1.0;
+    }
+    if vel <= first {
+        return table[0] * (vel / first).max(0.0);
+    }
+    if vel >= last {
+        return table[table.len() - 1];
+    }
+    let i = LEVEL_VELS.partition_point(|&v| v <= vel).clamp(1, LEVEL_VELS.len() - 1);
+    let (v0, v1) = (LEVEL_VELS[i - 1], LEVEL_VELS[i]);
+    let f = (vel - v0) / (v1 - v0);
+    table[i - 1] + (table[i] - table[i - 1]) * f
 }
 
 impl State {
@@ -541,10 +564,13 @@ impl<'a> MusicCtx<'a> {
     /// Classic) it is exactly [`MusicCtx::note`]`(name, play.midi, play.dur, cap, play.vel)`, the same key and the
     /// same samples, and the rest of `play` is left aside.
     ///
-    /// A Voice Engine 2 note is brought to the level of the voice's own note: once per voice, the voice's own note in
-    /// the middle of its register (velocity 0.8, 0.2 s, made on a copy of the noise stream, so the stream is left as
-    /// it was) against the instrument's, their first 0.3 s high-passed at 120 Hz, as [`MusicCtx::inst_gain`]
-    /// measures. Then [`MusicCtx::inst_gain`] applies as to any note.
+    /// A Voice Engine 2 note is brought to the level the voice's own note has at its velocity, so today's parts keep
+    /// the balance between their soft and loud notes that they were written for, while the tone still follows how hard
+    /// the note is played. Once per voice, the voice's own note in the middle of its register (0.2 s, on a fresh
+    /// noise stream, so the build's stream is left as it was) is measured against the instrument's at each velocity
+    /// of [`LEVEL_VELS`], their first 0.3 s high-passed at 120 Hz, as [`MusicCtx::inst_gain`] measures; a velocity
+    /// between them takes the factor between, one under the softest the softest's in proportion, one over the
+    /// hardest the hardest's. Then [`MusicCtx::inst_gain`] applies as to any note.
     ///
     /// # Errors
     /// As [`MusicCtx::note`].
@@ -564,28 +590,31 @@ impl<'a> MusicCtx<'a> {
         self.voice_of("engine2_of", name).ok()?.engine2()
     }
 
-    /// The factor that brings instrument `inst`'s notes to the level of `voice`'s own (see [`MusicCtx::note_played`]).
-    fn level2(&self, st: &mut State, name: &str, voice: &Arc<dyn Voice>, inst: &Instrument) -> f64 {
-        if let Some(&g) = st.levels2.get(name) {
-            return g;
-        }
-        let (lo, hi) = voice.register();
-        let middle = ifloor_div(i64::from(lo) + i64::from(hi), 2) as f64;
-        let mut noise = st.noise.clone();
-        let old = voice.note(&mut noise, middle, 0.8, 0.2);
-        let new = engine2::play(inst, &Play::plain(middle, 0.2, 0.8), 0.6, 0);
-        let heard = |x: &[f64]| {
-            let x = &x[..x.len().min((0.3 * SRF) as usize)];
-            if x.is_empty() {
-                return 0.0;
-            }
-            let squares: Vec<f64> = synth::hp(x, 120.0, FILTER_O).iter().map(|v| v * v).collect();
-            dsp::mean(&squares).sqrt()
-        };
-        let (a, b) = (heard(&old), heard(&new));
-        let g = if a.is_finite() && b > 0.0 { a / b } else { 1.0 };
-        st.levels2.insert(name.to_string(), g);
-        g
+    /// The factor that brings instrument `inst`'s note at velocity `vel` to the level of `voice`'s own (see
+    /// [`MusicCtx::note_played`]).
+    fn level2(&self, st: &mut State, name: &str, voice: &Arc<dyn Voice>, inst: &Instrument, vel: f64) -> f64 {
+        let table = st.levels2.entry(name.to_string()).or_insert_with(|| {
+            let (lo, hi) = voice.register();
+            let middle = ifloor_div(i64::from(lo) + i64::from(hi), 2) as f64;
+            let heard = |x: &[f64]| {
+                let x = &x[..x.len().min((0.3 * SRF) as usize)];
+                if x.is_empty() {
+                    return 0.0;
+                }
+                let squares: Vec<f64> = synth::hp(x, 120.0, FILTER_O).iter().map(|v| v * v).collect();
+                dsp::mean(&squares).sqrt()
+            };
+            LEVEL_VELS
+                .iter()
+                .map(|&v| {
+                    let old = voice.note(&mut PpNoise::start(), middle, v, 0.2);
+                    let new = engine2::play(inst, &Play::plain(middle, 0.2, v), 0.6, 0);
+                    let (a, b) = (heard(&old), heard(&new));
+                    if a.is_finite() && b > 0.0 { a / b } else { 1.0 }
+                })
+                .collect()
+        });
+        level_at(table, vel)
     }
 
     /// A part's own note helper (`Sound.note_helper`): [`MusicCtx::note`] with the helper's own fade, its own cache
@@ -673,7 +702,7 @@ impl<'a> MusicCtx<'a> {
         }
         let x = if let Some(inst) = e2 {
             let play = played.cloned().unwrap_or_else(|| Play::plain(midi, dur, vel));
-            let m = self.level2(&mut st, name, &voice, inst);
+            let m = self.level2(&mut st, name, &voice, inst, play.vel);
             engine2::play(inst, &play, cap, key.variant)
                 .into_iter()
                 .map(|v| v * m)
