@@ -1034,3 +1034,194 @@ fn a_reworked_voice_plays_its_real_notes_in_turns_under_composed_only() {
     let other = composed.note("FLUTE", 77.0, 0.2, 0.3, 0.8).unwrap()[0] / one;
     assert!((other - 2.0).abs() < 1e-9, "{other}");
 }
+
+/// A Voice Engine 2 instrument for tests: one steady recorded note at MIDI 66 (a few overtones and a little noise),
+/// with piano parts, made once and kept for the run.
+fn test_instrument() -> &'static engine2::Instrument {
+    use crate::voice::engine2::piano::PianoParts;
+    use crate::voice::engine2::recipe::{BANDS, Layer, Note, Partial, RecipeSet, grid};
+    use crate::voice::engine2::space::Space;
+    use crate::voice::engine2::{Instrument, Parts};
+    static I: std::sync::OnceLock<&'static Instrument> = std::sync::OnceLock::new();
+    I.get_or_init(|| {
+        let g = grid(2.0);
+        let n = g.len();
+        let set = RecipeSet {
+            name: "FLUTE".into(),
+            grid: g.clone(),
+            layers: vec![Layer {
+                name: "one".into(),
+                strength: 0.8,
+                gain_db: 0.0,
+            }],
+            notes: vec![Note {
+                layer: 0,
+                midi: 66.0,
+                f0: 369.994,
+                b: 0.0,
+                release: 0.08,
+                partials: (1..=6)
+                    .map(|k| Partial {
+                        number: k,
+                        ratio: f64::from(k),
+                        first: 0,
+                        level: g.iter().map(|t| -12.0 - 4.0 * f32::from(k) - 3.0 * *t as f32).collect(),
+                        cents: vec![0.0; n],
+                    })
+                    .collect(),
+                noise: vec![[-70.0; BANDS]; n],
+            }],
+        };
+        let bytes: &'static [u8] = Box::leak(set.to_bytes().into_boxed_slice());
+        let parts = Parts::Piano(PianoParts {
+            undamped_from: 200,
+            halo_db: -34.0,
+        });
+        Box::leak(Box::new(Instrument::new(
+            "FLUTE",
+            bytes,
+            parts,
+            Space {
+                width: 0.0,
+                tilt: 0.0,
+                home: None,
+            },
+        )))
+    })
+}
+
+/// A voice with a Voice Engine 2 instrument: its own notes are the test voice's sines (drawing `draws` normals).
+struct WithEngine2(Arc<TestVoice>);
+
+impl Voice for WithEngine2 {
+    fn note(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
+        self.0.note(noise, midi, vel, dur)
+    }
+
+    fn register(&self) -> (i32, i32) {
+        (60, 73)
+    }
+
+    fn name(&self) -> &str {
+        "FLUTE"
+    }
+
+    fn engine2(&self) -> Option<&'static engine2::Instrument> {
+        Some(test_instrument())
+    }
+}
+
+fn engine2_ctx(ep: &super::testkit::Episode, composed: bool, draws: usize) -> MusicCtx<'_> {
+    let mut ctx = MusicCtx::new(
+        &ep.show,
+        &ep.rec,
+        &ep.ff,
+        [&ep.cfg[0], &ep.cfg[1]],
+        [
+            Arc::new(WithEngine2(TestVoice::new("FLUTE", draws))),
+            TestVoice::new("TROMBONE", 0),
+        ],
+        Vec::new(),
+    )
+    .unwrap();
+    if composed {
+        ctx.polish = Some(Polish::default());
+    }
+    ctx
+}
+
+fn plain_ctx(ep: &super::testkit::Episode, draws: usize) -> MusicCtx<'_> {
+    MusicCtx::new(
+        &ep.show,
+        &ep.rec,
+        &ep.ff,
+        [&ep.cfg[0], &ep.cfg[1]],
+        [TestVoice::new("FLUTE", draws), TestVoice::new("TROMBONE", 0)],
+        Vec::new(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn classic_never_plays_engine2() {
+    let ep = episode();
+    let (ctx, plain) = (engine2_ctx(&ep, false, 3), plain_ctx(&ep, 3));
+    assert!(ctx.engine2_of("FLUTE").is_none());
+    for (m, d, cap, v) in [(66.0, 0.3, 0.5, 0.8), (70.0, 0.1, 0.2, 0.6), (66.0, 0.3, 0.5, 0.8)] {
+        assert_eq!(
+            ctx.note("FLUTE", m, d, cap, v).unwrap(),
+            plain.note("FLUTE", m, d, cap, v).unwrap()
+        );
+    }
+    let swelled = engine2::play::Play {
+        swell: Some(engine2::play::Swell {
+            from: 0.5,
+            to: 1.0,
+            over: 0.3,
+        }),
+        ..engine2::play::Play::plain(68.0, 0.25, 0.7)
+    };
+    assert_eq!(
+        ctx.note_played("FLUTE", &swelled, 0.4).unwrap(),
+        plain.note("FLUTE", 68.0, 0.25, 0.4, 0.7).unwrap()
+    );
+}
+
+#[test]
+fn composed_plays_engine2_and_takes_turns() {
+    let ep = episode();
+    let ctx = engine2_ctx(&ep, true, 0);
+    assert!(ctx.engine2_of("FLUTE").is_some());
+    let notes: Vec<Arc<[f64]>> = (0..4)
+        .map(|_| ctx.note("FLUTE", 66.0, 0.3, 0.5, 0.8).unwrap())
+        .collect();
+    assert!(Arc::ptr_eq(&notes[0], &notes[3]));
+    assert_ne!(notes[0], notes[1]);
+    assert_ne!(notes[1], notes[2]);
+    assert_ne!(notes[0], notes[2]);
+    // not the voice's own sine: the engine's note
+    let own = plain_ctx(&ep, 0).note("FLUTE", 66.0, 0.3, 0.5, 0.8).unwrap();
+    assert_ne!(notes[0], own);
+}
+
+#[test]
+fn a_note_shorter_than_its_attack_fits_its_cap() {
+    let ep = episode();
+    let ctx = engine2_ctx(&ep, true, 0);
+    for cap in [0.05, 0.11, 0.33] {
+        let x = ctx.note("FLUTE", 66.0, 0.08, cap, 0.9).unwrap();
+        assert_eq!(x.len(), (cap * SRF) as usize, "{cap}");
+        assert!(x.iter().all(|v| v.is_finite()));
+        assert!(x[x.len() - 1].abs() < 1e-9, "{cap}: ends at {}", x[x.len() - 1]);
+    }
+}
+
+#[test]
+fn an_engine2_voice_keeps_the_old_voices_level() {
+    let ep = episode();
+    let heard = |x: &[f64]| {
+        let squares: Vec<f64> = synth::hp(&x[..(0.3 * SRF) as usize], 120.0, FILTER_O)
+            .iter()
+            .map(|v| v * v)
+            .collect();
+        dsp::mean(&squares).sqrt()
+    };
+    // the middle of the register: (60 + 73) // 2
+    let new = engine2_ctx(&ep, true, 0).note("FLUTE", 66.0, 0.2, 0.6, 0.8).unwrap();
+    let old = engine2_ctx(&ep, false, 0).note("FLUTE", 66.0, 0.2, 0.6, 0.8).unwrap();
+    let d = 20.0 * dmath::log10(heard(&new) / heard(&old));
+    assert!(d.abs() < 0.1, "{d} dB");
+}
+
+#[test]
+fn the_noise_stream_is_untouched_by_the_level_match() {
+    let ep = episode();
+    // under Composed the engine's note draws nothing, and its level match draws from a copy: only the gain's
+    // measuring note (one call of the voice's own note) moves the stream
+    let ctx = engine2_ctx(&ep, true, 7);
+    ctx.note("FLUTE", 66.0, 0.3, 0.5, 0.8).unwrap();
+    let mut after = ctx.noise().unwrap();
+    let mut want = PpNoise::start();
+    want.nz(7);
+    assert_eq!(after.nz(4), want.nz(4));
+}

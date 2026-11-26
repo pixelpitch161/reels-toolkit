@@ -161,6 +161,13 @@ pub trait Voice: Send + Sync {
             None => x,
         }
     }
+
+    /// The voice's instrument in Voice Engine 2 ([`engine2`]), which the Composed arrangement plays in place of the
+    /// voice's own notes (and of [`Voice::note_real`]). The default is none: the voice has not moved to Voice Engine 2
+    /// yet.
+    fn engine2(&self) -> Option<&'static engine2::Instrument> {
+        None
+    }
 }
 
 pub mod engine2;

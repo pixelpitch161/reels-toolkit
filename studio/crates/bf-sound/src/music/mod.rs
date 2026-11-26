@@ -80,6 +80,8 @@ pub use self::timeline::ComposedPart;
 use crate::SRF;
 use crate::dsp;
 use crate::synth::{self, FILTER_O};
+use crate::voice::engine2::play::Play;
+use crate::voice::engine2::{self, Instrument};
 use crate::voice::{PpNoise, Voice};
 use bf_core::py::{py_max, py_min};
 
@@ -143,6 +145,8 @@ struct NoteKey {
     /// Which repeat of the note: 0, except for a [reworked](Voice::reworked) voice under the Composed arrangement,
     /// whose repeats take turns among [`crate::voice::real::TURNS`] variants.
     variant: u64,
+    /// How a Voice Engine 2 note asked for with [`MusicCtx::note_played`] is played ([`Play::key`]); empty otherwise.
+    play: Vec<u64>,
 }
 
 fn key_bits(x: f64) -> u64 {
@@ -160,6 +164,8 @@ struct State {
     first: Vec<NoteCall>,
     /// How often each note of a reworked voice has been asked for under the Composed arrangement.
     repeats: BTreeMap<NoteKey, u64>,
+    /// The factor that brings each Voice Engine 2 voice to its own voice's level, by name ([`MusicCtx::note`]).
+    levels2: BTreeMap<String, f64>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
     fighter_stops: Vec<f64>,
     /// The ordinary notes each fighter sounded under the Composed arrangement, by their time in microseconds
@@ -176,6 +182,7 @@ impl State {
             own_gains: BTreeMap::new(),
             first: Vec::new(),
             repeats: BTreeMap::new(),
+            levels2: BTreeMap::new(),
             line_overrides: BTreeMap::new(),
             fighter_stops: Vec::new(),
             played: BTreeMap::new(),
@@ -520,8 +527,65 @@ impl<'a> MusicCtx<'a> {
     /// has every instrument of the series). And after the voice call: samples that are not numbers, which is
     /// what a MIDI note far outside what the voice can make gives (Python plays the NaN); and a negative `cap`
     /// that leaves 1 or 2 samples of the note (Python raises there too, after the voice has drawn its noise).
+    ///
+    /// Under the Composed arrangement a voice with a [Voice Engine 2 instrument](Voice::engine2) plays that instead
+    /// (a plain [`Play`]), its repeats taking turns among variants as a reworked voice's do, brought to the level of
+    /// the voice's own note (see [`MusicCtx::note_played`]).
     pub fn note(&self, name: &str, midi: f64, dur: f64, cap: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.note_in(None, name, midi, dur, cap, vel)
+        self.note_in(None, name, midi, dur, cap, vel, None)
+    }
+
+    /// A note played a particular way ([`Play`]: an accent, a swell, the pedal, a chord's size...), `cap` seconds
+    /// long, in the voice `name`. Under the Composed arrangement, for a voice with a
+    /// [Voice Engine 2 instrument](Voice::engine2), it is that instrument's note as played; otherwise (always under
+    /// Classic) it is exactly [`MusicCtx::note`]`(name, play.midi, play.dur, cap, play.vel)`, the same key and the
+    /// same samples, and the rest of `play` is left aside.
+    ///
+    /// A Voice Engine 2 note is brought to the level of the voice's own note: once per voice, the voice's own note in
+    /// the middle of its register (velocity 0.8, 0.2 s, made on a copy of the noise stream, so the stream is left as
+    /// it was) against the instrument's, their first 0.3 s high-passed at 120 Hz, as [`MusicCtx::inst_gain`]
+    /// measures. Then [`MusicCtx::inst_gain`] applies as to any note.
+    ///
+    /// # Errors
+    /// As [`MusicCtx::note`].
+    pub fn note_played(&self, name: &str, play: &Play, cap: f64) -> Result<Arc<[f64]>, MusicError> {
+        if self.engine2_of(name).is_none() {
+            return self.note(name, play.midi, play.dur, cap, play.vel);
+        }
+        self.note_in(None, name, play.midi, play.dur, cap, play.vel, Some(play))
+    }
+
+    /// The voice `name`'s Voice Engine 2 instrument, under the Composed arrangement; `None` under Classic, for a voice
+    /// without one, or for a name that is not a voice of this fight.
+    pub fn engine2_of(&self, name: &str) -> Option<&'static Instrument> {
+        if !self.composed_on() {
+            return None;
+        }
+        self.voice_of("engine2_of", name).ok()?.engine2()
+    }
+
+    /// The factor that brings instrument `inst`'s notes to the level of `voice`'s own (see [`MusicCtx::note_played`]).
+    fn level2(&self, st: &mut State, name: &str, voice: &Arc<dyn Voice>, inst: &Instrument) -> f64 {
+        if let Some(&g) = st.levels2.get(name) {
+            return g;
+        }
+        let (lo, hi) = voice.register();
+        let middle = ifloor_div(i64::from(lo) + i64::from(hi), 2) as f64;
+        let mut noise = st.noise.clone();
+        let old = voice.note(&mut noise, middle, 0.8, 0.2);
+        let new = engine2::play(inst, &Play::plain(middle, 0.2, 0.8), 0.6, 0);
+        let heard = |x: &[f64]| {
+            let x = &x[..x.len().min((0.3 * SRF) as usize)];
+            if x.is_empty() {
+                return 0.0;
+            }
+            let squares: Vec<f64> = synth::hp(x, 120.0, FILTER_O).iter().map(|v| v * v).collect();
+            dsp::mean(&squares).sqrt()
+        };
+        let (a, b) = (heard(&old), heard(&new));
+        let g = if a.is_finite() && b > 0.0 { a / b } else { 1.0 };
+        st.levels2.insert(name.to_string(), g);
+        g
     }
 
     /// A part's own note helper (`Sound.note_helper`): [`MusicCtx::note`] with the helper's own fade, its own cache
@@ -543,9 +607,10 @@ impl<'a> MusicCtx<'a> {
         if !own.fade.is_finite() || own.fade < 0.0 {
             return Err(MusicError::new("note", format!("a helper's fade of {} s", own.fade)));
         }
-        self.note_in(Some(own), name, midi, dur, cap, vel)
+        self.note_in(Some(own), name, midi, dur, cap, vel, None)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn note_in(
         &self,
         own: Option<OwnNote>,
@@ -554,6 +619,7 @@ impl<'a> MusicCtx<'a> {
         dur: f64,
         cap: f64,
         vel: f64,
+        played: Option<&Play>,
     ) -> Result<Arc<[f64]>, MusicError> {
         const H: &str = "note";
         let fade = own.map_or(FIT_FADE, |o| o.fade);
@@ -577,11 +643,14 @@ impl<'a> MusicCtx<'a> {
             cap: key_bits(cap),
             vel: key_bits(round_nd(vel, 2)),
             variant: 0,
+            play: played.map_or_else(Vec::new, Play::key),
         };
         let mut st = self.lock()?;
-        // a reworked voice under Composed: the repeats of a note take turns among their variants
-        let real = self.composed_on() && self.voice_of(H, name).is_ok_and(|v| v.reworked());
-        if real {
+        // under Composed, a Voice Engine 2 instrument, else a reworked voice: the repeats of a note take turns among
+        // their variants
+        let e2 = self.engine2_of(name);
+        let real = e2.is_none() && self.composed_on() && self.voice_of(H, name).is_ok_and(|v| v.reworked());
+        if real || e2.is_some() {
             let asked = st.repeats.entry(key.clone()).or_insert(0);
             key.variant = *asked % crate::voice::real::TURNS;
             *asked += 1;
@@ -602,7 +671,14 @@ impl<'a> MusicCtx<'a> {
                 format!("{name} has no note for a held length (dur) of {dur} s: it would end before it starts"),
             ));
         }
-        let x = if real {
+        let x = if let Some(inst) = e2 {
+            let play = played.cloned().unwrap_or_else(|| Play::plain(midi, dur, vel));
+            let m = self.level2(&mut st, name, &voice, inst);
+            engine2::play(inst, &play, cap, key.variant)
+                .into_iter()
+                .map(|v| v * m)
+                .collect()
+        } else if real {
             voice.note_real(&mut st.noise, midi, vel, dur, key.variant)
         } else {
             voice.note(&mut st.noise, midi, vel, dur)
