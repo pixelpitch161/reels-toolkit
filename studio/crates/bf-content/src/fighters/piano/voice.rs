@@ -16,7 +16,8 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::voice::engine2::piano::PianoParts;
-use bf_sound::voice::engine2::space::Space;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::strings::StringsParts;
 use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::{self, SRF};
 use bf_sound::voice::{PpNoise, Voice};
@@ -121,10 +122,27 @@ pub fn inst_note(m: f64, v: f64) -> Vec<f64> {
     x
 }
 
-/// The Composed arrangement's PIANO (Voice Engine 2): a Steinway model B, rebuilt from its recordings (VCSL, CC0)
-/// at three strengths, with the damper, the pedal and the top 18 keys' undamped strings
-/// (`docs/studio/voice-engine-2-instruments.md`, "Piano"). Classic keeps the note above.
-pub static ENGINE2: Instrument = Instrument::new(
+/// The Composed arrangement's PIANO (Voice Engine 2): a grand built from how it works, on the struck-string engine
+/// (Aedan's pick P16: simulated strings struck by a felt hammer, through a soundboard), with every technique a
+/// piano has, in a light room of its own (`docs/studio/voice-engine-2-instruments.md`, "Piano"). Classic keeps the
+/// note above.
+pub static ENGINE2: Instrument = Instrument::built(
+    "PIANO",
+    Parts::Strings(StringsParts::P16),
+    Space {
+        width: 0.35,
+        tilt: 0.12,
+        home: Some(Home {
+            length: 2.4,
+            under: 15.0,
+            hp: 120.0,
+        }),
+    },
+);
+
+/// Stage 1's PIANO, rebuilt from recordings of a Steinway model B (VCSL, CC0) at three strengths: kept with the
+/// recipe engine, no fighter plays it.
+pub static RECIPE: Instrument = Instrument::new(
     "PIANO",
     include_bytes!("../../../data/voices/PIANO.ve2"),
     Parts::Piano(PianoParts {
@@ -166,7 +184,7 @@ mod tests {
 
     #[test]
     fn the_recipes_load_and_fit_the_budget() {
-        let set = ENGINE2.set();
+        let set = RECIPE.set();
         let names: Vec<&str> = set.layers.iter().map(|l| l.name.as_str()).collect();
         assert_eq!(names, ["vl2", "vl3", "vl4"]);
         // every layer has notes at or past both ends of the register
@@ -181,7 +199,7 @@ mod tests {
                 "layer {layer}: {lo} to {hi}"
             );
         }
-        assert!(ENGINE2.recipes.len() <= 1_500_000, "{} bytes", ENGINE2.recipes.len());
+        assert!(RECIPE.recipes.len() <= 1_500_000, "{} bytes", RECIPE.recipes.len());
     }
 
     fn peak(x: &[f64]) -> f64 {

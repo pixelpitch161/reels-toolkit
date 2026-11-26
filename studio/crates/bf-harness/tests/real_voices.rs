@@ -282,7 +282,7 @@ fn the_bassoons_keys_and_bellows_are_their_own_not_each_other() {
     for fighter in ["BASSOON", "CONTRABASSOON"] {
         reworked_nearer_its_own(fighter, "bassoon", &["bari sax", "clarinet", "tuba", "french horn"]);
     }
-    // PIANO and ORGAN play on Voice Engine 2 under Composed: `engine2_voices.rs`
+    // PIANO and ORGAN play on Voice Engine 2 under Composed: `engine2_built.rs`
     reworked_nearer_its_own(
         "ACCORDION",
         "accordion",

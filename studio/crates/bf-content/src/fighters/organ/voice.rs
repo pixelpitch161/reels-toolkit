@@ -27,6 +27,7 @@ use bf_core::py::{py_max, py_min};
 use bf_core::rng::Generator;
 use bf_sound::dsp;
 use bf_sound::voice::engine2::organ::OrganParts;
+use bf_sound::voice::engine2::pipes::PipeParts;
 use bf_sound::voice::engine2::space::{Home, Space};
 use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::{self, SRF};
@@ -65,11 +66,27 @@ const SULP: [Rank; 4] = [
     (&PRIN, 1.0, 0.35, 0.0),
 ];
 
-/// The Composed arrangement's ORGAN (Voice Engine 2): a pipe organ's main chorus, rebuilt from its recordings
-/// (VSCO 2 CE, CC0) with the quiet chorus a swell builds from, the wind and the pipes' quick stop, and a light room
-/// of its own in place of the church's long echo (`docs/studio/voice-engine-2-instruments.md`, "Organ"). Classic
-/// keeps the note above.
-pub static ENGINE2: Instrument = Instrument::new(
+/// The Composed arrangement's ORGAN (Voice Engine 2): a pipe organ built stop by stop on the pipe engine (Aedan's
+/// pick O8: the grand chorus, 16' stops to the mixture and the pedal, polished), with every technique an organ has,
+/// in a light room of its own in place of a church's long echo (`docs/studio/voice-engine-2-instruments.md`,
+/// "Organ"). Classic keeps the note above.
+pub static ENGINE2: Instrument = Instrument::built(
+    "ORGAN",
+    Parts::Pipes(PipeParts::O8),
+    Space {
+        width: 0.45,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 3.3,
+            under: 14.0,
+            hp: 120.0,
+        }),
+    },
+);
+
+/// Stage 1's ORGAN, rebuilt from recordings of a pipe organ's main chorus (VSCO 2 CE, CC0): kept with the recipe
+/// engine, no fighter plays it.
+pub static RECIPE: Instrument = Instrument::new(
     "ORGAN",
     include_bytes!("../../../data/voices/ORGAN.ve2"),
     Parts::Organ(OrganParts {
@@ -254,7 +271,7 @@ mod tests {
 
     #[test]
     fn the_recipes_load_and_fit_the_budget() {
-        let set = ENGINE2.set();
+        let set = RECIPE.set();
         let names: Vec<&str> = set.layers.iter().map(|l| l.name.as_str()).collect();
         assert_eq!(names, ["quiet", "loud"]);
         // every layer has notes at or past both ends of the register
@@ -269,7 +286,7 @@ mod tests {
                 "layer {layer}: {lo} to {hi}"
             );
         }
-        assert!(ENGINE2.recipes.len() <= 1_500_000, "{} bytes", ENGINE2.recipes.len());
+        assert!(RECIPE.recipes.len() <= 1_500_000, "{} bytes", RECIPE.recipes.len());
     }
 
     /// The two detunes are `2 ** (±2 / 1200)`: constants of the kit. These are Python's own bits (CPython 3.13 on

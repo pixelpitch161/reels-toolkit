@@ -1,6 +1,7 @@
 //! Voice Engine 2's recordings tool: fetches the free recording sets, studies every set of an instrument side by side,
 //! measures the shipped set into the instrument's recipe (`bf-content/data/voices/<NAME>.ve2`), checks the engine's
-//! notes against the recordings, and writes the yardstick the `engine2_voices` test reads.
+//! notes against the recordings, and writes the recipe engine's yardstick (`tests/reference/engine2/`; no test reads it
+//! since the fighters moved to the built engines, `docs/studio/2026-11-26-voice-engine-2-plan-stage1-built.md`).
 //!
 //! ```text
 //! cargo run --release -p bf-harness --example recipes -- fetch <set>
@@ -966,13 +967,18 @@ fn rivals(inst: &str) -> (&'static str, &'static [&'static str]) {
     }
 }
 
-/// The yardstick the `engine2_voices` test reads (`tests/reference/engine2/<INST>.json`): each shipped recording in
+/// The recipe engine's yardstick (`tests/reference/engine2/<INST>.json`, kept with the recipe engine): each shipped recording in
 /// the fighter's register measured, and the real instruments' spread by register from the study (every set studied
 /// here); then the engine's notes against both, printed, to set the test's bars.
 fn reference(inst: &str) -> Result<(), String> {
     let set = recipe(inst)?;
     let voice = bf_content::fighters::voice(inst).ok_or(format!("no fighter {inst}"))?;
-    let engine = voice.engine2().ok_or(format!("{inst} has no engine 2 instrument"))?;
+    // the recipe instrument, kept with the recipe engine (the fighter itself plays a built engine now)
+    let engine = if inst == "PIANO" {
+        &bf_content::fighters::piano::voice::RECIPE
+    } else {
+        &bf_content::fighters::organ::voice::RECIPE
+    };
     let (lo, hi) = voice.register();
     let (src, sub) = if inst == "PIANO" {
         ("vcsl", false)
