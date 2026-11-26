@@ -23,6 +23,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Samples, event_is_str, event_number, noise_seed};
 use bf_sound::synth::{self, THUD_SEED, clip};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
+use bf_sound::voice::engine2::play::{Play, Swell};
 
 use crate::fighters::shared::hash::h01;
 
@@ -140,10 +141,21 @@ impl OrganSound {
     /// `1 / n ** 0.6`. Python's defaults are [`CHORD_DUR`], [`CHORD_VEL`] and no `cap` (then `round(dur + 0.22,
     /// 2)`; a `cap` of 0 counts as none, as in Python).
     ///
+    /// Under the Composed arrangement every note is played on Voice Engine 2 with `swell` (the stops coming in) and
+    /// the chord's size; under Classic both are ignored.
+    ///
     /// # Errors
     /// As [`MusicCtx::note`]; no notes (Python's sum is then the number 0, which no bus takes); notes of
     /// different lengths (numpy refuses to add them).
-    pub fn chord(&self, ctx: &MusicCtx, ms: &[i32], dur: f64, vel: f64, cap: Option<f64>) -> Samples {
+    pub fn chord(
+        &self,
+        ctx: &MusicCtx,
+        ms: &[i32],
+        dur: f64,
+        vel: f64,
+        cap: Option<f64>,
+        swell: Option<Swell>,
+    ) -> Samples {
         let cap = match cap {
             Some(c) if c != 0.0 => c,
             _ => round_nd(dur + 0.22, 2),
@@ -151,7 +163,14 @@ impl OrganSound {
         let pp = ctx.cfg[self.k].pp.as_str();
         let mut sum: Option<Vec<f64>> = None;
         for &m in ms {
-            let x = ctx.note(pp, f64::from(m), dur, cap, vel)?;
+            // as `ctx.note` (Classic); the Composed organ also hears how many pipes sound together and the swell
+            let together = u8::try_from(ms.len()).unwrap_or(u8::MAX);
+            let play = Play {
+                together,
+                swell,
+                ..Play::plain(f64::from(m), dur, vel)
+            };
+            let x = ctx.note_played(pp, &play, cap)?;
             match &mut sum {
                 // sum(...) starts from 0
                 None => sum = Some(x.iter().map(|&v| 0.0 + v).collect()),
@@ -288,7 +307,18 @@ impl Sound for OrganSound {
                 self.full(ctx, ch)?
             }
         };
-        let x = self.chord(ctx, &notes, 0.5, 1.0, Some(1.2))?;
+        let x = self.chord(
+            ctx,
+            &notes,
+            0.5,
+            1.0,
+            Some(1.2),
+            Some(Swell {
+                from: 0.6,
+                to: 1.0,
+                over: 0.45,
+            }),
+        )?;
         mix.place(&self.bus(ctx), &Sig::Mono(x), t, 0.40, 0.0);
         Ok(())
     }
@@ -302,7 +332,7 @@ impl Sound for OrganSound {
             .get(1)
             .ok_or_else(|| MusicError::new(H, "the episode has no bar 1 to count in on"))?;
         for (tc, _) in ctx.show.grid.count.iter().take(3) {
-            let x = self.chord(ctx, &self.voicing(ctx, ch)?, 0.18, 0.9, None)?;
+            let x = self.chord(ctx, &self.voicing(ctx, ch)?, 0.18, 0.9, None, None)?;
             mix.place(&bus, &Sig::Mono(x), *tc, 0.30, 0.0);
         }
         Ok(())
@@ -348,7 +378,7 @@ impl Sound for OrganSound {
                     if let Some(m) = line {
                         vo = self.line_stab(ctx, ch, m, hp, t)?;
                     }
-                    let x = self.chord(ctx, &vo, 0.17, 0.85, None)?;
+                    let x = self.chord(ctx, &vo, 0.17, 0.85, None, None)?;
                     let (sig, g, lead) = self.tone(ctx, &x, t, 0.8, false)?;
                     mix.place(&bus, &Sig::Mono(sig), tq, 0.34 * g, 0.15 * side);
                     if bass {
@@ -356,7 +386,7 @@ impl Sound for OrganSound {
                         // note, in the pedal's octave, A1 to G#2, where the kit puts the chord's root)
                         let pedal = self.pedal(ctx, ch)?;
                         let pedal = line.map_or(pedal, |m| 33 + (m - 33).rem_euclid(12));
-                        let x = self.chord(ctx, &[pedal], 0.3, 0.9, None)?;
+                        let x = self.chord(ctx, &[pedal], 0.3, 0.9, None, None)?;
                         let sig = self.tone(ctx, &x, t, 0.6, true)?.0;
                         mix.place(&bus, &Sig::Mono(sig), tq, 0.30 * g, 0.1 * side);
                     }
@@ -370,7 +400,7 @@ impl Sound for OrganSound {
                             Some(m) if up > m - 3 => up - 12,
                             _ => up,
                         };
-                        let x = self.chord(ctx, &[up], 0.2, 0.7, None)?;
+                        let x = self.chord(ctx, &[up], 0.2, 0.7, None, None)?;
                         let sig = self.tone(ctx, &x, t, 1.0, false)?.0;
                         mix.place(&bus, &Sig::Mono(sig), tq, 0.16 * g, 0.1 * side);
                     }
@@ -384,12 +414,12 @@ impl Sound for OrganSound {
                     let top = self.line(ctx, tl)?.unwrap_or(top);
                     if bass {
                         // (the pedal is already under every row)
-                        let x = self.chord(ctx, &[top], 0.22, 1.0, None)?;
+                        let x = self.chord(ctx, &[top], 0.22, 1.0, None, None)?;
                         let (sig, g, _) = self.tone(ctx, &x, t, 0.6, false)?;
                         // 0.30 * g / 2 ** 0.6
                         mix.place(&bus, &Sig::Mono(sig), tl, 0.30 * g / dmath::pow(2.0, 0.6), pan);
                     } else {
-                        let x = self.chord(ctx, &[self.pedal(ctx, ch)?, top], 0.22, 1.0, None)?;
+                        let x = self.chord(ctx, &[self.pedal(ctx, ch)?, top], 0.22, 1.0, None, None)?;
                         let (sig, g, _) = self.tone(ctx, &x, t, 0.6, false)?;
                         mix.place(&bus, &Sig::Mono(sig), tl, 0.30 * g, pan);
                     }
@@ -404,7 +434,12 @@ impl Sound for OrganSound {
                         let mut ms = vec![self.pedal(ctx, ch)?, lowest(ch, &vo)? - 12];
                         ms.extend(&vo);
                         ms.push(highest(ch, &vo)? + 12);
-                        let x = self.chord(ctx, &ms, 2.0 * beat, 0.8, Some(2.0 * beat + 0.6))?;
+                        let swell = Swell {
+                            from: 0.5,
+                            to: 1.0,
+                            over: 1.5 * beat,
+                        };
+                        let x = self.chord(ctx, &ms, 2.0 * beat, 0.8, Some(2.0 * beat + 0.6), Some(swell))?;
                         mix.place(&bus, &Sig::Mono(x), tq, 0.20, 0.0);
                     } else if is(&cfg.unlock2.name)? {
                         // PULL ALL STOPS: a swell, the chord climbing the stops
@@ -413,13 +448,19 @@ impl Sound for OrganSound {
                         ms.push(highest(ch, &vo)? + 12);
                         for (j, m) in ms.into_iter().enumerate() {
                             let j = j as f64;
-                            let x = self.chord(ctx, &[m], 2.0 * beat - j * s16, 0.75, Some(2.0 * beat + 0.3))?;
+                            let dur = 2.0 * beat - j * s16;
+                            let swell = Swell {
+                                from: 0.5,
+                                to: 1.0,
+                                over: dur,
+                            };
+                            let x = self.chord(ctx, &[m], dur, 0.75, Some(2.0 * beat + 0.3), Some(swell))?;
                             mix.place(&bus, &Sig::Mono(x), tq + j * s16, 0.12 + 0.03 * j, 0.0);
                         }
                     } else if is(&cfg.low.name)? {
                         // TOCCATA: a falling 16th run over the telegraph
                         for (j, m) in self.toccata_run(ctx).into_iter().enumerate() {
-                            let x = self.chord(ctx, &[m, m - 12], 0.11, 0.9, None)?;
+                            let x = self.chord(ctx, &[m, m - 12], 0.11, 0.9, None, None)?;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16, 0.22, 0.0);
                         }
                     }
@@ -433,7 +474,7 @@ impl Sound for OrganSound {
                     let mut ms = vec![root - 12, root, lowest(at, &vo)? - 12];
                     ms.extend(&vo);
                     ms.push(highest(at, &vo)? + 12);
-                    let x = self.chord(ctx, &ms, 0.6, 1.0, Some(1.4))?;
+                    let x = self.chord(ctx, &ms, 0.6, 1.0, Some(1.4), None)?;
                     mix.place(&bus, &Sig::Mono(x), ts, 0.34, 0.0);
                     mix.place("fx", &Sig::Mono(synth::thud(0.7, 90.0, 30.0, THUD_SEED)), ts, 0.55, 0.0);
                     // (#35: its bed's timpani + bell)
@@ -455,7 +496,7 @@ impl Sound for OrganSound {
             let pipe = clank(j as u64, 1.0 - 0.08 * jf);
             // pan=(j - 3) / 6
             mix.place("fx", &Sig::Mono(pipe), t_hs + 0.09 * jf, 0.20, f64::from(j - 3) / 6.0);
-            let x = self.chord(ctx, &[root + 24 - 3 * j], 0.08, 0.6, None)?;
+            let x = self.chord(ctx, &[root + 24 - 3 * j], 0.08, 0.6, None, None)?;
             mix.place(&bus, &Sig::Mono(x), t_hs + 0.09 * jf, 0.10, 0.0);
         }
         Ok(())
@@ -469,7 +510,7 @@ impl Sound for OrganSound {
             .ok_or_else(|| MusicError::new(H, "the episode has no bars"))?;
         // self.full(self.T.CHORDS[0])[1:]
         let full = self.full(ctx, ch)?;
-        let x = self.chord(ctx, &full[1..], 0.9, 1.0, Some(1.6))?;
+        let x = self.chord(ctx, &full[1..], 0.9, 1.0, Some(1.6), None)?;
         mix.place("solo", &Sig::Mono(x), tw, 0.30, 0.0);
         Ok(())
     }
@@ -484,7 +525,7 @@ impl Sound for OrganSound {
                 break;
             }
             let dur = py_min(d * grid.beat * 0.92, grid.t_reassemble - ts);
-            let x = self.chord(ctx, &[m, m - 12], dur, 0.9, Some(round_nd(dur + 0.3, 2)))?;
+            let x = self.chord(ctx, &[m, m - 12], dur, 0.9, Some(round_nd(dur + 0.3, 2)), None)?;
             mix.place("solo", &Sig::Mono(x), ts, 0.34, 0.0);
         }
         Ok(())
@@ -505,7 +546,7 @@ impl Sound for OrganSound {
         let n = run.len() as f64;
         for (j, m) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / n);
-            let x = self.chord(ctx, &[m], 0.1, 0.7, None)?;
+            let x = self.chord(ctx, &[m], 0.1, 0.7, None, None)?;
             mix.place(&bus, &Sig::Mono(x), tj, 0.16, 0.0);
         }
         Ok(())
@@ -537,7 +578,7 @@ impl Sound for OrganSound {
         let side = self.side();
         for bt in 0..4i64 {
             let m = climb[imod_py(bt, climb.len() as i64) as usize];
-            let x = self.chord(ctx, &[m, m + 12], 0.35, 0.9, None)?;
+            let x = self.chord(ctx, &[m, m + 12], 0.35, 0.9, None, None)?;
             mix.place(&bus, &Sig::Mono(x), t_last + bt as f64 * grid.beat, 0.34, 0.1 * side);
         }
         Ok(())

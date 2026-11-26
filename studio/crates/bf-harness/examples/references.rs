@@ -724,8 +724,6 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "VIOLA" => &["violin", "cello", "french horn", "english horn"],
         "CELLO" => &["viola", "contrabass", "french horn", "bassoon"],
         "BASSOON" | "CONTRABASSOON" => &["bari sax", "clarinet", "tuba", "french horn"],
-        "PIANO" => &["harp", "marimba", "nylon guitar", "steel guitar"],
-        "ORGAN" => &["accordion", "drawbar organ", "flute", "clarinet"],
         "ACCORDION" => &["church organ", "drawbar organ", "oboe", "bagpipe"],
         "ACOUSTIC" => &["nylon guitar", "clean guitar", "harp", "piano"],
         "ELECTRIC" => &["clean guitar", "steel guitar", "trumpet"],

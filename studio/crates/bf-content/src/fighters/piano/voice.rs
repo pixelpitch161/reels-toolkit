@@ -15,8 +15,10 @@
 //! `additive`'s vibrato (`vibr`, the clavichord's).
 
 use bf_core::dmath::{self, PI};
+use bf_sound::voice::engine2::piano::PianoParts;
+use bf_sound::voice::engine2::space::Space;
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::{self, SRF};
-use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// PIANO's register in `pp_bridge`'s roster (`('PIANO', 'piano_lowpoly', 'grand', (48, 84), ...)`).
@@ -119,104 +121,22 @@ pub fn inst_note(m: f64, v: f64) -> Vec<f64> {
     x
 }
 
-/// The PIANO's added overtones: the harmonics its own note barely has, laid in at a real piano's level (dB
-/// under the fundamental, `NONE` for none), note by note. Written with the [`CORRECTION`].
-#[rustfmt::skip]
-pub const FILL: &Fill = &[
-    (48, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (49, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.2, -99.0]),
-    (50, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.3, -99.0]),
-    (51, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.5, -17.5]),
-    (52, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.4, -17.7]),
-    (53, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.4, -17.9]),
-    (54, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -16.3, -18.1]),
-    (55, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -14.3, -99.0]),
-    (56, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -14.2, -99.0]),
-    (57, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -14.2, -99.0]),
-    (58, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -14.2, -99.0]),
-    (59, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (60, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (61, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (62, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (63, [-99.0, -99.0, -99.0, -99.0, -10.4, -99.0, -99.0, -99.0]),
-    (64, [-99.0, -99.0, -99.0, -99.0, -10.5, -99.0, -99.0, -99.0]),
-    (65, [-99.0, -99.0, -99.0, -99.0, -10.5, -99.0, -99.0, -99.0]),
-    (66, [-99.0, -99.0, -99.0, -99.0, -10.5, -99.0, -99.0, -99.0]),
-    (67, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (68, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (69, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (70, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (71, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (72, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (73, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (74, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (75, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (76, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (77, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (78, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (79, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (80, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (81, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (82, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (83, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (84, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-];
-
-/// The PIANO's overtone correction toward a real piano: gains in dB for its first eight harmonics, note by
-/// note (FluidR3, `bf-harness/tests/reference/fluidr3.json`). Written by
-/// `cargo run --release -p bf-harness --example references -- correct "PIANO"`.
-#[rustfmt::skip]
-pub const CORRECTION: &Correction = &[
-    (48, [-3.7, 7.2, 0.9, 5.3, 3.0, 8.1, 12.1, 3.6]),
-    (49, [-3.8, 7.2, 0.9, 5.3, 3.2, 8.8, -3.9, 3.8]),
-    (50, [-3.8, 7.3, 1.0, 5.3, 3.4, 9.2, -3.9, 3.5]),
-    (51, [0.0, 8.3, -4.8, -0.6, 2.5, -0.5, 0.1, 0.1]),
-    (52, [0.0, 8.2, -4.8, -0.5, 2.9, -0.1, 0.1, 0.1]),
-    (53, [0.0, 8.1, -4.8, -0.5, 3.3, 0.2, 0.1, 0.1]),
-    (54, [0.0, 8.0, -4.8, -0.3, 3.8, 0.4, 0.0, 0.1]),
-    (55, [0.0, 3.4, -2.8, -0.3, 7.1, 2.7, 0.5, 13.8]),
-    (56, [0.0, 3.4, -2.8, 0.1, 7.4, 2.9, 0.5, 13.0]),
-    (57, [0.0, 3.5, -2.7, 0.5, 7.8, 3.0, 0.4, 12.1]),
-    (58, [0.0, 3.6, -2.7, 0.9, 8.1, 2.9, 0.3, 11.0]),
-    (59, [0.0, 2.9, -2.2, 8.3, 2.7, 11.5, 13.8, 13.2]),
-    (60, [0.0, 2.8, -2.1, 8.6, 2.7, 10.8, 12.8, 11.9]),
-    (61, [0.0, 2.7, -2.1, 8.8, 2.4, 9.8, 11.6, 10.6]),
-    (62, [0.0, 2.7, -2.0, 9.1, 2.0, 8.5, 10.3, 9.3]),
-    (63, [0.0, 4.7, -1.4, 6.2, 0.6, 11.4, -8.0, 12.2]),
-    (64, [0.0, 4.6, -1.0, 5.7, 0.5, 10.8, -7.6, 11.2]),
-    (65, [0.0, 4.5, -0.5, 5.0, 0.5, 10.4, -7.2, 10.6]),
-    (66, [0.0, 4.4, -0.1, 4.2, 0.5, 10.1, -6.9, 10.1]),
-    (67, [0.0, -11.9, -1.4, 1.7, -2.3, 6.5, -1.9, -6.3]),
-    (68, [0.0, -11.9, -1.2, 1.8, -4.0, 4.6, -3.1, -7.3]),
-    (69, [0.0, -11.9, -1.1, 1.7, -5.7, 2.8, -4.4, -8.4]),
-    (70, [0.0, -11.9, -1.2, 1.2, -7.6, 0.8, -5.8, -9.5]),
-    (71, [0.0, 3.3, 9.5, 1.4, 9.8, 5.2, -3.3, 8.4]),
-    (72, [0.0, 3.3, 9.8, 0.0, 9.3, 4.5, -4.5, 8.6]),
-    (73, [0.0, 3.3, 9.9, -1.4, 8.8, 3.7, -5.2, 9.1]),
-    (74, [0.0, 3.4, 9.9, -2.7, 8.2, 2.5, -5.9, 9.7]),
-    (75, [0.0, 5.1, -3.0, 8.2, 9.3, 2.9, -18.2, -14.4]),
-    (76, [0.0, 5.5, -3.3, 8.3, 9.2, 2.6, -18.4, -13.9]),
-    (77, [0.0, 5.9, -3.6, 8.6, 9.2, 2.4, -18.7, -13.8]),
-    (78, [0.0, 6.2, -3.9, 8.9, 9.2, 2.5, -19.1, -13.9]),
-    (79, [0.0, 6.6, -7.6, 5.5, 3.1, -15.1, -20.9, -19.2]),
-    (80, [0.0, 6.9, -8.4, 6.4, 2.9, -14.9, -20.9, -19.4]),
-    (81, [0.0, 6.8, -9.2, 7.0, 2.8, -15.1, -21.6, -19.7]),
-    (82, [0.0, 6.1, -9.6, 7.2, 2.5, -16.0, -23.5, -20.2]),
-    (83, [0.0, 5.0, -10.1, 6.9, 2.1, -17.4, -24.4, -20.8]),
-    (84, [0.0, 3.4, -10.5, 6.2, 1.5, -19.4, -25.0, -21.3]),
-];
-
-/// The Composed arrangement's PIANO (sound upgrade, stage 3, S1): its own note with the overtones of the real
-/// instrument, the ones it lacks added, and the damper's quicker stop (a 70 ms fade after its length), nearer the
-/// real one's; it keeps its own strike's snap.
-pub const REWORK: Rework = Rework {
-    fill: FILL,
-    correction: CORRECTION,
-    speak: 0.0,
-    stop: 0.07,
-    keep_shape: true,
-    tail: &[],
-};
+/// The Composed arrangement's PIANO (Voice Engine 2): a Steinway model B, rebuilt from its recordings (VCSL, CC0)
+/// at three strengths, with the damper, the pedal and the top 18 keys' undamped strings
+/// (`docs/studio/voice-engine-2-instruments.md`, "Piano"). Classic keeps the note above.
+pub static ENGINE2: Instrument = Instrument::new(
+    "PIANO",
+    include_bytes!("../../../data/voices/PIANO.ve2"),
+    Parts::Piano(PianoParts {
+        undamped_from: 91,
+        halo_db: -34.0,
+    }),
+    Space {
+        width: 0.35,
+        tilt: 0.12,
+        home: None,
+    },
+);
 
 /// PIANO's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -231,8 +151,8 @@ impl Voice for PianoVoice {
         REGISTER
     }
 
-    fn rework(&self) -> Option<&'static Rework> {
-        Some(&REWORK)
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
     }
 
     fn name(&self) -> &str {
@@ -243,6 +163,26 @@ impl Voice for PianoVoice {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_recipes_load_and_fit_the_budget() {
+        let set = ENGINE2.set();
+        let names: Vec<&str> = set.layers.iter().map(|l| l.name.as_str()).collect();
+        assert_eq!(names, ["vl2", "vl3", "vl4"]);
+        // every layer has notes at or past both ends of the register
+        for layer in 0..set.layers.len() {
+            let m: Vec<f64> = set.notes.iter().filter(|n| n.layer == layer).map(|n| n.midi).collect();
+            let (lo, hi) = (
+                m.iter().copied().fold(f64::MAX, f64::min),
+                m.iter().copied().fold(f64::MIN, f64::max),
+            );
+            assert!(
+                lo <= f64::from(REGISTER.0) + 0.5 && hi >= f64::from(REGISTER.1) - 0.5,
+                "layer {layer}: {lo} to {hi}"
+            );
+        }
+        assert!(ENGINE2.recipes.len() <= 1_500_000, "{} bytes", ENGINE2.recipes.len());
+    }
 
     fn peak(x: &[f64]) -> f64 {
         x.iter().fold(0.0f64, |p, v| p.max(v.abs()))
