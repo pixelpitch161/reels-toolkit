@@ -10,7 +10,7 @@
 //! layers  u8 count; each: name, f32 strength, f32 gain dB
 //! notes   u16 count; each:
 //!         u8 layer, f32 midi, f32 f0, f32 b, f32 release, f32 top dB
-//!         u16 partials; each: f32 ratio, u16 first point, u16 points,
+//!         u16 partials; each: u16 number, f32 ratio, u16 first point, u16 points,
 //!                             points x u8 level, points x i8 cents
 //!         u16 noise points (from the first), then points x 24 u8 levels
 //! ```
@@ -71,6 +71,9 @@ pub struct Layer {
 /// One overtone of a recorded note over time.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Partial {
+    /// Which overtone it is on the note's grid of overtones, from 1 (an organ's grid is half its note's frequency, so
+    /// its number 2 is the note's fundamental). Notes are blended overtone by overtone, by this number.
+    pub number: u16,
     /// Its frequency over the note's measured `f0`.
     pub ratio: f64,
     /// The grid point its first value is at; before it, and after its last, it is silent.
@@ -235,6 +238,7 @@ impl RecipeSet {
             }
             b.extend_from_slice(&(n.partials.len() as u16).to_le_bytes());
             for p in &n.partials {
+                b.extend_from_slice(&p.number.to_le_bytes());
                 put_f32(&mut b, p.ratio);
                 b.extend_from_slice(&(p.first as u16).to_le_bytes());
                 b.extend_from_slice(&(p.level.len() as u16).to_le_bytes());
@@ -287,6 +291,7 @@ impl RecipeSet {
             let (midi, f0, b, release, top) = (r.f32()?, r.f32()?, r.f32()?, r.f32()?, r.f32()? as f32);
             let mut partials = Vec::new();
             for _ in 0..r.u16()? {
+                let number = r.u16()?;
                 let ratio = r.f32()?;
                 let first = usize::from(r.u16()?);
                 let len = usize::from(r.u16()?);
@@ -299,6 +304,7 @@ impl RecipeSet {
                 let level = r.take(len)?.iter().map(|&v| unquant_level(v, top)).collect();
                 let cents = r.take(len)?.iter().map(|&v| f32::from(v as i8) / 4.0).collect();
                 partials.push(Partial {
+                    number,
                     ratio,
                     first,
                     level,
@@ -449,12 +455,14 @@ mod tests {
             release: 0.07,
             partials: vec![
                 Partial {
+                    number: 1,
                     ratio: 1.0,
                     first: 0,
                     level: vec![-12.0; n],
                     cents: vec![0.5; n],
                 },
                 Partial {
+                    number: 2,
                     ratio: 2.001,
                     first: 3,
                     level: (0..n - 5)
@@ -494,7 +502,7 @@ mod tests {
         for (a, b) in s.notes.iter().zip(&back.notes) {
             assert_eq!((a.layer, a.midi), (b.layer, b.midi));
             for (p, q) in a.partials.iter().zip(&b.partials) {
-                assert_eq!((p.first, p.level.len()), (q.first, q.level.len()));
+                assert_eq!((p.number, p.first, p.level.len()), (q.number, q.first, q.level.len()));
                 for (x, y) in p.level.iter().zip(&q.level) {
                     assert!(x == y || (x - y).abs() <= 0.25 + 1e-4, "{x} {y}");
                 }

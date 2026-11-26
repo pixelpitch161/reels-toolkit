@@ -8,5 +8,9 @@
 //! an organ's wind and its stops coming in.
 //!
 //! - [`recipe`]: the recipe format.
+//! - [`player`]: a note rebuilt from a recipe.
+//! - [`play`]: how a note is played (accents, slurs, swells, the pedal...), for the parts and the composition system.
 
+pub mod play;
+pub mod player;
 pub mod recipe;
