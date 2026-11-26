@@ -76,7 +76,9 @@ arrangement, switched on the Music screen:
   `real::fill`: the note's own fundamental as an analytic signal, raised to each harmonic, so the added partials
   follow its vibrato and bends); the reworked note keeps the voice's own loudness. Parts that make their own notes
   (piccolo, oboe, clarinet, bass clarinet, the bagpipes' chanter) keep their Classic function and add a `played`
-  (or `ch`) that reworks it under Composed through `real::RealNotes`. Drums (timpani, bass drum) get only the
+  (or `ch`) that reworks it under Composed through `real::RealNotes`. A fighter measured against a relative FluidR3
+  lacks is aimed at it shaded (`references.rs` `tilt`: cornet 0.5 and flugelhorn 1 dB per harmonic mellower than the
+  trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart. Drums (timpani, bass drum) get only the
   repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and
   the contrabass above 57; those notes keep the table's last row. The real instruments' fingerprints are
   `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in

@@ -502,6 +502,37 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
     }
 }
 
+/// How much brighter (dB per harmonic, positive) or mellower (negative) a fighter is aimed than the real instrument
+/// it is measured against, for one measured against a relative FluidR3 lacks: the cornet and flugelhorn against the
+/// trumpet (a cornet is a little mellower, a flugelhorn more so) and the mellophone against the horn (a little
+/// brighter), so the family stays three voices, not one.
+fn tilt(fighter: &str) -> f64 {
+    match fighter {
+        "CORNET" => -0.5,
+        "FLUGELHORN" => -1.0,
+        "MELLOPHONE" => 0.5,
+        _ => 0.0,
+    }
+}
+
+/// The real levels `real` a fighter is aimed at: tilted by [`tilt`] per harmonic, the strongest of the first eight
+/// back at 0 dB.
+fn shaded(fighter: &str, real: &[f64]) -> Vec<f64> {
+    let t = tilt(fighter);
+    if t == 0.0 {
+        return real.to_vec();
+    }
+    let n = real.len().min(bf_sound::voice::real::SET);
+    let mut h: Vec<f64> = real
+        .iter()
+        .enumerate()
+        .map(|(k, v)| if k < n { v + t * k as f64 } else { *v })
+        .collect();
+    let top = h[..n].iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    h.iter_mut().for_each(|v| *v -= top);
+    h
+}
+
 /// The note a fighter's part plays at MIDI `m`, held, for the measures: its voice's, but the BAGPIPES' chanter alone
 /// (the voice's note carries the drones, which the part plays apart).
 fn own_note(fighter: &str, v: &dyn bf_sound::voice::Voice, m: i32) -> Vec<f64> {
@@ -532,7 +563,7 @@ fn correct(fighter: &str) {
                 let v = &v;
                 let refs = &refs;
                 sc.spawn(move || {
-                    let real = &refs[own].get(&m)?.harmonics;
+                    let real = &shaded(fighter, &refs[own].get(&m)?.harmonics);
                     let x = own_note(fighter, &**v, m);
                     let f = bf_sound::voice::pp::midi_hz(f64::from(m));
                     // the overtones the voice barely has (15 dB or more under the real balance, beside its
@@ -620,6 +651,10 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "CLARINET" => &["oboe", "french horn", "bassoon", "flute"],
         "BASS CLARINET" | "CONTRABASS CLARINET" => &["bassoon", "tuba", "french horn"],
         "BAGPIPES" => &["trumpet", "muted trumpet", "oboe"],
+        "TRUMPET" => &["trombone", "french horn", "alto sax", "soprano sax"],
+        "CORNET" | "FLUGELHORN" => &["french horn", "trombone", "alto sax"],
+        "HORN" => &["trombone", "trumpet", "alto sax", "bassoon"],
+        "MELLOPHONE" => &["trumpet", "trombone", "alto sax"],
         _ => &[],
     }
 }

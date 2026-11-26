@@ -200,6 +200,25 @@ fn the_bagpipe_chanter_is_a_bagpipe_not_a_trumpet() {
 }
 
 #[test]
+fn the_trumpets_are_trumpets_not_horns_or_trombones() {
+    // the cornet and the flugelhorn are aimed mellower than the trumpet (FluidR3 has neither), and stay nearer it
+    reworked_nearer_its_own(
+        "TRUMPET",
+        "trumpet",
+        &["trombone", "french horn", "alto sax", "soprano sax"],
+    );
+    for fighter in ["CORNET", "FLUGELHORN"] {
+        reworked_nearer_its_own(fighter, "trumpet", &["french horn", "trombone", "alto sax"]);
+    }
+}
+
+#[test]
+fn the_horns_are_horns_not_trumpets_or_trombones() {
+    reworked_nearer_its_own("HORN", "french horn", &["trombone", "trumpet", "alto sax", "bassoon"]);
+    reworked_nearer_its_own("MELLOPHONE", "french horn", &["trumpet", "trombone", "alto sax"]);
+}
+
+#[test]
 fn the_drums_repeats_differ_and_keep_their_length() {
     for fighter in ["TIMPANI", "BASS DRUM"] {
         let v = bf_content::fighters::voice(fighter).expect("a voice");
