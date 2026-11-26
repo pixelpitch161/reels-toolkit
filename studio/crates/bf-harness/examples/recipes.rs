@@ -910,6 +910,274 @@ fn check(inst: &str, wav_dir: Option<&Path>) -> Result<(), String> {
     Ok(())
 }
 
+/// A yardstick row: the note, its differences, its stop and the stop wanted.
+type RefRow = (String, e2measure::YardDiff, f64, f64);
+
+/// The rivals each instrument's notes must be farther from than from its own real one, in FluidR3's set
+/// (`tests/reference/fluidr3.json`, which has no electric piano or reed organ).
+fn rivals(inst: &str) -> (&'static str, &'static [&'static str]) {
+    match inst {
+        "PIANO" => ("piano", &["harp", "marimba", "nylon guitar"]),
+        _ => ("church organ", &["accordion", "drawbar organ", "trumpet"]),
+    }
+}
+
+/// The yardstick the `engine2_voices` test reads (`tests/reference/engine2/<INST>.json`): each shipped recording in
+/// the fighter's register measured, and the real instruments' spread by register from the study (every set studied
+/// here); then the engine's notes against both, printed, to set the test's bars.
+fn reference(inst: &str) -> Result<(), String> {
+    let set = recipe(inst)?;
+    let voice = bf_content::fighters::voice(inst).ok_or(format!("no fighter {inst}"))?;
+    let engine = voice.engine2().ok_or(format!("{inst} has no engine 2 instrument"))?;
+    let (lo, hi) = voice.register();
+    let (src, sub) = if inst == "PIANO" {
+        ("vcsl", false)
+    } else {
+        ("vsco", true)
+    };
+    let recs = recordings(src, inst);
+    let picked: Vec<&Note> = set
+        .notes
+        .iter()
+        .filter(|n| n.midi >= f64::from(lo) - 2.0 && n.midi <= f64::from(hi) + 2.0)
+        .collect();
+    let notes: Vec<Option<Value>> = par_map(&picked, |n| {
+        let layer = &set.layers[n.layer];
+        let r = recs
+            .iter()
+            .find(|r| r.layer == layer.name && (r.midi - n.midi).abs() < 0.6)?;
+        let x = load(r)?;
+        let x = x[e2measure::onset(&x)..].to_vec();
+        let g = if sub { n.f0 / 2.0 } else { n.f0 };
+        let yard = e2measure::yard(&x, g, n.b, None);
+        let print = bf_harness::timbre::fingerprint(&x, n.midi.round() as i32, 1.0, true);
+        Some(
+            json!({"midi": n.midi, "layer": layer.name, "strength": layer.strength, "f0": n.f0, "grid_f0": g,
+                    "b": n.b, "release": n.release, "yard": yard.to_json(), "fingerprint": print.to_json()}),
+        )
+    });
+    let notes: Vec<Value> = notes.into_iter().flatten().collect();
+    // the spread of the real instruments, by register, over every set and strength studied
+    let mut spread: BTreeMap<&str, [(f64, f64); 4]> = BTreeMap::new();
+    for v in studied(inst)? {
+        let (Some(midi), Some(f0), Some(y)) = (v["midi"].as_f64(), v["f0"].as_f64(), Yard::from_json(&v["yard"]))
+        else {
+            continue;
+        };
+        let vals = [y.bright_early / f0, y.bright_late / f0, y.fall, y.noise_early];
+        let e = spread.entry(region(midi)).or_insert([(f64::MAX, f64::MIN); 4]);
+        for (i, (slot, v)) in e.iter_mut().zip(vals).enumerate() {
+            // a brightness of 0 is a note too short to read there
+            if v.is_finite() && (i >= 2 || v > 0.0) {
+                *slot = (slot.0.min(v), slot.1.max(v));
+            }
+        }
+    }
+    let spread_json: serde_json::Map<String, Value> = spread
+        .iter()
+        .map(|(reg, s)| {
+            (
+                reg.to_string(),
+                json!({"bright_early": [s[0].0, s[0].1], "bright_late": [s[1].0, s[1].1],
+                                     "fall": [s[2].0, s[2].1], "noise_early": [s[3].0, s[3].1]}),
+            )
+        })
+        .collect();
+    let out = studio().join(format!("crates/bf-harness/tests/reference/engine2/{inst}.json"));
+    std::fs::create_dir_all(out.parent().expect("a folder")).map_err(|e| e.to_string())?;
+    let doc = json!({
+        "what": format!("Voice Engine 2's yardstick for {inst}: the shipped set's recordings ({src}) in the register, \
+                         measured by bf_harness::e2measure::yard, and the spread of every set studied by register \
+                         (cargo run --release -p bf-harness --example recipes -- reference {inst})"),
+        "notes": notes,
+        "spread": spread_json,
+    });
+    std::fs::write(
+        &out,
+        serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())? + "\n",
+    )
+    .map_err(|e| e.to_string())?;
+    println!("written {} ({} notes)", out.display(), notes.len());
+
+    // the engine against the recordings, as the test measures it
+    println!(
+        "\n| note | early overtone dB (time, overtone) | median dB | any dB | start ms | stop s (ours, want) | noise early % | noise steady % |"
+    );
+    println!("|---|---|---|---|---|---|---|---|");
+    let rows: Vec<RefRow> = par_map(&notes, |v| {
+        let (midi, strength, g, b, rel) = (
+            v["midi"].as_f64()?,
+            v["strength"].as_f64()?,
+            v["grid_f0"].as_f64()?,
+            v["b"].as_f64()?,
+            v["release"].as_f64()?,
+        );
+        let real = Yard::from_json(&v["yard"])?;
+        let y = e2measure::engine2_note(engine, midi, strength, 4.0, 6.0, 0);
+        let ours = e2measure::yard(&y, g, b, Some(4.0));
+        Some((
+            format!("{:.0} {}", midi, v["layer"].as_str()?),
+            e2measure::yard_diff(&real, &ours),
+            ours.stop.unwrap_or(f64::NAN),
+            rel * std::f64::consts::LN_10 * 2.0,
+        ))
+    })
+    .into_iter()
+    .flatten()
+    .collect();
+    for (name, d, stop, want) in &rows {
+        println!(
+            "| {name} | {:.1} ({}, {}) | {:.1} | {:.1} | {:+.0} | {stop:.3} {want:.3} | {:+.1} | {:+.1} |",
+            d.early_db,
+            d.early_at.0,
+            d.early_at.1,
+            d.median_db,
+            d.any_db,
+            d.start_s * 1000.0,
+            d.noise_early * 100.0,
+            d.noise_steady * 100.0
+        );
+    }
+    let worst = |f: &dyn Fn(&RefRow) -> f64| {
+        let mut v: Vec<f64> = rows.iter().map(f).collect();
+        v.sort_by(f64::total_cmp);
+        (v[v.len() / 2], v[v.len() * 9 / 10], v[v.len() - 1])
+    };
+    println!(
+        "\n{inst} worst (median, 90%, worst): early overtone {:.1?} dB, median {:.1?} dB, start {:.3?} s, stop {:.3?} s, noise early {:.3?}, noise steady {:.3?}",
+        worst(&|r| r.1.early_db),
+        worst(&|r| r.1.median_db),
+        worst(&|r| r.1.start_s.abs()),
+        worst(&|r| (r.2 - r.3).abs()),
+        worst(&|r| r.1.noise_early.abs()),
+        worst(&|r| r.1.noise_steady.abs())
+    );
+
+    println!(
+        "{inst} held tone (median, 90%, worst): late median {:.1?} dB, steady overtone {:.1?} dB",
+        worst(&|r| r.1.late_median_db),
+        worst(&|r| r.1.steady_db)
+    );
+
+    // the engine's notes across the register in whole tones against the spread
+    println!("\n| note | bright early x f0 | late | fall dB/s | noise early | register's spread |");
+    println!("|---|---|---|---|---|---|");
+    let grid_notes: Vec<i32> = (lo..=hi).step_by(2).collect();
+    let vel = if inst == "PIANO" { 0.8 } else { 1.0 };
+    let tones: Vec<(i32, Yard)> = par_map(&grid_notes, |&m| {
+        let f0 = 440.0 * 2f64.powf((f64::from(m) - 69.0) / 12.0);
+        let c = set.nearest(f64::from(m), vel);
+        let b: f64 = c.iter().map(|(i, w)| w * set.notes[i].b).sum();
+        let y = e2measure::engine2_note(engine, f64::from(m), vel, 4.0, 6.0, 0);
+        (m, e2measure::yard(&y, if sub { f0 / 2.0 } else { f0 }, b, None))
+    });
+    for (m, y) in &tones {
+        let f0 = 440.0 * 2f64.powf((f64::from(*m) - 69.0) / 12.0);
+        let s = spread.get(region(f64::from(*m)));
+        println!(
+            "| {m} | {:.2} | {:.2} | {:.1} | {:.3} | {} |",
+            y.bright_early / f0,
+            y.bright_late / f0,
+            y.fall,
+            y.noise_early,
+            s.map_or("none".into(), |s| format!(
+                "{:.2}-{:.2}, {:.2}-{:.2}, {:.1}-{:.1}, {:.3}-{:.3}",
+                s[0].0, s[0].1, s[1].0, s[1].1, s[2].0, s[2].1, s[3].0, s[3].1
+            ))
+        );
+    }
+
+    // the rivals, as real_voices.rs measures them
+    let (own, rivals) = rivals(inst);
+    let path = studio().join("crates/bf-harness/tests/reference/fluidr3.json");
+    let fl: Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    let refs: BTreeMap<String, BTreeMap<i32, bf_harness::timbre::Fingerprint>> = fl["references"]
+        .as_object()
+        .ok_or("no references")?
+        .iter()
+        .map(|(name, r)| {
+            let notes = r["notes"]
+                .as_array()
+                .map(|a| {
+                    a.iter()
+                        .filter_map(bf_harness::timbre::Fingerprint::from_json)
+                        .filter(|f| f.harmonics.iter().any(|&h| h > -200.0))
+                        .map(|f| (f.midi, f))
+                        .collect()
+                })
+                .unwrap_or_default();
+            (name.clone(), notes)
+        })
+        .collect();
+    println!("\n| note | to the real {own} | {} |", rivals.join(" | "));
+    let mut worst_own: f64 = 0.0;
+    let mut closest: f64 = f64::MAX;
+    for m in lo..=hi {
+        let Some(real) = refs[own].get(&m) else { continue };
+        let x = e2measure::engine2_note(engine, f64::from(m), 0.8, 1.0, 2.0, 0);
+        let b = bf_harness::timbre::fingerprint(&x, m, 1.0, true);
+        let d_own = bf_harness::timbre::distance(&b.harmonics, &real.harmonics);
+        worst_own = worst_own.max(d_own);
+        let ds: Vec<String> = rivals
+            .iter()
+            .map(|r| match refs[*r].get(&m) {
+                Some(rr) => {
+                    let d = bf_harness::timbre::distance(&b.harmonics, &rr.harmonics);
+                    closest = closest.min(d - d_own);
+                    format!("{d:.1}")
+                }
+                None => "-".into(),
+            })
+            .collect();
+        println!("| {m} | {d_own:.1} | {} |", ds.join(" | "));
+    }
+    println!("\n{inst}: worst distance to its own {worst_own:.1}; nearest rival margin {closest:.1}");
+    // the recordings themselves against FluidR3, and the engine against the recordings, by the same fingerprint
+    println!(
+        "\n| note | recording to FluidR3 {own} | engine to recording | engine to {} |",
+        rivals.join(" | ")
+    );
+    let (mut worst_rec, mut margin) = (0.0_f64, f64::MAX);
+    for v in &notes {
+        let (Some(midi), Some(strength), Some(fr)) = (
+            v["midi"].as_f64(),
+            v["strength"].as_f64(),
+            bf_harness::timbre::Fingerprint::from_json(&v["fingerprint"]),
+        ) else {
+            continue;
+        };
+        let m = midi.round() as i32;
+        let y = e2measure::engine2_note(engine, midi, strength, 1.0, 2.0, 0);
+        let fe = bf_harness::timbre::fingerprint(&y, m, 1.0, true);
+        let d_own = bf_harness::timbre::distance(&fe.harmonics, &fr.harmonics);
+        worst_rec = worst_rec.max(d_own);
+        let to = |a: &bf_harness::timbre::Fingerprint, name: &str| {
+            refs[name]
+                .get(&m)
+                .map(|rr| bf_harness::timbre::distance(&a.harmonics, &rr.harmonics))
+        };
+        let ds: Vec<String> = rivals
+            .iter()
+            .map(|r| match to(&fe, r) {
+                Some(d) => {
+                    margin = margin.min(d - d_own);
+                    format!("{d:.1}")
+                }
+                None => "-".into(),
+            })
+            .collect();
+        println!(
+            "| {m} {} | {} | {d_own:.1} | {} |",
+            v["layer"].as_str().unwrap_or(""),
+            to(&fr, own).map_or("-".into(), |d| format!("{d:.1}")),
+            ds.join(" | ")
+        );
+    }
+    println!("\n{inst}: engine to its recordings at most {worst_rec:.1}; nearest rival margin {margin:.1}");
+    Ok(())
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let r = match args.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
@@ -918,6 +1186,7 @@ fn main() -> ExitCode {
         ["measure", inst] => measure(inst),
         ["check", inst] => check(inst, None),
         ["check", inst, "--wav", dir] => check(inst, Some(Path::new(dir))),
+        ["reference", inst] => reference(inst),
         ["sets"] => {
             for s in SETS {
                 let how = match &s.from {

@@ -15,7 +15,9 @@ use std::process::Command;
 use bf_core::dmath;
 use bf_sound::SRF;
 use bf_sound::dsp::fft::Fft;
+use bf_sound::voice::engine2::play::{Play, Swell};
 use bf_sound::voice::engine2::recipe::{BANDS, Note, Partial, band_edges, grid};
+use bf_sound::voice::engine2::{self, Instrument, Parts};
 use serde_json::{Value, json};
 
 /// The recording at `path` as mono at 48 kHz (its channels averaged), decoded by ffmpeg.
@@ -659,6 +661,114 @@ impl Yard {
             bright_late: v["bright_late"].as_f64()?,
             fall: v["fall"].as_f64()?,
         })
+    }
+}
+
+/// The engine 2 note the yardstick measures: `inst` at `midi`, struck or registered at `strength` (a piano's
+/// velocity; an organ's registration, 0.5 the quiet chorus and 1 the loud), the key held `hold` seconds, `secs` long,
+/// as repeat `variant`.
+pub fn engine2_note(inst: &Instrument, midi: f64, strength: f64, hold: f64, secs: f64, variant: u64) -> Vec<f64> {
+    let play = match inst.parts {
+        Parts::Piano(_) => Play::plain(midi, hold, strength),
+        Parts::Organ(_) => Play {
+            swell: Some(Swell {
+                from: strength,
+                to: strength,
+                over: 0.0,
+            }),
+            ..Play::plain(midi, hold, 0.8)
+        },
+    };
+    engine2::play(inst, &play, secs, variant)
+}
+
+/// How many of [`YARD_TIMES`] come before a piano's strings have beaten apart (30, 100 and 300 ms): a single
+/// overtone is compared there; later only the overtones' median is, as two or three strings of one note beat in and
+/// out of step and a beat's low point falls wherever it falls.
+pub const YARD_EARLY: usize = 3;
+
+/// How far a note's [`Yard`] is from its recording's: the tone at each of [`YARD_TIMES`], each overtone against the
+/// strongest at that moment (how loud the whole note is then is the start's, the stop's and the fall's business), over
+/// the overtones the recording has within 50 dB of its strongest there.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct YardDiff {
+    /// The farthest one overtone is from the recording's at any of the first [`YARD_EARLY`] times, dB.
+    pub early_db: f64,
+    /// Which (time index, overtone number) that was.
+    pub early_at: (usize, usize),
+    /// The farthest the overtones' median difference is from 0 at any of [`YARD_TIMES`], dB.
+    pub median_db: f64,
+    /// The same from 0.3 s on (the held tone), dB.
+    pub late_median_db: f64,
+    /// The farthest one overtone of the held tone is, its power averaged over 0.3, 1 and 2.5 s (so a beat's low point
+    /// does not count as the tone), dB.
+    pub steady_db: f64,
+    /// The farthest one overtone is at any time (beats included), dB: for the record.
+    pub any_db: f64,
+    /// The start, ours less the recording's, seconds.
+    pub start_s: f64,
+    /// The noise shares, ours less the recording's.
+    pub noise_early: f64,
+    pub noise_steady: f64,
+}
+
+/// `ours` against `real` ([`YardDiff`]).
+pub fn yard_diff(real: &Yard, ours: &Yard) -> YardDiff {
+    let (mut early, mut at, mut median, mut any) = (0.0_f64, (0, 0), 0.0_f64, 0.0_f64);
+    let mut late_median = 0.0_f64;
+    let top = |row: &[f64; 16]| row.iter().copied().fold(-120.0, f64::max);
+    for j in 0..YARD_TIMES.len() {
+        let (rt, ot) = (top(&real.levels[j]), top(&ours.levels[j]));
+        if rt <= -119.0 {
+            continue;
+        }
+        let mut ds = Vec::new();
+        for k in 0..16 {
+            if real.levels[j][k] > rt - 50.0 {
+                let d = ((real.levels[j][k] - rt) - (ours.levels[j][k] - ot)).abs();
+                ds.push(d);
+                any = any.max(d);
+                if j < YARD_EARLY && d > early {
+                    (early, at) = (d, (j, k + 1));
+                }
+            }
+        }
+        if !ds.is_empty() {
+            let m = median_of(ds);
+            median = median.max(m);
+            if j >= YARD_EARLY {
+                late_median = late_median.max(m);
+            }
+        }
+    }
+    // the held tone: each overtone's power averaged over the late times, against the strongest of those
+    let held = |y: &Yard| -> [f64; 16] {
+        let mut h = [0.0; 16];
+        for (k, v) in h.iter_mut().enumerate() {
+            let p: f64 = (YARD_EARLY..YARD_TIMES.len())
+                .map(|j| dmath::exp(y.levels[j][k] * std::f64::consts::LN_10 / 10.0))
+                .sum::<f64>()
+                / (YARD_TIMES.len() - YARD_EARLY) as f64;
+            *v = 10.0 * dmath::log10(p.max(1e-12));
+        }
+        let top = h.iter().copied().fold(-120.0, f64::max);
+        h.map(|v| v - top)
+    };
+    let (hr, ho) = (held(real), held(ours));
+    let steady = (0..16)
+        .filter(|&k| hr[k] > -50.0)
+        .map(|k| (hr[k] - ho[k]).abs())
+        .fold(0.0, f64::max);
+    YardDiff {
+        early_db: early,
+        early_at: at,
+        median_db: median,
+        late_median_db: late_median,
+        steady_db: steady,
+        any_db: any,
+        start_s: ours.start - real.start,
+        noise_early: ours.noise_early - real.noise_early,
+        noise_steady: ours.noise_steady - real.noise_steady,
     }
 }
 
