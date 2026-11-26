@@ -42,6 +42,9 @@ is the recipe for a synth "supersaw". The room is a 1.25 s tail. Every note is a
    coming back. No reeds are built in this pass.
 7. **Approved** (08:56Z): "The organ probably shouldn't have so much of it's own echo. Other than that, approve". So
    the organ's own echo is light (see "Rooms").
+8. **Aedan reviews each family before the next** (08:57Z): "For this one, I do want you to wait for my review after
+   each family of instruments is built." So each stage stops at its listening page until Aedan has reviewed it (see
+   "Stages").
 
 The sketches behind that page are in the project files under `ballfight-studio/voice-engine-2/approaches/`
 (`sketches/*.py`: `recipe.py` measures and rebuilds, `pianoA.py`/`organA.py` are the physical sketches, `real.py`
@@ -312,11 +315,11 @@ is why that needs Aedan first.
 
 ## Stages
 
-Each stage is its own pull request into the build branch. After Aedan approves this design the stages run one after
-another without waiting for approval (his standing rule for feature work); each listening page is posted in the
-thread, and Aedan can stop or redirect at any point. Each stage ends with a listening page (the fighter's riff today and new,
+Each stage is its own pull request into the build branch. Unlike Aedan's standing rule for feature work, the stages
+do **not** run on by themselves: each stage stops at its listening page, which is posted in the thread, and the next
+family starts only after Aedan has reviewed it (his ask, 08:57Z). His notes are fixed in the same stage first. Each stage ends with a listening page (the fighter's riff today and new,
 the real recording where there is one, a stretch of a real fight rendered with `ballfight sound` cut the stage 1 way,
-`-ss 10 -t 22`, -16 LUFS, with phone versions, and spectrograms with a playhead), and merges once its PC tests pass.
+`-ss 10 -t 22`, -16 LUFS, with phone versions, and spectrograms with a playhead), and merges once its PC tests pass and Aedan has reviewed it.
 Each stage's plan is written when it starts, and its first step is the instrument sheets for that family.
 
 | Stage | What | Recordings (see the sources note) |
@@ -355,7 +358,7 @@ All through `PC-Tests:` lines, only what changed:
 - Speed: a Composed soundtrack build may take at most 25% longer, measured before and after on the same machine.
 - The organ's home room is a light church tail of about 1.5 to 2 s, after Aedan's note that it shouldn't have so much
   echo.
-- Eight stages in the order above, each merged after its PC tests, without waiting for approval between them.
+- Eight stages in the order above, each merged after its PC tests and Aedan's review of its listening page.
 
 ## Left to the builder
 
