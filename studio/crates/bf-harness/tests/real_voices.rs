@@ -264,8 +264,9 @@ fn the_plucked_and_struck_are_their_own_not_each_other() {
 }
 
 #[test]
-fn the_drums_repeats_differ_and_keep_their_length() {
-    for fighter in ["TIMPANI", "BASS DRUM"] {
+fn the_drums_and_synth_repeats_differ_and_keep_their_length() {
+    // no overtones to set (or, for the synth, no real one to aim at): only the repeats' small differences
+    for fighter in ["TIMPANI", "BASS DRUM", "DRUMS", "SNARE DRUM", "SYNTH"] {
         let v = bf_content::fighters::voice(fighter).expect("a voice");
         assert!(v.reworked(), "{fighter}");
         let (lo, hi) = v.register();

@@ -10,6 +10,7 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::Rework;
 use bf_sound::voice::{PpNoise, Voice};
 
 /// SYNTH's register in `pp_bridge`'s roster (`('SYNTH', 'synth60_lowpoly', None, (57, 81), ...)`).
@@ -102,6 +103,16 @@ fn echo(x: &[f64], sec: f64, fb: f64, n: usize) -> Vec<f64> {
     out
 }
 
+/// The Composed arrangement's SYNTH (sound upgrade, stage 3, S1): a synth has no real instrument to aim at, so only the
+/// small differences between its repeated notes (a hair of pitch, a little level), as an analog synth drifts.
+pub const REWORK: Rework = Rework {
+    fill: &[],
+    correction: &[],
+    speak: 0.0,
+    stop: 0.0,
+    keep_shape: false,
+};
+
 /// SYNTH's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SynthVoice;
@@ -113,6 +124,10 @@ impl Voice for SynthVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn rework(&self) -> Option<&'static Rework> {
+        Some(&REWORK)
     }
 
     fn name(&self) -> &str {

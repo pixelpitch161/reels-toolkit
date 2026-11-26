@@ -83,8 +83,10 @@ arrangement, switched on the Music screen:
   reeds) keep their Classic function and add a `played` (or `ch`, `bsn`, `chord`) that reworks it under Composed
   through `real::RealNotes`. A fighter measured against a relative FluidR3
   lacks is aimed at it shaded (`references.rs` `tilt`: cornet 0.5 and flugelhorn 1 dB per harmonic mellower than the
-  trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart. Drums (timpani, bass drum) get only the
-  repeats' differences: their overtones are not a note's harmonics. FluidR3 is silent for the tuba above 72 and
+  trumpet, mellophone 0.5 brighter than the horn), so a family keeps its voices apart. Drums (timpani, bass drum, the kit, the
+  snare drum) and the synth get only the repeats' differences: a drum's overtones are not a note's harmonics, and
+  the synth has no real instrument (the snare's strokes take turns through its own `played`). The turntables are
+  left as they are: every scratch already follows the floor's own curve and noise. FluidR3 is silent for the tuba above 72 and
   the contrabass above 57; those notes keep the table's last row. The real instruments' fingerprints are
   `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in
   `F:\bf-refs`, `references -- render`); `references -- profile` prints a voice's overtone table from them and
