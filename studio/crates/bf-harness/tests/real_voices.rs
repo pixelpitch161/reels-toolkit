@@ -1,14 +1,16 @@
 //! The sound upgrade's stage 3 (S1): the reworked voices against recordings of the real instruments (FluidR3's
 //! fingerprints, `tests/reference/fluidr3.json`, made on the owner's PC by the `references` example).
 //!
-//! Saxes first: each sax, on every note of its register, is nearer to its own real instrument than to the real
+//! Saxes first (bari, alto, soprano, tenor): each sax, on every note of its register, is nearer to its own real instrument than to the real
 //! brass it could be taken for, and within [`AT_MOST`] of its own (the fingerprint distance,
 //! [`bf_harness::timbre::distance`]).
 
 use std::collections::BTreeMap;
 
+use bf_core::rng::Generator;
 use bf_harness::timbre::{self, Fingerprint};
 use bf_sound::voice::pp;
+use bf_sound::voice::real::midi_of;
 use serde_json::Value;
 
 /// The farthest a reworked voice's note may be from its real instrument's, in dB (S1).
@@ -68,4 +70,40 @@ fn the_bari_sax_is_a_bari_sax_not_a_trombone() {
     nearer_its_own("BARI SAX", REGISTER, "bari sax", &["trombone", "tuba"], |f| {
         bari_tone_real(f, 1.0, 0.8, 0.0, 0)
     });
+}
+
+#[test]
+fn the_alto_sax_is_an_alto_sax_not_brass() {
+    use bf_content::fighters::alto_sax::voice::{REGISTER, TONE, tone_real};
+    nearer_its_own(
+        "ALTO SAX",
+        REGISTER,
+        "alto sax",
+        &["trumpet", "french horn", "trombone"],
+        |f| tone_real(&mut Generator::new(23), midi_of(f), 1.0, 0.8, &TONE, 0),
+    );
+}
+
+#[test]
+fn the_soprano_sax_is_a_soprano_sax_not_a_trumpet() {
+    use bf_content::fighters::soprano_sax::voice::{REGISTER, TONE, tone_real};
+    nearer_its_own(
+        "SOPRANO SAX",
+        REGISTER,
+        "soprano sax",
+        &["trumpet", "muted trumpet", "french horn"],
+        |f| tone_real(&mut Generator::new(23), midi_of(f), 1.0, 0.8, &TONE, 0),
+    );
+}
+
+#[test]
+fn the_tenor_sax_is_a_tenor_sax_not_brass() {
+    use bf_content::fighters::tenor_sax::voice::{REGISTER, VOICE_HONK, tenor_tone_real};
+    nearer_its_own(
+        "TENOR SAX",
+        REGISTER,
+        "tenor sax",
+        &["trumpet", "french horn", "trombone"],
+        |f| tenor_tone_real(f, 1.0, 0.8, VOICE_HONK, 0.0, 0),
+    );
 }

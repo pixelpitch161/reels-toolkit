@@ -7,6 +7,9 @@
 //! the voice's own slope from the eighth, and the whole keeps the voice's strongest level. [`wobble`] gives repeated
 //! notes their small seeded differences (a few cents of pitch, a little level).
 
+use std::collections::BTreeMap;
+use std::sync::Mutex;
+
 use bf_core::dmath;
 use bf_core::rng::Generator;
 
@@ -64,6 +67,59 @@ pub fn reshape(a: &mut [f64], target: &[f64; SET]) {
     }
 }
 
+/// How many variants the repeats of one note take turns among.
+pub const TURNS: u64 = 3;
+
+/// A part's count of how often it has asked for each note, so that under the Composed arrangement the repeats of a
+/// note take turns among [`TURNS`] variants ([`wobble`]): the first time a note is asked for it is variant 0, the
+/// next time 1, then 2, then 0 again. A part makes one with its build, so the count starts over with every build.
+#[derive(Debug, Default)]
+pub struct Repeats(Mutex<BTreeMap<Vec<u64>, u64>>);
+
+impl Repeats {
+    /// The variant of this asking for the note `key` (whatever identifies the note: its pitch, length, level...).
+    pub fn next(&self, key: &[u64]) -> u64 {
+        let mut seen = self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let n = seen.entry(key.to_vec()).or_insert(0);
+        *n += 1;
+        (*n - 1) % TURNS
+    }
+}
+
+/// The MIDI note of `f` Hz (A4 = 440 Hz = 69), not rounded.
+pub fn midi_of(f: f64) -> f64 {
+    69.0 + 12.0 * dmath::log2(f / 440.0)
+}
+
+/// How a reworked voice's note is shaped: the overtone levels at its pitch ([`levels`]), how long it takes to reach
+/// full level and its release's time constant, in seconds, and how deep its reed buzz is ([`buzz`]).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Shape {
+    pub levels: [f64; SET],
+    pub speak: f64,
+    pub release: f64,
+    pub buzz: f64,
+}
+
+/// A reed's buzz on a 44.1 kHz tone: a slow, rough flicker of its level (a normal noise every 720 samples, about
+/// 16 ms, joined by straight lines), `depth` deep, from `seed`.
+pub fn buzz(x: &mut [f64], seed: u64, depth: f64) {
+    let mut g = Generator::new(seed);
+    let raw: Vec<f64> = (0..x.len() / 720 + 3).map(|_| g.standard_normal()).collect();
+    for (i, o) in x.iter_mut().enumerate() {
+        let p = i as f64 / 720.0;
+        let j = p as usize;
+        let fr = p - j as f64;
+        *o *= 1.0 + depth * (raw[j] + fr * (raw[j + 1] - raw[j]));
+    }
+}
+
+/// The seed of a note's buzz and variants: its pitch in tenths of a hertz, as the Pixel Pitch voices seed their
+/// breath.
+pub fn pitch_seed(f: f64) -> u64 {
+    ((f * 10.0) as i64).rem_euclid(100_003) as u64
+}
+
 /// A repeated note's small seeded differences: `(pitch factor, level factor)`, the pitch within `cents` either way
 /// and the level within `level` (a share) either way, from `seed`.
 pub fn wobble(seed: u64, cents: f64, level: f64) -> (f64, f64) {
@@ -107,6 +163,29 @@ mod tests {
         for k in SET..12 {
             assert!((a[k] / before[k] - s).abs() < 1e-12);
         }
+    }
+
+    #[test]
+    fn a_buzz_flickers_the_level_a_little_and_is_seeded() {
+        let mut a = vec![1.0; 4410];
+        let mut b = a.clone();
+        buzz(&mut a, 3, 0.06);
+        buzz(&mut b, 3, 0.06);
+        assert_eq!(a, b);
+        assert!(a.iter().all(|v| (v - 1.0).abs() < 0.06 * 5.0));
+        assert!(a.iter().any(|v| (v - 1.0).abs() > 0.01));
+        let mut c = vec![1.0; 4410];
+        buzz(&mut c, 4, 0.06);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn repeats_take_turns() {
+        let r = Repeats::default();
+        let a: Vec<u64> = (0..7).map(|_| r.next(&[60, 1])).collect();
+        assert_eq!(a, [0, 1, 2, 0, 1, 2, 0]);
+        assert_eq!(r.next(&[61, 1]), 0, "another note counts by itself");
+        assert!((midi_of(440.0) - 69.0).abs() < 1e-12 && (midi_of(220.0) - 57.0).abs() < 1e-12);
     }
 
     #[test]

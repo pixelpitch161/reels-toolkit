@@ -140,6 +140,9 @@ struct NoteKey {
     dur: u64,
     cap: u64,
     vel: u64,
+    /// Which repeat of the note: 0, except for a [reworked](Voice::reworked) voice under the Composed arrangement,
+    /// whose repeats take turns among [`crate::voice::real::TURNS`] variants.
+    variant: u64,
 }
 
 fn key_bits(x: f64) -> u64 {
@@ -155,6 +158,8 @@ struct State {
     /// The parts' own helpers' gains (`self._gain` of each part), by (side, fade bits, name).
     own_gains: BTreeMap<(usize, u64, String), f64>,
     first: Vec<NoteCall>,
+    /// How often each note of a reworked voice has been asked for under the Composed arrangement.
+    repeats: BTreeMap<NoteKey, u64>,
     line_overrides: BTreeMap<String, Vec<LineOverride>>,
     fighter_stops: Vec<f64>,
     /// The ordinary notes each fighter sounded under the Composed arrangement, by their time in microseconds
@@ -170,6 +175,7 @@ impl State {
             gains: BTreeMap::new(),
             own_gains: BTreeMap::new(),
             first: Vec::new(),
+            repeats: BTreeMap::new(),
             line_overrides: BTreeMap::new(),
             fighter_stops: Vec::new(),
             played: BTreeMap::new(),
@@ -563,15 +569,23 @@ impl<'a> MusicCtx<'a> {
             ));
         }
         let midi = midi.trunc();
-        let key = NoteKey {
+        let mut key = NoteKey {
             own: own.map(|o| (o.side, key_bits(o.fade))),
             name: name.to_string(),
             midi: midi as i64,
             dur: key_bits(round_nd(dur, 3)),
             cap: key_bits(cap),
             vel: key_bits(round_nd(vel, 2)),
+            variant: 0,
         };
         let mut st = self.lock()?;
+        // a reworked voice under Composed: the repeats of a note take turns among their variants
+        let real = self.composed_on() && self.voice_of(H, name).is_ok_and(|v| v.reworked());
+        if real {
+            let asked = st.repeats.entry(key.clone()).or_insert(0);
+            key.variant = *asked % crate::voice::real::TURNS;
+            *asked += 1;
+        }
         if let Some(x) = st.notes.get(&key) {
             return Ok(Arc::clone(x));
         }
@@ -588,7 +602,11 @@ impl<'a> MusicCtx<'a> {
                 format!("{name} has no note for a held length (dur) of {dur} s: it would end before it starts"),
             ));
         }
-        let x = voice.note(&mut st.noise, midi, vel, dur);
+        let x = if real {
+            voice.note_real(&mut st.noise, midi, vel, dur, key.variant)
+        } else {
+            voice.note(&mut st.noise, midi, vel, dur)
+        };
         if !x.iter().all(|v| v.is_finite()) {
             return Err(MusicError::new(
                 H,

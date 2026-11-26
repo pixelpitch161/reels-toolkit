@@ -977,3 +977,60 @@ fn a_reseed_through_with_noise_is_what_later_notes_draw_from() {
     copy.1.alto.random();
     assert_eq!(ctx.noise().unwrap().1.alto.random().to_bits(), next);
 }
+
+/// A reworked voice: every Classic note is 0.5 s of 1.0, every Composed note 0.5 s of `2 + variant`.
+struct Reworked;
+
+impl Voice for Reworked {
+    fn note(&self, _: &mut PpNoise, _: f64, _: f64, _: f64) -> Vec<f64> {
+        vec![1.0; 24_000]
+    }
+
+    fn register(&self) -> (i32, i32) {
+        (72, 93)
+    }
+
+    fn name(&self) -> &str {
+        "FLUTE"
+    }
+
+    fn reworked(&self) -> bool {
+        true
+    }
+
+    fn note_real(&self, _: &mut PpNoise, _: f64, _: f64, _: f64, variant: u64) -> Vec<f64> {
+        vec![2.0 + variant as f64; 24_000]
+    }
+}
+
+#[test]
+fn a_reworked_voice_plays_its_real_notes_in_turns_under_composed_only() {
+    let ep = episode();
+    let make = || {
+        MusicCtx::new(
+            &ep.show,
+            &ep.rec,
+            &ep.ff,
+            [&ep.cfg[0], &ep.cfg[1]],
+            [Arc::new(Reworked), TestVoice::new("TROMBONE", 0)],
+            Vec::new(),
+        )
+        .unwrap()
+    };
+    let first = |ctx: &MusicCtx| ctx.note("FLUTE", 76.0, 0.2, 0.3, 0.8).unwrap()[0];
+    // Classic: the voice's own note every time
+    let classic = make();
+    let one = first(&classic);
+    assert!(one.is_finite() && one > 0.0, "{one}");
+    assert_eq!([first(&classic), first(&classic)], [one, one]);
+    // Composed: the real notes, the repeats taking turns among three variants
+    let mut composed = make();
+    composed.polish = Some(Polish::default());
+    let got: Vec<f64> = (0..4).map(|_| first(&composed) / one).collect();
+    for (g, want) in got.iter().zip([2.0, 3.0, 4.0, 2.0]) {
+        assert!((g - want).abs() < 1e-9, "{got:?}");
+    }
+    // another note keeps its own turns
+    let other = composed.note("FLUTE", 77.0, 0.2, 0.3, 0.8).unwrap()[0] / one;
+    assert!((other - 2.0).abs() < 1e-9, "{other}");
+}

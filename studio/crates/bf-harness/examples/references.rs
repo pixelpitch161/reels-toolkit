@@ -411,7 +411,15 @@ type Tone = Box<dyn Fn(f64, f64, u64) -> Vec<f64>>;
 
 /// A reworked fighter: its register, its real instrument, its rivals, and its note today and reworked.
 fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str], Tone, Tone) {
+    use bf_content::fighters::alto_sax::voice as alto;
     use bf_content::fighters::bari_sax::voice as bari;
+    use bf_content::fighters::soprano_sax::voice as soprano;
+    use bf_content::fighters::tenor_sax::voice as tenor;
+    use bf_core::rng::Generator;
+    use bf_sound::voice::pp::alto::alto_tone;
+    use bf_sound::voice::real::midi_of;
+    // the alto block's breath, from a fresh generator each note, as the alto part seeds it
+    let rn = || Generator::new(23);
     match fighter {
         "BARI SAX" => (
             bari::REGISTER,
@@ -419,6 +427,29 @@ fn reworked(fighter: &str) -> ((i32, i32), &'static str, &'static [&'static str]
             &["trombone", "tuba"],
             Box::new(|f, dur, _| bari::bari_tone_scooped(f, dur, 0.8, 0.0, Some(bari::STEADY_SCOOP))),
             Box::new(|f, dur, repeat| bari::bari_tone_real(f, dur, 0.8, 0.0, repeat % 3)),
+        ),
+        "ALTO SAX" => (
+            alto::REGISTER,
+            "alto sax",
+            &["trumpet", "french horn", "trombone"],
+            Box::new(move |f, dur, _| alto_tone(&mut rn(), f, dur, 0.8, &alto::TONE)),
+            Box::new(move |f, dur, repeat| alto::tone_real(&mut rn(), midi_of(f), dur, 0.8, &alto::TONE, repeat % 3)),
+        ),
+        "SOPRANO SAX" => (
+            soprano::REGISTER,
+            "soprano sax",
+            &["trumpet", "muted trumpet", "french horn"],
+            Box::new(move |f, dur, _| alto_tone(&mut rn(), f, dur, 0.8, &soprano::TONE)),
+            Box::new(move |f, dur, repeat| {
+                soprano::tone_real(&mut rn(), midi_of(f), dur, 0.8, &soprano::TONE, repeat % 3)
+            }),
+        ),
+        "TENOR SAX" => (
+            tenor::REGISTER,
+            "tenor sax",
+            &["trumpet", "french horn", "trombone"],
+            Box::new(|f, dur, _| tenor::tenor_tone(f, dur, 0.8, tenor::VOICE_HONK, 0.0)),
+            Box::new(|f, dur, repeat| tenor::tenor_tone_real(f, dur, 0.8, tenor::VOICE_HONK, 0.0, repeat % 3)),
         ),
         _ => panic!("{fighter} has no reworked voice yet"),
     }

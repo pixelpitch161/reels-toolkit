@@ -33,8 +33,9 @@ use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, SOUND_COLOUR_DRIVE_K, Sound};
 use bf_sound::voice::pp::alto::{AltoTone, alto_tone, part_seed};
 use bf_sound::voice::pp::{self};
+use bf_sound::voice::real::Repeats;
 
-use super::voice::{TAIL, TONE};
+use super::voice::{TAIL, TONE, tone_real};
 
 /// The name the part's errors carry.
 const H: &str = "ALTO SAX";
@@ -44,8 +45,9 @@ fn bad(e: HarmonyError) -> MusicError {
 }
 
 /// The key `tone` keeps a tone by: `(int(m), round(dur, 3), round(vel, 2), growl)`, the floats by their bits
-/// (`-0.0` as `0.0`, which Python's dict takes for the same key).
-type ToneKey = (i64, u64, u64, Option<u64>);
+/// (`-0.0` as `0.0`, which Python's dict takes for the same key); then whether it is the Composed arrangement's real
+/// alto, and which of its repeats ([`Repeats`]).
+type ToneKey = (i64, u64, u64, Option<u64>, bool, u64);
 
 fn key_bits(x: f64) -> u64 {
     if x == 0.0 { 0 } else { x.to_bits() }
@@ -57,6 +59,8 @@ pub struct AltoSaxSound {
     k: usize,
     /// `self._c`: the tones made so far.
     tones: Mutex<BTreeMap<ToneKey, Arc<[f64]>>>,
+    /// How often each Composed tone has been asked for (its repeats take turns among a few variants).
+    repeats: Repeats,
 }
 
 impl AltoSaxSound {
@@ -65,6 +69,7 @@ impl AltoSaxSound {
         AltoSaxSound {
             k,
             tones: Mutex::new(BTreeMap::new()),
+            repeats: Repeats::default(),
         }
     }
 
@@ -79,7 +84,9 @@ impl AltoSaxSound {
     }
 
     /// `tone(m, dur, vel=0.85, **kw)`: one tone of the rebuilt alto, `dur + 0.25` s at 48 kHz, level-matched; the
-    /// only keyword the part passes is `growl`.
+    /// only keyword the part passes is `growl`. Under the Composed arrangement the tone is the real alto's
+    /// ([`tone_real`], sound upgrade, stage 3), its repeats taking turns among a few variants; under Classic it is
+    /// the kit's, to the sample.
     ///
     /// # Errors
     /// Where Python raises: `m`, `dur` or `vel` is not a number, `m` is below 0 (numpy refuses a negative seed), or
@@ -100,12 +107,20 @@ impl AltoSaxSound {
         }
         // key = (int(m), round(dur, 3), round(vel, 2), tuple(sorted(kw.items())))
         let mi = m.trunc();
-        let key: ToneKey = (
+        let real = ctx.composed_on();
+        let first = (
             mi as i64,
             key_bits(round_nd(dur, 3)),
             key_bits(round_nd(vel, 2)),
             growl.map(key_bits),
         );
+        let variant = if real {
+            self.repeats
+                .next(&[first.0 as u64, first.1, first.2, first.3.unwrap_or(u64::MAX)])
+        } else {
+            0
+        };
+        let key: ToneKey = (first.0, first.1, first.2, first.3, real, variant);
         let held = |e| MusicError::new(H, format!("the part's tones cannot be read ({e})"));
         if let Some(x) = self.tones.lock().map_err(held)?.get(&key) {
             return Ok(x.clone());
@@ -126,8 +141,12 @@ impl AltoSaxSound {
         let x = ctx.with_noise(|n| {
             // self.mod.AS._RN = np.random.default_rng(int(m) * 1000 + int(round(dur * 1000))): deterministic breath
             n.1.alto = Generator::new(part_seed(mi, dur));
-            // self.mod.alto_tone(self.mod._midi_hz(int(m)), dur, vel, **kw)
-            alto_tone(&mut n.1.alto, pp::midi_hz(mi), dur, vel, &tone)
+            if real {
+                tone_real(&mut n.1.alto, mi, dur, vel, &tone, variant)
+            } else {
+                // self.mod.alto_tone(self.mod._midi_hz(int(m)), dur, vel, **kw)
+                alto_tone(&mut n.1.alto, pp::midi_hz(mi), dur, vel, &tone)
+            }
         })?;
         // self.M.fit(self.B._resample(np.asarray(x, float)), dur + 0.25) * self.g0
         let y: Arc<[f64]> = fit(&pp::to_48k(&x), dur + 0.25, FIT_FADE)?

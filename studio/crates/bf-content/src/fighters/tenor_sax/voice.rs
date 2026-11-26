@@ -18,6 +18,7 @@ use bf_core::py::{self, py_max};
 use bf_core::rng::Generator;
 use bf_sound::dsp::{self, FilterKind};
 use bf_sound::voice::pp::{self, SRF};
+use bf_sound::voice::real::{self, Profile, Shape};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// TENOR SAX's register in `pp_bridge`'s roster (`('TENOR SAX', 'tenorsax_lowpoly', 'ball', (44, 76), 0, 1.06)`).
@@ -32,6 +33,60 @@ const FORMANTS: [(f64, f64, f64); 3] = [(620.0, 340.0, 1.6), (1500.0, 560.0, 0.8
 /// `tenor_tone`'s default `bright`.
 const BRIGHT: f64 = 0.42;
 
+/// A real tenor sax's first eight overtones, dB under the strongest (FluidR3, `bf-harness/tests/reference/fluidr3.json`,
+/// written by `cargo run --release -p bf-harness --example references -- profile "tenor sax" 44 76`).
+#[rustfmt::skip]
+pub const PROFILE: &Profile = &[
+    (44, [-5.6, -0.4, -14.1, -8.6, -12.6, 0.0, -9.2, -25.3]),
+    (45, [-5.6, -0.5, -14.1, -8.6, -12.8, 0.0, -9.0, -24.8]),
+    (46, [-5.6, -0.5, -14.0, -8.6, -13.1, 0.0, -8.8, -24.2]),
+    (47, [-5.6, -0.5, -14.0, -8.5, -13.5, 0.0, -8.6, -23.4]),
+    (48, [-2.3, -8.6, -2.2, 0.0, -7.5, -12.9, -25.9, -13.0]),
+    (49, [-2.3, -8.5, -2.2, 0.0, -7.7, -12.9, -26.3, -12.9]),
+    (50, [-11.6, -11.5, -0.0, 0.0, -15.2, -5.9, -15.1, -9.3]),
+    (51, [-11.6, -11.7, -0.0, 0.0, -15.3, -5.9, -15.0, -9.2]),
+    (52, [-15.3, -1.0, -21.4, 0.0, -14.1, -21.7, -17.1, -19.7]),
+    (53, [-15.4, -1.1, -21.6, 0.0, -14.1, -21.2, -17.4, -19.5]),
+    (54, [-7.2, 0.0, -13.0, -11.3, -12.2, -8.2, -5.2, -17.9]),
+    (55, [-7.2, 0.0, -12.9, -11.4, -12.1, -8.2, -5.3, -18.1]),
+    (56, [-3.4, 0.0, -11.4, -17.0, -17.8, -8.8, -16.9, -21.4]),
+    (57, [-3.4, 0.0, -11.6, -17.0, -17.7, -9.1, -17.1, -21.3]),
+    (58, [-1.5, 0.0, -3.5, -10.6, -4.4, -3.5, -3.6, -18.4]),
+    (59, [-1.6, 0.0, -3.5, -10.6, -4.5, -3.7, -3.8, -18.3]),
+    (60, [0.0, -1.3, -24.3, -21.1, -18.2, -17.0, -12.2, -13.1]),
+    (61, [0.0, -1.2, -24.3, -20.9, -18.1, -17.0, -12.2, -12.8]),
+    (62, [-1.1, 0.0, -6.9, -20.4, -25.2, -8.3, -8.8, -13.3]),
+    (63, [-1.1, 0.0, -7.0, -21.0, -24.9, -8.2, -8.7, -12.9]),
+    (64, [-5.7, 0.0, -4.5, -1.7, -5.9, -10.6, -4.0, -17.9]),
+    (65, [-5.6, 0.0, -4.3, -1.8, -6.7, -11.3, -4.1, -17.9]),
+    (66, [0.0, -11.2, -19.4, -15.1, -0.7, -14.7, -32.0, -15.5]),
+    (67, [0.0, -10.9, -19.4, -15.8, -0.7, -15.9, -32.3, -15.5]),
+    (68, [-9.8, -5.5, 0.0, -6.9, -8.0, -17.4, -26.2, -36.1]),
+    (69, [-9.9, -5.8, 0.0, -7.7, -8.0, -17.8, -26.5, -36.9]),
+    (70, [-3.8, -10.2, -12.7, 0.0, -6.9, -20.4, -14.0, -31.1]),
+    (71, [-3.2, -9.3, -12.3, 0.0, -6.2, -20.2, -13.7, -31.4]),
+    (72, [0.0, -4.0, -3.6, -10.8, -16.7, -13.2, -22.8, -25.5]),
+    (73, [0.0, -3.8, -3.7, -10.3, -17.3, -13.4, -22.8, -26.2]),
+    (74, [-4.6, -7.5, -0.9, 0.0, -16.0, -27.1, -17.4, -17.8]),
+    (75, [-4.6, -7.4, -1.1, 0.0, -16.6, -26.9, -17.4, -18.2]),
+    (76, [-4.6, -7.1, -1.1, 0.0, -17.4, -26.3, -17.4, -18.6]),
+];
+
+/// The most the Composed tenor scoops up into a note, a share of its pitch (a fifth of a semitone): the tone's own
+/// scoop starts a honk over a semitone flat, which slides.
+pub const STEADY_SCOOP: f64 = 0.012;
+
+/// The Composed arrangement's tenor (sound upgrade, stage 3, S1): the real one's overtones at the note's pitch, its
+/// time to speak and to stop (FluidR3: 31 ms to speak, 63 ms to a tenth after the release), and a reed buzz.
+pub fn shape(f: f64) -> Shape {
+    Shape {
+        levels: real::levels(PROFILE, real::midi_of(f)),
+        speak: 0.032,
+        release: 0.027,
+        buzz: 0.05,
+    }
+}
+
 /// TENOR SAX's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TenorSaxVoice;
@@ -43,6 +98,14 @@ impl Voice for TenorSaxVoice {
 
     fn register(&self) -> (i32, i32) {
         REGISTER
+    }
+
+    fn reworked(&self) -> bool {
+        true
+    }
+
+    fn note_real(&self, _noise: &mut PpNoise, midi: f64, vel: f64, dur: f64, variant: u64) -> Vec<f64> {
+        pp::to_48k(&tenor_tone_real(midi_hz(midi), dur, vel, VOICE_HONK, 0.0, variant))
     }
 
     fn name(&self) -> &str {
@@ -76,13 +139,39 @@ pub fn synth(midi: f64, vel: f64, dur: f64) -> Vec<f64> {
 /// Where Python raises: `dur` is not a number, or so far below -0.18 s that the note has a negative number of
 /// samples; a pitch and length whose seed `int(f * 10 + dur * 1000)` is not a whole number an integer holds.
 pub fn tenor_tone(f: f64, dur: f64, v: f64, honk: f64, sub: f64) -> Vec<f64> {
+    tone(f, dur, v, honk, sub, None)
+}
+
+/// The tenor under the Composed arrangement (sound upgrade, stage 3, S1): [`tenor_tone`] with its scoop held to
+/// [`STEADY_SCOOP`], its first eight overtones moved to a real tenor sax's at that pitch, a real tenor's speed to
+/// speak and to stop, a reed buzz, and the small differences of the `variant`th repeat of the note (a few cents, a
+/// little level).
+///
+/// # Panics
+/// As [`tenor_tone`].
+pub fn tenor_tone_real(f: f64, dur: f64, v: f64, honk: f64, sub: f64, variant: u64) -> Vec<f64> {
+    let (pitch, level) = if variant == 0 {
+        (1.0, 1.0)
+    } else {
+        real::wobble(real::pitch_seed(f) ^ (variant << 32), 4.0, 0.04)
+    };
+    tone(f * pitch, dur, v * level, honk, sub, Some(&shape(f)))
+}
+
+/// [`tenor_tone`], and [`tenor_tone_real`] where `real` shapes it.
+fn tone(f: f64, dur: f64, v: f64, honk: f64, sub: f64, real: Option<&Shape>) -> Vec<f64> {
     let n = pp::len(dur + 0.18);
     let t = pp::tt(n);
     let att = 0.014 + 0.05 * sub;
-    let rel = if dur < 0.15 { 0.04 } else { 0.07 };
+    let rel: f64 = if dur < 0.15 { 0.04 } else { 0.07 };
+    let (att, rel) = match real {
+        Some(r) => (r.speak + 0.05 * sub, rel.min(r.release)),
+        None => (att, rel),
+    };
     // fr = f * (1 - (.03 + .06 * honk) * np.exp(-t / (.05 + .03 * honk))): the scoop up into the note
     // fr = fr * (1 + .0045 * np.sin(2 * np.pi * 5.1 * t) * np.clip((t - .22) / .3, 0, 1)): a lazy vibrato
     let (depth, fall) = (0.03 + 0.06 * honk, 0.05 + 0.03 * honk);
+    let depth = if real.is_some() { depth.min(STEADY_SCOOP) } else { depth };
     let vib = 2.0 * PI * 5.1;
     let fr: Vec<f64> = t
         .iter()
@@ -96,6 +185,7 @@ pub fn tenor_tone(f: f64, dur: f64, v: f64, honk: f64, sub: f64) -> Vec<f64> {
     let mut x = vec![0.0; n];
     let mut tot = 0.0;
     let br = BRIGHT + 0.3 * honk - 0.35 * sub;
+    let mut amps = Vec::new();
     for k in 1..70 {
         let k = f64::from(k);
         let fk = f * k;
@@ -110,6 +200,13 @@ pub fn tenor_tone(f: f64, dur: f64, v: f64, honk: f64, sub: f64) -> Vec<f64> {
         let mut a = dmath::pow(k, -0.75) * (0.3 + formants);
         // a *= math.exp(-fk / max(500.0, 1100 + 3600 * br * v))
         a *= dmath::exp(-fk / py_max(500.0, 1100.0 + 3600.0 * br * v));
+        amps.push(a);
+    }
+    if let Some(r) = real {
+        real::reshape(&mut amps, &r.levels);
+    }
+    for (k, &a) in amps.iter().enumerate() {
+        let k = (k + 1) as f64;
         let shift = 0.37 * k;
         for (x, &ph) in x.iter_mut().zip(&ph) {
             *x += a * dmath::sin(k * ph + shift);
@@ -117,6 +214,9 @@ pub fn tenor_tone(f: f64, dur: f64, v: f64, honk: f64, sub: f64) -> Vec<f64> {
         tot += a;
     }
     let tot = tot + 1e-9;
+    if let Some(r) = real {
+        real::buzz(&mut x, real::pitch_seed(f) ^ 0x5EED, r.buzz);
+    }
     // x *= 1 + gr * np.sin(2 * np.pi * 31 * t + 2.6 * np.sin(2 * np.pi * 6.5 * t)): the growl
     let gr = 0.04 + 0.26 * honk;
     let (growl, wobble) = (2.0 * PI * 31.0, 2.0 * PI * 6.5);
@@ -177,6 +277,30 @@ fn whole(x: f64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_real_tone_is_its_own_and_its_repeats_differ() {
+        let f = midi_hz(56.0);
+        let today = tenor_tone(f, 0.5, 0.8, VOICE_HONK, 0.0);
+        let real0 = tenor_tone_real(f, 0.5, 0.8, VOICE_HONK, 0.0, 0);
+        assert_eq!(real0.len(), today.len());
+        assert_ne!(real0, today);
+        assert!(real0.iter().all(|v| v.is_finite()));
+        assert_eq!(real0, tenor_tone_real(f, 0.5, 0.8, VOICE_HONK, 0.0, 0));
+        let real1 = tenor_tone_real(f, 0.5, 0.8, VOICE_HONK, 0.0, 1);
+        assert_ne!(real0, real1);
+        assert_ne!(real1, tenor_tone_real(f, 0.5, 0.8, VOICE_HONK, 0.0, 2));
+        // Classic is the kit's tone, untouched
+        assert_eq!(today, tenor_tone(f, 0.5, 0.8, VOICE_HONK, 0.0));
+        let notes: Vec<i32> = PROFILE.iter().map(|(m, _)| *m).collect();
+        assert_eq!(notes, (REGISTER.0..=REGISTER.1).collect::<Vec<_>>());
+        let mut noise = PpNoise::start();
+        assert!(TenorSaxVoice.reworked());
+        assert_eq!(
+            TenorSaxVoice.note_real(&mut noise, 56.0, 0.8, 0.5, 1),
+            pp::to_48k(&tenor_tone_real(f, 0.5, 0.8, VOICE_HONK, 0.0, 1))
+        );
+    }
 
     fn peak(x: &[f64]) -> f64 {
         x.iter().fold(0.0f64, |p, v| p.max(v.abs()))

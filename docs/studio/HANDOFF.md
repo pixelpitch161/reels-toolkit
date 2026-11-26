@@ -64,7 +64,11 @@ arrangement, switched on the Music screen:
   After changing `OVER_BAND`, write the level table again (`ballfight levels fights/dev/bold_<fighter>.toml ...`,
   one per fighter, `--write crates/bf-content/src/levels_table.rs`).
   Stage 3 (S1) gives fighters a voice toward the real instrument, under Composed only (Classic keeps the ported
-  tone bit for bit): the bari sax first (`bari_sax/voice.rs` `bari_tone_real`). The real instruments' fingerprints are
+  tone bit for bit): the saxes first (`bari_tone_real`, the alto's and soprano's `tone_real`, `tenor_tone_real`).
+  A voice that plays through `ctx.note` opts in with `Voice::reworked` and `Voice::note_real`; parts with their own
+  tone functions (alto, bari, tenor) choose the real tone under `ctx.composed_on()`. Repeats of one note take turns
+  among three variants (`voice::real::Repeats`). The shared pieces are in `bf-sound/src/voice/real.rs` (`levels`,
+  `reshape`, `buzz`, `wobble`). The real instruments' fingerprints are
   `bf-harness/tests/reference/fluidr3.json`, made on the owner's PC (FluidR3 through fluidsynth, tools in
   `F:\bf-refs`, `references -- render`); `references -- profile` prints a voice's overtone table from them and
   `references -- compare "<FIGHTER>"` measures a reworked voice note by note. `tests/real_voices.rs` is S1's test:

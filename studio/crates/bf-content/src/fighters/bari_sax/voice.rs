@@ -226,15 +226,8 @@ fn tone(f: f64, dur: f64, v: f64, honk: f64, max_scoop: Option<f64>, real: Optio
         *o *= 1.0 + gr * dmath::sin(w29 * t + 3.0 * dmath::sin(w7 * t));
     }
     if real.is_some() {
-        // the reed's buzz: a slow, rough flicker of the tone (a smoothed noise, 15 ms), from the note's own seed
-        let mut g = Generator::new(((f * 10.0) as i64).rem_euclid(100_003) as u64 ^ 0x5EED);
-        let raw: Vec<f64> = (0..n / 720 + 3).map(|_| g.standard_normal()).collect();
-        for (i, o) in x.iter_mut().enumerate() {
-            let p = i as f64 / 720.0;
-            let j = p as usize;
-            let fr = p - j as f64;
-            *o *= 1.0 + BUZZ * (raw[j] + fr * (raw[j + 1] - raw[j]));
-        }
+        // the reed's buzz, from the note's own seed
+        real::buzz(&mut x, real::pitch_seed(f) ^ 0x5EED, BUZZ);
     }
     // rng = np.random.default_rng(int(f * 10) % 100003)
     let tenth = f * 10.0;
