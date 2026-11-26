@@ -47,6 +47,26 @@ kept but no fighter on it). Create this plan.
 
 - [ ] Write both, commit.
 
+### Task 0b: Every technique in `Play` (Aedan, 21:36Z)
+
+Aedan: "for any instruments it applies to, I'd like them to be capable of all their articulations and techniques.
+So when the new composition system is made, it can take full advantage of the instruments."
+
+**Files:** Modify `engine2/play.rs`, `engine2/piano.rs` (the recipe piano reads the new pedals), `docs/studio/
+voice-engine-2-playing.md`.
+
+**Interfaces:**
+- Produces: `Play.pedals: Pedals { sustain: f64 /* 0 up, 1 down, between: half pedal */, lift: Option<f64> /* the
+  sustain pedal comes up this many seconds into the note */, soft: bool /* una corda */, sostenuto: bool }` in place
+  of `pedal: bool`; `Play.technique: Technique { Normal, Harmonic(u8) /* touched at 1/n of the string */, Plucked }`
+  (later families add theirs); `Play.stops: Option<Stops>` (an organ's registration: `Stops { manual: u16, pedal: u8,
+  sub: bool, octave: bool }` with named sets); `Play.expression: Option<Swell>` (a volume pedal: an organ's swell
+  box, later a guitar's volume swell). `Mute::Muted` on a piano: the strings damped by hand. `Play::key` covers all.
+- Composition-level techniques (trills, runs, repeated notes, glissandos, clusters) are notes in a row: the playing
+  doc says so.
+
+- [ ] Unit tests: the key covers every new field; the recipe piano's pedal still rings.
+
 ### Task 1: The struck-string engine
 
 **Files:** Create `studio/crates/bf-sound/src/voice/engine2/strings.rs`, `.../engine2/board.rs`.
@@ -66,6 +86,14 @@ kept but no fighter on it). Create this plan.
   rings on; `Choked`/`Clipped` damps twice as fast at the release; repeats (`variant`) vary the strike (strength
   ±3%, strike point) and never the key's make-up.
 
+- Techniques: sustain (dampers lifted by `sustain`, half pedal damping lightly, landing at `lift`), the other strings
+  ringing along under the sustain pedal (the keys whose overtones meet the note's, driven by the bridge, quiet), soft
+  (one string fewer struck, softer felt), sostenuto (this note's dampers stay up, nothing else rings along),
+  `Muted` (a hand on the strings: a short pitched thud), `Harmonic(n)` (a finger at 1/n: only every n-th mode rings
+  past the strike), `Plucked` (one string pulled aside and let go, no hammer).
+- [ ] Technique tests: `half_pedal_dies_between_damped_and_held`, `the_pedal_lifts_when_asked`, `sympathetic_strings
+  _ring_only_under_the_pedal`, `soft_is_softer_and_darker`, `a_hand_damped_note_is_short`, `a_harmonic_sounds_an_octave
+  _up`, `a_plucked_note_has_no_hammer_knock`.
 - [ ] Unit tests first (in `strings.rs`): `the_hammer_leaves_within_its_registers_contact` (strength 0.6 at 36, 60,
   84: within 15% of `contact`), `a_harder_strike_is_louder_and_brighter`, `notes_are_in_tune` (40 to 96: the
   fundamental within 3 cents of the stretched tuning), `a_damped_key_dies_and_a_top_key_rings_on`,
@@ -86,6 +114,13 @@ kept but no fighter on it). Create this plan.
   in in that order; O8's studio polish EQ per note (low shelf 110 +2, peak 250 +1.5, peak 2800 +1, high shelf 9000
   +1.5). Mono: the stops' stereo places are left to the voice's `Space` width.
 
+- Techniques: `stops` (named sets SOFT, FLUTES, STRINGS, PRINCIPAL, CHORUS, GRAND (O8, the default), FULL, TRUMPET,
+  OBOE; new stops for them: Gedackt 8', Rohrflute 4', Salicional 8', Voix celeste 8' (a hair sharp: it beats),
+  Oboe 8'), couplers (`sub`, `octave`), `swell` (the crescendo pedal: the set's stops come in in a builder's order),
+  `expression` (the swell box: quieter and darker shut), `vibrato` (the tremulant: the wind shaken about 5.5 times a
+  second), `accent` (a quicker key: more chiff).
+- [ ] Technique tests: `every_set_sounds`, `strings_beat_and_flutes_are_pure`, `the_box_shut_is_quieter_and_darker`,
+  `the_tremulant_shakes_the_level`, `couplers_add_octaves`.
 - [ ] Unit tests first: `each_stop_sounds_its_pitch` (a 16' gives an octave under), `pipes_speak_quickly_and_stop_
   quickly`, `a_swell_brings_the_stops_in`, `a_big_chord_sags_a_hair`, `the_same_note_is_the_same`, `edge_notes_are_
   finite`.
@@ -112,5 +147,6 @@ organ's held chord within the sketch's bands (±1.5 dB), both voices repeat-diff
 ### Task 5: Docs, page, push
 
 - [ ] Instrument sheets ("Piano", "Organ") and `voice-engine-2-playing.md` for the built engines; HANDOFF.
-- [ ] Fights and bands page (piano_vs_organ, the mambo and noir jazz bands, each today against stage 1b).
+- [ ] Fights and bands page (piano_vs_organ, the mambo and noir jazz bands, each today against stage 1b), and a
+  techniques section: each technique of both instruments on its own short phrase.
 - [ ] Commit with PC-Tests lines, push, PR comment.

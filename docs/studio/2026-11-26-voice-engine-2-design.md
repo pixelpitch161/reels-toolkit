@@ -426,3 +426,9 @@ instrument from how it works and its parts, aiming to sound good**. Recordings a
   range; the organ against its own sketch, as no free organ recording sounded the way Aedan wanted.
 - Stage 1b (`2026-11-26-voice-engine-2-plan-stage1-built.md`) builds P16 and O8 into the engine. It stops at a
   fights and bands page for Aedan's review, like every family.
+- **Every technique** (Aedan, 21:36Z): "for any instruments it applies to, I'd like them to be capable of all their
+  articulations and techniques. So when the new composition system is made, it can take full advantage of the
+  instruments." Each family's sheet lists its instruments' techniques (pedals, mutes, harmonics, pizzicato, flutter
+  tongue, rolls, registrations...), its engine plays every one, `Play` asks for each, and its listening page has a
+  section for each. Techniques that are notes in a row (trills, runs, repeated notes, glissandos) are left to the
+  composition system.
