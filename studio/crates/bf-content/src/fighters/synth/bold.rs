@@ -26,6 +26,7 @@ use bf_picture::ring::state::Wave;
 use bf_picture::scene::{self, A, R_BALL as R};
 
 use super::{CableState, Item, SynthLook, lash_angle};
+use bf_core::roster::FighterCfg;
 
 /// The dark metal of a jack's barrel.
 const METAL: V3 = [58.0, 64.0, 84.0];
@@ -210,12 +211,30 @@ fn static_px(img: &mut Pic, c: (f64, f64), r: f64, flat: f64, n: u64, seed: u64,
     }
 }
 
-impl SynthLook {
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
     /// The leash's length (the roster's `weapon.length`).
-    fn leash(p: &PictureCtx, k: usize) -> f64 {
-        p.cfg[k].raw["weapon"]["length"].as_f64().unwrap_or(2.4)
-    }
+    leash: f64,
+    /// WHITE NOISE's ring: its speed and radius.
+    noise: (f64, f64),
+}
 
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            leash: cfg.raw["weapon"]["length"].as_f64().unwrap_or(2.4),
+            noise: (
+                cfg.low.get("speed").unwrap_or(4.5),
+                cfg.low.get("radius").unwrap_or(9.0),
+            ),
+        }
+    }
+}
+
+impl SynthLook {
     /// The frame's cables, bumps, jacks and arms.
     fn bold_scene(&self, p: &PictureCtx, f: &FrameCtx<'_>) -> Scene {
         let (k, t, fs) = (self.k, f.t, f.fs);
@@ -243,7 +262,7 @@ impl SynthLook {
         };
         let phase = tc * if hasted { 7.0 } else { 3.2 };
         // how slack the cables are, and a leash that has just held them straight
-        let leash = Self::leash(p, k);
+        let leash = self.nums.leash;
         let slack = (1.0 - (dist - 2.0 * R) / (leash - 2.0 * R).max(1e-6)).clamp(0.0, 1.0);
         let taut = bold::since(p, k, &["leash"], tc, TAUT_S).map_or(0.0, |(age, _)| 1.0 - age / TAUT_S);
         let cab = self.live_cables(p, t);
@@ -550,8 +569,7 @@ impl SynthLook {
             );
         }
         // WHITE NOISE: a band of static pixels rides the ring out
-        let low = &p.cfg[k].low;
-        let (speed, radius) = (low.get("speed").unwrap_or(4.5), low.get("radius").unwrap_or(9.0));
+        let (speed, radius) = self.nums.noise;
         if let Some((age, e)) = bold::since(p, k, &["ability:wave"], t, (radius - R) / speed.max(1e-6)) {
             let c0 = p.run.p(p.sim_i(e.t), k);
             let r = R + speed * age;

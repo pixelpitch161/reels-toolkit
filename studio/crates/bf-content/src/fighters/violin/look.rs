@@ -182,7 +182,7 @@ impl Look for ViolinLook {
         self.k = k;
         self.mult = cfg.unlock2.get("mult").unwrap_or(1.0);
         if p.bold {
-            self.bold = Self::bold_setup(p, k);
+            self.bold = Self::bold_setup(p, k, cfg);
         }
     }
 

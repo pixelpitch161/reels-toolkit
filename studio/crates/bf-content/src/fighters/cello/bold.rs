@@ -28,6 +28,7 @@ use bf_picture::ring::state::Wave;
 use bf_picture::scene::{self, R_BALL as R};
 
 use super::{BODY, CelloLook, EBONY, HAIR, WING, WING_D, arm_wrap, how, seg_pts, unit, wing_poly};
+use bf_core::roster::FighterCfg;
 
 /// Seconds the bow stays flung out after a throw, and the thrown enemy trails speed lines.
 const FLING_S: f64 = 0.28;
@@ -99,18 +100,34 @@ fn rope_end(c: [f64; 2], a: f64) -> [f64; 2] {
     [c[0] + d[0] * m, c[1] + d[1] * m]
 }
 
-impl CelloLook {
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
     /// PRELUDE's ring speed, from whichever of its moves is the prelude.
-    fn prelude_speed(p: &PictureCtx, k: usize) -> f64 {
-        ["unlock1", "unlock2", "low"]
-            .iter()
-            .map(|slot| &p.cfg[k].raw["abilities"][*slot])
-            .find(|ab| ab["kind"] == "prelude")
-            .and_then(|ab| ab["speed"].as_f64())
-            .filter(|&s| s > 0.0)
-            .unwrap_or(6.0)
-    }
+    prelude_speed: f64,
+    /// SWAN SONG's landing radius.
+    swan_r: f64,
+}
 
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let abilities = &cfg.raw["abilities"];
+        Nums {
+            prelude_speed: ["unlock1", "unlock2", "low"]
+                .iter()
+                .map(|slot| &abilities[*slot])
+                .find(|ab| ab["kind"] == "prelude")
+                .and_then(|ab| ab["speed"].as_f64())
+                .filter(|&s| s > 0.0)
+                .unwrap_or(6.0),
+            swan_r: abilities["low"]["radius"].as_f64().unwrap_or(1.4),
+        }
+    }
+}
+
+impl CelloLook {
     pub(super) fn bold_canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {
         if !self.show(p, c.t) {
             return;
@@ -153,7 +170,7 @@ impl CelloLook {
         }
         // SWAN SONG: the landing mark closes in on the spot through the glide and the dive
         let tc = p.fx_clock(c.t);
-        let radius = p.cfg[k].raw["abilities"]["low"]["radius"].as_f64().unwrap_or(1.4);
+        let radius = self.nums.swan_r;
         for e in bold::events_in(p, k, &["swan"], tc - 8.0, tc) {
             let (tg, tl) = (e.f(4), e.f(6));
             if tg <= tc && tc < tl {
@@ -351,7 +368,7 @@ impl CelloLook {
         }
         let cam = f.cam;
         let en = f.fs[1 - self.k].p;
-        let speed = Self::prelude_speed(p, self.k);
+        let speed = self.nums.prelude_speed;
         let j0 = self.notes.partition_point(|n| n.t < ta - 1.0);
         let j1 = self.notes.partition_point(|n| n.t <= ta);
         for nt in &self.notes[j0..j1] {

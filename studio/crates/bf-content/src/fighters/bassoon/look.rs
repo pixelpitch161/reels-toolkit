@@ -388,6 +388,8 @@ struct Crook;
 /// BASSOON's look: `Look` of `kit/fighters/bassoon.py`.
 #[derive(Clone, Debug, Default)]
 pub struct BassoonLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `HOPS`, in time order (`HOP_T` is their times).
@@ -612,6 +614,7 @@ impl Look for BassoonLook {
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`.
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let mine = |kind: &'static str| {
             p.rec
                 .events

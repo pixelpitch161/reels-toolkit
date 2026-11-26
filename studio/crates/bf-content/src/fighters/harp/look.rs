@@ -79,6 +79,8 @@ fn how(e: &Event) -> &str {
 /// HARP's look.
 #[derive(Clone, Debug, Default)]
 pub struct HarpLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     strings: Vec<Str>,
     /// `STR_T`: when each string was laid (the strings in that order).
@@ -269,6 +271,7 @@ impl Look for HarpLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         let mut strings: Vec<Str> = ev
             .iter()

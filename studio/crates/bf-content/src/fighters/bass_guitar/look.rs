@@ -130,6 +130,8 @@ fn pick_shape(c: (f64, f64), rot: f64, s: f64) -> Vec<(f64, f64)> {
 /// BASS GUITAR's look.
 #[derive(Default)]
 pub struct BassGuitarLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     throws: Vec<Throw>,
     slides: Vec<(f64, bool)>,
@@ -333,8 +335,9 @@ impl Look for BassGuitarLook {
         Some(String::new())
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         self.throws = state::throws(ev, k);
         self.slides = state::moves(ev, k, "fret_slide");

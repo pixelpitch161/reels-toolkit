@@ -109,6 +109,8 @@ struct Row {
 /// PIANO's look: `class Look(base.Look)` of `kit/fighters/piano.py`.
 #[derive(Clone, Debug)]
 pub struct PianoLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `T8 = T.BEAT / 2`.
@@ -287,6 +289,7 @@ impl PianoLook {
     pub fn new() -> PianoLook {
         PianoLook {
             k: 0,
+            nums: bold::Nums::default(),
             t8: 0.0,
             reg: (48, 84),
             margin: 0.45,
@@ -516,6 +519,7 @@ impl Look for PianoLook {
     /// `Look(P, k)` with `self.cfg = cfg`, then `setup()`.
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let beat = p.show.grid.beat;
         self.t8 = beat / 2.0;
         // w.get('reg', self.cfg['register']), w.get('margin', 0.45)

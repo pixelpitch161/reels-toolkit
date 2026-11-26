@@ -25,6 +25,7 @@ use bf_picture::ring::PictureCtx;
 use bf_picture::scene::R_BALL as R;
 
 use super::{BEAD, CHROME, HICKORY, STICK_Y, SnareDrumLook, how, state};
+use bf_core::roster::FighterCfg;
 
 /// The grace stick and its star.
 const GHOST: V3 = [190.0, 232.0, 255.0];
@@ -140,17 +141,39 @@ fn chips(img: &mut Pic, c: (f64, f64), age: f64, n: u64, speed: f64, seed: u64) 
     }
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// RIMSHOT's beats armed.
+    rim_beats: f64,
+    /// The sticks' spread, in degrees.
+    spread: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            rim_beats: [&cfg.unlock1, &cfg.unlock2, &cfg.low]
+                .iter()
+                .find(|ab| ab.params.contains_key("dmg_k"))
+                .and_then(|ab| ab.params.get("dur_beats"))
+                .copied()
+                .unwrap_or(8.0),
+            spread: match &cfg.weapon {
+                WeaponCfg::Sticks(w) => w.spread,
+                _ => 35.0,
+            },
+        }
+    }
+}
+
 impl SnareDrumLook {
     /// The stretch RIMSHOT is armed in that holds `t`: from its arming to the stroke that spends it (or to its
     /// time running out).
     fn armed_at(&self, p: &PictureCtx, t: f64) -> Option<(f64, f64)> {
-        let cfg = &p.cfg[self.k];
-        let beats = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
-            .iter()
-            .find(|ab| ab.params.contains_key("dmg_k"))
-            .and_then(|ab| ab.params.get("dur_beats"))
-            .copied()
-            .unwrap_or(8.0);
+        let beats = self.nums.rim_beats;
         let t0 = *self.armed.iter().rev().find(|&&t0| t0 <= t)?;
         let spent = self.rims.iter().map(|r| r.0).find(|&tr| tr >= t0);
         let t1 = spent.unwrap_or(f64::INFINITY).min(t0 + beats * p.show.grid.beat);
@@ -230,11 +253,7 @@ impl SnareDrumLook {
             return;
         }
         let flam = state::within(&self.flams, f.t);
-        let spread = match &p.cfg[k].weapon {
-            WeaponCfg::Sticks(w) => w.spread,
-            _ => 35.0,
-        }
-        .to_radians();
+        let spread = self.nums.spread.to_radians();
         let them = f.fs[1 - k].p;
         let (dx, dz) = (them[0] - me.p[0], them[1] - me.p[1]);
         let n = dmath::hypot(dx, dz).max(1e-9);

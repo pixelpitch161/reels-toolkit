@@ -26,6 +26,7 @@ use bf_picture::ring::{self, PictureCtx};
 use bf_picture::scene::R_BALL as R;
 
 use super::{BEAM_FADE, Beam, ContraLook, FOG, Horn, circle, toward_white, wedge, world};
+use bf_core::roster::FighterCfg;
 
 /// Seconds before a blast its cone shows on the floor.
 const WARN_S: f64 = 0.5;
@@ -102,6 +103,23 @@ fn fog_bank(arr: &mut Img<f32>, cam: &Cam, puffs: &[([f64; 2], f64, f64)], col: 
     let body: Vec<Vec<(f64, f64)>> = puffs.iter().map(|&(q, r, y)| cam.wp(&circle(q, r, y, 14))).collect();
     ring::layer_blend(arr, &rim, bold::INK, (0.75 * a).min(1.0), None);
     ring::layer_blend(arr, &body, col, a.min(1.0), None);
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// FOG BANK's beats.
+    fog_beats: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            fog_beats: cfg.raw["abilities"]["unlock1"]["dur_beats"].as_f64().unwrap_or(6.0),
+        }
+    }
 }
 
 impl ContraLook {
@@ -234,9 +252,7 @@ impl ContraLook {
 
     /// FOG BANK at `t`: how far the fog has risen and how far it has cleared.
     fn fog(&self, p: &PictureCtx, shield: f64, t: f64) -> Option<(f64, f64)> {
-        let beats = p.cfg[self.k].raw["abilities"]["unlock1"]["dur_beats"]
-            .as_f64()
-            .unwrap_or(6.0);
+        let beats = self.nums.fog_beats;
         let dur = beats * p.show.grid.beat;
         let (age, _) = bold::since(p, self.k, &["ability:shield"], t, dur + CLEAR_S)?;
         if shield > 0.0 {

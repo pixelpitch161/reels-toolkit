@@ -144,6 +144,8 @@ fn draw_mallet(img: &mut Img<f32>, cam: &Cam, x: f64, z: f64, dir: (f64, f64), h
 /// MARIMBA's look.
 #[derive(Default)]
 pub struct MarimbaLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     throws: Vec<Throw>,
     bounces: Vec<Bounce>,
@@ -213,8 +215,9 @@ impl Look for MarimbaLook {
         Some(String::new())
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         self.throws = state::throws(ev, k);
         self.bounces = state::bounces(ev, k);

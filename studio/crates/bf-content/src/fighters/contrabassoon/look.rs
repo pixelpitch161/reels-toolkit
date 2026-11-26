@@ -9,6 +9,7 @@
 use bf_core::dmath::{self, PI};
 use bf_core::event::Event;
 use bf_core::py::py_min;
+use bf_core::roster::FighterCfg;
 use bf_picture::camera::{Cam, V3};
 use bf_picture::img::Img;
 use bf_picture::look::{FrameCtx, Look, Payload, Phase, Spark};
@@ -104,6 +105,8 @@ fn part_of(pts: &[[f64; 2]], frac: f64) -> Vec<[f64; 2]> {
 /// CONTRABASSOON's look.
 #[derive(Clone, Debug, Default)]
 pub struct ContrabassoonLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     k: usize,
     pipes: Vec<PipeL>,
     sprays: Vec<SprayL>,
@@ -243,7 +246,13 @@ impl Look for ContrabassoonLook {
     }
 
     fn setup(&mut self, p: &PictureCtx, k: usize) {
+        self.setup_as(p, k, &p.cfg[k]);
+    }
+
+    /// Everything from side `k`'s events; only the bold spray's reach from `cfg`.
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let ev = &p.rec.events;
         let mut pipes: Vec<PipeL> = Vec::new();
         for e in ev.iter().filter(|e| e.who() == Some(k)) {

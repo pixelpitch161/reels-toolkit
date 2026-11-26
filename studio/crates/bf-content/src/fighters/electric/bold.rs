@@ -27,6 +27,7 @@ use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::scene::{CORNERS, R_BALL as R, ROPE_Y};
 
 use super::{BODY, Bolt, ElectricLook, MAPLE, POST_CORNER, POST_SIDES, bolt_path, draw_bolt, jag_ring, on_screen};
+use bf_core::roster::FighterCfg;
 
 /// Seconds a bold bolt shows (classic: 0.13).
 const BOLT_S: f64 = 0.2;
@@ -91,6 +92,25 @@ fn xray(img: &mut Pic, d: &DrawnBall, flip: bool, col: V3) {
         let yy = y - 0.1 * r + f64::from(j) * 0.2 * r;
         let half = (0.46 - 0.08 * f64::from(j)) * r;
         px::line(img, (x - half, yy), (x + half, yy), 1.6, fg, 1.0);
+    }
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// The reach of the noise band round the ball: the weapon's reach times the first move's `reach_k`.
+    band_reach: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let raw = &cfg.raw;
+        Nums {
+            band_reach: raw["weapon"]["reach"].as_f64().unwrap_or(1.1)
+                * raw["abilities"]["unlock1"]["reach_k"].as_f64().unwrap_or(1.4),
+        }
     }
 }
 
@@ -218,9 +238,7 @@ impl ElectricLook {
                     }
                 }
             }
-            let raw = &p.cfg[k].raw;
-            let reach = raw["weapon"]["reach"].as_f64().unwrap_or(1.1)
-                * raw["abilities"]["unlock1"]["reach_k"].as_f64().unwrap_or(1.4);
+            let reach = self.nums.band_reach;
             floor::band(ic, c, Family::Noise, q[0], q[1], 2.0 * R + reach, 0.5, c.t, tint, 0.6);
         }
         // the smash to come: the ball's shadow shrinks on a landing mark that closes in

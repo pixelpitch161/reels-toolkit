@@ -312,6 +312,8 @@ enum Item {
 /// SYNTH's look.
 #[derive(Clone, Debug)]
 pub struct SynthLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `weapon.volt_speed`.
@@ -338,6 +340,7 @@ impl Default for SynthLook {
     fn default() -> SynthLook {
         SynthLook {
             k: 0,
+            nums: bold::Nums::default(),
             volt_speed: 9.0,
             pitch: 28.0,
             view: (10.0, 20.0, 0.0),
@@ -536,6 +539,7 @@ impl Look for SynthLook {
     /// The run's cables, plugs, pulses and lashes for side `k`, with `cfg`'s numbers (#31 render.py 293-321).
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.volt_speed = cfg
             .raw
             .get("weapon")

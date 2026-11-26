@@ -448,6 +448,8 @@ fn w_at(p: [f64; 2], y: f64) -> V3 {
 /// BARI SAX's look: `Look` of `older/fighters/bari_sax.py`.
 #[derive(Clone, Debug, Default)]
 pub struct BariSaxLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `cfg['weapon']['kind'] == 'wrecking'`.
@@ -849,6 +851,7 @@ impl Look for BariSaxLook {
 
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         let w = cfg.raw.get("weapon");
         let num = |key: &str| w.and_then(|w| w.get(key)).and_then(|v| v.as_f64());
         self.wrecker = w.and_then(|w| w.get("kind")).and_then(|v| v.as_str()) == Some("wrecking");

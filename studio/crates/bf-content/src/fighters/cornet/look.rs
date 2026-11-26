@@ -77,6 +77,8 @@ fn last_event(events: &[Event], kind: &str, who: usize, t: f64) -> Option<f64> {
 /// CORNET's look.
 #[derive(Clone, Debug, Default)]
 pub struct CornetLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
 }
@@ -181,8 +183,9 @@ impl Look for CornetLook {
         self.setup_as(p, k, &p.cfg[k]);
     }
 
-    fn setup_as(&mut self, _p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, _p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
     }
 
     fn canvas(&self, p: &PictureCtx, ic: &mut [V3], c: &CanvasCtx<'_>) {

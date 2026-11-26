@@ -295,6 +295,8 @@ struct Tune {
 /// OBOE's look: `Look` of `kit/fighters/oboe.py`.
 #[derive(Clone, Debug, Default)]
 pub struct OboeLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// `TUNES`: its beams.
@@ -473,6 +475,7 @@ impl Look for OboeLook {
     /// `k`. For its own side `cfg` is `p.cfg[k]`, and this is `setup`.
     fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.hold = match &cfg.weapon {
             WeaponCfg::Tune(w) => Some(w.hold),
             _ => None,

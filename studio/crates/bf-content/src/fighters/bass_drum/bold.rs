@@ -28,6 +28,7 @@ use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::scene::{self, R_BALL as R};
 
 use super::{BassDrumLook, CHROME, DUSTC, HEADC, HOOPC, slams};
+use bf_core::roster::FighterCfg;
 
 /// The dub's red, and the heart monitor's trace.
 const RED: V3 = [255.0, 64.0, 76.0];
@@ -100,6 +101,23 @@ fn muzzle(bx: f64, bz: f64, ux: f64, uz: f64, recoil: f64) -> V3 {
     [bx + ux * d, bz + uz * d, R * 2.1]
 }
 
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// How many shots a volley has.
+    shots: i64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            shots: cfg.raw["abilities"]["low"]["n"].as_f64().unwrap_or(5.0) as i64,
+        }
+    }
+}
+
 impl BassDrumLook {
     /// The 1812 OVERTURE volley under way at `t` (or just over): its cannons and which of them was fired last.
     fn volley(&self, p: &PictureCtx, t: f64) -> Option<(&[Cannon], usize)> {
@@ -117,8 +135,8 @@ impl BassDrumLook {
     }
 
     /// How many shots a volley has.
-    fn shots(&self, p: &PictureCtx) -> i64 {
-        p.cfg[self.k].raw["abilities"]["low"]["n"].as_f64().unwrap_or(5.0) as i64
+    fn shots(&self) -> i64 {
+        self.nums.shots
     }
 
     /// The cannon's aim at `t`: the ball, the unit vector to the spot and the recoil of the last shot.
@@ -273,7 +291,7 @@ impl BassDrumLook {
             return;
         }
         let fire = bold::light(FIRE);
-        let last_i = self.shots(p) - 1;
+        let last_i = self.shots() - 1;
         // 1812 OVERTURE: the landing mark closes in, then the blast (the last one half as big again)
         for s in slams(p, c.i) {
             if s.owner != self.k as i64 {
@@ -479,7 +497,7 @@ impl BassDrumLook {
         // 1812 OVERTURE
         let Some((shots, j)) = self.volley(p, t) else { return };
         let b = f.fs[k].p;
-        let n = self.shots(p).max(1);
+        let n = self.shots().max(1);
         let unit = bold::px_per_unit(f.cam, b[0], b[1], R);
         for &(t0, i, x, z, t_land) in shots.iter().filter(|s| s.0 <= t) {
             let last = i >= n - 1;
@@ -638,7 +656,7 @@ impl BassDrumLook {
             "roll" => HitSize::Heavy,
             "drumroll" if bold::since(p, self.k, &["hit:drumroll"], e.t - 1e-6, 0.3).is_none() => HitSize::Heavy,
             "cannon" => {
-                let last_i = self.shots(p) - 1;
+                let last_i = self.shots() - 1;
                 if self.cannons.iter().any(|c| (c.4 - e.t).abs() < 0.05 && c.1 >= last_i) {
                     HitSize::Heavy
                 } else {

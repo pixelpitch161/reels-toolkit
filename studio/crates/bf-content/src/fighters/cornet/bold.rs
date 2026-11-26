@@ -25,6 +25,7 @@ use bf_picture::ring::state::Wave;
 use bf_picture::scene::{self, R_BALL as R};
 
 use super::{CORD, CornetLook, RIM, RUBBER, WAH_S, WOOD, cord, draw_hat, last_event, ngon};
+use bf_core::roster::FighterCfg;
 
 /// The wah's purple, as paint and as canvas light.
 const PURPLE: V3 = [190.0, 110.0, 255.0];
@@ -71,6 +72,23 @@ fn draw_big_cup(fr: &mut Frame, cam: &Cam, cx: f64, cz: f64, bx: f64, bz: f64, w
         &ngon(cx + ux * 0.02, cz + uz * 0.02, 0.57, 0.21 * wide, 10, rot + 0.3),
         RUBBER,
     );
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// DERBY HAT's landing radius.
+    derby_r: f64,
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        Nums {
+            derby_r: cfg.raw["abilities"]["unlock2"]["radius"].as_f64().unwrap_or(0.9),
+        }
+    }
 }
 
 impl CornetLook {
@@ -153,7 +171,7 @@ impl CornetLook {
             }
         }
         // DERBY HAT: the landing mark closes in while the hat is in the air
-        let radius = p.cfg[k].raw["abilities"]["unlock2"]["radius"].as_f64().unwrap_or(0.9);
+        let radius = self.nums.derby_r;
         for e in p
             .rec
             .events

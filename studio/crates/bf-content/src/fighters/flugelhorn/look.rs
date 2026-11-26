@@ -90,6 +90,8 @@ fn draw_wing(arr: &mut Img<f32>, cam: &Cam, c: [f64; 2], aim: f64, s: f64, phi: 
 /// FLUGELHORN's look.
 #[derive(Clone, Debug, Default)]
 pub struct FlugelLook {
+    /// The roster numbers its bold moves read, from `setup_as`'s `cfg`.
+    nums: bold::Nums,
     /// Its side.
     k: usize,
     /// Its claps.
@@ -236,8 +238,9 @@ impl Look for FlugelLook {
         self.setup_as(p, k, &p.cfg[k]);
     }
 
-    fn setup_as(&mut self, p: &PictureCtx, k: usize, _cfg: &FighterCfg) {
+    fn setup_as(&mut self, p: &PictureCtx, k: usize, cfg: &FighterCfg) {
         self.k = k;
+        self.nums = bold::Nums::of(cfg);
         self.claps = claps(&p.rec.events, k);
         self.flanks = flanks(&p.rec.events, k);
         self.takes = takes(&p.rec.events, k);

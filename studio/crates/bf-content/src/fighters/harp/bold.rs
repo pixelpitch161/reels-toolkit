@@ -26,6 +26,7 @@ use bf_picture::ring::state::{BallState, Wave};
 use bf_picture::scene::{self, R_BALL as R};
 
 use super::{DRAW_IN, FEATHER, FEATHER_DK, GOLD, HarpLook, STR_Y, Str, how, ss};
+use bf_core::roster::FighterCfg;
 
 /// Seconds a crossed string stays bent round the enemy after the hit, before it snaps back.
 const BEND_S: f64 = 0.12;
@@ -85,6 +86,29 @@ fn teardrop(x: f64, z: f64, ang: f64, y: f64, k: f64) -> Vec<V3> {
         pts.push(at(0.08 + 0.17 * dmath::cos(a), 0.17 * dmath::sin(a)));
     }
     pts
+}
+
+/// The roster numbers the bold moves read, taken in `setup_as` from its `cfg`: for its own side that is
+/// `p.cfg[k]`, and EUPHONIUM's copy of this look gets the copied fighter's numbers.
+#[derive(Clone, Debug, Default)]
+pub(super) struct Nums {
+    /// PLUCK: how many strings, and the beats its darts take to leave.
+    pluck: (usize, f64),
+}
+
+impl Nums {
+    /// The numbers of the roster entry `cfg`.
+    pub(super) fn of(cfg: &FighterCfg) -> Nums {
+        let ab = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
+            .into_iter()
+            .find(|a| a.kind == AbilityKind::Arc);
+        Nums {
+            pluck: (
+                ab.and_then(|a| a.get("n")).unwrap_or(7.0).clamp(2.0, 12.0) as usize,
+                ab.and_then(|a| a.get("beats")).unwrap_or(1.0),
+            ),
+        }
+    }
 }
 
 impl HarpLook {
@@ -443,12 +467,8 @@ impl HarpLook {
         if let Some(d) = me
             && let Some(t0) = self.fired(p, "arc", f.t, 0.0)
         {
-            let cfg = &p.cfg[k];
-            let ab = [&cfg.unlock1, &cfg.unlock2, &cfg.low]
-                .into_iter()
-                .find(|a| a.kind == AbilityKind::Arc);
-            let n = ab.and_then(|a| a.get("n")).unwrap_or(7.0).clamp(2.0, 12.0) as usize;
-            let over = ab.and_then(|a| a.get("beats")).unwrap_or(1.0) * p.show.grid.beat;
+            let n = self.nums.pluck.0;
+            let over = self.nums.pluck.1 * p.show.grid.beat;
             let dt = f.t - t0;
             if dt < over + 0.3 {
                 let out = (1.0 - (dt - over) / 0.3).clamp(0.0, 1.0);
