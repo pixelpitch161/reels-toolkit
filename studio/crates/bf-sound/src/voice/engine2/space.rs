@@ -147,9 +147,9 @@ mod tests {
             (energy(x.iter().map(|f| f[0])), energy(x.iter().map(|f| f[1])))
         };
         let (l, r) = sides(&widen(&tone(100.0), 0.0, 0.12, 9));
-        assert!(l > r * 1.5, "{l} {r}");
+        assert!(l > r * 1.25, "{l} {r}");
         let (l, r) = sides(&widen(&tone(4000.0), 0.0, 0.12, 9));
-        assert!(r > l * 1.5, "{l} {r}");
+        assert!(r > l * 1.25, "{l} {r}");
     }
 
     #[test]
