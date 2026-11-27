@@ -38,6 +38,10 @@ engine (`plucked.rs`) with the instrument's strings and body. The bodies join `b
   semitones); an accent comes with bow speed and weight together (`bite_v`), its bite lasts 20 ms, and a strong accent
   (0.6 and up) starts the bow quicker (`att_acc` 0.7; a light one keeps 0.4); accent bite 0.8 on the violin and viola,
   0.4 on the cello, the basses as before. Accents settle in about 25 to 35 ms.
+- His third note (fix 5, the last for these): an open string is bowed with 15% more weight (`open_press` 1.15; with no
+  finger it is less damped and slips twice a period at a weight a stopped string bows cleanly), on the violin, viola,
+  cello and contrabass, not the octobass (pressed hard already; more creaks); the viola's accent bite 0.4, lasting
+  12 ms.
 - Every technique (Aedan, 2026-11-26 21:36Z) through `Play`; runs of notes stay the composition system's.
 - The contrabass and the octobass keep today's rule for a plain note: plucked under half a second, bowed from there.
 - VST later: no hard-coded 48 kHz; the string's rate follows the sample rate.
