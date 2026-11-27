@@ -10,11 +10,15 @@
 //! - ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE and HARP on the plucked-string engine (A6, E2, B3, U6, H3,
 //!   2026-11-27): each one's riff of the listening rounds (`tests/reference/plucked_riffs.txt`, written from the
 //!   sketch's own) keeps the sketch's octave bands within 2 dB, through its amp where it has one.
+//! - VIOLIN, VIOLA, CELLO, CONTRABASS and OCTOBASS on the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2,
+//!   2026-11-27): each one's riff of the bowed rounds (`tests/reference/bowed_riffs.txt`, the sketch's own) keeps
+//!   the sketch's octave bands within 2 dB.
 //! - Every voice's repeats differ, as a player's do.
 
 use bf_sound::SRF;
 use bf_sound::dsp::fft::Fft;
-use bf_sound::voice::engine2::play::{Bend, Mute, Play, Technique, Vibrato};
+use bf_sound::voice::engine2::play::Vibrato;
+use bf_sound::voice::engine2::play::{Bend, Mute, Play, Swell, Technique};
 use bf_sound::voice::engine2::{self, Instrument, Parts, amp};
 
 fn instrument(name: &str) -> &'static Instrument {
@@ -186,7 +190,15 @@ fn the_fighters_play_their_built_engines() {
     for (_, name, _) in PLUCKED {
         assert!(matches!(instrument(name).parts, Parts::Plucked(_)), "{name}");
     }
-    for name in ["PIANO", "ORGAN"].into_iter().chain(PLUCKED.map(|p| p.1)) {
+    for (_, name, _) in BOWED {
+        assert!(matches!(instrument(name).parts, Parts::Bowed(_)), "{name}");
+        assert_eq!(instrument(name).space.amp, None, "{name}");
+    }
+    for name in ["PIANO", "ORGAN"]
+        .into_iter()
+        .chain(PLUCKED.map(|p| p.1))
+        .chain(BOWED.map(|p| p.1))
+    {
         assert!(!instrument(name).parts.has_recipe(), "{name}");
     }
     // the electric and the bass play through their amps, the rest through none
@@ -336,9 +348,113 @@ fn the_plucked_riffs_keep_the_sketches_balance() {
     }
 }
 
+/// The bowed riffs: the sketch's code, the fighter, and the sketch's own bands (its riff through the sketch's body,
+/// the two microphones' powers averaged) over [`ORGAN_EDGES`].
+const BOWED: [(&str, &str, [f64; 9]); 5] = [
+    ("Vn3", "VIOLIN", BOWED_SKETCH[0]),
+    ("Va3", "VIOLA", BOWED_SKETCH[1]),
+    ("Vc1", "CELLO", BOWED_SKETCH[2]),
+    ("Cb1", "CONTRABASS", BOWED_SKETCH[3]),
+    ("Oc2", "OCTOBASS", BOWED_SKETCH[4]),
+];
+#[rustfmt::skip]
+const BOWED_SKETCH: [[f64; 9]; 5] = [
+    [-83.09, -65.68, -42.68, -22.17, -4.08, -4.72, -6.64, -13.31, -28.46],
+    [-67.73, -37.31, -11.89, -7.79, -3.50, -6.42, -10.57, -22.28, -38.82],
+    [-40.30, -5.95, -2.51, -9.57, -14.67, -15.96, -18.79, -26.42, -41.43],
+    [-6.76, -3.45, -6.69, -11.86, -14.41, -17.04, -27.80, -43.69, -56.30],
+    [-1.50, -6.14, -15.67, -19.03, -21.40, -27.61, -40.15, -55.45, -67.37],
+];
+
+/// The riff `code` of `tests/reference/bowed_riffs.txt` on `inst`, mono and dry, each note as long as it rings, a
+/// pitch's repeats taking turns. A line is the code, then the note's start, MIDI, held length and velocity, then the
+/// sketch's asks: `tech=` (pizz, snap, lh, slap, spicc, legno, tratto, trem, harm, harm3, arco), `acc=` an accent,
+/// `tie=1`, `slur=` the pitch it is slurred from, `str=` a string, `end=stop` a martele, `swell=` from,to,over.
+fn bowed_riff(inst: &Instrument, code: &str) -> Vec<f64> {
+    let text = include_str!("reference/bowed_riffs.txt");
+    let mut out = vec![0.0; (20.0 * SRF) as usize];
+    let mut seen = std::collections::BTreeMap::new();
+    for line in text.lines().filter(|l| l.split_whitespace().next() == Some(code)) {
+        let w: Vec<&str> = line.split_whitespace().collect();
+        let at = |i: usize| -> f64 { w[i].parse().expect("a number") };
+        let mut play = Play::plain(at(2), at(3), at(4));
+        for kv in &w[5..] {
+            let (k, v) = kv.split_once('=').expect("a key=value");
+            let num = || -> f64 { v.parse().expect("a number") };
+            match k {
+                "tech" => {
+                    play.technique = match v {
+                        "pizz" => Technique::Pizzicato,
+                        "snap" => Technique::SnapPizz,
+                        "lh" => Technique::LeftHandPizz,
+                        "slap" => Technique::Slap,
+                        "spicc" => Technique::Spiccato,
+                        "legno" => Technique::ColLegno,
+                        "tratto" => Technique::ColLegnoTratto,
+                        "trem" => Technique::Tremolo,
+                        "harm" => Technique::Harmonic(2),
+                        "harm3" => Technique::Harmonic(3),
+                        "arco" => Technique::Arco,
+                        other => panic!("a technique {other:?}"),
+                    }
+                }
+                "acc" => play.accent = num(),
+                "tie" => play.tie = v == "1",
+                "slur" => play.slur_from = Some(num()),
+                "str" => play.string = Some(num() as u8),
+                "end" if v == "stop" => play.technique = Technique::Martele,
+                "swell" => {
+                    let q: Vec<f64> = v.split(',').map(|x| x.parse().expect("a number")).collect();
+                    play.swell = Some(Swell {
+                        from: q[0],
+                        to: q[1],
+                        over: q[2],
+                    });
+                }
+                other => panic!("an ask {other:?}"),
+            }
+        }
+        let turn = seen.entry(play.midi as i64).or_insert(0u64);
+        let x = engine2::play(inst, &play, 0.0, *turn % 3);
+        *turn += 1;
+        let s = (at(1) * SRF) as usize;
+        for (o, y) in out.iter_mut().skip(s).zip(&x) {
+            *o += y;
+        }
+    }
+    let end = out.iter().rposition(|v| v.abs() > 1e-9).map_or(0, |i| i + 1);
+    out.truncate(end);
+    out
+}
+
+#[test]
+fn the_bowed_riffs_keep_the_sketches_balance() {
+    for (code, name, sketch) in BOWED {
+        let x = bowed_riff(instrument(name), code);
+        assert!(x.len() > (5.0 * SRF) as usize, "{name}");
+        let b = bands(&x, &ORGAN_EDGES);
+        for (i, v) in b.iter().enumerate() {
+            if sketch[i] < QUIET {
+                continue;
+            }
+            assert!(
+                (v - sketch[i]).abs() < PLUCKED_MARGIN,
+                "{name} ({code}), band {} to {} Hz: {v:.2} dB, the sketch {}",
+                ORGAN_EDGES[i],
+                ORGAN_EDGES[i + 1],
+                sketch[i]
+            );
+        }
+    }
+}
+
 #[test]
 fn repeats_differ_and_the_same_note_is_the_same() {
-    for name in ["PIANO", "ORGAN"].into_iter().chain(PLUCKED.map(|p| p.1)) {
+    for name in ["PIANO", "ORGAN"]
+        .into_iter()
+        .chain(PLUCKED.map(|p| p.1))
+        .chain(BOWED.map(|p| p.1))
+    {
         let inst = instrument(name);
         let note = |variant| engine2::play(inst, &Play::plain(62.0, 0.4, 0.7), 0.8, variant);
         assert_eq!(note(0), note(0), "{name}");

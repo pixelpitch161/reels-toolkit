@@ -26,7 +26,8 @@ pub struct Play {
     pub bend: Option<Bend>,
     /// A swell of the strength over the note: an organ's stops coming in, a wind's crescendo.
     pub swell: Option<Swell>,
-    /// A vibrato.
+    /// A vibrato. On a bowed string, none asked is the player's own (it comes in after the start) and one of 0 cents
+    /// none at all.
     pub vibrato: Option<Vibrato>,
     /// The pedals a piano (or a vibraphone) has.
     pub pedals: Pedals,
@@ -40,11 +41,13 @@ pub struct Play {
     pub stops: Option<Stops>,
     /// Where along a plucked string it is plucked, as a fraction of the sounding string from the bridge (0.5 the
     /// middle): near the bridge is bright and thin (sul ponticello, a harp's près de la table), over the neck round
-    /// and soft (sul tasto). None: where the player usually plucks.
+    /// and soft (sul tasto). None: where the player usually plucks. On a bowed string, where the bow sits, from the
+    /// bridge (0.02 to 0.3): by the bridge glassy and thin, over the fingerboard soft and sweet.
     pub position: Option<f64>,
     /// Which string a fretted note is played on, counted as a player numbers them from the chin down, from 0 (a
     /// guitar's low E, a ukulele's high G); none, or a string tuned over the note: the lowest position that has it.
-    /// The same pitch higher up a lower string is rounder.
+    /// The same pitch higher up a lower string is rounder. On a bowed string counted from the lowest (0 the violin's
+    /// G, the cello's C); none, or a string tuned over the note: the highest string that has it.
     pub string: Option<u8>,
     /// A volume pedal over the note, 0 (shut) to 1 (open), with no new start: an organ's swell box, quieter and
     /// darker shut; on a bowed string, the bow's speed and weight over the note.

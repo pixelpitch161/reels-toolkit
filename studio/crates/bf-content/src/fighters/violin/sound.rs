@@ -18,6 +18,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{MusicCtx, MusicError, Samples, Thinner, event_int, event_is_str, noise_seed};
 use bf_sound::synth::{self, FILTER_O, clip};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::{Mute, Play, Technique};
 
 /// The name the part's errors carry.
 const H: &str = "VIOLIN";
@@ -45,6 +46,31 @@ fn scratch(dur: f64, seed: u64) -> Vec<f64> {
             v * (1.0 + 0.8 * s.signum() * f64::from(u8::from(s != 0.0))) * e
         })
         .collect()
+}
+
+/// The built instrument `inst`'s pizzicato of `m` (voice `pp`), as long as it rings, at the level of a kit's own pluck:
+/// [`MusicCtx::note_played`] (the voice's own level at `vel`, its repeats taking turns) less the series' gain. A
+/// `mute` of [`Mute::Choked`] is the kit's muted pluck, damped short.
+pub(crate) fn built_pluck(
+    ctx: &MusicCtx,
+    pp: &str,
+    inst: &bf_sound::voice::engine2::Instrument,
+    m: i32,
+    vel: f64,
+    mute: Mute,
+) -> Samples {
+    let play = Play {
+        technique: Technique::Pizzicato,
+        mute,
+        ..Play::plain(
+            f64::from(m),
+            if mute == Mute::Choked { 0.12 } else { 0.3 },
+            round_nd(vel, 2),
+        )
+    };
+    let g = ctx.inst_gain(pp)?;
+    let x = ctx.note_played(pp, &play, round_nd(inst.natural(&play), 2))?;
+    Ok(x.iter().map(|v| if g > 0.0 { v / g } else { 0.0 }).collect())
 }
 
 /// `pizz(m, vel)`: a plucked string with a little wooden body.
@@ -106,6 +132,16 @@ impl ViolinSound {
     /// A little to its own side.
     fn pan(&self) -> f64 {
         if self.k == 0 { -0.2 } else { 0.2 }
+    }
+
+    /// A pizzicato: under the Composed arrangement the VIOLIN's built instrument's (Vn3), at the level of the kit's
+    /// own pluck (the voice's level, less the series' gain); under Classic the kit's [`pizz`].
+    fn pluck(&self, ctx: &MusicCtx, m: i32, vel: f64) -> Samples {
+        let pp = &ctx.cfg[self.k].pp;
+        match ctx.engine2_of(pp) {
+            Some(inst) => built_pluck(ctx, pp, inst, m, vel, Mute::Open),
+            None => Ok(pizz(m, vel)),
+        }
     }
 
     /// `bow_note(m, n16, vel)`: a bowed note held for `n16` sixteenths.
@@ -246,7 +282,7 @@ impl Sound for ViolinSound {
         let ms = self.plucks(ctx, grid.bar)?;
         for (j, (tc, _)) in grid.count.iter().take(3).enumerate() {
             let m = ms[(j * 2).min(ms.len() - 1)];
-            mix.place(&bus, &Sig::Mono(pizz(m, 0.9)), *tc, 0.2, pan);
+            mix.place(&bus, &Sig::Mono(self.pluck(ctx, m, 0.9)?), *tc, 0.2, pan);
         }
         let m = self.line(ctx, grid.t_fight)?;
         mix.place(
@@ -330,7 +366,9 @@ impl Sound for ViolinSound {
                     let ms = self.plucks(ctx, tq)?;
                     let sub = event_int(H, e, 8)?;
                     let m = ms[py::imod_py(sub * 2, ms.len() as i64) as usize];
-                    let x = self.colour(ctx, &pizz(m, 0.9), t, 1.0, &self.colour_args())?.0;
+                    let x = self
+                        .colour(ctx, &self.pluck(ctx, m, 0.9)?, t, 1.0, &self.colour_args())?
+                        .0;
                     mix.place(&bus, &Sig::Mono(x), tq, 0.30, clip(e.f(5) / 3.5, -0.6, 0.6));
                 }
                 "hit" if event_is_str(H, e, 7, "wave")? => {
@@ -341,7 +379,9 @@ impl Sound for ViolinSound {
                     let ms = self.plucks(ctx, tq)?;
                     for j in 0..n {
                         let m = ms[(j * 2) % ms.len()];
-                        let x = self.colour(ctx, &pizz(m, 0.8), t, 1.0, &self.colour_args())?.0;
+                        let x = self
+                            .colour(ctx, &self.pluck(ctx, m, 0.8)?, t, 1.0, &self.colour_args())?
+                            .0;
                         mix.place(&bus, &Sig::Mono(x), tq + j as f64 * s16, 0.24, pan);
                     }
                 }
@@ -428,7 +468,7 @@ impl Sound for ViolinSound {
         let n = ms.len().clamp(1, 6);
         for (j, &m) in ms.iter().take(n).enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / n as f64);
-            mix.place("solo", &Sig::Mono(pizz(m, 0.7)), tj, 0.18, 0.0);
+            mix.place("solo", &Sig::Mono(self.pluck(ctx, m, 0.7)?), tj, 0.18, 0.0);
         }
         Ok(())
     }

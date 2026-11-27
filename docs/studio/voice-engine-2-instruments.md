@@ -432,3 +432,91 @@ technique has its own check in `plucked.rs`, the bodies in `body.rs`, the amps i
 
 Nothing recorded ships. The harp and bass recordings looked at while sketching (VSCO 2 CE harp, Karoryfer
 growlybass, both CC0) were yardsticks only.
+
+---
+
+## The bowed strings (fighters VIOLIN, VIOLA, CELLO, CONTRABASS, OCTOBASS)
+
+One engine for the family (`bf-sound/src/voice/engine2/bowed.rs`), built from how a bowed string works and tuned by
+ear in one listening round and five rounds of fixes (sketch `bw.rs` with `bowed.py`,
+`/mnt/project-files/ballfight-studio/voice-engine-2/bow1/`). Aedan's picks (2026-11-27): Vn3, Va3, Vc1, Cb1, Oc2;
+the sketch approved at 06:49Z after fix 5. The fixes, all carried into the engine:
+
+1. The free ring: a note rings on after the bow leaves, until the finger lifts (a stopped string) or it dies away (an
+   open one).
+2. (A wobbling bowing point sounded "broken": undone.)
+3. The "synth layer following the notes": the twist's own resonances sat on whole overtones of every note, so the
+   same overtones dropped out of every note. Each instrument's twist speed now puts them between the overtones (the
+   pattern under 2 dB, as a real violin's 1.2 dB).
+4. The squeaks in short and accented notes, three causes measured from the sound: a martelé's weight left on the
+   string at rest pinned it like a fret (a jump of 200 cents), now let off with the speed; twist speeds that bowed
+   the upper notes 40 cents flat for the ear to scoop up, now within 5 cents; and accents that took 80 ms to settle,
+   now speed and weight together, a strong accent quicker (25 to 35 ms).
+5. The squeak left in the violin's spiccato run and the viola's first accents: an open string is bowed 15% heavier
+   (no finger damps it, so it slipped twice a period), the octobass excepted (it creaks); the viola's accents lighter
+   and shorter.
+
+### Working parts
+
+- **The string.** Two delay lines meeting at the bow, one to the bridge and one to the stopping finger or the nut;
+  each end a reflection that loses a little (a gain and a gentle low-pass, set so the string rings its time at the
+  fundamental and at 4 kHz). A finger stops a string with more loss than the nut does.
+- **The bow.** It holds the string by friction: while the string moves with the bow it sticks; once the force that
+  would take passes what the rosin can hold, it slips, the friction falling as it slips faster (hyperbolic friction),
+  until it can stick again. That stick and slip, once a period, is the Helmholtz motion: a corner running round the
+  string, a sawtooth push on the bridge. The bow's speed, its weight and where it sits (0.07 to 0.12 of the string
+  from the bridge) set the tone: nearer the bridge and heavier is brighter and grittier, further out sweeter.
+- **The twist.** The bow turns the string's surface, so it twists; those waves run 6 to 9 times quicker and die fast,
+  and they soak up the ripples that would make the bow slip twice a period.
+- **The player.** The ear hears the time between slips and moves the finger a hair to bring the note to pitch; the
+  rosin makes the force jitter; the vibrato rocks the finger, coming in after the start; the bow's speed and weight
+  wander a little.
+- **The body** (`body.rs`): each instrument's air and wood resonances and its bridge hill, the strong ones measured
+  from free recordings, fitted over thirds of an octave; the plucks lose energy to it where it moves most readily.
+
+### The picks
+
+| Code | Fighter | The string | Bowed | Through |
+|---|---|---|---|---|
+| Vn3 | VIOLIN | rings 3 s (open), 0.5 s free after the bow | further from the bridge (0.12), a lighter bow, a wide slow vibrato (24 cents, 5 Hz) | a warm violin body: sweeter and darker |
+| Va3 | VIOLA | rings 3 s, 0.6 s free | as the violin, a wide vibrato (22 cents) | a large viola, its body resonating lower: darker and fuller, the low C filled in |
+| Vc1 | CELLO | rings 4 s, 0.8 s free | the usual spot (0.09), vibrato 16 cents at 5.2 Hz | a concert cello |
+| Cb1 | CONTRABASS | steel, rings 6 s, 1.2 s free | the usual spot (0.10) | an orchestral bass: a full, even bowed tone and a ringing pluck |
+| Oc2 | OCTOBASS | rings 8 s, 1.5 s free | nearer the bridge (0.07), a firmer bow | the octobass's body with more low-middle: more grind, which carries on small speakers |
+
+### How it is played
+
+Every technique, as the engine plays it (asked for as in `voice-engine-2-playing.md`): strength (bow speed and
+weight together); accents; détaché (a plain bowed note); legato slurs and ties (one bow, no new start); portamento;
+martelé; spiccato; tremolo; col legno battuto and tratto; sul ponticello to sul tasto (the bowing point); natural
+harmonics; con sordino; pizzicato, the snap (Bartók) pizzicato and the left-hand pizzicato; vibrato, its depth, rate
+and wait, or none; swells (crescendo, diminuendo) and the bow's expression over a note; choked and clipped notes; which string; the basses'
+slap. A plain contrabass or octobass note under half a second is plucked, longer ones bowed, as the walking line was
+written. Double stops are two notes at once (two `Play`s). Trills, runs, glissandos made of notes, sautillé and ricochet
+runs are the composition system's, made of single notes.
+
+### The built engine (stage 3)
+
+- The string runs at a rate of its own (192 kHz for the violin and the viola, 96 kHz for the cello, the heard rate for
+  the basses; as near as a whole multiple of the sample rate goes) and is brought down by a windowed-sinc decimator;
+  at 44.1 kHz and 48 kHz alike every note is in tune within 5 cents.
+- Plucked and struck notes (pizzicato, snap, left-hand, slap, col legno battuto) are the same string as its own modes,
+  pulled aside or struck and let go.
+- Each repeat of a note is bowed a hair differently (three takes in turn), as a player never bows a note twice alike.
+- Once the bow has left the string for good, the bow and the twist are no longer worked out (they no longer touch the
+  sound), which keeps a fight's string parts within the speed budget; the same note comes out to the last bit.
+- Each fighter's room is the sketch's (3.3 s, 14 LU under for the violin, viola and cello; 2.4 s, 15 LU under for the
+  contrabass; 3.3 s for the octobass); the violin, viola and cello are spread a little (0.25), the basses sit in the
+  middle.
+
+Checked against the sketch: each fighter's riff of the listening round within 2 dB in every octave
+(`bf-harness/tests/engine2_built.rs`, `tests/reference/bowed_riffs.txt`). Each technique has its own check in
+`bowed.rs`: in tune at two sample rates, one slip a period, the ear off still near the note, accents settling on
+pitch, a martelé never above its note, no overtone pattern following the notes, harder louder and no darker, spiccato,
+tremolo at 14 strokes a second without a thump, harmonics, plucks, the snap and the wood, the mute, every bowing
+point heard, the free ring, joins without a click, repeats, odd asks finite, and every note ending quietly.
+
+### Licences
+
+Nothing recorded ships. The VSCO 2 CE string recordings (CC0) the bodies were fitted to while sketching were
+yardsticks only; the bodies are their own resonances, not the recordings.

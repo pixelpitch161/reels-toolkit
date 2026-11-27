@@ -4,6 +4,7 @@
 use bf_core::rng::Generator;
 
 use super::amp::Amp;
+use crate::dsp::fft::Fft;
 use crate::dsp::{self, FilterKind, butter_sos};
 use crate::polish::room;
 use crate::{SRF, heard};
@@ -95,22 +96,12 @@ pub fn home(x: &[[f64; 2]], h: &Home, seed: u64) -> Vec<[f64; 2]> {
     // minutes long: one transform of the whole, or one side after the other, costs seconds a bus)
     let hp = butter_sos(FilterKind::Hp, &[h.hp], 4, SRF);
     let ir = room::ir_with(seed, h.length, h.length * 0.55);
-    let channel = |c: usize| {
-        let dry: Vec<f64> = x.iter().map(|f| f[c]).collect();
-        let r: Vec<f64> = ir.iter().map(|f| f[c]).collect();
-        dsp::oaconvolve(&dry, &dsp::sosfilt(&hp, &r))
-    };
-    let (l, r, dry_level) = std::thread::scope(|s| {
-        let l = s.spawn(|| channel(0));
-        let r = s.spawn(|| channel(1));
-        let dry_level = heard::integrated(x);
-        (
-            l.join().expect("the room's left side"),
-            r.join().expect("the room's right side"),
-            dry_level,
-        )
+    let side = |c: usize| dsp::sosfilt(&hp, &ir.iter().map(|f| f[c]).collect::<Vec<f64>>());
+    let (wet, dry_level) = std::thread::scope(|s| {
+        let dry_level = s.spawn(|| heard::integrated(x));
+        let wet = convolve_room(x, [&side(0), &side(1)]);
+        (wet, dry_level.join().expect("the dry level"))
     });
-    let wet: Vec<[f64; 2]> = (0..x.len()).map(|i| [l[i], r[i]]).collect();
     let wet_level = heard::integrated(&wet);
     if dry_level <= -70.0 || wet_level <= -70.0 {
         return x.to_vec();
@@ -120,6 +111,84 @@ pub fn home(x: &[[f64; 2]], h: &Home, seed: u64) -> Vec<[f64; 2]> {
         .zip(&wet)
         .map(|(f, w)| [f[0] + g * w[0], f[1] + g * w[1]])
         .collect()
+}
+
+/// The first `x.len()` samples of `x`'s two sides each convolved with its own side of the room `ir`, by overlap-add
+/// in blocks: both sides in one complex transform (the left the real part, the right the imaginary, pulled apart by
+/// the transform's symmetry), the blocks shared out between two threads, a block of silence passed over. The
+/// convolution [`dsp::oaconvolve`] gives each side, to rounding, at a quarter of the transforms.
+fn convolve_room(x: &[[f64; 2]], ir: [&[f64]; 2]) -> Vec<[f64; 2]> {
+    let k = ir[0].len().max(ir[1].len());
+    if x.is_empty() || k == 0 {
+        return vec![[0.0; 2]; x.len()];
+    }
+    let size = (4 * k).next_power_of_two().max(1024);
+    let step = size - k + 1;
+    let fft = Fft::new(size);
+    let spectrum = |h: &[f64]| {
+        let (mut re, mut im) = (vec![0.0; size], vec![0.0; size]);
+        re[..h.len()].copy_from_slice(h);
+        fft.forward(&mut re, &mut im);
+        (re, im)
+    };
+    let (hl, hr) = (spectrum(ir[0]), spectrum(ir[1]));
+    let starts: Vec<usize> = (0..x.len()).step_by(step).collect();
+    // the blocks from `from` to `to` (by number), added into their own stretch of the output from `starts[from]`
+    let blocks = |from: usize, to: usize| {
+        let at = starts.get(from).copied().unwrap_or(x.len());
+        let end = if to > from {
+            (starts[to - 1] + size).min(x.len())
+        } else {
+            at
+        };
+        let mut out = vec![[0.0; 2]; end - at];
+        let (mut re, mut im) = (vec![0.0; size], vec![0.0; size]);
+        let (mut zr, mut zi) = (vec![0.0; size], vec![0.0; size]);
+        for &start in &starts[from..to] {
+            let block = &x[start..(start + step).min(x.len())];
+            if block.iter().all(|f| f[0] == 0.0 && f[1] == 0.0) {
+                continue;
+            }
+            re.fill(0.0);
+            im.fill(0.0);
+            for (i, f) in block.iter().enumerate() {
+                (re[i], im[i]) = (f[0], f[1]);
+            }
+            fft.forward(&mut re, &mut im);
+            for j in 0..size {
+                // Y[j] and the conjugate of Y[-j]: the left's spectrum is their mean, the right's their difference
+                // over 2i
+                let m = (size - j) % size;
+                let (a, b, c, d) = (re[j], im[j], re[m], im[m]);
+                let (lr, li) = (0.5 * (a + c), 0.5 * (b - d));
+                let (rr, ri) = (0.5 * (b + d), 0.5 * (c - a));
+                let (pl, ql) = (lr * hl.0[j] - li * hl.1[j], lr * hl.1[j] + li * hl.0[j]);
+                let (pr, qr) = (rr * hr.0[j] - ri * hr.1[j], rr * hr.1[j] + ri * hr.0[j]);
+                // the left's product plus i times the right's
+                (zr[j], zi[j]) = (pl - qr, ql + pr);
+            }
+            fft.inverse(&mut zr, &mut zi);
+            let m = (block.len() + k - 1).min(x.len() - start);
+            for (o, (l, r)) in out[start - at..start - at + m].iter_mut().zip(zr.iter().zip(&zi)) {
+                o[0] += l;
+                o[1] += r;
+            }
+        }
+        (at, out)
+    };
+    let half = starts.len().div_ceil(2);
+    let (first, second) = std::thread::scope(|s| {
+        let second = s.spawn(|| blocks(half, starts.len()));
+        let first = blocks(0, half);
+        (first, second.join().expect("the room's later blocks"))
+    });
+    let mut y = first.1;
+    y.resize(x.len(), [0.0; 2]);
+    for (o, v) in y[second.0..].iter_mut().zip(&second.1) {
+        o[0] += v[0];
+        o[1] += v[1];
+    }
+    y
 }
 
 #[cfg(test)]
@@ -225,5 +294,32 @@ mod tests {
         );
         let silent = vec![[0.0; 2]; 48_000];
         assert_eq!(home(&silent, &h, 3), silent);
+    }
+
+    #[test]
+    fn the_rooms_convolution_is_each_sides_own() {
+        // two unlike sides, a stretch of silence a few blocks long, and blocks enough for both threads: each side
+        // as the plain overlap-add convolution gives it, to rounding, for the first x.len() samples
+        let k = 300;
+        let ir = [noise(7, k), noise(8, k)];
+        let (l, r) = (noise(1, 12_000), noise(2, 12_000));
+        let x: Vec<[f64; 2]> = (0..12_000)
+            .map(|i| {
+                if (3_000..7_500).contains(&i) {
+                    [0.0; 2]
+                } else {
+                    [l[i], 0.5 * r[i]]
+                }
+            })
+            .collect();
+        let y = convolve_room(&x, [&ir[0], &ir[1]]);
+        assert_eq!(y.len(), x.len());
+        for c in 0..2 {
+            let side: Vec<f64> = x.iter().map(|f| f[c]).collect();
+            let want = dsp::oaconvolve(&side, &ir[c]);
+            let worst = (0..x.len()).map(|i| (y[i][c] - want[i]).abs()).fold(0.0, f64::max);
+            assert!(worst < 1e-10, "side {c}: {worst:e} off");
+        }
+        assert!(convolve_room(&[], [&ir[0], &ir[1]]).is_empty());
     }
 }

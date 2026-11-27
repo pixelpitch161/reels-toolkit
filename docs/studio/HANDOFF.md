@@ -285,14 +285,16 @@ for facts (the owner's rule, 2026-11-26): the piano is the struck-string engine 
 owner's pick P16), the organ the pipe engine (`pipes.rs`, O8); since stage 2 the acoustic, electric, bass guitar,
 ukulele and harp play the plucked-string engine (`plucked.rs`, the picks A6, E2, B3, U6, H3), with a wooden body
 (`body.rs`) for the acoustic, the ukulele and the harp and an amp and cabinet (`amp.rs`, through the voice's
-`Space.amp`, playing on the fighter's whole bus in the Composed polish) for the electric and the bass. Every
+`Space.amp`, playing on the fighter's whole bus in the Composed polish) for the electric and the bass; since stage 3
+the violin, viola, cello, contrabass and octobass play the bowed-string engine (`bowed.rs`, the picks Vn3, Va3, Vc1,
+Cb1, Oc2: a string held by a bow's friction, its twist, the player's ear, the body; plucks as the string's modes). Every
 instrument plays all its techniques (pedals, harmonics, stops, swell box, picks, slaps, palm mutes, bends...), and
 the engines run one note at a time at any sample rate (a plugin could use them later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
 plays only under the Composed arrangement; Classic is untouched, byte for byte. The families follow one stage at a
 time, each with its own engine and voice lab, stopping at a listening page for the owner's review
 (`docs/studio/2026-11-26-voice-engine-2-design.md`, "Revision: built engines").
 
-- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `plucked.rs`,
+- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `plucked.rs`, `bowed.rs`,
   `body.rs`, `amp.rs`, `eq.rs`; `play.rs`
   for how a note is played; `space.rs` for width and an instrument's own room; the kept recipe engine's format,
   player and parts); each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs` (`ENGINE2`, built with

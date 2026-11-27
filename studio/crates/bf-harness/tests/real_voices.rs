@@ -194,13 +194,6 @@ fn the_trombone_is_a_trombone_not_a_tuba_or_a_sax() {
 }
 
 #[test]
-fn the_big_strings_are_contrabasses_not_cellos_or_bass_guitars() {
-    for fighter in ["OCTOBASS", "CONTRABASS"] {
-        reworked_nearer_its_own(fighter, "contrabass", &["cello", "finger bass", "tuba"]);
-    }
-}
-
-#[test]
 fn the_flutes_and_the_oboe_are_their_own_not_each_other() {
     reworked_nearer_its_own("PICCOLO", "piccolo", &["flute", "oboe", "clarinet"]);
     reworked_nearer_its_own("FLUTE", "flute", &["piccolo", "oboe", "clarinet", "soprano sax"]);
@@ -269,12 +262,7 @@ fn the_horns_are_horns_not_trumpets_or_trombones() {
     reworked_nearer_its_own("MELLOPHONE", "french horn", &["trumpet", "trombone", "alto sax"]);
 }
 
-#[test]
-fn the_bowed_strings_are_their_own_not_each_other() {
-    reworked_nearer_its_own("VIOLIN", "violin", &["viola", "cello", "french horn", "trumpet"]);
-    reworked_nearer_its_own("VIOLA", "viola", &["violin", "cello", "french horn", "english horn"]);
-    reworked_nearer_its_own("CELLO", "cello", &["viola", "contrabass", "french horn", "bassoon"]);
-}
+// VIOLIN, VIOLA, CELLO, CONTRABASS and OCTOBASS play on Voice Engine 2 under Composed: `engine2_built.rs`
 
 #[test]
 fn the_bassoons_keys_and_bellows_are_their_own_not_each_other() {

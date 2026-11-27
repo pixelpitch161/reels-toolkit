@@ -10,8 +10,9 @@ its `Play`; what is notes in a row (trills, runs, repeated notes, glissandos, cl
 chords) is the composition system's, made of single notes. An instrument takes what it can do and ignores the rest: a
 piano has no vibrato, an organ no accent by touch. Since stage 1b the piano is the struck-string engine (Aedan's pick
 P16) and the organ the pipe engine (O8); since stage 2 the acoustic guitar, electric guitar, bass guitar, ukulele and
-harp are the plucked-string engine (A6, E2, B3, U6, H3). Later stages add each family's own (a wind's slur and
-vibrato, a string's bow, a brass's mute and fall).
+harp are the plucked-string engine (A6, E2, B3, U6, H3); since stage 3 the violin, viola, cello, contrabass and
+octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2). Later stages add each family's own (a wind's slur and
+vibrato, a brass's mute and fall).
 
 The engines work one note at a time at any sample rate, so the same notes could later be played by a plugin.
 
@@ -37,7 +38,8 @@ The engines work one note at a time at any sample rate, so the same notes could 
 | `string` | Which string a fretted note is played on, from 0 (a guitar's low E, a ukulele's high G). | no | no |
 
 The plucked strings take `midi`, `dur`, `vel`, `accent`, `slur_from`, `bend`, `vibrato`, `mute`, `technique`,
-`position` and `string` (below); the rest they leave aside.
+`position` and `string` (below); the rest they leave aside. The bowed strings take those and `swell`, `expression`
+and `tie` (below), `position` there being where the bow sits and `string` counted from the lowest string.
 
 `Play::plain(midi, dur, vel)` is a note with none of the extras: open, on its own, no pedal, the organ's own stops.
 
@@ -108,6 +110,43 @@ with a pick, the rest with the fingers.
 Strums, rolled chords, tremolo picking, trills, glissandos and a harp's bisbigliando are the composition system's,
 made of single notes (a strum is the chord's notes a few milliseconds apart, low to high going down). The electric's
 and the bass's amps play on the fighter's whole part, so a chord's notes distort together, as on a real amp.
+
+## The bowed strings' techniques
+
+VIOLIN, VIOLA, CELLO, CONTRABASS and OCTOBASS. A plain note is bowed (détaché); on the contrabass and the octobass a
+plain note under half a second is plucked, as an orchestra's bass plays a walking line, and `Arco` bows it whatever its
+length.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | the bow's speed and weight together: louder, with the same overtone balance (no darker) |
+| Accent | `accent` | a bitten start: more speed and weight at once, settling on the note within about 30 ms; a strong accent starts quicker |
+| Détaché, legato | `dur` | the bow lifts after the note and the string rings on freely until the finger lifts (an open string until it dies away) |
+| Slur | `slur_from` | the bow keeps moving: no new start, the finger moving to the new note in a few milliseconds |
+| Tie, slur on | `tie` | this note hands over to the next instead of stopping (the next comes with `slur_from` set to this pitch) |
+| Portamento | `slur_from` with a `bend` of 0 cents | the finger slides from the note before over the bend's `over` seconds |
+| Bend, scoop, fall | `bend` | the finger slides the pitch so many cents, from a moment, over a time |
+| Martelé | `technique = Martele` | a hammered stroke: a strong accent, and the bow stopped on the string at the note's end (its weight let off with its speed) |
+| Spiccato | `technique = Spiccato` | the bow dropped onto the string and bouncing off: a short, light note that rings on free |
+| Tremolo | `technique = Tremolo` | the bow back and forth 14 times a second all through the note |
+| Col legno battuto | `technique = ColLegno` | the string struck with the bow's wood: a dry tick with a ghost of the note |
+| Col legno tratto | `technique = ColLegnoTratto` | drawn with the wood: a thin, airy, whistling bowed note |
+| Sul ponticello, sul tasto | `position` | where the bow sits, as a part of the string from the bridge (0.02 to 0.3): by the bridge glassy and thin (a lighter, slower bow, as a player does there), over the fingerboard soft and sweet; none is the instrument's own spot |
+| Harmonic | `technique = Harmonic(n)` | the string touched lightly at 1/n: the n-th overtone sounds, the fundamental gone (2 an octave up, 3 an octave and a fifth) |
+| Con sordino | `mute = Muted` | a mute on the bridge: darker and veiled, a little quieter |
+| Pizzicato | `technique = Pizzicato` | plucked by the finger, dying away |
+| Snap pizzicato | `technique = SnapPizz` | pulled up and let slap back onto the fingerboard: louder, with a crack |
+| Left-hand pizzicato | `technique = LeftHandPizz` | plucked by the stopping hand: softer and thinner |
+| Slap | `technique = Slap` | the basses' slap: the string pulled and let hit the fingerboard, a clack with the note |
+| Vibrato | `vibrato` | the finger rocks the pitch, so many cents, so many times a second, coming in after `wait`; `None` is the player's own (the violin 24 cents at 5 Hz, the octobass 12 at 4.6), a vibrato of 0 cents none at all |
+| Swell, expression | `swell`, `expression` | the bow's speed and weight change over the note: a crescendo, a diminuendo |
+| Choked | `mute = Choked` | the hand damps the string as the bow leaves |
+| As short as it goes | `mute = Clipped` | a stroke of 60 ms at the most, the bow stopped on the string |
+| Which string | `string` | counted from the lowest (0 is the violin's G, the cello's C); the same note higher up a lower string is a heavier string, stopped: fuller and more covered; none, or a string tuned over the note, the highest string that has it |
+
+Double stops and chords are several notes at once (one `Play` each). Trills, runs, glissandos of notes, sautillé and
+ricochet runs are the composition system's, made of single notes; a note's repeats already take turns among three
+slightly different bows.
 
 ## What today's parts pass by themselves
 

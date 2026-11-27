@@ -7,6 +7,8 @@
 //! - [`pipes`]: pipes, the organ.
 //! - [`plucked`] (with its bodies, [`body`], and the amps, [`amp`]): plucked strings, the guitars, the bass, the
 //!   ukulele and the harp.
+//! - [`bowed`] (with its bodies, [`body`]): bowed strings, the violin, the viola, the cello, the contrabass and the
+//!   octobass.
 //!
 //! Stage 1 rebuilt notes from recordings instead (the recipe engine below); no fighter plays a recipe now, but the
 //! engine stays for a family that wants a measured part:
@@ -32,6 +34,7 @@ use std::sync::OnceLock;
 pub mod amp;
 pub mod board;
 pub mod body;
+pub mod bowed;
 pub mod eq;
 pub mod organ;
 pub mod piano;
@@ -43,6 +46,7 @@ pub mod recipe;
 pub mod space;
 pub mod strings;
 
+use self::bowed::BowedParts;
 use self::organ::OrganParts;
 use self::piano::PianoParts;
 use self::pipes::PipeParts;
@@ -66,6 +70,8 @@ pub enum Parts {
     Pipes(PipeParts),
     /// The plucked-string engine.
     Plucked(PluckedParts),
+    /// The bowed-string engine.
+    Bowed(BowedParts),
 }
 
 impl Parts {
@@ -119,12 +125,13 @@ impl Instrument {
 
     /// How long the note `play` rings with no length asked for: to its stop's fall of 70 dB, or, for a note that
     /// isn't stopped, until it has died away, at most [`LONGEST`] seconds.
-    fn natural(&self, play: &Play) -> f64 {
+    pub fn natural(&self, play: &Play) -> f64 {
         let dur = play.dur.max(0.0);
         match self.parts {
             Parts::Strings(p) => return strings::rings_for(&p, play, LONGEST),
             Parts::Pipes(p) => return pipes::rings_for(&p, play, LONGEST),
             Parts::Plucked(p) => return plucked::rings_for(&p, play, LONGEST),
+            Parts::Bowed(p) => return bowed::rings_for(&p, play, LONGEST),
             _ => {}
         }
         let set = self.set();
@@ -152,5 +159,6 @@ pub fn play(i: &Instrument, play: &Play, cap: f64, variant: u64) -> Vec<f64> {
         Parts::Strings(p) => strings::note(p, play, len, variant, SRF),
         Parts::Pipes(p) => pipes::note(p, play, len, variant, SRF),
         Parts::Plucked(p) => plucked::note(p, play, len, variant, SRF),
+        Parts::Bowed(p) => bowed::note(p, play, len, variant, SRF),
     }
 }

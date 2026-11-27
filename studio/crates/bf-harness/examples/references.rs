@@ -708,7 +708,6 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
     match fighter {
         "TUBA" | "SOUSAPHONE" | "EUPHONIUM" => &["trombone", "bari sax", "bassoon", "french horn"],
         "TROMBONE" => &["tuba", "bari sax", "french horn", "tenor sax"],
-        "OCTOBASS" | "CONTRABASS" => &["cello", "finger bass", "tuba"],
         "TIMPANI" => &["marimba", "finger bass", "tuba"],
         "PICCOLO" => &["flute", "oboe", "clarinet"],
         "FLUTE" => &["piccolo", "oboe", "clarinet", "soprano sax"],
@@ -720,9 +719,6 @@ fn rivals(fighter: &str) -> &'static [&'static str] {
         "CORNET" | "FLUGELHORN" => &["french horn", "trombone", "alto sax"],
         "HORN" => &["trombone", "trumpet", "alto sax", "bassoon"],
         "MELLOPHONE" => &["trumpet", "trombone", "alto sax"],
-        "VIOLIN" => &["viola", "cello", "french horn", "trumpet"],
-        "VIOLA" => &["violin", "cello", "french horn", "english horn"],
-        "CELLO" => &["viola", "contrabass", "french horn", "bassoon"],
         "BASSOON" | "CONTRABASSOON" => &["bari sax", "clarinet", "tuba", "french horn"],
         "ACCORDION" => &["church organ", "drawbar organ", "oboe", "bagpipe"],
         "MARIMBA" => &["piano", "harp", "timpani"],
