@@ -267,12 +267,14 @@ const PICK_WIDTH: f64 = 0.004;
 const NAIL_SHARE: f64 = 0.4;
 const THUMB_WIDTH: f64 = 0.03;
 const SLAP_WIDTH: f64 = 0.02;
-/// Where a slap, a pop and a tap meet the string, as parts of the sounding string from the bridge (a slap and a
-/// pop over the last frets, a tap right by the fret).
+/// Where a slap and a pop meet the string, as parts of the sounding string from the bridge (over the last frets).
 const SLAP_AT: f64 = 0.3;
 const POP_AT: f64 = 0.25;
-const TAP_AT: f64 = 0.08;
-/// How loud a tapped note is against a plucked one.
+/// A tap or a hammer-on: the fingertip's width and softness (Hz) as it lands on the fret, and how loud the note is
+/// against a plucked one. The string sounds from where it was plucked, so the note keeps the plucked note's shape,
+/// rounder and softer.
+const TAP_WIDTH: f64 = 0.03;
+const TAP_SOFT: f64 = 2000.0;
 const TAP_LEVEL: f64 = 0.7;
 /// What a harmonic leaves of the overtones it stops, and what a pinch harmonic leaves (the thumb touches only
 /// briefly).
@@ -410,9 +412,8 @@ fn hand(p: &PluckedParts, t: Technique) -> Hand {
             ..fingers
         },
         Technique::Tapped | Technique::Hammer => Hand {
-            width: SLAP_WIDTH,
-            struck: true,
-            at: Some(TAP_AT),
+            width: TAP_WIDTH,
+            soft: Some(TAP_SOFT),
             knock: Some((0.5, 1500.0)),
             level: TAP_LEVEL,
             ..fingers
@@ -916,6 +917,27 @@ mod tests {
             1.0,
         );
         assert_eq!(plain, picked);
+    }
+
+    #[test]
+    fn a_tap_or_a_hammer_on_is_softer_and_rounder_than_a_pluck() {
+        // the fretted instruments (a harp has no frets to tap)
+        for p in [PluckedParts::A6, PluckedParts::E2, PluckedParts::B3, PluckedParts::U6] {
+            let plain = sound(&p, &Play::plain(57.0, 1.0, 0.7), 1.0);
+            for t in [Technique::Tapped, Technique::Hammer] {
+                let x = sound(
+                    &p,
+                    &Play {
+                        technique: t,
+                        ..Play::plain(57.0, 1.0, 0.7)
+                    },
+                    1.0,
+                );
+                let b = |x: &[f64]| bright(x, 0.0, 0.3, 2500.0);
+                assert!(b(&x) < b(&plain) - 1.0, "{t:?}: {} against {}", b(&x), b(&plain));
+                assert!(db(&x, 0.0, 0.3) < db(&plain, 0.0, 0.3), "{t:?}");
+            }
+        }
     }
 
     #[test]
