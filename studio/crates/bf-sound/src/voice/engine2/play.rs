@@ -47,8 +47,11 @@ pub struct Play {
     /// The same pitch higher up a lower string is rounder.
     pub string: Option<u8>,
     /// A volume pedal over the note, 0 (shut) to 1 (open), with no new start: an organ's swell box, quieter and
-    /// darker shut.
+    /// darker shut; on a bowed string, the bow's speed and weight over the note.
     pub expression: Option<Swell>,
+    /// The next note is slurred on from this one: the bow keeps moving (a wind's breath keeps flowing) and the note
+    /// hands over to the next instead of stopping (which comes with `slur_from` set to this note's pitch).
+    pub tie: bool,
 }
 
 /// A piano's three pedals.
@@ -110,6 +113,24 @@ pub enum Technique {
     Hammer,
     /// A pinch harmonic: the pick and the thumb's edge together, so a high overtone squeals out (an electric's).
     PinchHarmonic,
+    /// Bowed (arco), whatever the note's length: a contrabass's plain short notes are plucked otherwise.
+    Arco,
+    /// Pizzicato: a bowed string plucked by the finger.
+    Pizzicato,
+    /// A snap pizzicato (Bartók's): the string pulled up and let slap back onto the fingerboard.
+    SnapPizz,
+    /// A left-hand pizzicato: plucked by a finger of the hand that stops the strings, lighter and thinner.
+    LeftHandPizz,
+    /// Spiccato: the bow dropped onto the string and bouncing off, a short, light, bouncing note.
+    Spiccato,
+    /// Martelé: a bitten start, the bow stopped on the string before the next note.
+    Martele,
+    /// Tremolo: the bow moved back and forth as fast as it goes, all through the note.
+    Tremolo,
+    /// Col legno battuto: the string struck with the bow's wooden stick, a dry click with a short pitch.
+    ColLegno,
+    /// Col legno tratto: the stick drawn across the string, a thin, whispering tone.
+    ColLegnoTratto,
 }
 
 /// An organ's registration: which stops sound, as bits of [`Stops::MANUAL`] and [`Stops::PEDAL`], and its octave
@@ -254,7 +275,7 @@ pub struct Vibrato {
 pub enum Mute {
     /// Played open.
     Open,
-    /// With a mute (brass) or damped by hand (strings).
+    /// With a mute (brass, a bowed string's con sordino on its bridge) or damped by hand (plucked strings).
     Muted,
     /// Stopped dead at the key's release (a cymbal grabbed, a string choked).
     Choked,
@@ -283,6 +304,7 @@ impl Play {
             expression: None,
             position: None,
             string: None,
+            tie: false,
         }
     }
 
@@ -326,6 +348,15 @@ impl Play {
             Technique::Tapped => 9,
             Technique::Hammer => 10,
             Technique::PinchHarmonic => 11,
+            Technique::Arco => 12,
+            Technique::Pizzicato => 13,
+            Technique::SnapPizz => 14,
+            Technique::LeftHandPizz => 15,
+            Technique::Spiccato => 16,
+            Technique::Martele => 17,
+            Technique::Tremolo => 18,
+            Technique::ColLegno => 19,
+            Technique::ColLegnoTratto => 20,
         });
         match self.stops {
             Some(s) => k.extend([
@@ -349,6 +380,7 @@ impl Play {
             Some(x) => k.extend([1, u64::from(x)]),
             None => k.push(0),
         }
+        k.push(u64::from(self.tie));
         k
     }
 }
@@ -458,6 +490,27 @@ mod tests {
             },
             Play {
                 string: Some(2),
+                ..a.clone()
+            },
+            Play { tie: true, ..a.clone() },
+            Play {
+                technique: Technique::Arco,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Pizzicato,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Spiccato,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Tremolo,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::ColLegnoTratto,
                 ..a.clone()
             },
         ] {

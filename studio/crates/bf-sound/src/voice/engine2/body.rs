@@ -1,7 +1,7 @@
-//! A plucked string instrument's body: what turns the strings' push on the bridge into sound (`docs/studio/voice-
-//! engine-2-instruments.md`, "Acoustic guitar", "Ukulele", "Harp"). A guitar's or a ukulele's box and a harp's
-//! soundboard each have a few strong low resonances (the air in the box, the top's first ways of bending) and many
-//! small ones above; the force goes straight out a little too. The sum is then shaped so its average response (over
+//! A string instrument's body: what turns the strings' push on the bridge into sound (`docs/studio/voice-engine-2-
+//! instruments.md`, "Acoustic guitar", "Ukulele", "Harp", and the bowed strings). A guitar's or a ukulele's box, a
+//! harp's soundboard and a violin's body each have a few strong low resonances (the air in the box, the top's first
+//! ways of bending) and many small ones above; the force goes straight out a little too. The sum is then shaped so its average response (over
 //! thirds of an octave) follows a target, keeping its own peaks and dips inside each third: the body's character
 //! from its resonances, its overall tone from the listening rounds (the sketch `pl.py`, `body_ir` and `fit`).
 //!
@@ -83,6 +83,57 @@ const PEDAL_HARP_MODES: [(f64, f64, f64); 8] = [
     (720.0, 30.0, 0.45),
 ];
 
+/// A violin's: the air (A0), the body bending (CBR), the two "signature" modes B1- and B1+, then a few more.
+const VIOLIN_MODES: [(f64, f64, f64); 7] = [
+    (275.0, 15.0, 0.8),
+    (410.0, 30.0, 0.35),
+    (470.0, 25.0, 1.0),
+    (540.0, 25.0, 1.0),
+    (650.0, 30.0, 0.5),
+    (760.0, 30.0, 0.45),
+    (900.0, 32.0, 0.4),
+];
+/// A large viola's: a standard viola's moved down by 0.92, filling in its low C.
+const VIOLA_BIG_MODES: [(f64, f64, f64); 7] = [
+    (211.6, 14.0, 0.8),
+    (312.8, 30.0, 0.35),
+    (363.4, 25.0, 1.0),
+    (414.0, 25.0, 1.0),
+    (515.2, 30.0, 0.5),
+    (598.0, 30.0, 0.45),
+    (717.6, 32.0, 0.4),
+];
+/// A cello's.
+const CELLO_MODES: [(f64, f64, f64); 7] = [
+    (100.0, 12.0, 0.8),
+    (145.0, 22.0, 1.0),
+    (195.0, 22.0, 1.0),
+    (225.0, 25.0, 0.6),
+    (290.0, 28.0, 0.5),
+    (360.0, 30.0, 0.45),
+    (440.0, 30.0, 0.4),
+];
+/// A double bass's.
+const CONTRABASS_MODES: [(f64, f64, f64); 7] = [
+    (60.0, 10.0, 0.9),
+    (98.0, 20.0, 1.0),
+    (122.0, 20.0, 0.9),
+    (145.0, 22.0, 0.6),
+    (180.0, 25.0, 0.5),
+    (230.0, 28.0, 0.45),
+    (290.0, 30.0, 0.4),
+];
+/// An octobass's: the double bass's scaled to a body twice its size.
+const OCTOBASS_MODES: [(f64, f64, f64); 7] = [
+    (42.0, 9.0, 0.9),
+    (65.0, 18.0, 1.0),
+    (82.0, 20.0, 0.9),
+    (98.0, 22.0, 0.6),
+    (122.0, 25.0, 0.5),
+    (155.0, 28.0, 0.45),
+    (200.0, 30.0, 0.4),
+];
+
 /// The bodies Aedan picked in the listening rounds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BodyKind {
@@ -92,10 +143,22 @@ pub enum BodyKind {
     Soprano,
     /// A concert pedal harp: a soft top end (H3).
     PedalHarp,
+    /// A violin, its top end softened: the warm violin (Vn3).
+    ViolinWarm,
+    /// A large viola, warmer: the big viola (Va3).
+    ViolaBig,
+    /// A concert cello (Vc1).
+    Cello,
+    /// An orchestral double bass (Cb1).
+    Contrabass,
+    /// An octobass with more low middle, which carries on small speakers (Oc2).
+    OctobassGrowl,
 }
 
 impl BodyKind {
-    /// Its make-up (the sketch's `dread_b`, `soprano_b` and `pedalharp`).
+    /// Its make-up (the sketches' `dread_b`, `soprano_b` and `pedalharp`; `bowed.py`'s bodies with round 1's
+    /// variants: `violin_warm`, `viola_big`, `cello`, `bass`, `octo_growl`, their targets fitted to the CC0 VSCO 2
+    /// strings).
     pub fn body(self) -> Body {
         match self {
             BodyKind::Dreadnought => Body {
@@ -145,6 +208,96 @@ impl BodyKind {
                     gain: 0.8,
                 },
                 target: [-18.0, -13.0, -9.0, -5.0, -2.0, 0.0, 0.0, -1.0, -4.0, -9.0, -15.0, -24.0],
+            },
+            BodyKind::ViolinWarm => Body {
+                length: 0.35,
+                direct: 0.25,
+                low: 1.0,
+                hp: 180.0,
+                floor_y: 0.02,
+                modes: &VIOLIN_MODES,
+                dense: Dense {
+                    lo: 600.0,
+                    hi: 14_000.0,
+                    count: 1200,
+                    q: 30.0,
+                    gain: 0.8,
+                },
+                target: [
+                    -50.0, -43.0, -31.0, -22.0, -18.0, -15.0, -12.0, -9.0, -8.0, -9.0, -14.0, -24.0,
+                ],
+            },
+            BodyKind::ViolaBig => Body {
+                length: 0.38,
+                direct: 0.25,
+                low: 1.0,
+                hp: 120.0,
+                floor_y: 0.02,
+                modes: &VIOLA_BIG_MODES,
+                dense: Dense {
+                    lo: 460.0,
+                    hi: 13_000.0,
+                    count: 1200,
+                    q: 30.0,
+                    gain: 0.8,
+                },
+                target: [
+                    -40.0, -30.0, -17.0, -8.0, -6.0, -5.0, -5.0, -6.0, -7.0, -12.0, -18.0, -28.0,
+                ],
+            },
+            BodyKind::Cello => Body {
+                length: 0.45,
+                direct: 0.25,
+                low: 1.0,
+                hp: 55.0,
+                floor_y: 0.02,
+                modes: &CELLO_MODES,
+                dense: Dense {
+                    lo: 250.0,
+                    hi: 12_000.0,
+                    count: 1300,
+                    q: 30.0,
+                    gain: 0.8,
+                },
+                target: [
+                    -14.0, -5.0, -2.0, -5.0, -6.0, -5.0, -5.0, -5.0, -6.0, -9.0, -14.0, -20.0,
+                ],
+            },
+            BodyKind::Contrabass => Body {
+                length: 0.5,
+                direct: 0.2,
+                low: 1.0,
+                hp: 32.0,
+                floor_y: 0.02,
+                modes: &CONTRABASS_MODES,
+                dense: Dense {
+                    lo: 150.0,
+                    hi: 10_000.0,
+                    count: 1300,
+                    q: 30.0,
+                    gain: 0.8,
+                },
+                target: [
+                    -8.0, 0.0, -6.0, -8.0, -6.0, -5.0, -6.0, -8.0, -12.0, -20.0, -27.0, -33.0,
+                ],
+            },
+            BodyKind::OctobassGrowl => Body {
+                length: 0.6,
+                direct: 0.2,
+                low: 1.0,
+                hp: 22.0,
+                floor_y: 0.02,
+                modes: &OCTOBASS_MODES,
+                dense: Dense {
+                    lo: 100.0,
+                    hi: 9000.0,
+                    count: 1300,
+                    q: 30.0,
+                    gain: 0.8,
+                },
+                target: [
+                    0.0, -3.0, -8.0, -10.0, -9.0, -8.0, -10.0, -14.0, -22.0, -30.0, -36.0, -42.0,
+                ],
             },
         }
     }
@@ -403,7 +556,16 @@ mod tests {
 
     #[test]
     fn each_body_follows_its_target_and_is_made_once() {
-        for kind in [BodyKind::Dreadnought, BodyKind::Soprano, BodyKind::PedalHarp] {
+        for kind in [
+            BodyKind::Dreadnought,
+            BodyKind::Soprano,
+            BodyKind::PedalHarp,
+            BodyKind::ViolinWarm,
+            BodyKind::ViolaBig,
+            BodyKind::Cello,
+            BodyKind::Contrabass,
+            BodyKind::OctobassGrowl,
+        ] {
             let b = kind.body();
             let r = response(kind, SRF);
             assert!(Arc::ptr_eq(&r, &response(kind, SRF)), "{kind:?} made twice");

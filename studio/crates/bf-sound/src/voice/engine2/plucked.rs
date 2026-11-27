@@ -377,7 +377,18 @@ fn hand(p: &PluckedParts, t: Technique) -> Hand {
     match t {
         Technique::Picked | Technique::PinchHarmonic => pick,
         Technique::Fingers | Technique::Plucked => fingers,
-        Technique::Normal | Technique::Harmonic(_) => {
+        // a bowed string's ways are the plucked string's own
+        Technique::Normal
+        | Technique::Harmonic(_)
+        | Technique::Arco
+        | Technique::Pizzicato
+        | Technique::SnapPizz
+        | Technique::LeftHandPizz
+        | Technique::Spiccato
+        | Technique::Martele
+        | Technique::Tremolo
+        | Technique::ColLegno
+        | Technique::ColLegnoTratto => {
             if p.picked {
                 pick
             } else {
