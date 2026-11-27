@@ -22,12 +22,17 @@ pub struct Play {
     /// pull-off. A bend adds to it: a bend let down is the bent pitch as both the note and `slur_from`, with a bend
     /// down from it.
     pub slur_from: Option<f64>,
-    /// A slide of the pitch: a bend, a fall, a scoop.
+    /// A slide of the pitch: a bend, a fall (down), a doit (up). With `slur_from` and 0 cents, a slur that glides
+    /// over the bend's `over` (a portamento, a wind's smear, a trombone's slide).
     pub bend: Option<Bend>,
-    /// A swell of the strength over the note: an organ's stops coming in, a wind's crescendo.
+    /// A scoop into the note: it starts the bend's `cents` off its pitch (under it when negative), stays there `at`
+    /// seconds and reaches its pitch over `over` (a wind, a voice; a bend after it is a fall or a doit).
+    pub scoop: Option<Bend>,
+    /// A swell of the strength over the note: an organ's stops coming in, a wind's crescendo (a sforzando: an accent
+    /// with a swell from 1 down).
     pub swell: Option<Swell>,
-    /// A vibrato. On a bowed string, none asked is the player's own (it comes in after the start) and one of 0 cents
-    /// none at all.
+    /// A vibrato. On a bowed string or a wind, none asked is the player's own (it comes in after the start, if the
+    /// instrument's players use one) and one of 0 cents none at all.
     pub vibrato: Option<Vibrato>,
     /// The pedals a piano (or a vibraphone) has.
     pub pedals: Pedals,
@@ -39,6 +44,8 @@ pub struct Play {
     pub technique: Technique,
     /// An organ's registration: which stops sound (none asked: the instrument's own, the organ's grand chorus).
     pub stops: Option<Stops>,
+    /// An accordion's register: which banks of reeds sound (none asked: the instrument's own).
+    pub register: Option<Register>,
     /// Where along a plucked string it is plucked, as a fraction of the sounding string from the bridge (0.5 the
     /// middle): near the bridge is bright and thin (sul ponticello, a harp's près de la table), over the neck round
     /// and soft (sul tasto). None: where the player usually plucks. On a bowed string, where the bow sits, from the
@@ -47,10 +54,13 @@ pub struct Play {
     /// Which string a fretted note is played on, counted as a player numbers them from the chin down, from 0 (a
     /// guitar's low E, a ukulele's high G); none, or a string tuned over the note: the lowest position that has it.
     /// The same pitch higher up a lower string is rounder. On a bowed string counted from the lowest (0 the violin's
-    /// G, the cello's C); none, or a string tuned over the note: the highest string that has it.
+    /// G, the cello's C); none, or a string tuned over the note: the highest string that has it. On brass, the
+    /// fingering: how many semitones the valves (or the trombone's slide, 0 its first position) lower the horn, plus
+    /// 100 for a double horn's other side; none, or one that cannot reach the note: the player's usual fingering.
     pub string: Option<u8>,
     /// A volume pedal over the note, 0 (shut) to 1 (open), with no new start: an organ's swell box, quieter and
-    /// darker shut; on a bowed string, the bow's speed and weight over the note.
+    /// darker shut; on a bowed string, the bow's speed and weight over the note; on brass with
+    /// [`Mute::Plunger`], how far the plunger is off the bell (none: closed).
     pub expression: Option<Swell>,
     /// The next note is slurred on from this one: the bow keeps moving (a wind's breath keeps flowing) and the note
     /// hands over to the next instead of stopping (which comes with `slur_from` set to this note's pitch).
@@ -93,7 +103,9 @@ pub enum Technique {
     /// the fingers).
     Normal,
     /// A harmonic: the string touched at 1/n of its length (2 to 6) as it is played, so only every n-th overtone
-    /// rings on (2 sounds an octave up, 3 an octave and a fifth).
+    /// rings on (2 sounds an octave up, 3 an octave and a fifth). On a wind, the note played on the n-th resonance of
+    /// its tube (from 1): a flute's harmonic (a lower note's fingering overblown, hollow), a reed's register (a
+    /// clarinet's 1 chalumeau, 3 clarion, 5 altissimo), a brass player's natural note n (with `string` its valves).
     Harmonic(u8),
     /// Plucked: a piano's string pulled aside by a finger inside the piano and let go.
     Plucked,
@@ -105,7 +117,8 @@ pub enum Technique {
     Nails,
     /// A plucked string played with the side of the thumb: deep and soft.
     Thumb,
-    /// A bass string struck by the thumb against the last frets: a bright knock with the frets' buzz.
+    /// A bass string struck by the thumb against the last frets: a bright knock with the frets' buzz. On a reed, a
+    /// slap tongue: the tongue pulls the reed onto the mouthpiece and lets go with a pop.
     Slap,
     /// A bass string pulled up and let snap against the frets: a sharp, metallic crack.
     Pop,
@@ -128,12 +141,42 @@ pub enum Technique {
     Spiccato,
     /// Martelé: a bitten start, the bow stopped on the string before the next note.
     Martele,
-    /// Tremolo: the bow moved back and forth as fast as it goes, all through the note.
+    /// Tremolo: the bow moved back and forth as fast as it goes, all through the note. On an accordion, the
+    /// bellows shake: the bellows pushed and pulled in quick turns.
     Tremolo,
     /// Col legno battuto: the string struck with the bow's wooden stick, a dry click with a short pitch.
     ColLegno,
     /// Col legno tratto: the stick drawn across the string, a thin, whispering tone.
     ColLegnoTratto,
+    /// A wind's note started by the breath alone, with no tongue: a soft, breathy start (a flute's "hoo").
+    Breath,
+    /// A wind's note started by the back of the tongue, the "k" of double and triple tonguing ("tu-ku", "tu-tu-ku"):
+    /// a little softer than the tip's "t".
+    BackTongue,
+    /// A soft legato tongue ("d"): the breath keeps flowing and the tongue just touches the reed or the lips.
+    SoftTongue,
+    /// Flutter tongue: the tongue rolling an "r" through the note, a fast buzzing flutter.
+    Flutter,
+    /// A growl: the player hums or growls in the throat while playing, a rough buzz on the tone.
+    Growl,
+    /// A saxophone's subtone: the lip damps the reed, a soft, breathy, dark tone (in the low notes most of all).
+    Subtone,
+    /// An air tone: breath through the instrument with the reed (the lips, the jet) hardly sounding, a pitched
+    /// rushing air.
+    AirTone,
+    /// Key clicks: the keys (pads) slapped shut with no breath, a small pitched pop of the tube.
+    KeyClick,
+    /// A brass lip shake: the note shaken fast to the natural note above and back.
+    Shake,
+    /// Half valve: a valve pressed half way down, a choked, nasal, wobbly tone.
+    HalfValve,
+    /// A flute's whistle tone: hardly any breath over the hole, a very soft, pure, high whistle.
+    WhistleTone,
+    /// A flute's jet whistle: a hard burst of breath straight into the hole, a rushing sweep.
+    JetWhistle,
+    /// Sung while played: the player hums a note this many semitones from the played one into the instrument (a
+    /// flute's "singing": the voice and the tone beat against each other).
+    Sung(i8),
 }
 
 /// An organ's registration: which stops sound, as bits of [`Stops::MANUAL`] and [`Stops::PEDAL`], and its octave
@@ -278,12 +321,52 @@ pub struct Vibrato {
 pub enum Mute {
     /// Played open.
     Open,
-    /// With a mute (brass, a bowed string's con sordino on its bridge) or damped by hand (plucked strings).
+    /// With a mute (brass: its straight mute; a bowed string's con sordino on its bridge) or damped by hand (plucked
+    /// strings).
     Muted,
-    /// Stopped dead at the key's release (a cymbal grabbed, a string choked).
+    /// Stopped dead at the key's release (a cymbal grabbed, a string choked; a wind's tongue stopping the note).
     Choked,
     /// Cut short, as short as the instrument allows.
     Clipped,
+    /// Brass, a straight mute: a cone in the bell, bright, nasal and buzzy.
+    Straight,
+    /// Brass, a cup mute: the cone with a cup over the bell's mouth, round and muffled.
+    Cup,
+    /// Brass, a harmon mute with its stem out: thin, buzzy and close (the jazz trumpet's ballad sound).
+    Harmon,
+    /// Brass, a harmon mute with its stem in: a strong nasal ring, the "wah-wah" with a hand over the stem.
+    HarmonStem,
+    /// Brass, a plunger (a rubber cup) held over the bell, opened and closed by the hand as `expression` says: the
+    /// "wah-wah".
+    Plunger,
+    /// Brass, a practice mute: the bell almost shut, quiet and stuffy.
+    Practice,
+    /// A horn's stopped note: the hand closes the bell almost completely, a thin, brassy buzz.
+    Stopped,
+    /// A horn's brass stopping mute: the stopped buzz, a little brighter.
+    StopMute,
+}
+
+/// An accordion's register: which banks of reeds sound for a key (the switches over the keys, or the buttons of the
+/// bass side).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Register {
+    /// One reed at pitch ("clarinet").
+    One,
+    /// Two reeds at pitch, one a little sharp ("violin"), beating gently.
+    Two,
+    /// The musette: three reeds at pitch, one flat, one sharp, beating fast (the Paris café sound).
+    Musette,
+    /// The low reed alone, an octave under ("bassoon").
+    Low,
+    /// The low and the middle reeds, an octave apart ("bandoneon").
+    Octave,
+    /// The master: every bank, low, middle and high.
+    Master,
+    /// A bass button: the note with its octaves over.
+    Bass,
+    /// A chord button's reeds: the note and its octave over.
+    Chord,
 }
 
 impl Play {
@@ -297,6 +380,7 @@ impl Play {
             accent: 0.0,
             slur_from: None,
             bend: None,
+            scoop: None,
             swell: None,
             vibrato: None,
             pedals: Pedals::UP,
@@ -304,6 +388,7 @@ impl Play {
             together: 1,
             technique: Technique::Normal,
             stops: None,
+            register: None,
             expression: None,
             position: None,
             string: None,
@@ -320,6 +405,10 @@ impl Play {
             None => k.push(0),
         }
         match self.bend {
+            Some(x) => k.extend([1, b(x.cents), b(x.at), b(x.over)]),
+            None => k.push(0),
+        }
+        match self.scoop {
             Some(x) => k.extend([1, b(x.cents), b(x.at), b(x.over)]),
             None => k.push(0),
         }
@@ -360,6 +449,19 @@ impl Play {
             Technique::Tremolo => 18,
             Technique::ColLegno => 19,
             Technique::ColLegnoTratto => 20,
+            Technique::Breath => 21,
+            Technique::BackTongue => 22,
+            Technique::SoftTongue => 23,
+            Technique::Flutter => 24,
+            Technique::Growl => 25,
+            Technique::Subtone => 26,
+            Technique::AirTone => 27,
+            Technique::KeyClick => 28,
+            Technique::Shake => 29,
+            Technique::HalfValve => 30,
+            Technique::WhistleTone => 31,
+            Technique::JetWhistle => 32,
+            Technique::Sung(n) => 0x200 | u64::from(n as u8),
         });
         match self.stops {
             Some(s) => k.extend([
@@ -369,6 +471,10 @@ impl Play {
                 u64::from(s.sub),
                 u64::from(s.octave),
             ]),
+            None => k.push(0),
+        }
+        match self.register {
+            Some(r) => k.extend([1, r as u64]),
             None => k.push(0),
         }
         match self.expression {
@@ -514,6 +620,42 @@ mod tests {
             },
             Play {
                 technique: Technique::ColLegnoTratto,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Flutter,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Sung(-12),
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Sung(-7),
+                ..a.clone()
+            },
+            Play {
+                mute: Mute::Plunger,
+                ..a.clone()
+            },
+            Play {
+                mute: Mute::Stopped,
+                ..a.clone()
+            },
+            Play {
+                scoop: Some(Bend {
+                    cents: -100.0,
+                    at: 0.0,
+                    over: 0.1,
+                }),
+                ..a.clone()
+            },
+            Play {
+                register: Some(Register::Musette),
+                ..a.clone()
+            },
+            Play {
+                register: Some(Register::One),
                 ..a.clone()
             },
         ] {

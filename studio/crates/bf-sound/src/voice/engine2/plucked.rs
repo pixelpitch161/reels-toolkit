@@ -377,7 +377,7 @@ fn hand(p: &PluckedParts, t: Technique) -> Hand {
     match t {
         Technique::Picked | Technique::PinchHarmonic => pick,
         Technique::Fingers | Technique::Plucked => fingers,
-        // a bowed string's ways are the plucked string's own
+        // a bowed string's ways (and a wind's) are the plucked string's own
         Technique::Normal
         | Technique::Harmonic(_)
         | Technique::Arco
@@ -388,7 +388,20 @@ fn hand(p: &PluckedParts, t: Technique) -> Hand {
         | Technique::Martele
         | Technique::Tremolo
         | Technique::ColLegno
-        | Technique::ColLegnoTratto => {
+        | Technique::ColLegnoTratto
+        | Technique::Breath
+        | Technique::BackTongue
+        | Technique::SoftTongue
+        | Technique::Flutter
+        | Technique::Growl
+        | Technique::Subtone
+        | Technique::AirTone
+        | Technique::KeyClick
+        | Technique::Shake
+        | Technique::HalfValve
+        | Technique::WhistleTone
+        | Technique::JetWhistle
+        | Technique::Sung(_) => {
             if p.picked {
                 pick
             } else {
@@ -579,7 +592,8 @@ impl Setup {
                     sig_h[i] = sig_v[i];
                 }
             }
-            Mute::Open | Mute::Clipped => {}
+            // open, clipped (its length is cut above), or a wind's mute, nothing to a string
+            _ => {}
         }
         let damp = f.iter().map(|fk| p.damp * (1.0 + fk / 1500.0)).collect();
         let slur = play.slur_from.is_some_and(f64::is_finite);

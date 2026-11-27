@@ -370,7 +370,21 @@ enum Way {
 /// How `play` is played on `p`.
 fn way(p: &BowedParts, play: &Play) -> Way {
     match play.technique {
-        Technique::Normal => {
+        // the winds' ways are nothing to a string: played as usual
+        Technique::Normal
+        | Technique::Breath
+        | Technique::BackTongue
+        | Technique::SoftTongue
+        | Technique::Flutter
+        | Technique::Growl
+        | Technique::Subtone
+        | Technique::AirTone
+        | Technique::KeyClick
+        | Technique::Shake
+        | Technique::HalfValve
+        | Technique::WhistleTone
+        | Technique::JetWhistle
+        | Technique::Sung(_) => {
             if p.bass && play.dur < SHORT && !play.tie && play.slur_from.is_none() {
                 Way::Plucked(Pluck::Finger)
             } else {

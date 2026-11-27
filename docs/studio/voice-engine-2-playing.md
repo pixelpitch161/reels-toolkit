@@ -11,8 +11,8 @@ chords) is the composition system's, made of single notes. An instrument takes w
 piano has no vibrato, an organ no accent by touch. Since stage 1b the piano is the struck-string engine (Aedan's pick
 P16) and the organ the pipe engine (O8); since stage 2 the acoustic guitar, electric guitar, bass guitar, ukulele and
 harp are the plucked-string engine (A6, E2, B3, U6, H3); since stage 3 the violin, viola, cello, contrabass and
-octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2). Later stages add each family's own (a wind's slur and
-vibrato, a brass's mute and fall).
+octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2). The winds (reeds, brass and flutes) share one set of
+ways to play (below, "The winds' ways"); each wind family's table comes with its engine.
 
 The engines work one note at a time at any sample rate, so the same notes could later be played by a plugin.
 
@@ -25,7 +25,8 @@ The engines work one note at a time at any sample rate, so the same notes could 
 | `vel` | How hard, 0 to 1. | strength: the hammer's speed, harder is louder and brighter | how loud only (a pipe sounds the same however the key goes down) |
 | `accent` | An accent on top of `vel`, 0 to 1. | a harder strike (up to 0.12 more strength) | the pipes speak quicker, with more of their start's chiff |
 | `slur_from` | Join this note to the one before without a new start. | no (a piano always strikes) | no |
-| `bend` | Slide the pitch: a bend, a fall, a scoop. | no | no |
+| `bend` | Slide the pitch: a bend, a fall, a doit. | no | no |
+| `scoop` | Start the note off its pitch and slide onto it. | no | no |
 | `swell` | A change over the note's start, from one value to another (0 to 1). | no | the crescendo: the stops come in, in the order a builder adds them, from the softest towards the full set |
 | `vibrato` | A wobble, so many cents, so many times a second. | no | the tremulant: the wind shakes the level and a hair of the pitch (0.25 dB and 0.4 cents for every cent asked) |
 | `pedals` | The piano's three pedals (below). | yes | no |
@@ -33,6 +34,7 @@ The engines work one note at a time at any sample rate, so the same notes could 
 | `together` | How many notes start at once, this one included. | no | a chord of 3 or more sags a hair in pitch, as the wind does under a big chord |
 | `technique` | `Normal`, `Harmonic(n)`, `Plucked`. | `Harmonic(n)`: the string touched at 1/n as it is struck (2 sounds an octave up); `Plucked`: the string pulled by a finger inside the piano | no |
 | `stops` | The organ's registration (below). | no | yes; none asked is the grand chorus Aedan picked |
+| `register` | An accordion's register: which banks of reeds sound. | no | no |
 | `expression` | A volume pedal over the note, 0 shut to 1 open, with no new start. | no | the swell box: shut is 24 dB quieter and much darker |
 | `position` | Where a plucked string is plucked, as a part of the string from the bridge (0.5 the middle). | no | no |
 | `string` | Which string a fretted note is played on, from 0 (a guitar's low E, a ukulele's high G). | no | no |
@@ -147,6 +149,45 @@ length.
 Double stops and chords are several notes at once (one `Play` each). Trills, runs, glissandos of notes, sautillé and
 ricochet runs are the composition system's, made of single notes; a note's repeats already take turns among three
 slightly different bows.
+
+## The winds' ways
+
+The reeds (saxophones, clarinets, oboe, bassoon, contrabassoon, bagpipe, accordion), the brass (trumpet, cornet,
+flugelhorn, horn, mellophone, trombone, euphonium, tuba, sousaphone) and the flutes (flute, piccolo) are asked with the
+same fields. A wind takes the ones its players have and leaves the rest (a flute has no mute, a trumpet no subtone).
+
+| Technique | Ask for it with |
+|---|---|
+| Tongued start ("t"), the plain note | `technique = Normal` |
+| Double and triple tonguing | the "k" notes `technique = BackTongue` ("tu-ku", "tu-tu-ku" are notes in a row) |
+| Soft legato tongue ("d") | `technique = SoftTongue` |
+| Breath start, no tongue | `technique = Breath` |
+| Slur, lip slur | `slur_from`, with `tie` on the note before |
+| Smear, glissando, a trombone's slide | `slur_from` with a `bend` of 0 cents: the glide over the bend's `over` |
+| Accent, sforzando | `accent`; a sforzando is an accent with a `swell` from 1 down |
+| Crescendo, diminuendo | `swell` |
+| Vibrato | `vibrato`; none is the player's own, 0 cents none at all |
+| Scoop | `scoop`: starts so many cents off, stays `at`, reaches the note over `over` |
+| Fall, doit, bend | `bend` (down a fall, up a doit) |
+| Tongue stop | `mute = Choked` |
+| Flutter tongue, growl | `technique = Flutter`, `Growl` |
+| Slap tongue (reeds) | `technique = Slap` |
+| Subtone (saxophones) | `technique = Subtone` |
+| Air tone | `technique = AirTone` |
+| Key clicks | `technique = KeyClick` |
+| Register, harmonic, natural note | `technique = Harmonic(n)`: the n-th resonance of the tube (a clarinet's 1, 3, 5; a flute's harmonic; a brass natural note) |
+| Lip shake (brass) | `technique = Shake` |
+| Half valve (brass) | `technique = HalfValve` |
+| Fingering (brass) | `string`: how many semitones the valves or the slide lower the horn (0 open, the trombone's first position), plus 100 for a double horn's other side |
+| Mutes (brass) | `mute = Muted` (the straight mute), `Straight`, `Cup`, `Harmon` (stem out), `HarmonStem` (stem in), `Plunger` (its opening over the note is `expression`, none closed), `Practice` |
+| Stopped horn | `mute = Stopped` (the hand), `StopMute` (the brass stopping mute) |
+| Whistle tone, jet whistle (flutes) | `technique = WhistleTone`, `JetWhistle` |
+| Singing while playing (flutes) | `technique = Sung(n)`: a hummed note n semitones from the played one |
+| Accordion register | `register`: `One`, `Two`, `Musette`, `Low`, `Octave` (bandoneon), `Master`, `Bass`, `Chord` |
+| Bellows shake (accordion) | `technique = Tremolo` |
+
+Trills, runs, repeated tonguing, a rip up the natural notes and multiphonics in a row are the composition system's,
+made of single notes.
 
 ## What today's parts pass by themselves
 
