@@ -282,14 +282,18 @@ can show at once; the 4 s gap between names counts per fighter).
 Voice Engine 2 is the Studio's own instrument synthesizer. Since stage 1b each instrument family has its **own built
 engine**, modelled from how the instrument physically works and judged by ear, with real recordings as the reference
 for facts (the owner's rule, 2026-11-26): the piano is the struck-string engine (`strings.rs` with `board.rs`, the
-owner's pick P16), the organ the pipe engine (`pipes.rs`, O8). Every instrument plays all its techniques (pedals,
-harmonics, stops, swell box...), and the engines run one note at a time at any sample rate (a plugin could use them
-later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
+owner's pick P16), the organ the pipe engine (`pipes.rs`, O8); since stage 2 the acoustic, electric, bass guitar,
+ukulele and harp play the plucked-string engine (`plucked.rs`, the picks A6, E2, B3, U6, H3), with a wooden body
+(`body.rs`) for the acoustic, the ukulele and the harp and an amp and cabinet (`amp.rs`, through the voice's
+`Space.amp`, playing on the fighter's whole bus in the Composed polish) for the electric and the bass. Every
+instrument plays all its techniques (pedals, harmonics, stops, swell box, picks, slaps, palm mutes, bends...), and
+the engines run one note at a time at any sample rate (a plugin could use them later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
 plays only under the Composed arrangement; Classic is untouched, byte for byte. The families follow one stage at a
 time, each with its own engine and voice lab, stopping at a listening page for the owner's review
 (`docs/studio/2026-11-26-voice-engine-2-design.md`, "Revision: built engines").
 
-- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `eq.rs`; `play.rs`
+- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `plucked.rs`,
+  `body.rs`, `amp.rs`, `eq.rs`; `play.rs`
   for how a note is played; `space.rs` for width and an instrument's own room; the kept recipe engine's format,
   player and parts); each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs` (`ENGINE2`, built with
   `Instrument::built`; `RECIPE` the kept recipe voice); parts ask for notes with `MusicCtx::note_played`. The built

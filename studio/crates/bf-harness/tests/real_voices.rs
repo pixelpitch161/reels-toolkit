@@ -292,20 +292,7 @@ fn the_bassoons_keys_and_bellows_are_their_own_not_each_other() {
 
 #[test]
 fn the_plucked_and_struck_are_their_own_not_each_other() {
-    reworked_nearer_its_own(
-        "ACOUSTIC",
-        "steel guitar",
-        &["nylon guitar", "clean guitar", "harp", "piano"],
-    );
-    reworked_nearer_its_own(
-        "ELECTRIC",
-        "overdriven guitar",
-        &["clean guitar", "steel guitar", "trumpet"],
-    );
-    reworked_nearer_its_own("BASS GUITAR", "finger bass", &["contrabass", "tuba", "cello"]);
-    // FluidR3 has no ukulele: it is aimed at the nylon-string guitar
-    reworked_nearer_its_own("UKULELE", "nylon guitar", &["steel guitar", "harp", "marimba"]);
-    reworked_nearer_its_own("HARP", "harp", &["piano", "nylon guitar", "marimba"]);
+    // ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE and HARP play on Voice Engine 2 under Composed: `engine2_built.rs`
     reworked_nearer_its_own("MARIMBA", "marimba", &["piano", "harp", "timpani"]);
 }
 

@@ -9,8 +9,9 @@ Every instrument can play every one of its techniques (Aedan, 2026-11-26): what 
 its `Play`; what is notes in a row (trills, runs, repeated notes, glissandos, clusters, a pedal changed between
 chords) is the composition system's, made of single notes. An instrument takes what it can do and ignores the rest: a
 piano has no vibrato, an organ no accent by touch. Since stage 1b the piano is the struck-string engine (Aedan's pick
-P16) and the organ the pipe engine (O8); later stages add each family's own (a wind's slur and vibrato, a string's
-bow, a brass's mute and fall).
+P16) and the organ the pipe engine (O8); since stage 2 the acoustic guitar, electric guitar, bass guitar, ukulele and
+harp are the plucked-string engine (A6, E2, B3, U6, H3). Later stages add each family's own (a wind's slur and
+vibrato, a string's bow, a brass's mute and fall).
 
 The engines work one note at a time at any sample rate, so the same notes could later be played by a plugin.
 
@@ -32,6 +33,11 @@ The engines work one note at a time at any sample rate, so the same notes could 
 | `technique` | `Normal`, `Harmonic(n)`, `Plucked`. | `Harmonic(n)`: the string touched at 1/n as it is struck (2 sounds an octave up); `Plucked`: the string pulled by a finger inside the piano | no |
 | `stops` | The organ's registration (below). | no | yes; none asked is the grand chorus Aedan picked |
 | `expression` | A volume pedal over the note, 0 shut to 1 open, with no new start. | no | the swell box: shut is 24 dB quieter and much darker |
+| `position` | Where a plucked string is plucked, as a part of the string from the bridge (0.5 the middle). | no | no |
+| `string` | Which string a fretted note is played on, from 0 (a guitar's low E, a ukulele's high G). | no | no |
+
+The plucked strings take `midi`, `dur`, `vel`, `accent`, `slur_from`, `bend`, `vibrato`, `mute`, `technique`,
+`position` and `string` (below); the rest they leave aside.
 
 `Play::plain(midi, dur, vel)` is a note with none of the extras: open, on its own, no pedal, the organ's own stops.
 
@@ -73,6 +79,35 @@ Rohrflute 4', Quint 2 2/3', Superoctave 2', Mixture IV, Cymbal III, Trumpet 8', 
 Octavebass 8', Choralbass 4', Posaune 16'. Ready sets: `soft` (a stopped flute), `flutes`, `strings` (the celeste
 beating gently), `principal`, `chorus` (8' to the mixture), `grand` (the chorus with the 16' stops, O8 as picked),
 `full` (with the cymbal and the reeds), `trumpet` (a trumpet solo over a flute), `oboe`.
+
+## The plucked strings' techniques
+
+ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE and HARP. A plain note is the instrument's own way: the electric and the bass
+with a pick, the rest with the fingers.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | louder, and a touch brighter (the string leaves a harder pluck sooner) |
+| Accent | `accent` | a harder pluck on top of the strength |
+| Let ring, staccato | `dur` | the fretting finger lifts (or the hand damps) when the note is let go; a harp's strings ring on unless damped |
+| Fingers, pick, nails, thumb | `technique = Fingers`, `Picked`, `Nails`, `Thumb` | the flesh is round, a pick sharp and bright with a click, nails crisp, the thumb deep and soft |
+| Pluck point | `position` | near the bridge (0.05) thin and bright (sul ponticello, a harp's pres de la table); over the neck (0.4) round (sul tasto) |
+| Which string | `string` | the same note higher up a lower string: rounder |
+| Slap, pop | `technique = Slap`, `Pop` | the bass's thumb struck over the last frets, the finger snapping a string on the frets: a bright knock, a crack |
+| Tapping | `technique = Tapped` | a fingertip hammered onto the fret, no pluck: softer, rounder |
+| Hammer-on, pull-off | `technique = Hammer` with `slur_from` | no new pluck: the pitch changes at once, the string still ringing |
+| Slide | `slur_from` | no new pluck: the string slides from that pitch to this one over 60 ms |
+| Bend, scoop, fall | `bend` | the pitch pushed up (or down) by so many cents, starting at a moment, over a time; a bend let down is the bent pitch as both the note and `slur_from`, with a bend down from it |
+| Vibrato | `vibrato` | the fretting finger rocks the pitch, growing in over a quarter second |
+| Harmonic | `technique = Harmonic(n)` | the string touched at 1/n: only every n-th overtone rings (2 an octave up) |
+| Pinch harmonic | `technique = PinchHarmonic` | the pick and the thumb's edge together: a high overtone squeals out (with the electric's amp) |
+| Palm mute, etouffe | `mute = Muted` | the side of the hand on the strings by the bridge: short and dull (the chug); a harp's string damped by the palm |
+| Dead note, chunk | `mute = Choked` | the string muted by the fretting hand: a short, pitchless thud |
+| As short as it goes | `mute = Clipped` | let go at once |
+
+Strums, rolled chords, tremolo picking, trills, glissandos and a harp's bisbigliando are the composition system's,
+made of single notes (a strum is the chord's notes a few milliseconds apart, low to high going down). The electric's
+and the bass's amps play on the fighter's whole part, so a chord's notes distort together, as on a real amp.
 
 ## What today's parts pass by themselves
 

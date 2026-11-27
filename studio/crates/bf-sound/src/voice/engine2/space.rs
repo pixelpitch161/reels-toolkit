@@ -3,6 +3,7 @@
 
 use bf_core::rng::Generator;
 
+use super::amp::Amp;
 use crate::dsp::{self, FilterKind, butter_sos};
 use crate::polish::room;
 use crate::{SRF, heard};
@@ -16,6 +17,8 @@ pub struct Space {
     pub tilt: f64,
     /// Its own room, if it has one.
     pub home: Option<Home>,
+    /// The amp its whole sound plays through (an electric's, a bass's), if it has one.
+    pub amp: Option<Amp>,
 }
 
 /// A voice's own room: `length` seconds long, `under` LU under the dry sound, high-passed at `hp` Hz so it never

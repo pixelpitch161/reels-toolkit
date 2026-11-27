@@ -7,12 +7,15 @@
 //! - The riff's tune an octave up keeps its energy over 4 kHz low: the high notes Aedan heard as "very
 //!   synthesized" (P12) had 9.5 dB under the whole there, the real Steinway 32.6, P16 27.2.
 //! - The organ's riff keeps O8's balance as built (within 2 dB of each band).
-//! - Both voices' repeats differ, as a player's do.
+//! - ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE and HARP on the plucked-string engine (A6, E2, B3, U6, H3,
+//!   2026-11-27): each one's riff of the listening rounds (`tests/reference/plucked_riffs.txt`, written from the
+//!   sketch's own) keeps the sketch's octave bands within 2 dB, through its amp where it has one.
+//! - Every voice's repeats differ, as a player's do.
 
 use bf_sound::SRF;
 use bf_sound::dsp::fft::Fft;
-use bf_sound::voice::engine2::play::Play;
-use bf_sound::voice::engine2::{self, Instrument, Parts};
+use bf_sound::voice::engine2::play::{Bend, Mute, Play, Technique, Vibrato};
+use bf_sound::voice::engine2::{self, Instrument, Parts, amp};
 
 fn instrument(name: &str) -> &'static Instrument {
     bf_content::fighters::voice(name)
@@ -177,10 +180,21 @@ const REAL_HIGH: [f64; 8] = [-18.62, -8.73, -3.76, -1.90, -10.46, -15.22, -24.01
 const PIANO_MARGIN: f64 = 1.5;
 
 #[test]
-fn both_fighters_play_their_built_engines() {
+fn the_fighters_play_their_built_engines() {
     assert!(matches!(instrument("PIANO").parts, Parts::Strings(_)));
     assert!(matches!(instrument("ORGAN").parts, Parts::Pipes(_)));
-    assert!(!instrument("PIANO").parts.has_recipe() && !instrument("ORGAN").parts.has_recipe());
+    for (_, name, _) in PLUCKED {
+        assert!(matches!(instrument(name).parts, Parts::Plucked(_)), "{name}");
+    }
+    for name in ["PIANO", "ORGAN"].into_iter().chain(PLUCKED.map(|p| p.1)) {
+        assert!(!instrument(name).parts.has_recipe(), "{name}");
+    }
+    // the electric and the bass play through their amps, the rest through none
+    assert_eq!(instrument("ELECTRIC").space.amp, Some(amp::Amp::HIGH_GAIN));
+    assert_eq!(instrument("BASS GUITAR").space.amp, Some(amp::Amp::BASS_GRIT));
+    for name in ["ACOUSTIC", "UKULELE", "HARP", "PIANO", "ORGAN"] {
+        assert_eq!(instrument(name).space.amp, None, "{name}");
+    }
 }
 
 #[test]
@@ -225,9 +239,106 @@ fn the_organ_riff_keeps_o8s_balance() {
     }
 }
 
+/// The plucked riffs: the sketch's code, the fighter, and the sketch's own bands (its riff dry, mono; the acoustic's
+/// and the ukulele's two microphones' powers averaged) over [`ORGAN_EDGES`].
+const PLUCKED: [(&str, &str, [f64; 9]); 5] = [
+    ("A6", "ACOUSTIC", SKETCH[0]),
+    ("E2", "ELECTRIC", SKETCH[1]),
+    ("B3", "BASS GUITAR", SKETCH[2]),
+    ("U6", "UKULELE", SKETCH[3]),
+    ("H3", "HARP", SKETCH[4]),
+];
+#[rustfmt::skip]
+const SKETCH: [[f64; 9]; 5] = [
+    [-43.22, -8.63, -4.47, -6.99, -11.16, -9.00, -10.63, -17.91, -32.93],
+    [-35.26, -17.24, -10.98, -6.49, -6.37, -5.70, -7.83, -19.27, -42.94],
+    [-10.32, -3.50, -6.93, -9.85, -10.36, -12.96, -19.75, -33.13, -66.98],
+    [-94.38, -59.20, -27.83, -2.85, -4.92, -10.35, -12.15, -23.07, -44.99],
+    [-56.15, -26.02, -11.99, -5.47, -2.78, -9.47, -20.08, -48.81, -84.12],
+];
+/// A band this far under the whole is too quiet to hold to the sketch (a ukulele's lowest octaves).
+const QUIET: f64 = -45.0;
+const PLUCKED_MARGIN: f64 = 2.0;
+
+/// The riff `code` of `tests/reference/plucked_riffs.txt` on `inst`, mono and dry, each note as long as it rings, a
+/// pitch's repeats taking turns, through the instrument's amp if it has one. A line is the code, then the note's
+/// start, MIDI, held length, velocity, `pick` or `fingers`, `open`, `palm` or `dead`, a bend's cents, start and
+/// length, a vibrato's cents, rate and wait, and the pitch it slides from (`-` for none).
+fn plucked_riff(inst: &Instrument, code: &str) -> Vec<f64> {
+    let text = include_str!("reference/plucked_riffs.txt");
+    let mut out = vec![0.0; (20.0 * SRF) as usize];
+    let mut seen = std::collections::BTreeMap::new();
+    for line in text.lines().filter(|l| l.split_whitespace().next() == Some(code)) {
+        let w: Vec<&str> = line.split_whitespace().collect();
+        let num = |i: usize| -> Option<f64> { (w[i] != "-").then(|| w[i].parse().expect("a number")) };
+        let at = |i: usize| num(i).expect("a value");
+        let play = Play {
+            technique: if w[5] == "pick" {
+                Technique::Picked
+            } else {
+                Technique::Fingers
+            },
+            mute: match w[6] {
+                "palm" => Mute::Muted,
+                "dead" => Mute::Choked,
+                _ => Mute::Open,
+            },
+            bend: num(7).map(|cents| Bend {
+                cents,
+                at: at(8),
+                over: at(9),
+            }),
+            vibrato: num(10).map(|cents| Vibrato {
+                cents,
+                hz: at(11),
+                wait: at(12),
+            }),
+            slur_from: num(13),
+            ..Play::plain(at(2), at(3), at(4))
+        };
+        let turn = seen.entry(play.midi as i64).or_insert(0u64);
+        let x = engine2::play(inst, &play, 0.0, *turn % 3);
+        *turn += 1;
+        let s = (at(1) * SRF) as usize;
+        for (o, y) in out.iter_mut().skip(s).zip(&x) {
+            *o += y;
+        }
+    }
+    let end = out.iter().rposition(|v| v.abs() > 1e-9).map_or(0, |i| i + 1);
+    out.truncate(end);
+    match &inst.space.amp {
+        Some(a) => {
+            let both: Vec<[f64; 2]> = out.iter().map(|&v| [v, v]).collect();
+            amp::on_bus(&both, a, SRF).iter().map(|f| f[0]).collect()
+        }
+        None => out,
+    }
+}
+
+#[test]
+fn the_plucked_riffs_keep_the_sketches_balance() {
+    for (code, name, sketch) in PLUCKED {
+        let x = plucked_riff(instrument(name), code);
+        assert!(x.len() > (5.0 * SRF) as usize, "{name}");
+        let b = bands(&x, &ORGAN_EDGES);
+        for (i, v) in b.iter().enumerate() {
+            if sketch[i] < QUIET {
+                continue;
+            }
+            assert!(
+                (v - sketch[i]).abs() < PLUCKED_MARGIN,
+                "{name} ({code}), band {} to {} Hz: {v:.2} dB, the sketch {}",
+                ORGAN_EDGES[i],
+                ORGAN_EDGES[i + 1],
+                sketch[i]
+            );
+        }
+    }
+}
+
 #[test]
 fn repeats_differ_and_the_same_note_is_the_same() {
-    for name in ["PIANO", "ORGAN"] {
+    for name in ["PIANO", "ORGAN"].into_iter().chain(PLUCKED.map(|p| p.1)) {
         let inst = instrument(name);
         let note = |variant| engine2::play(inst, &Play::plain(62.0, 0.4, 0.7), 0.8, variant);
         assert_eq!(note(0), note(0), "{name}");

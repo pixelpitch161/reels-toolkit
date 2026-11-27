@@ -5,6 +5,8 @@
 //!
 //! - [`strings`] (with its soundboard, [`board`]): struck strings, the piano.
 //! - [`pipes`]: pipes, the organ.
+//! - [`plucked`] (with its bodies, [`body`], and the amps, [`amp`]): plucked strings, the guitars, the bass, the
+//!   ukulele and the harp.
 //!
 //! Stage 1 rebuilt notes from recordings instead (the recipe engine below); no fighter plays a recipe now, but the
 //! engine stays for a family that wants a measured part:
@@ -27,13 +29,16 @@
 
 use std::sync::OnceLock;
 
+pub mod amp;
 pub mod board;
+pub mod body;
 pub mod eq;
 pub mod organ;
 pub mod piano;
 pub mod pipes;
 pub mod play;
 pub mod player;
+pub mod plucked;
 pub mod recipe;
 pub mod space;
 pub mod strings;
@@ -42,6 +47,7 @@ use self::organ::OrganParts;
 use self::piano::PianoParts;
 use self::pipes::PipeParts;
 use self::play::Play;
+use self::plucked::PluckedParts;
 use self::recipe::RecipeSet;
 use self::space::Space;
 use self::strings::StringsParts;
@@ -58,6 +64,8 @@ pub enum Parts {
     Strings(StringsParts),
     /// The pipe engine.
     Pipes(PipeParts),
+    /// The plucked-string engine.
+    Plucked(PluckedParts),
 }
 
 impl Parts {
@@ -116,6 +124,7 @@ impl Instrument {
         match self.parts {
             Parts::Strings(p) => return strings::rings_for(&p, play, LONGEST),
             Parts::Pipes(p) => return pipes::rings_for(&p, play, LONGEST),
+            Parts::Plucked(p) => return plucked::rings_for(&p, play, LONGEST),
             _ => {}
         }
         let set = self.set();
@@ -142,5 +151,6 @@ pub fn play(i: &Instrument, play: &Play, cap: f64, variant: u64) -> Vec<f64> {
         Parts::Organ(p) => organ::note(i.set(), p, play, len, variant),
         Parts::Strings(p) => strings::note(p, play, len, variant, SRF),
         Parts::Pipes(p) => pipes::note(p, play, len, variant, SRF),
+        Parts::Plucked(p) => plucked::note(p, play, len, variant, SRF),
     }
 }

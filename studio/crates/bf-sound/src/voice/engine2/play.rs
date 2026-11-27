@@ -17,7 +17,10 @@ pub struct Play {
     /// An accent on top of `vel`, 0 (none) to 1 (as hard as it goes): a harder, noisier start.
     pub accent: f64,
     /// A slur from the note before, at this MIDI pitch: the note joins it without a new start, where the instrument
-    /// can (a wind, a bowed string).
+    /// can (a wind, a bowed string). On a plucked string the string keeps ringing without a new pluck and slides from
+    /// that pitch to this one over 60 ms, or with [`Technique::Hammer`] changes at once: a slide, a hammer-on, a
+    /// pull-off. A bend adds to it: a bend let down is the bent pitch as both the note and `slur_from`, with a bend
+    /// down from it.
     pub slur_from: Option<f64>,
     /// A slide of the pitch: a bend, a fall, a scoop.
     pub bend: Option<Bend>,
@@ -35,6 +38,14 @@ pub struct Play {
     pub technique: Technique,
     /// An organ's registration: which stops sound (none asked: the instrument's own, the organ's grand chorus).
     pub stops: Option<Stops>,
+    /// Where along a plucked string it is plucked, as a fraction of the sounding string from the bridge (0.5 the
+    /// middle): near the bridge is bright and thin (sul ponticello, a harp's près de la table), over the neck round
+    /// and soft (sul tasto). None: where the player usually plucks.
+    pub position: Option<f64>,
+    /// Which string a fretted note is played on, counted as a player numbers them from the chin down, from 0 (a
+    /// guitar's low E, a ukulele's high G); none, or a string tuned over the note: the lowest position that has it.
+    /// The same pitch higher up a lower string is rounder.
+    pub string: Option<u8>,
     /// A volume pedal over the note, 0 (shut) to 1 (open), with no new start: an organ's swell box, quieter and
     /// darker shut.
     pub expression: Option<Swell>,
@@ -72,13 +83,33 @@ impl Pedals {
 /// A special way of sounding a note. Later families add their own (pizzicato, flutter tongue, rimshot...).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Technique {
-    /// As the instrument is usually played.
+    /// As the instrument is usually played (a plucked string: the electric and the bass with a pick, the rest with
+    /// the fingers).
     Normal,
     /// A harmonic: the string touched at 1/n of its length (2 to 6) as it is played, so only every n-th overtone
     /// rings on (2 sounds an octave up, 3 an octave and a fifth).
     Harmonic(u8),
     /// Plucked: a piano's string pulled aside by a finger inside the piano and let go.
     Plucked,
+    /// A plucked string played with the flesh of the finger: round and warm.
+    Fingers,
+    /// A plucked string played with a pick: a sharp, bright start.
+    Picked,
+    /// A plucked string played with the fingernails: bright and crisp.
+    Nails,
+    /// A plucked string played with the side of the thumb: deep and soft.
+    Thumb,
+    /// A bass string struck by the thumb against the last frets: a bright knock with the frets' buzz.
+    Slap,
+    /// A bass string pulled up and let snap against the frets: a sharp, metallic crack.
+    Pop,
+    /// A string sounded by a fingertip hammered onto the fret, with no pluck.
+    Tapped,
+    /// A hammer-on or pull-off: the note before keeps ringing into this one, a fretting finger changing the pitch
+    /// (with `slur_from`; without it, as [`Technique::Tapped`]).
+    Hammer,
+    /// A pinch harmonic: the pick and the thumb's edge together, so a high overtone squeals out (an electric's).
+    PinchHarmonic,
 }
 
 /// An organ's registration: which stops sound, as bits of [`Stops::MANUAL`] and [`Stops::PEDAL`], and its octave
@@ -250,6 +281,8 @@ impl Play {
             technique: Technique::Normal,
             stops: None,
             expression: None,
+            position: None,
+            string: None,
         }
     }
 
@@ -284,6 +317,15 @@ impl Play {
             Technique::Normal => 0,
             Technique::Harmonic(n) => 0x100 | u64::from(n),
             Technique::Plucked => 2,
+            Technique::Fingers => 3,
+            Technique::Picked => 4,
+            Technique::Nails => 5,
+            Technique::Thumb => 6,
+            Technique::Slap => 7,
+            Technique::Pop => 8,
+            Technique::Tapped => 9,
+            Technique::Hammer => 10,
+            Technique::PinchHarmonic => 11,
         });
         match self.stops {
             Some(s) => k.extend([
@@ -297,6 +339,14 @@ impl Play {
         }
         match self.expression {
             Some(x) => k.extend([1, b(x.from), b(x.to), b(x.over)]),
+            None => k.push(0),
+        }
+        match self.position {
+            Some(x) => k.extend([1, b(x)]),
+            None => k.push(0),
+        }
+        match self.string {
+            Some(x) => k.extend([1, u64::from(x)]),
             None => k.push(0),
         }
         k
@@ -388,6 +438,26 @@ mod tests {
                     to: 1.0,
                     over: 1.0,
                 }),
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Picked,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Slap,
+                ..a.clone()
+            },
+            Play {
+                technique: Technique::Hammer,
+                ..a.clone()
+            },
+            Play {
+                position: Some(0.1),
+                ..a.clone()
+            },
+            Play {
+                string: Some(2),
                 ..a.clone()
             },
         ] {

@@ -7,82 +7,33 @@
 //! generator seeded 0, as `ks(.., seed=idx)` is for the note's index 0.
 
 use bf_core::rng::Generator;
+use bf_sound::voice::engine2::plucked::PluckedParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp;
-use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
 /// The UKULELE's register in `pp_bridge`'s roster (`('UKULELE', 'ukulele60_lowpoly', None, (60, 81), 0, 1.0)`).
 pub const REGISTER: (i32, i32) = (60, 81);
 
-/// The UKULELE's added overtones: the harmonics its own note barely has, laid in at a real nylon-string guitar's
-/// level (FluidR3 has no ukulele; dB under the fundamental, `NONE` for none), note by note. Written with the
-/// [`CORRECTION`].
-#[rustfmt::skip]
-pub const FILL: &Fill = &[
-    (60, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (61, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (62, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (63, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (64, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (65, [-99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (66, [-99.0, -99.0, 4.2, -1.9, -99.0, -99.0, -18.3, -99.0]),
-    (67, [-99.0, -99.0, 4.4, -99.0, -99.0, -99.0, -99.0, -99.0]),
-    (68, [-99.0, -99.0, -99.0, -99.0, -99.0, -12.7, -22.9, -37.3]),
-    (69, [-99.0, -99.0, -99.0, -99.0, -99.0, -12.8, -23.1, -37.6]),
-    (70, [-99.0, -99.0, -99.0, -99.0, -99.0, -13.0, -23.3, -37.9]),
-    (71, [-99.0, -99.0, -99.0, -99.0, -13.3, -99.0, -41.3, -27.6]),
-    (72, [-99.0, -99.0, -99.0, -99.0, -13.5, -99.0, -42.4, -28.2]),
-    (73, [-99.0, -99.0, -99.0, -99.0, -13.7, -99.0, -99.0, -29.0]),
-    (74, [-99.0, -99.0, -99.0, -18.4, -13.9, -99.0, -99.0, -29.8]),
-    (75, [-99.0, 7.0, -99.0, -18.6, -14.2, -99.0, -99.0, -30.7]),
-    (76, [-99.0, 5.9, -9.8, -4.3, -6.9, -20.0, -24.7, -33.7]),
-    (77, [-99.0, 5.7, -10.0, -4.9, -7.9, -21.0, -26.0, -35.8]),
-    (78, [-99.0, 5.5, -99.0, -5.6, -8.8, -22.0, -27.4, -37.9]),
-    (79, [-99.0, 5.3, -10.4, -6.2, -9.7, -23.1, -28.9, -40.2]),
-    (80, [-99.0, 5.2, -10.5, -6.9, -10.6, -24.3, -30.4, -42.5]),
-    (81, [-99.0, 5.1, -10.6, -7.6, -11.4, -25.6, -32.1, -99.0]),
-];
-
-/// The UKULELE's overtone correction toward a real nylon-string guitar (FluidR3 has no ukulele): gains in dB for
-/// its first eight harmonics, note by note (FluidR3, `bf-harness/tests/reference/fluidr3.json`). Written by
-/// `cargo run --release -p bf-harness --example references -- correct "UKULELE"`.
-#[rustfmt::skip]
-pub const CORRECTION: &Correction = &[
-    (60, [5.4, -17.1, -16.3, -1.8, -14.7, -10.9, -23.6, -30.0]),
-    (61, [1.5, -11.2, -13.3, 10.5, -9.4, -2.3, -22.5, -12.0]),
-    (62, [1.1, -12.6, -13.9, 9.2, -6.4, -7.1, -22.3, -19.8]),
-    (63, [-2.9, -12.5, 3.4, 4.1, 2.9, -9.2, -1.0, -9.8]),
-    (64, [-5.4, -13.2, 7.5, 6.2, 5.4, -9.4, 5.9, -1.5]),
-    (65, [-5.9, -12.8, 9.1, 6.8, -2.6, -5.9, 4.8, -0.4]),
-    (66, [-0.5, -5.4, 0.0, -0.6, 3.2, 9.8, 0.3, 12.7]),
-    (67, [0.9, -5.1, 0.0, 15.9, -3.5, 3.9, 8.6, 1.0]),
-    (68, [0.0, 3.2, 9.9, -1.6, 6.4, -0.4, 0.1, -0.4]),
-    (69, [0.0, 4.1, 10.9, -6.0, 12.1, -0.1, 0.1, 0.1]),
-    (70, [0.0, 2.1, 10.0, -12.4, 11.7, -0.6, -0.6, 0.3]),
-    (71, [-7.7, 1.4, -5.8, -7.2, -8.4, -7.0, -7.5, -7.7]),
-    (72, [-7.6, 1.2, -3.5, -5.9, -8.0, -1.2, -7.4, -7.5]),
-    (73, [-7.4, 0.5, -6.4, -8.3, -6.0, -7.3, 0.0, -7.6]),
-    (74, [-8.2, 5.9, 1.1, -9.6, -8.4, 0.0, 0.0, -8.3]),
-    (75, [-0.9, 0.0, 7.8, -1.1, -1.1, 0.0, 0.0, -1.0]),
-    (76, [-1.0, 0.0, -0.3, -1.0, -1.0, -1.0, -1.0, -1.0]),
-    (77, [-0.8, 0.0, -0.3, -0.8, -0.8, -0.7, -0.7, -0.8]),
-    (78, [-0.7, 0.0, 10.2, -1.0, -0.8, -0.7, -0.7, -0.6]),
-    (79, [-0.4, 0.0, -0.3, -0.4, -0.4, -0.4, -0.4, -0.4]),
-    (80, [0.5, 0.0, 0.3, 0.5, 0.5, 0.5, 0.4, 0.4]),
-    (81, [0.7, 0.0, 0.5, 0.6, 0.6, 0.6, 0.7, 0.0]),
-];
-
-/// The Composed arrangement's UKULELE (sound upgrade, stage 3, S1): its own note with the overtones of the real
-/// instrument, the ones it lacks added, and a quicker stop (a 150 ms fade after its length), nearer the real
-/// one's; it keeps its own pluck's snap.
-pub const REWORK: Rework = Rework {
-    fill: FILL,
-    correction: CORRECTION,
-    speak: 0.0,
-    stop: 0.15,
-    keep_shape: true,
-    tail: &[],
-};
+/// The Composed arrangement's UKULELE (Voice Engine 2): a soprano ukulele built from how it works, on the
+/// plucked-string engine (Aedan's pick U6: new fluorocarbon strings, the fingers, through its small box, a light
+/// studio polish), with every technique a ukulele has, in a small room of its own
+/// (`docs/studio/voice-engine-2-instruments.md`, "Ukulele"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "UKULELE",
+    Parts::Plucked(PluckedParts::U6),
+    Space {
+        width: 0.25,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.4,
+            under: 15.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
 
 /// The UKULELE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
@@ -97,8 +48,8 @@ impl Voice for UkuleleVoice {
         REGISTER
     }
 
-    fn rework(&self) -> Option<&'static Rework> {
-        Some(&REWORK)
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
     }
 
     fn name(&self) -> &str {

@@ -1085,6 +1085,7 @@ fn test_instrument() -> &'static engine2::Instrument {
                 width: 0.0,
                 tilt: 0.0,
                 home: None,
+                amp: None,
             },
         )))
     })

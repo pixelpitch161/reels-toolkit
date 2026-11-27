@@ -22,8 +22,9 @@ use std::collections::BTreeMap;
 
 use crate::master::{Levels, Soundtrack};
 use crate::mix::Mix;
+use crate::voice::engine2::amp;
 use crate::voice::engine2::space::{self, Space};
-use crate::{NA, heard};
+use crate::{NA, SRF, heard};
 
 pub mod bands;
 pub mod highs;
@@ -53,9 +54,9 @@ pub struct Part {
     pub low: bool,
     /// It stings: it gets [`highs::treat`] and sends less to the room.
     pub piercing: bool,
-    /// A Voice Engine 2 voice's place in the stereo picture and its own room ([`space::home`], then
-    /// [`space::widen`], after its gain and before the treatments; the solo too when it wins). `None` for every
-    /// other voice.
+    /// A Voice Engine 2 voice's amp, its own room and its place in the stereo picture ([`amp::on_bus`],
+    /// [`space::home`], then [`space::widen`], after its gain and before the treatments; the solo too when it
+    /// wins). `None` for every other voice.
     pub space: Option<Space>,
 }
 
@@ -148,6 +149,11 @@ pub fn treated(mix: &Mix, levels: &Levels, plan: &Plan) -> BTreeMap<String, Vec<
             && let Some(sp) = plan.parts[k].space
         {
             let seed = name.bytes().map(u64::from).sum();
+            // the amp first, as the player's rig: it sets its own drive from the bus's loudness, so the gain
+            // above makes no difference to how it distorts
+            if let Some(a) = &sp.amp {
+                y = amp::on_bus(&y, a, SRF);
+            }
             if let Some(h) = &sp.home {
                 y = space::home(&y, h, seed);
             }
@@ -408,7 +414,7 @@ mod tests {
     }
 
     /// A fighter with no space comes out of `treated` as before (its gain only); one with a space is widened, its
-    /// mono sum kept, and so is its solo when it wins.
+    /// mono sum kept, and so is its solo when it wins; one with an amp plays through it, the solo too.
     #[test]
     fn a_part_without_space_is_untouched() {
         use crate::mix::Sig;
@@ -447,6 +453,7 @@ mod tests {
             width: 0.35,
             tilt: 0.12,
             home: None,
+            amp: None,
         });
         let wide = treated(&mix, &levels, &plan);
         for bus in ["flute", SOLO] {
@@ -457,5 +464,24 @@ mod tests {
         }
         assert_eq!(wide["tuba"], plain["tuba"]);
         assert_eq!(wide["drums"], plain["drums"]);
+        // an amp: on the fighter's bus and its solo, each through its own, each as loud as it was; the others
+        // untouched
+        plan.parts[0].space = Some(Space {
+            width: 0.0,
+            tilt: 0.0,
+            home: None,
+            amp: Some(amp::Amp::HIGH_GAIN),
+        });
+        let amped = treated(&mix, &levels, &plan);
+        for bus in ["flute", SOLO] {
+            assert_ne!(amped[bus], plain[bus], "{bus}");
+            assert_eq!(amped[bus], amp::on_bus(&plain[bus], &amp::Amp::HIGH_GAIN, SRF), "{bus}");
+            assert!(
+                (heard::integrated(&amped[bus]) - heard::integrated(&plain[bus])).abs() < 0.5,
+                "{bus}"
+            );
+        }
+        assert_eq!(amped["tuba"], plain["tuba"]);
+        assert_eq!(amped["drums"], plain["drums"]);
     }
 }

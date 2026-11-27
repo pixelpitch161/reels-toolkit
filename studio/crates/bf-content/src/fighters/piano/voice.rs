@@ -137,6 +137,7 @@ pub static ENGINE2: Instrument = Instrument::built(
             under: 15.0,
             hp: 120.0,
         }),
+        amp: None,
     },
 );
 
@@ -153,6 +154,7 @@ pub static RECIPE: Instrument = Instrument::new(
         width: 0.35,
         tilt: 0.12,
         home: None,
+        amp: None,
     },
 );
 

@@ -363,3 +363,72 @@ and repeats differ. Each technique has its own check in `pipes.rs`.
     http://www.lam.jussieu.fr/Membres/Castellengo/publications/
 12. Organ pipe chiff analysis, University of Bremen (2007), https://www.ant.uni-bremen.de
 13. US patent 5,508,472, wind supply effects (pitch and level of organ tones with the wind), https://image-ppubs.uspto.gov
+
+---
+
+## The plucked strings (fighters ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE, HARP)
+
+One engine for the family (`bf-sound/src/voice/engine2/plucked.rs`), built from how a plucked string works and tuned
+by ear in two listening rounds (sketch `pl.py`, `/mnt/project-files/ballfight-studio/voice-engine-2/pluck1/` and
+`pluck2/`). Aedan's picks (2026-11-27): A6, E2, B3, U6, H3. Round 1 found A1 and U1 "too dull"; round 2 brightened
+them (newer strings, the body heard a little closer, a light polish).
+
+### Working parts
+
+- **The string.** A stiff string's overtones (overtone *n* at *n* × pitch × sqrt(1 + *B* n²)), each ringing two ways:
+  across the top, where the bridge moves most readily, so the body drains it sooner; and along it, a hair sharp
+  (0.2 to 0.6 per thousand), a quieter share (a quarter to a half of 0.35), ringing longer. The two ways together give
+  a plucked note's quick first fall and slower ring.
+- **The pluck.** The string pulled aside at a point and let go: the point sets which overtones ring (one at the middle
+  leaves out every second), the width of the finger, nail or pick sets how far up they reach, and a harder pluck
+  leaves the finger sooner. A pick's quick release also lifts the top and clicks. A fretted note is stopped shorter,
+  so the pluck point and the finger are a larger part of what sounds (higher up the neck: rounder); a harp's strings
+  shorten with pitch.
+- **Losses.** The air and the string's own damping (the high overtones far sooner: steel new and bright, nylon and
+  gut softer), and the body's drain where the body is most open. When a note is let go, the fretting finger lifts
+  over 15 to 50 ms and damps the string (a harp's barely: harpists let notes ring).
+- **The body** (`body.rs`) for the acoustic, the ukulele and the harp: a few strong low resonances (the air in the
+  box, the top's first ways of bending), many small ones above, and the force going straight out; then the average
+  response fitted to a target over thirds of an octave, keeping each body's own peaks and dips.
+- **The pickups and the amp** (`amp.rs`) for the electric and the bass: the pickups hear the string where they sit
+  (by the bridge: thin and bright), their coil adds a soft resonant top, and the amp's gain stages round off the peaks
+  (each a valve's slightly lopsided clip), then a tone stack, the power stage and the speaker cabinet. The amp plays
+  on the fighter's whole part, so a chord's notes beat into each other and distort as one.
+
+### The picks
+
+| Code | Fighter | The string | Played | Through |
+|---|---|---|---|---|
+| A6 | ACOUSTIC | new steel strings (rings 8 s at the low E) | fingers at 0.16 of the string | a dreadnought's box, heard close; a polish: a little less boom and box, more presence and air |
+| E2 | ELECTRIC | steel, long sustain (12 s) | a pick at 0.12, bridge pickup | a high-gain amp: tight lows, a scooped middle, a 4x12 cabinet |
+| B3 | BASS GUITAR | roundwound bass strings (16 s) | a pick at 0.14, one pickup at 0.21 | a bass amp pushed for a little grit |
+| U6 | UKULELE | new fluorocarbon (4 s at middle C) | fingers at 0.22, re-entrant G C E A | a soprano's small box, heard close; a light polish |
+| H3 | HARP | gut (9 s at E3, shorter up high) | fingers at a third of each string | a concert pedal harp's long soundboard and deep box, a soft top |
+
+### How it is played
+
+Every technique, as the engine plays it (asked for as in `voice-engine-2-playing.md`): strength and accent; let ring
+or staccato; fingers, pick, nails or thumb; the pluck point (by the bridge to over the neck); which string; slap and
+pop (the bass); tapping; hammer-ons and pull-offs; slides; bends, scoops and falls; vibrato; harmonics; pinch
+harmonics (the electric); palm mute (a harp's etouffe); dead notes; the shortest note. Strums, rolled chords, tremolo
+picking, trills, glissandos and bisbigliando are the composition system's, made of single notes.
+
+### The built engine (stage 2)
+
+- Notes run in blocks of 32 samples at any sample rate: each overtone a turning phasor, its pitch and loss set once a
+  block (a bend, a slide, a vibrato, the release land smoothly), dropped once it is 140 dB down.
+- The body is the middle of the sketch's two microphones' bodies, fitted (the fighter's width spreads it again); its
+  level is the same at any sample rate.
+- The amp's drive is set from the part's own loudness against the level the listening riffs drove it at, so it
+  distorts the same however loud the part is mixed, and comes out as loud as it went in.
+- Each fighter's room is the sketch's: the guitars', the bass's and the ukulele's small (2.4 s), the harp's light
+  (3.3 s); the electric and the bass sit in the middle (their amps are one speaker).
+
+Checked against the sketch: single notes within 0.6 dB in every octave (correlation 0.99 or more), the amp exactly,
+each fighter's riff of the listening rounds within 2 dB in every octave (`bf-harness/tests/engine2_built.rs`). Each
+technique has its own check in `plucked.rs`, the bodies in `body.rs`, the amps in `amp.rs`.
+
+### Licences
+
+Nothing recorded ships. The harp and bass recordings looked at while sketching (VSCO 2 CE harp, Karoryfer
+growlybass, both CC0) were yardsticks only.
