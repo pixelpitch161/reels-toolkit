@@ -1675,13 +1675,15 @@ mod tests {
     fn with_the_ear_off_a_held_note_bows_near_its_pitch() {
         // fix 4: twist speeds that keep each note's bowed pitch near the note, so the player's ear has no scoop to
         // make (at the round's speeds the cello's upper notes bowed 40 cents flat). The approved sketch: the violin
-        // and viola within 9 cents, the cello 13, the contrabass 15, the octobass's lowest notes up to 53 flat.
+        // and viola within 9 cents, the cello 13, the contrabass 15, the octobass's lowest notes up to 53 flat. The
+        // octobass's soft D1 moves with the maths' last place: 53 flat away from Windows, 64 on it (the C runtime's
+        // functions, see `dmath`), hence its wider margin.
         let sets: [(&[f64], f64); 5] = [
             (&[55.0, 62.0, 69.0, 76.0, 81.0, 88.0], 10.0),
             (&[48.0, 55.0, 62.0, 69.0, 74.0, 81.0], 10.0),
             (&[36.0, 43.0, 50.0, 57.0, 64.0, 69.0], 15.0),
             (&[28.0, 33.0, 38.0, 43.0, 50.0, 55.0], 20.0),
-            (&[22.0, 26.0, 29.0, 34.0, 41.0], 60.0),
+            (&[22.0, 26.0, 29.0, 34.0, 41.0], 80.0),
         ];
         for ((p, _, _), (notes, most)) in ALL.iter().zip(sets) {
             let deaf = BowedParts { intone: 0.0, ..*p };
