@@ -12,6 +12,9 @@ use std::sync::{Arc, Mutex, OnceLock};
 use bf_core::dmath::{self, PI};
 use bf_core::rng::Generator;
 use bf_sound::SRF;
+use bf_sound::voice::engine2::reed::ReedParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice, pp};
 
@@ -156,7 +159,30 @@ pub const REWORK: Rework = Rework {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AccordionVoice;
 
+/// The Composed arrangement's ACCORDION (Voice Engine 2): built from how it works, on the reed engine (Aedan's pick
+/// Ac1, the musette accordion: three reeds to a note, one a little flat and one a little sharp, so they beat; its bass
+/// side's buttons for the low notes), with every technique it has, in a light room of its own
+/// (`docs/studio/voice-engine-2-instruments.md`, "The reeds"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "ACCORDION",
+    Parts::Reed(ReedParts::AC1),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 impl Voice for AccordionVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, _noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         reed(pp::midi_hz(midi), dur, vel, (midi as i64 * 7).max(0) as u64)
     }

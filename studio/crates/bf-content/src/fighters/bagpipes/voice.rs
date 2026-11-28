@@ -23,6 +23,9 @@ use bf_core::dmath::{self, PI};
 use bf_core::py::{fmod_py, py_max, py_min};
 use bf_core::rng::Generator;
 use bf_sound::dsp;
+use bf_sound::voice::engine2::reed::ReedParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::{self, SRF};
 use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
 use bf_sound::voice::{PpNoise, Voice};
@@ -332,7 +335,30 @@ pub const REWORK: Rework = Rework {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BagpipesVoice;
 
+/// The Composed arrangement's BAGPIPES (Voice Engine 2): built from how it works, on the reed engine (Aedan's pick Bp1,
+/// the Highland pipe: a chanter with its high-G grace notes over two tenor drones and a bass drone, all on A, at A440),
+/// with every technique it has, in a light room of its own (`docs/studio/voice-engine-2-instruments.md`, "The reeds").
+/// Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "BAGPIPES",
+    Parts::Reed(ReedParts::BP1),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 impl Voice for BagpipesVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, _noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         pp::to_48k(&synth(midi, vel, dur))
     }

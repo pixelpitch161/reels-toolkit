@@ -11,8 +11,11 @@ chords) is the composition system's, made of single notes. An instrument takes w
 piano has no vibrato, an organ no accent by touch. Since stage 1b the piano is the struck-string engine (Aedan's pick
 P16) and the organ the pipe engine (O8); since stage 2 the acoustic guitar, electric guitar, bass guitar, ukulele and
 harp are the plucked-string engine (A6, E2, B3, U6, H3); since stage 3 the violin, viola, cello, contrabass and
-octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2). The winds (reeds, brass and flutes) share one set of
-ways to play (below, "The winds' ways"); each wind family's table comes with its engine.
+octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2); since stage 4 the soprano, alto, tenor and bari
+saxophones, the clarinet, bass clarinet and contrabass clarinet, the oboe, the bassoon and contrabassoon, the bagpipes
+and the accordion are the reed engine (Ss2, As2, Ts2, Bs2, Cl1, Bc1, Cc1, Ob1, Bn1, Cf2, Bp1, Ac1). The winds (reeds,
+brass and flutes) share one set of ways to play (below, "The winds' ways"); each wind family's table comes with its
+engine.
 
 The engines work one note at a time at any sample rate, so the same notes could later be played by a plugin.
 
@@ -41,7 +44,9 @@ The engines work one note at a time at any sample rate, so the same notes could 
 
 The plucked strings take `midi`, `dur`, `vel`, `accent`, `slur_from`, `bend`, `vibrato`, `mute`, `technique`,
 `position` and `string` (below); the rest they leave aside. The bowed strings take those and `swell`, `expression`
-and `tie` (below), `position` there being where the bow sits and `string` counted from the lowest string.
+and `tie` (below), `position` there being where the bow sits and `string` counted from the lowest string. The reeds
+take `midi`, `dur`, `vel`, `accent`, `slur_from`, `tie`, `bend`, `scoop`, `swell`, `vibrato`, `mute` (the tongue
+stops), `technique` and, on the accordion, `register` (below).
 
 `Play::plain(midi, dur, vel)` is a note with none of the extras: open, on its own, no pedal, the organ's own stops.
 
@@ -149,6 +154,46 @@ length.
 Double stops and chords are several notes at once (one `Play` each). Trills, runs, glissandos of notes, sautillé and
 ricochet runs are the composition system's, made of single notes; a note's repeats already take turns among three
 slightly different bows.
+
+## The reeds' techniques
+
+SOPRANO SAX, ALTO SAX, TENOR SAX, BARI SAX, CLARINET, BASS CLARINET, CONTRABASS CLARINET, OBOE, BASSOON,
+CONTRABASSOON, BAGPIPES and ACCORDION, asked with the winds' ways (below). A plain note is tongued; on the BAGPIPES a
+plain note has the piper's high-G grace in front of it (high A before a high G), as the bag never stops the air and the
+tongue never touches the reed.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | the breath: louder and brighter (more of the reed's beating) |
+| Accent | `accent` | more breath at the start and more loudness at the bell, settling in about 70 ms |
+| Tongued start | `technique = Normal` | the tongue leaves the reed: the breath held behind it pushes in and the reed swings a little wider for a few cycles |
+| "k" tongue (double, triple tonguing) | `technique = BackTongue` | a softer, slower release than the "t" (its notes in a row are the composition system's) |
+| Soft "d" tongue | `technique = SoftTongue` | a gentle release and a gentle stop, for a tongued legato |
+| Breath start | `technique = Breath` | no tongue: the breath builds the note, with more air heard at first |
+| Key click | `technique = KeyClick` | the keys slapped shut with no breath: a small pitched pop of the tube, no tone |
+| Slur | `slur_from` (and `tie` on the note before) | one breath: the fingers move, no new start; across registers each resonance hands on its swing |
+| Smear, glide | `slur_from` with a `bend` of 0 cents | the pitch glides from the note before over the bend's `over` seconds |
+| Bend | `bend` | the lip slides the pitch so many cents, from `at`, over `over` (the ear lets go meanwhile) |
+| Fall, doit | `bend` from the note's end (`at` = `dur`) | the pitch drops (or rises) as the breath goes, over `over` |
+| Scoop | `scoop` | starts so many cents off (under it when negative), stays `at`, reaches the note over `over` |
+| Swell, sforzando | `swell` | the breath changes over the note (a sforzando: an accent with a swell from 1 down) |
+| Vibrato | `vibrato` | the jaw rocks the pitch, so many cents, so many times a second, coming in after `wait` and growing over 0.3 s (held to 400 cents and 20 Hz); `None` is the player's own (the saxophones 15 to 18 cents at 4.8 to 5.8 Hz, the oboe 16 at 5.4, the bassoons 15 and 12; the clarinets, the bagpipe and the accordion none), 0 cents none at all |
+| Tongue stop, staccato | `mute = Choked` or `Clipped` | the tongue lands back on the reed at the note's end |
+| Growl | `technique = Growl` | the throat growls into the tone: a rough buzz (97 Hz) through the breath |
+| Hummed note | `technique = Sung(n)` | the voice hums n semitones from the note into the instrument, beating against it |
+| Flutter tongue | `technique = Flutter` | the tongue rolls an "r" against the reed, 26 times a second |
+| Subtone | `technique = Subtone` | the lip damps the reed: soft, breathy and dark, started by the breath |
+| Slap tongue | `technique = Slap` | the tongue pulls the reed off and lets it snap back: a pop, then the note |
+| Air tone | `technique = AirTone` | breath through the instrument, the reed hardly sounding (on the accordion the air button: the bellows with no reed) |
+| Register, harmonic | `technique = Harmonic(n)` | the note on the tube's n-th resonance (a clarinet's 1, 3, 5; a saxophone's 1, 2, 3) |
+| Shake | `technique = Shake` | a wide, quick lip shake (70 cents at 7 Hz) |
+| Grace notes, drones (BAGPIPES) | a plain note; `slur_from` for none; `register = Bass` for the drones | the high-G grace before a plain note, none on a slurred one; the drones (two tenors on A3, a bass on A2, struck in one after the other) as one note held as long as asked |
+| Registers (ACCORDION) | `register` | `One` one reed, `Two` two (one 9 cents sharp), `Musette` three (14 cents either way), `Low` an octave down, `Octave` the bandoneon's two octaves, `Master` all five; the bass side's `Bass` button (the note and two octaves over) and `Chord` button; none asked is the musette |
+| Bellows shake (ACCORDION) | `technique = Tremolo` | the bellows shaken 7 times a second |
+| Bend, wobble (ACCORDION) | `bend`, `vibrato` | the bellows pushed for a bend; a vibrato is the bellows' wobble of the level (its cents over 100 the share of the level that swings, at most 0.6) |
+
+Trills, runs, repeated tonguing, a rip and multiphonics in a row are the composition system's, made of single notes;
+a note's repeats already take turns among three slightly different takes (the breath and the player's wander).
 
 ## The winds' ways
 

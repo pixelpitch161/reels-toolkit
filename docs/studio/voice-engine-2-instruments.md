@@ -520,3 +520,105 @@ point heard, the free ring, joins without a click, repeats, odd asks finite, and
 
 Nothing recorded ships. The VSCO 2 CE string recordings (CC0) the bodies were fitted to while sketching were
 yardsticks only; the bodies are their own resonances, not the recordings.
+
+## The reeds (fighters SOPRANO SAX, ALTO SAX, TENOR SAX, BARI SAX, CLARINET, BASS CLARINET, CONTRABASS CLARINET, OBOE, BASSOON, CONTRABASSOON, BAGPIPES, ACCORDION)
+
+One engine for the family (`bf-sound/src/voice/engine2/reed.rs`), built from how a reed works and tuned by ear in one
+listening round (sketch `rd.rs` with `reeds.py`, `round1.py` and `rriffs.py`,
+`/mnt/project-files/ballfight-studio/voice-engine-2/reed1/`). Aedan's picks (2026-11-27): Ss2, As2, Ts2, Bs2, Cl1,
+Bc1, Cc1, Ob1, Bn1, Cf2, Bp1, Ac1. The port plays the sketch's numbers: the sketch's own lines through the port's line
+kernel come out the same (correlation 1.000000 for every pick but the contrabass clarinet's 0.999993; the difference
+is the maths library's last places).
+
+### Working parts
+
+- **The reed.** A valve the breath pushes shut: the pressure between the mouth and the mouthpiece bends the reed (a
+  mass on a spring, damped by the lip), and the air squeezed through the gap is the flow (Bernoulli: the square root of
+  the pressure across it, times the gap), solved exactly each sample. The reed beats shut against the lay when it
+  swings far enough. A double reed (the oboe, the bassoons, the chanter) is the same valve, stiffer and narrower.
+- **The bore.** A set of tuned resonances fed by the flow. A cone (the saxophones, the oboe, the bassoons, the chanter)
+  has every multiple of its lowest, thinned by a comb where the cone's missing tip would be; a cylinder (the clarinets,
+  the drones) only the odd ones. The resonances fall away above the open end's cutoff (the tone holes and the bell);
+  the bore's own impedance carries what lies above them; the mouthpiece (or the bocal) adds one broad resonance of its
+  own, let go when the note itself reaches it.
+- **The register vent.** A small hole that spoils the resonances that are not multiples of the register's, so the tube
+  plays an octave (a cone) or a twelfth (a cylinder) up. On a slur across registers each resonance hands its swing to
+  the nearest new one, so the note carries on instead of starting again.
+- **The player.** Each note is tuned before it is played (a trial run at its breath, the fingering moved until it is
+  in tune; one that will not speak is tried with more or less breath, a firmer or looser lip, another throat, up to
+  nine ways); the ear then holds the note on pitch in about 35 ms, letting go in bends, scoops, smears and growls. A
+  tongued note starts as the tongue leaves the reed (the breath held behind it, the reed swinging a little wider for a
+  few cycles); an accent is more breath and more loudness at the bell. Breath noise rides in the flow, a little air is
+  heard directly, the pads knock as fingers come down.
+- **The bell and the mouthpiece's colour**: a few formants and a gentle top, the player's own (the jazz saxophones'
+  edge near 2.7 kHz).
+- **The free reed** (the accordion): a brass tongue swinging through a slot with no bore to rule it, so its pitch is
+  its own. The bellows' pressure sets how far it swings; the air is chopped into puffs each time the tongue clears the
+  slot (a plate of fixed thickness, so how long it stays open changes with the swing); the reed block's cavity colours
+  it. Each key sounds a bank of reeds.
+- **The bagpipe**: a conical chanter on a double reed, tongued by nobody (the bag keeps the air going, so notes are
+  parted by grace notes, never by the tongue), over two tenor drones and a bass drone, each a cylinder on a single
+  reed, all on A.
+
+### The picks
+
+| Code | Fighter | The reed and bore | Played | Sounds |
+|---|---|---|---|---|
+| Ss2 | SOPRANO SAX | cone, a bright open jazz mouthpiece (its resonance at 1.3 kHz) | vibrato 18 cents at 5.8 Hz | bright and singing, an edge at 2.7 kHz |
+| As2 | ALTO SAX | cone, the jazz mouthpiece at 850 Hz | vibrato 16 cents at 5.4 Hz | the jazz alto: open and bright, more breath |
+| Ts2 | TENOR SAX | cone, the jazz mouthpiece at 650 Hz | vibrato 18 cents at 5 Hz | warm with an edge |
+| Bs2 | BARI SAX | cone, the jazz mouthpiece at 450 Hz | vibrato 15 cents at 4.8 Hz | dark and buzzy, the edge on top |
+| Cl1 | CLARINET | cylinder, the French Boehm clarinet | no vibrato | dark low notes (odd overtones), a clear top |
+| Bc1 | BASS CLARINET | cylinder, the standard bass clarinet | no vibrato | deep and woody |
+| Cc1 | CONTRABASS CLARINET | cylinder, a softer reed (0.55) and a lower bell (550 Hz) | no vibrato | deep and round |
+| Ob1 | OBOE | narrow cone, the French oboe | vibrato 16 cents at 5.4 Hz | nasal and bright, strong overtones from 1 to 2 kHz |
+| Bn1 | BASSOON | wide cone with its bocal, the German (Heckel) bassoon | vibrato 15 cents at 5 Hz | warm and round, reedy |
+| Cf2 | CONTRABASSOON | the same, rougher: a looser reed, a lower bell (420 Hz), a strong bocal and a formant at 1.2 kHz | vibrato 12 cents at 4.6 Hz | rough and buzzy, easiest to hear on small speakers |
+| Bp1 | BAGPIPES | the Highland chanter, loud and bright, its drones on A2 and A3 | no vibrato; the high-G grace before a plain note | the Highland pipe, at A440 |
+| Ac1 | ACCORDION | three free reeds to a key, 14 cents flat, true and 14 sharp (the musette) | no vibrato | the musette's wide beating shimmer |
+
+### How it is played
+
+Every technique, as the engine plays it (asked for as in `voice-engine-2-playing.md`): strength (breath); accents; the
+tongued start, the "k" tongue (double and triple tonguing are its notes in a row), the soft "d" tongue, the breath start
+and key clicks (the pads slapped shut, no breath); slurs and ties (one breath, no new start); smears and glides; tongue
+stops (choked and clipped notes); swells; vibrato, its depth, rate and wait, or none; bends, falls and doits; scoops;
+growl, flutter tongue and the hummed note (sung); the saxophones' subtone; slap tongue; air tone; a forced register (the
+n-th resonance); the saxophone's shake; the bagpipe's grace notes and drones; the accordion's registers (one, two,
+musette, low, octave, master, and the bass side's bass and chord buttons), its bellows shake, a bend and a wobble of the
+bellows. Trills, runs, repeated tonguing and multiphonics in a row are the composition system's, made of single notes.
+
+### The built engine (stage 4)
+
+- The reed and its bore run at twice the sample rate (96 kHz at 48 kHz) and are brought down by a windowed-sinc
+  decimator (cut at 20 kHz, or under a lower rate's half); at 44.1 and 48 kHz alike every note is in tune.
+- The sketch plays a whole line through one bore. The app plays a note at a time: each note is the sketch's line of
+  that one note; a slurred one has the note it comes from as a short lead-in (the bore and the breath carried into the
+  slur, the join faded over 12 ms), a tied one hands over to the next. A plain chanter note has its high-G grace in
+  front (the sketch's piper's own); the drones are a held note of their own (`register = Bass` on the BAGPIPES), struck
+  in once and held under the whole part.
+- The tuning trial of each note is kept once worked out (the same pitch, breath and instrument tune the same), the
+  bore's resonances turn their filters on from the lowest, a step at a time, and a line's noise (the breath, the air,
+  the player's unsteadiness) is drawn ahead on a thread of its own while the line plays, the resonances' working
+  numbers are kept in the bore between retunes and the decimator works four outputs at a time: the notes come out the
+  same to rounding, and the same sample for sample as drawing the noise in line.
+- A note asked to sound longer than it rings (a kit's note held open past its release) stops once it has rung out and
+  fallen 60 dB under its loudest (the first 10 ms that quiet, faded over those 10 ms) instead of playing the breath's
+  noise floor to the end.
+- Each repeat of a note is a different take (the breath noise and the player's wander), three in turn.
+- Each fighter's room is the sketch's light room (2.6 s, 14 LU under); the winds sit in the middle (no spread), the
+  room giving the width.
+
+Checked against the sketch: the sketch's own lines through the port's line kernel (correlation 1.000000, the contrabass
+clarinet 0.99999; relative error under 5e-4, the contrabass clarinet 4e-3), and each fighter's riff of the listening
+round, played a note at a time, within 2 dB in every octave but where the sketch's whole lines carry the bore from note
+to note: the bassoon's octaves under 250 Hz 7 to 9 dB under the sketch's, the contrabassoon's 7 to 14 (its middle 2 to
+3, its top 6 to 7), the tenor's 62 to 125 Hz 3.7 (`bf-harness/tests/engine2_built.rs`,
+`tests/reference/reed_riffs.txt`). The engine's own checks in `reed.rs`: in tune at two sample rates, a harder breath
+louder (the alto's, tenor's and bari's reeds, already beating, and the bagpipe's bag no quieter) and no darker, every
+technique and stop finite, heard and its own, joins without a click or a gap, repeats, odd asks finite, every note
+ending quietly, the bagpipe's grace and drones, the accordion's banks, and the line kernel.
+
+### Licences
+
+Nothing recorded ships. The sketch was built from how the instruments work; recordings were yardsticks only.

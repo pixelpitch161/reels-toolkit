@@ -9,6 +9,7 @@
 //!   ukulele and the harp.
 //! - [`bowed`] (with its bodies, [`body`]): bowed strings, the violin, the viola, the cello, the contrabass and the
 //!   octobass.
+//! - [`reed`]: reeds, the saxophones, the clarinets, the oboe, the bassoons, the bagpipes and the accordion.
 //!
 //! Stage 1 rebuilt notes from recordings instead (the recipe engine below); no fighter plays a recipe now, but the
 //! engine stays for a family that wants a measured part:
@@ -43,6 +44,7 @@ pub mod play;
 pub mod player;
 pub mod plucked;
 pub mod recipe;
+pub mod reed;
 pub mod space;
 pub mod strings;
 
@@ -53,6 +55,7 @@ use self::pipes::PipeParts;
 use self::play::Play;
 use self::plucked::PluckedParts;
 use self::recipe::RecipeSet;
+use self::reed::ReedParts;
 use self::space::Space;
 use self::strings::StringsParts;
 use crate::SRF;
@@ -72,6 +75,8 @@ pub enum Parts {
     Plucked(PluckedParts),
     /// The bowed-string engine.
     Bowed(BowedParts),
+    /// The reed engine.
+    Reed(ReedParts),
 }
 
 impl Parts {
@@ -132,6 +137,7 @@ impl Instrument {
             Parts::Pipes(p) => return pipes::rings_for(&p, play, LONGEST),
             Parts::Plucked(p) => return plucked::rings_for(&p, play, LONGEST),
             Parts::Bowed(p) => return bowed::rings_for(&p, play, LONGEST),
+            Parts::Reed(p) => return reed::rings_for(&p, play, LONGEST),
             _ => {}
         }
         let set = self.set();
@@ -160,5 +166,6 @@ pub fn play(i: &Instrument, play: &Play, cap: f64, variant: u64) -> Vec<f64> {
         Parts::Pipes(p) => pipes::note(p, play, len, variant, SRF),
         Parts::Plucked(p) => plucked::note(p, play, len, variant, SRF),
         Parts::Bowed(p) => bowed::note(p, play, len, variant, SRF),
+        Parts::Reed(p) => reed::note(p, play, len, variant, SRF),
     }
 }

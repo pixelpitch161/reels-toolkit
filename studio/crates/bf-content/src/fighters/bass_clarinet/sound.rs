@@ -28,6 +28,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, WHOOSH_SEED};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
+use bf_sound::voice::engine2::play::{Play, Technique};
 use bf_sound::voice::pp;
 use bf_sound::voice::real::{self, RealNotes};
 
@@ -127,12 +128,27 @@ impl BassClarinetSound {
         })
     }
 
-    /// The note as the arrangement plays it: [`Self::bcl`]'s own under Classic; under Composed (sound upgrade, stage 3,
-    /// S1) reworked toward the real clarinet (FluidR3 has no bass clarinet) ([`REWORK`]), its repeats taking turns.
+    /// The note as the arrangement plays it: [`Self::bcl`]'s own under Classic; under Composed the built bass
+    /// clarinet's (Voice Engine 2, Bc1; a growl the engine's), cut and levelled as `bcl` cuts and levels its own.
     ///
     /// # Errors
     /// As [`Self::bcl`].
     fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, growl: f64) -> Result<Arc<[f64]>, MusicError> {
+        if pp::has_len(dur + 0.16) {
+            let play = Play {
+                technique: if growl > 0.0 {
+                    Technique::Growl
+                } else {
+                    Technique::Normal
+                },
+                ..Play::plain(m, dur, vel)
+            };
+            let cap = round_nd(dur + 0.16, 3);
+            let pp = &ctx.cfg[self.k].pp;
+            if let Some(x) = crate::fighters::clarinet::sound::built_reed(ctx, pp, &play, cap, Some((0.12, 0.16)))? {
+                return Ok(x);
+            }
+        }
         let x = self.bcl(m, dur, vel, growl)?;
         if !ctx.composed_on() {
             return Ok(x);

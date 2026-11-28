@@ -29,6 +29,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, FILTER_O, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, SOUND_VOICE_VEL, Sound};
+use bf_sound::voice::engine2::play::Play;
 use bf_sound::voice::pp;
 use bf_sound::voice::real::{self, RealNotes};
 
@@ -122,12 +123,20 @@ impl OboeSound {
         Ok(x)
     }
 
-    /// The note as the arrangement plays it: [`Self::oboe`]'s own under Classic; under Composed (sound upgrade, stage 3,
-    /// S1) reworked toward the real oboe ([`REWORK`]), its repeats taking turns.
+    /// The note as the arrangement plays it: [`Self::oboe`]'s own under Classic; under Composed the built oboe's (Voice
+    /// Engine 2, Ob1), cut and levelled as `oboe` cuts and levels its own.
     ///
     /// # Errors
     /// As [`Self::oboe`].
     fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        if pp::has_len(dur + 0.12) && m.is_finite() && vel.is_finite() {
+            let play = Play::plain(m, dur, vel);
+            let cap = round_nd(dur + 0.12, 3);
+            let pp = &ctx.cfg[self.k].pp;
+            if let Some(x) = crate::fighters::clarinet::sound::built_reed(ctx, pp, &play, cap, Some((0.25, 0.136)))? {
+                return Ok(x);
+            }
+        }
         let x = self.oboe(m, dur, vel)?;
         if !ctx.composed_on() {
             return Ok(x);

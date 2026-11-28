@@ -30,6 +30,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError, bend, clank, fit, noise_seed};
 use bf_sound::synth::{self, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
+use bf_sound::voice::engine2::play::Play;
 use bf_sound::voice::pp;
 
 use super::state::{RecSrc, Wreckage, wobbles};
@@ -224,10 +225,27 @@ impl BariSaxSound {
 
     /// `bari(m, dur, vel=0.9, honk=0.0)`: one bari note, fitted to `dur + 0.12` s with a 20 ms fade, levelled.
     ///
-    /// `steady` is the Composed arrangement's bari: the part passes `ctx.composed_on()`, and the note is then
-    /// [`bari_tone_real`] (no slide, a real bari's overtones, and each repeat of the same note a little different, in
-    /// turns of [`REPEATS`]). With it false the note is the kit's, to the sample.
-    fn bari(&self, m: f64, dur: f64, vel: f64, honk: f64, steady: bool) -> Result<Arc<[f64]>, MusicError> {
+    /// The part passes its context: under the Composed arrangement the note is then the built bari's (Voice Engine 2,
+    /// Bs2: no slide, a honk its accent, half the honk), cut and levelled the same way, its repeats taking turns; under
+    /// Classic, or with no context (the breaking instrument), it is the kit's, to the sample.
+    fn bari(&self, m: f64, dur: f64, vel: f64, honk: f64, ctx: Option<&MusicCtx>) -> Result<Arc<[f64]>, MusicError> {
+        let steady = ctx.is_some_and(MusicCtx::composed_on);
+        if let Some(ctx) = ctx
+            && pp::has_len(dur + 0.16)
+            && (pp::midi_hz(m) * 10.0).is_finite()
+            && vel.is_finite()
+            && honk.is_finite()
+        {
+            let play = Play {
+                accent: round_nd(0.5 * honk.clamp(0.0, 1.0), 2),
+                ..Play::plain(m, dur, vel)
+            };
+            let pp = &ctx.cfg[self.k].pp;
+            let cap = round_nd(dur + 0.12, 3);
+            if let Some(x) = crate::fighters::clarinet::sound::built_reed(ctx, pp, &play, cap, Some((0.12, 0.16)))? {
+                return Ok(x);
+            }
+        }
         let variant = if steady {
             let mut uses = self
                 .uses
@@ -280,7 +298,7 @@ impl BariSaxSound {
         t: f64,
         drive_k: f64,
     ) -> Result<(Vec<f64>, f64, f64), MusicError> {
-        let x = self.bari(m, dur, vel, honk, ctx.composed_on())?;
+        let x = self.bari(m, dur, vel, honk, Some(ctx))?;
         self.colour(ctx, &x, t, drive_k, &self.colour_args())
     }
 
@@ -383,7 +401,7 @@ impl Sound for BariSaxSound {
     }
 
     fn voice(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
-        self.bari(m, dur, vel, 0.0, ctx.composed_on())
+        self.bari(m, dur, vel, 0.0, Some(ctx))
     }
 
     /// A huge honk on the root and its octave.
@@ -398,14 +416,14 @@ impl Sound for BariSaxSound {
         };
         mix.place(
             &bus,
-            &Sig::Mono(self.bari(first, 0.5, 1.0, 1.0, ctx.composed_on())?.to_vec()),
+            &Sig::Mono(self.bari(first, 0.5, 1.0, 1.0, Some(ctx))?.to_vec()),
             t,
             0.55,
             0.0,
         );
         mix.place(
             &bus,
-            &Sig::Mono(self.bari(last, 0.4, 0.8, 0.6, ctx.composed_on())?.to_vec()),
+            &Sig::Mono(self.bari(last, 0.4, 0.8, 0.6, Some(ctx))?.to_vec()),
             t + 0.02,
             0.20,
             0.0,
@@ -607,7 +625,7 @@ impl Sound for BariSaxSound {
         let bus = self.bus(ctx);
         let t_hs = ctx.show.t_hs;
         // the instrument breaking: the kit's own note, scoop and fall, under either arrangement
-        let x = self.bari(self.k0(ctx, 0), 1.0, 1.0, 0.8, false)?;
+        let x = self.bari(self.k0(ctx, 0), 1.0, 1.0, 0.8, None)?;
         let mut blat = bend(&x, -7.0, 0.05, 1.0)?;
         for (o, ramp) in blat.iter_mut().zip(dsp::linspace(1.0, 0.4, x.len())) {
             *o *= ramp;
@@ -629,14 +647,14 @@ impl Sound for BariSaxSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         mix.place(
             "solo",
-            &Sig::Mono(self.bari(self.k0(ctx, 0), 0.8, 1.0, 1.0, ctx.composed_on())?.to_vec()),
+            &Sig::Mono(self.bari(self.k0(ctx, 0), 0.8, 1.0, 1.0, Some(ctx))?.to_vec()),
             tw,
             0.50,
             0.0,
         );
         mix.place(
             "solo",
-            &Sig::Mono(self.bari(self.k0(ctx, 12), 0.8, 0.8, 0.6, ctx.composed_on())?.to_vec()),
+            &Sig::Mono(self.bari(self.k0(ctx, 12), 0.8, 0.8, 0.6, Some(ctx))?.to_vec()),
             tw + 0.02,
             0.22,
             0.0,
@@ -651,7 +669,7 @@ impl Sound for BariSaxSound {
             if ts > grid.t_reassemble - 0.05 {
                 break;
             }
-            let x = self.bari(f64::from(m), d * grid.beat * 0.9, 0.95, 0.7, ctx.composed_on())?;
+            let x = self.bari(f64::from(m), d * grid.beat * 0.9, 0.95, 0.7, Some(ctx))?;
             mix.place("solo", &Sig::Mono(x.to_vec()), ts, 0.55, 0.0);
         }
         Ok(())
@@ -663,9 +681,7 @@ impl Sound for BariSaxSound {
         let run = [0, 3, 7, 10, 12, 15];
         for (j, off) in run.into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / run.len() as f64);
-            let x = self
-                .bari(self.k0(ctx, off), 0.10, 0.7, 0.0, ctx.composed_on())?
-                .to_vec();
+            let x = self.bari(self.k0(ctx, off), 0.10, 0.7, 0.0, Some(ctx))?.to_vec();
             mix.place(&bus, &Sig::Mono(x), tj, 0.24, 0.0);
         }
         Ok(())
