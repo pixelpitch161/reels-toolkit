@@ -10,6 +10,9 @@
 //! - [`bowed`] (with its bodies, [`body`]): bowed strings, the violin, the viola, the cello, the contrabass and the
 //!   octobass.
 //! - [`reed`]: reeds, the saxophones, the clarinets, the oboe, the bassoons, the bagpipes and the accordion.
+//! - [`brass`] (with its players' ears, [`brass_tune`]): brass, the trumpet, the cornet, the flugelhorn, the horn,
+//!   the mellophone, the trombone, the euphonium, the tuba and the sousaphone.
+//! - [`flute`]: flutes, the flute and the piccolo.
 //!
 //! Stage 1 rebuilt notes from recordings instead (the recipe engine below); no fighter plays a recipe now, but the
 //! engine stays for a family that wants a measured part:
@@ -36,7 +39,10 @@ pub mod amp;
 pub mod board;
 pub mod body;
 pub mod bowed;
+pub mod brass;
+pub mod brass_tune;
 pub mod eq;
+pub mod flute;
 pub mod organ;
 pub mod piano;
 pub mod pipes;
@@ -49,6 +55,8 @@ pub mod space;
 pub mod strings;
 
 use self::bowed::BowedParts;
+use self::brass::BrassParts;
+use self::flute::FluteParts;
 use self::organ::OrganParts;
 use self::piano::PianoParts;
 use self::pipes::PipeParts;
@@ -77,6 +85,10 @@ pub enum Parts {
     Bowed(BowedParts),
     /// The reed engine.
     Reed(ReedParts),
+    /// The brass engine.
+    Brass(BrassParts),
+    /// The flute engine.
+    Flute(FluteParts),
 }
 
 impl Parts {
@@ -138,6 +150,8 @@ impl Instrument {
             Parts::Plucked(p) => return plucked::rings_for(&p, play, LONGEST),
             Parts::Bowed(p) => return bowed::rings_for(&p, play, LONGEST),
             Parts::Reed(p) => return reed::rings_for(&p, play, LONGEST),
+            Parts::Brass(p) => return brass::rings_for(&p, play, LONGEST),
+            Parts::Flute(p) => return flute::rings_for(&p, play, LONGEST),
             _ => {}
         }
         let set = self.set();
@@ -167,5 +181,7 @@ pub fn play(i: &Instrument, play: &Play, cap: f64, variant: u64) -> Vec<f64> {
         Parts::Plucked(p) => plucked::note(p, play, len, variant, SRF),
         Parts::Bowed(p) => bowed::note(p, play, len, variant, SRF),
         Parts::Reed(p) => reed::note(p, play, len, variant, SRF),
+        Parts::Brass(p) => brass::note(p, play, len, variant, SRF),
+        Parts::Flute(p) => flute::note(p, play, len, variant, SRF),
     }
 }

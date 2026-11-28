@@ -69,6 +69,31 @@ fn event_str<'e>(helper: &'static str, e: &'e Event, i: usize) -> Result<&'e str
     }
 }
 
+/// A note held `dur` seconds as `eup` keeps it: `n` samples long (cut, or padded with zeros), its last 30 ms faded
+/// (a third of it at most), levelled so its first 0.25 s have an RMS of 0.16.
+///
+/// # Errors
+/// A note too short to fade (Python raises).
+fn levelled(x: Vec<f64>, n: usize, dur: f64) -> Result<Vec<f64>, MusicError> {
+    // n = int((dur + 0.16) * A.SR); x = x[:n].copy(), padded with zeros to n
+    let mut x: Vec<f64> = x.into_iter().take(n).collect();
+    x.resize(n, 0.0);
+    // fd = min(len(x) // 3, int(0.03 * A.SR)); x[-fd:] *= np.linspace(1, 0, fd)
+    let fd = (x.len() / 3).min((0.03 * SRF) as usize);
+    if fd == 0 && !x.is_empty() {
+        return Err(MusicError::new(H, format!("a note held {dur} s is too short to fade")));
+    }
+    let len = x.len();
+    for (v, k) in x[len - fd..].iter_mut().zip(dsp::linspace(1.0, 0.0, fd)) {
+        *v *= k;
+    }
+    // r = np.sqrt((x[:int(0.25 * A.SR)] ** 2).mean()) + 1e-9; x * (0.16 / r)
+    let head: Vec<f64> = x[..len.min((0.25 * SRF) as usize)].iter().map(|v| v * v).collect();
+    let r = dsp::mean(&head).sqrt() + 1e-9;
+    let level = 0.16 / r;
+    Ok(x.iter().map(|v| v * level).collect())
+}
+
 /// `x * k` on every sample.
 fn scaled(x: &[f64], k: f64) -> Vec<f64> {
     x.iter().map(|v| v * k).collect()
@@ -133,6 +158,18 @@ impl EuphoniumSound {
     /// # Errors
     /// As [`EuphoniumSound::eup`].
     fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        let pp = &ctx.cfg[self.k].pp;
+        if ctx.engine2_of(pp).is_some() {
+            // sound upgrade (Voice Engine 2): under Composed the built euphonium (Eu1) plays the note, cut and levelled
+            // as the kit's own is
+            let held = round_nd(dur, 3);
+            let n = (held + 0.16) * SRF;
+            if !(pp::has_len(held + 0.16) && n.is_finite() && n > -1.0) {
+                return Err(MusicError::new(H, format!("a note held {dur} s")));
+            }
+            let x = ctx.note(pp, round_nd(m, 3), held, round_nd(held + 0.16, 2), round_nd(vel, 2))?;
+            return Ok(levelled(x.to_vec(), n as usize, dur)?.into());
+        }
         self.note(ctx.composed_on(), m, dur, vel)
     }
 
@@ -155,24 +192,7 @@ impl EuphoniumSound {
             } else {
                 x
             };
-            // n = int((dur + 0.16) * A.SR); x = x[:n].copy(), padded with zeros to n
-            let n = n as usize;
-            let mut x: Vec<f64> = x.into_iter().take(n).collect();
-            x.resize(n, 0.0);
-            // fd = min(len(x) // 3, int(0.03 * A.SR)); x[-fd:] *= np.linspace(1, 0, fd)
-            let fd = (x.len() / 3).min((0.03 * SRF) as usize);
-            if fd == 0 && !x.is_empty() {
-                return Err(MusicError::new(H, format!("a note held {dur} s is too short to fade")));
-            }
-            let len = x.len();
-            for (v, k) in x[len - fd..].iter_mut().zip(dsp::linspace(1.0, 0.0, fd)) {
-                *v *= k;
-            }
-            // r = np.sqrt((x[:int(0.25 * A.SR)] ** 2).mean()) + 1e-9; x * (0.16 / r)
-            let head: Vec<f64> = x[..len.min((0.25 * SRF) as usize)].iter().map(|v| v * v).collect();
-            let r = dsp::mean(&head).sqrt() + 1e-9;
-            let level = 0.16 / r;
-            Ok(x.iter().map(|v| v * level).collect())
+            levelled(x, n as usize, dur)
         })
     }
 

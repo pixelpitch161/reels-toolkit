@@ -290,7 +290,11 @@ the violin, viola, cello, contrabass and octobass play the bowed-string engine (
 Cb1, Oc2: a string held by a bow's friction, its twist, the player's ear, the body; plucks as the string's modes); since
 stage 4 the saxophones, clarinets, oboe, bassoons, bagpipes and accordion play the reed engine (`reed.rs`, the picks
 Ss2, As2, Ts2, Bs2, Cl1, Bc1, Cc1, Ob1, Bn1, Cf2, Bp1, Ac1: a reed valve on a bore of tuned resonances, the register
-vent, the player's tuning and ear; the accordion's free reeds; the bagpipe's grace notes and held drones). Every
+vent, the player's tuning and ear; the accordion's free reeds; the bagpipe's grace notes and held drones);
+since stage 5 the trumpet, cornet, flugelhorn, horn, mellophone, trombone, euphonium, tuba and sousaphone play the brass
+engine (`brass.rs`, the picks Tp1, Co1, Fh1, Hn1, Me1, Tb1, Eu1, Tu1, Su1: the lips a mass on a spring against the
+horn's resonances, the blare of the bore, the player's ear made offline into `brass_tune.rs`, mutes and the hand) and
+the flute and piccolo the flute engine (`flute.rs`, Fl1, Pc1: an air jet driving the tube). Every
 instrument plays all its techniques (pedals, harmonics, stops, swell box, picks, slaps, palm mutes, bends...), and
 the engines run one note at a time at any sample rate (a plugin could use them later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
 plays only under the Composed arrangement; Classic is untouched, byte for byte. The families follow one stage at a
@@ -298,7 +302,7 @@ time, each with its own engine and voice lab, stopping at a listening page for t
 (`docs/studio/2026-11-26-voice-engine-2-design.md`, "Revision: built engines").
 
 - **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `plucked.rs`, `bowed.rs`,
-  `reed.rs`, `body.rs`, `amp.rs`, `eq.rs`; `play.rs`
+  `reed.rs`, `brass.rs` with `brass_tune.rs`, `flute.rs`, `body.rs`, `amp.rs`, `eq.rs`; `play.rs`
   for how a note is played; `space.rs` for width and an instrument's own room; the kept recipe engine's format,
   player and parts); each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs` (`ENGINE2`, built with
   `Instrument::built`; `RECIPE` the kept recipe voice); parts ask for notes with `MusicCtx::note_played`. The built

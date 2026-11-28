@@ -18,6 +18,10 @@
 //!   Ac1, 2026-11-27): each one's riff of the reed rounds (`tests/reference/reed_riffs.txt`, the sketch's own) keeps
 //!   the sketch's octave bands within 2 dB, but where the sketch's whole lines carry the bore from note to note
 //!   ([`REED_HISTORY`]).
+//! - TRUMPET, CORNET, FLUGELHORN, HORN, MELLOPHONE, TROMBONE, EUPHONIUM, TUBA and SOUSAPHONE on the brass engine,
+//!   FLUTE and PICCOLO on the flute engine (Tp1, Co1, Fh1, Hn1, Me1, Tb1, Eu1, Tu1, Su1, Fl1, Pc1, 2026-11-27): each
+//!   one's riff of the brass and flutes round (`tests/reference/wind_riffs.txt`, the sketch's own) keeps the sketch's
+//!   octave bands as heard (after its limiter, mutes and hand, dry) within 2 dB.
 //! - Every voice's repeats differ, as a player's do.
 
 use bf_sound::SRF;
@@ -203,11 +207,20 @@ fn the_fighters_play_their_built_engines() {
         assert!(matches!(instrument(name).parts, Parts::Reed(_)), "{name}");
         assert_eq!(instrument(name).space.amp, None, "{name}");
     }
+    for (code, name, _) in WINDS {
+        match &instrument(name).parts {
+            Parts::Brass(b) => assert_eq!(b.name, code, "{name}"),
+            Parts::Flute(f) => assert_eq!(f.name, code, "{name}"),
+            _ => panic!("{name} plays neither wind engine"),
+        }
+        assert_eq!(instrument(name).space.amp, None, "{name}");
+    }
     for name in ["PIANO", "ORGAN"]
         .into_iter()
         .chain(PLUCKED.map(|p| p.1))
         .chain(BOWED.map(|p| p.1))
         .chain(REEDS.map(|p| p.1))
+        .chain(WINDS.map(|p| p.1))
     {
         assert!(!instrument(name).parts.has_recipe(), "{name}");
     }
@@ -646,6 +659,164 @@ fn the_reed_riffs_keep_the_sketches_balance() {
     }
 }
 
+/// The brass and flutes' riffs: the sketch's code, the fighter, and the sketch's own bands (its riff as heard: through
+/// its pulse limiter, mutes and hand, dry) over [`ORGAN_EDGES`].
+const WINDS: [(&str, &str, [f64; 9]); 11] = [
+    ("Tp1", "TRUMPET", WINDS_SKETCH[0]),
+    ("Co1", "CORNET", WINDS_SKETCH[1]),
+    ("Fh1", "FLUGELHORN", WINDS_SKETCH[2]),
+    ("Hn1", "HORN", WINDS_SKETCH[3]),
+    ("Me1", "MELLOPHONE", WINDS_SKETCH[4]),
+    ("Tb1", "TROMBONE", WINDS_SKETCH[5]),
+    ("Eu1", "EUPHONIUM", WINDS_SKETCH[6]),
+    ("Tu1", "TUBA", WINDS_SKETCH[7]),
+    ("Su1", "SOUSAPHONE", WINDS_SKETCH[8]),
+    ("Fl1", "FLUTE", WINDS_SKETCH[9]),
+    ("Pc1", "PICCOLO", WINDS_SKETCH[10]),
+];
+#[rustfmt::skip]
+const WINDS_SKETCH: [[f64; 9]; 11] = [
+    [-90.43, -80.41, -67.65, -19.57, -2.12, -6.77, -9.21, -14.26, -21.65],
+    [-66.96, -62.48, -47.00, -7.93, -2.01, -7.60, -15.42, -22.07, -32.21],
+    [-83.71, -72.64, -39.71, -4.41, -2.49, -11.48, -25.76, -37.77, -51.86],
+    [-53.79, -48.50, -14.23, -2.22, -5.77, -10.84, -18.36, -32.18, -51.73],
+    [-78.45, -66.68, -55.07, -11.85, -2.60, -6.21, -9.58, -15.01, -23.60],
+    [-42.03, -24.57, -8.20, -3.44, -5.17, -11.55, -18.12, -25.98, -34.84],
+    [-58.14, -22.26, -7.71, -3.24, -5.17, -13.57, -25.57, -39.14, -54.68],
+    [-20.02, -8.77, -4.65, -3.30, -13.75, -24.40, -32.69, -41.19, -48.76],
+    [-19.16, -8.34, -4.89, -3.27, -13.94, -23.41, -30.77, -38.28, -45.33],
+    [-72.78, -64.52, -54.41, -26.15, -5.45, -1.82, -13.59, -20.02, -28.42],
+    [-86.01, -76.74, -67.61, -58.75, -12.99, -3.79, -2.97, -16.02, -25.88],
+];
+
+/// The riff `code` of `tests/reference/wind_riffs.txt` on `inst`, mono and dry, each note as long as it rings, a
+/// pitch's repeats taking turns. A line is the code, then the note's start, MIDI, held length and velocity, then the
+/// sketch's asks: `tech=` (back, soft, breath, shake, flutter, growl, half, whistle, jet, click, air, harm<n>,
+/// sung<n>), `str=` the fingering, `acc=` an accent, `tie=1`, `slur=` the pitch it is slurred from, `bend=`,
+/// `scoop=` cents,at,over, `swell=`, `expr=` from,to,over, `vib=` cents,hz,wait, `mute=` (straight, cup, harmon,
+/// stem, plunger, practice, stopped, stopmute, muted, choked, clipped).
+fn wind_riff(inst: &Instrument, code: &str) -> Vec<f64> {
+    let text = include_str!("reference/wind_riffs.txt");
+    let mut out = vec![0.0; (20.0 * SRF) as usize];
+    let mut seen = std::collections::BTreeMap::new();
+    for line in text.lines().filter(|l| l.split_whitespace().next() == Some(code)) {
+        let w: Vec<&str> = line.split_whitespace().collect();
+        let at = |i: usize| -> f64 { w[i].parse().expect("a number") };
+        let mut play = Play::plain(at(2), at(3), at(4));
+        for kv in &w[5..] {
+            let (k, v) = kv.split_once('=').expect("a key=value");
+            let num = || -> f64 { v.parse().expect("a number") };
+            let three = || -> Vec<f64> { v.split(',').map(|x| x.parse().expect("a number")).collect() };
+            match k {
+                "tech" => {
+                    play.technique = match v {
+                        "back" => Technique::BackTongue,
+                        "soft" => Technique::SoftTongue,
+                        "breath" => Technique::Breath,
+                        "shake" => Technique::Shake,
+                        "flutter" => Technique::Flutter,
+                        "growl" => Technique::Growl,
+                        "half" => Technique::HalfValve,
+                        "whistle" => Technique::WhistleTone,
+                        "jet" => Technique::JetWhistle,
+                        "click" => Technique::KeyClick,
+                        "air" => Technique::AirTone,
+                        t if t.starts_with("harm") => Technique::Harmonic(t[4..].parse().expect("a harmonic")),
+                        t if t.starts_with("sung") => Technique::Sung(t[4..].parse().expect("an interval")),
+                        other => panic!("a technique {other:?}"),
+                    }
+                }
+                "str" => play.string = Some(num() as u8),
+                "acc" => play.accent = num(),
+                "tie" => play.tie = v == "1",
+                "slur" => play.slur_from = Some(num()),
+                "bend" | "scoop" => {
+                    let q = three();
+                    let b = Some(Bend {
+                        cents: q[0],
+                        at: q[1],
+                        over: q[2],
+                    });
+                    if k == "bend" {
+                        play.bend = b;
+                    } else {
+                        play.scoop = b;
+                    }
+                }
+                "swell" | "expr" => {
+                    let q = three();
+                    let s = Some(Swell {
+                        from: q[0],
+                        to: q[1],
+                        over: q[2],
+                    });
+                    if k == "swell" {
+                        play.swell = s;
+                    } else {
+                        play.expression = s;
+                    }
+                }
+                "vib" => {
+                    let q = three();
+                    play.vibrato = Some(Vibrato {
+                        cents: q[0],
+                        hz: q[1],
+                        wait: q[2],
+                    });
+                }
+                "mute" => {
+                    play.mute = match v {
+                        "straight" => Mute::Straight,
+                        "muted" => Mute::Muted,
+                        "cup" => Mute::Cup,
+                        "harmon" => Mute::Harmon,
+                        "stem" => Mute::HarmonStem,
+                        "plunger" => Mute::Plunger,
+                        "practice" => Mute::Practice,
+                        "stopped" => Mute::Stopped,
+                        "stopmute" => Mute::StopMute,
+                        "choked" => Mute::Choked,
+                        "clipped" => Mute::Clipped,
+                        other => panic!("a mute {other:?}"),
+                    }
+                }
+                other => panic!("an ask {other:?}"),
+            }
+        }
+        let turn = seen.entry(play.midi as i64).or_insert(0u64);
+        let x = engine2::play(inst, &play, 0.0, *turn % 3);
+        *turn += 1;
+        let s = (at(1) * SRF) as usize;
+        for (o, y) in out.iter_mut().skip(s).zip(&x) {
+            *o += y;
+        }
+    }
+    let end = out.iter().rposition(|v| v.abs() > 1e-9).map_or(0, |i| i + 1);
+    out.truncate(end);
+    out
+}
+
+#[test]
+fn the_wind_riffs_keep_the_sketches_balance() {
+    for (code, name, sketch) in WINDS {
+        let x = wind_riff(instrument(name), code);
+        assert!(x.len() > (5.0 * SRF) as usize, "{name}");
+        let b = bands(&x, &ORGAN_EDGES);
+        for (i, v) in b.iter().enumerate() {
+            if sketch[i] < QUIET {
+                continue;
+            }
+            assert!(
+                (v - sketch[i]).abs() < PLUCKED_MARGIN,
+                "{name} ({code}), band {} to {} Hz: {v:.2} dB, the sketch {}",
+                ORGAN_EDGES[i],
+                ORGAN_EDGES[i + 1],
+                sketch[i]
+            );
+        }
+    }
+}
+
 #[test]
 fn repeats_differ_and_the_same_note_is_the_same() {
     for name in ["PIANO", "ORGAN"]
@@ -653,6 +824,7 @@ fn repeats_differ_and_the_same_note_is_the_same() {
         .chain(PLUCKED.map(|p| p.1))
         .chain(BOWED.map(|p| p.1))
         .chain(REEDS.map(|p| p.1))
+        .chain(WINDS.map(|p| p.1))
     {
         let inst = instrument(name);
         let note = |variant| engine2::play(inst, &Play::plain(62.0, 0.4, 0.7), 0.8, variant);

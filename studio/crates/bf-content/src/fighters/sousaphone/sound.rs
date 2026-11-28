@@ -29,6 +29,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, bend, noise_seed};
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::Play;
 use bf_sound::voice::pp;
 use bf_sound::voice::real::{self, Repeats};
 
@@ -180,6 +181,22 @@ impl SousaphoneSound {
             if !v.is_finite() {
                 return Err(MusicError::new(H, format!("a tone's {what} is {v}, not a number")));
             }
+        }
+        let pp = &ctx.cfg[self.k].pp;
+        if ctx.engine2_of(pp).is_some() {
+            // sound upgrade (Voice Engine 2): under Composed the built sousaphone (Su1) plays the note, `blat` its
+            // accent, at the voice's level (the series' gain in it, as `g0` is in the kit's)
+            if !(pp::has_len(dur + 0.14) && pp::len(dur + 0.14) > 0) {
+                return Err(MusicError::new(
+                    H,
+                    format!("no tone for a held length (dur) of {dur} s: it would end before it starts"),
+                ));
+            }
+            let play = Play {
+                accent: round_nd(blat, 2).clamp(0.0, 1.0),
+                ..Play::plain(f64::from(m), round_nd(dur, 3), round_nd(vel, 2))
+            };
+            return ctx.note_played(pp, &play, round_nd(dur + 0.14, 2));
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;

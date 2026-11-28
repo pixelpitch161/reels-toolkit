@@ -195,6 +195,41 @@ tongue never touches the reed.
 Trills, runs, repeated tonguing, a rip and multiphonics in a row are the composition system's, made of single notes;
 a note's repeats already take turns among three slightly different takes (the breath and the player's wander).
 
+## The brass and flutes' techniques
+
+The brass engine (TRUMPET, CORNET, FLUGELHORN, HORN, MELLOPHONE, TROMBONE, EUPHONIUM, TUBA, SOUSAPHONE) and the flute
+engine (FLUTE, PICCOLO) take the winds' fields below; this is how each sounds on them.
+
+| Technique | Ask for it with | What the engine does |
+|---|---|---|
+| Plain note | `Play::plain` | a tongued start ("t"): the tongue lets go, the breath rises with a little overshoot, the lips lock on their natural note (the flute's jet onto its resonance) |
+| Strength | `vel` | the breath: louder is brighter, the blare (the wave steepening down the bore) growing on the loudest notes |
+| Accent | `accent` | a quicker start, a bigger overshoot, a harder tongue |
+| Sforzando | `swell` from over 1 (`from`: how far over, `to`: where it falls back, `over`: how quickly) | the breath thrown in hard and dropped back (brass 1.5 to 0.45 in 0.12 s as the round played it, flutes 1.6 to 0.55) |
+| Crescendo, diminuendo | `swell` from 1 or under | the breath over the note; `expression` a second swell on top |
+| Double, triple tonguing | `technique = BackTongue` on the "k" notes | brass: a softer, slower back-of-the-tongue start played after its tongued note (the horn still ringing); flutes: as tongued, as the round's flute tongued them |
+| Soft tongue, breath start | `technique = SoftTongue`, `Breath` | a "d": slower, no overshoot; no tongue: the breath swells in (the flutes' breathy "hoo") |
+| Slur, lip slur | `slur_from`, `tie` on the note before | the note it slurs from plays for 0.2 s first, the lips carried across (re-set where they would land between natural notes); 12 ms join |
+| Smear, glide, trombone slide | `slur_from` with a `bend` of 0 cents | the pitch glides over the bend's `over` |
+| Scoop, fall, doit, bend | `scoop`, `bend` | the lips (and half-pressed valves past what the lips can pull) carry the pitch; a fall of over 150 cents dies away |
+| Vibrato | `vibrato` | none asked: the player's own on notes of half a second or more (Tp1 5 cents, Tb1 4.8, Fl1 6 at 5.2 Hz, Pc1 5 at 5.8 Hz, Su1 none); 0 cents none |
+| Tongue stop, shortest note | `mute = Choked`, `Clipped` | the breath cut in 5 ms; a note of 60 ms at most |
+| Lip shake | `technique = Shake` | the lips flick to the next natural note up and back, 6.5 times a second, after 0.15 s |
+| Flutter tongue | `technique = Flutter` | the tongue rolls an R: the air cut and let go about 24 times a second |
+| Growl | `technique = Growl` | the player hums into the horn: a rough 92 Hz buzz in the breath under the note |
+| Half valve | `technique = HalfValve` | the valves half down: a choked, nasal note a little flat (Fh1 0.55, the rest 0.6) |
+| Natural note | `technique = Harmonic(n)` | brass: the n-th natural note, its fingering found to suit; flutes: the note fingered as the n-th harmonic of a lower one |
+| Fingering | `string` | semitones the valves or slide lower the horn (0 open, the trombone's first position), 100 and over the double horn's other side |
+| Mutes | `mute = Muted`/`Straight`, `Cup`, `Harmon`, `HarmonStem`, `Practice`, `StopMute` | each a filter with the round's level against the open horn (3 to 15 dB quieter on the trumpet) |
+| Plunger | `mute = Plunger`, its opening `expression` (from, to, over) | closed with none; with one, opening from `from` to `to` over `over` and back (a wah every 2 x `over`) while the note holds |
+| Stopped horn | `mute = Stopped` | the hand closing the bell: brassy and buzzing |
+| Whistle tone, jet whistle | `technique = WhistleTone`, `JetWhistle` | flutes: a faint pure whistle on a high harmonic; a rush of air through the tube |
+| Key clicks, air | `technique = KeyClick`, `AirTone` | flutes: the pads alone, pitched by the tube; the breath through the flute with no note |
+| Singing while playing | `technique = Sung(n)` | flutes: a hummed note n semitones from the played one, beating against it |
+
+A brass note over the player's reliable top (MELLOPHONE 81, EUPHONIUM 72, SOUSAPHONE 56), or one no lip tension
+sounds cleanly, is played an octave down, as a player out of reach would.
+
 ## The winds' ways
 
 The reeds (saxophones, clarinets, oboe, bassoon, contrabassoon, bagpipe, accordion), the brass (trumpet, cornet,
@@ -209,7 +244,7 @@ same fields. A wind takes the ones its players have and leaves the rest (a flute
 | Breath start, no tongue | `technique = Breath` |
 | Slur, lip slur | `slur_from`, with `tie` on the note before |
 | Smear, glissando, a trombone's slide | `slur_from` with a `bend` of 0 cents: the glide over the bend's `over` |
-| Accent, sforzando | `accent`; a sforzando is an accent with a `swell` from 1 down |
+| Accent, sforzando | `accent`; a sforzando is an accent with a `swell` from 1 down, or a `swell` from over 1 (the breath thrown in past the note's strength, as the brass and flutes' round played it; the reeds take a swell up to 1.2): either way works on every wind |
 | Crescendo, diminuendo | `swell` |
 | Vibrato | `vibrato`; none is the player's own, 0 cents none at all |
 | Scoop | `scoop`: starts so many cents off, stays `at`, reaches the note over `over` |

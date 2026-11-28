@@ -75,6 +75,15 @@ impl PiccoloSound {
     /// # Errors
     /// As [`Self::pic`].
     fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64) -> Result<Arc<[f64]>, MusicError> {
+        let pp = &ctx.cfg[self.k].pp;
+        if ctx.engine2_of(pp).is_some() {
+            // sound upgrade (Voice Engine 2): under Composed the built piccolo (Pc1) plays the note, at the level of
+            // the kit's own (the voice's level, less the series' gain)
+            let g = ctx.inst_gain(pp)?;
+            let held = round_nd(dur.max(0.0), 3);
+            let x = ctx.note(pp, round_nd(m, 2), held, round_nd(held + 0.18, 2), round_nd(vel, 2))?;
+            return Ok(x.iter().map(|v| if g > 0.0 { v / g } else { 0.0 }).collect());
+        }
         let x = self.pic(m, dur, vel)?;
         if !ctx.composed_on() {
             return Ok(x);

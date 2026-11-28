@@ -8,6 +8,9 @@
 //!
 //! The voice draws no noise: the shared stream is left where it was.
 
+use bf_sound::voice::engine2::brass::BrassParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp;
 use bf_sound::voice::pp::brass::{Brass, brass};
 use bf_sound::voice::real::{Correction, Fill, Rework, Tail};
@@ -125,11 +128,34 @@ pub const REWORK: Rework = Rework {
     tail: TAIL,
 };
 
+/// The Composed arrangement's HORN (Voice Engine 2): built from how it works, on the brass engine (the lips a mass on a
+/// spring, the horn its resonances, the blare of the bore), Aedan's pick Hn1, the double horn: warm and noble, the hand
+/// in the bell, with every technique it has, in a light room of its own (`docs/studio/voice-engine-2-instruments.md`,
+/// "The brass and flutes"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "HORN",
+    Parts::Brass(BrassParts::HN1),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 /// The HORN's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct HornVoice;
 
 impl Voice for HornVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, _noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         pp::to_48k(&synth(midi, vel, dur))
     }
