@@ -25,9 +25,16 @@ pub struct Reached {
 /// The mix `x` brought to `lufs` with its true peak at or under `peak` dB, and each of `stems` under the same
 /// gains. Silence is left alone.
 pub fn to_target(x: &mut [[f64; 2]], stems: &mut [&mut Vec<[f64; 2]>], lufs: f64, peak: f64) -> Reached {
-    let reached = |x: &[[f64; 2]]| Reached {
-        lufs: heard::integrated(x),
-        true_peak: heard::db(heard::true_peak(x)),
+    // the loudness and the true peak at once, on two threads (the same numbers as one after the other)
+    let reached = |x: &[[f64; 2]]| {
+        let (lufs, peak) = std::thread::scope(|s| {
+            let peak = s.spawn(|| heard::true_peak(x));
+            (heard::integrated(x), peak.join().expect("the true peak"))
+        });
+        Reached {
+            lufs,
+            true_peak: heard::db(peak),
+        }
     };
     let mut now = reached(x);
     if now.lufs <= -70.0 {
