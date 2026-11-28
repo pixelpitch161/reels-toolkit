@@ -10,6 +10,8 @@
 //! resonance up (the octave), and the fingering takes the tube's first resonance for the low octave, its second for
 //! the next, its third and fourth above. The player's embouchure holds the jet's swing across the edge near a level
 //! that rises with strength, adjusting over 30 ms: a small swing is a sweet round tone, a large one hard and bright.
+//! A player sets it for the note before the tongue lets the air go, so a note from rest starts on its breath and its
+//! tone grows out of it (the embouchure the ear found each note settling on comes with its trim).
 //!
 //! The player's ear: each note is first tried alone for 0.42 s and the tube's length trimmed (as a flautist rolls
 //! the flute in or out) until it sounds in tune, read finely from the spectrum. The techniques are the player's:
@@ -61,6 +63,9 @@ pub struct FluteParts {
     pub att: f64,
     pub batt: f64,
     pub rel: f64,
+    /// A tongued start from rest with the embouchure already set for the note (each note in the app): the jet up
+    /// to speed in, s.
+    pub att_set: f64,
     /// The ear listens to each note from this long after its start, s.
     pub tun_a: f64,
     /// The player's own vibrato (cents, Hz, the wait), mostly in the breath: its swing at that depth.
@@ -93,13 +98,15 @@ pub struct FluteParts {
 
 /// The ear's trims (cents) for plain notes, made offline by the ear's own trial passes: each note from `low` to
 /// `high` at each strength step from `vels.0` to `vels.1` (in twentieths), a strength between two steps taking the
-/// trim between theirs.
+/// trim between theirs. `embs`, laid out alike: the embouchure each note settled on in the same passes (the jet's
+/// gain, log), which the player sets before the note starts.
 #[derive(Debug, PartialEq)]
 pub struct FluteTable {
     pub low: u8,
     pub high: u8,
     pub vels: (u8, u8),
     pub rows: &'static [f64],
+    pub embs: &'static [f64],
 }
 
 /// The sample rate the tables were made at (at another, every note is tried).
@@ -127,6 +134,7 @@ const FLUTE: FluteParts = FluteParts {
     att: 0.025,
     batt: 0.09,
     rel: 0.06,
+    att_set: 0.012,
     tun_a: 0.22,
     vib_cents: 6.0,
     vib_hz: 5.2,
@@ -293,13 +301,30 @@ impl FNote {
     }
 }
 
+/// How long a note's embouchure, set before it, waits for the note to sound before raising the jet's gain, s.
+const SET_WAIT: f64 = 0.08;
+
 /// One flautist playing a line of notes (in time order) at the tube's rate `fs`: what is heard (the tube and the
-/// jet's hiss), and the tube alone. `corr` is each note's tube trim, cents.
-fn line(fl: &FluteParts, notes: &[FNote], corr: &[f64], n_s: usize, seed: u64, fs: f64) -> (Vec<f64>, Vec<f64>) {
+/// jet's hiss), the tube alone, and the embouchure at the end (the jet's gain, log). `corr` is each note's tube trim,
+/// cents. `emb` is the embouchure the player sets before the line's first note (as the ear found it holding the
+/// note): each start from rest then lets the jet go at once (`att_set`), and the embouchure is not raised while the
+/// note is still growing (it waits for the note to reach its swing, `SET_WAIT` at most), so the tone grows out of the
+/// breath at its own pace. `None` is the sketch's way, the ear's trial passes: the embouchure relaxed at rest and
+/// adjusting from the first breath, which overdrives a start from rest (the jet's gain wound up while the tube is
+/// still quiet, the swing overshooting several times over for the first tens of ms).
+fn line(
+    fl: &FluteParts,
+    notes: &[FNote],
+    corr: &[f64],
+    n_s: usize,
+    seed: u64,
+    fs: f64,
+    emb: Option<f64>,
+) -> (Vec<f64>, Vec<f64>, f64) {
     // two draws a step (the jet's turbulence and its hiss), one a block on a flutter
     let flutter = notes.iter().any(|f| f.n.flutter);
     let draws = 2 * n_s + if flutter { n_s / BLOCK + 1 } else { 0 };
-    brass::ahead(seed, draws, |rng| line_in(fl, notes, corr, n_s, rng, fs))
+    brass::ahead(seed, draws, |rng| line_in(fl, notes, corr, n_s, rng, fs, emb))
 }
 
 fn line_in(
@@ -309,7 +334,8 @@ fn line_in(
     n_s: usize,
     rng: &mut brass::Ahead,
     fs: f64,
-) -> (Vec<f64>, Vec<f64>) {
+    emb: Option<f64>,
+) -> (Vec<f64>, Vec<f64>, f64) {
     let dt = 1.0 / fs;
     let nm = fl.nmodes;
     let mut modes = vec![Svf::default(); nm];
@@ -323,7 +349,11 @@ fn line_in(
     let mut hs_lp = OnePole::lp(6000.0, fs);
     let mut jet_lp = OnePole::lp(fs * 0.12, fs);
     let mut jet_bp = Svf::default();
-    let (mut lg, mut a_ms, mut a_tgt) = (0.0f64, 0.0f64, 1.0f64);
+    // the embouchure (the jet's gain, log), where it rests between breaths, and whether a note set before it is
+    // still growing (since when); `set` marks a start from rest with the embouchure set
+    let rest = emb.unwrap_or(0.0);
+    let (mut lg, mut a_ms, mut a_tgt) = (rest, 0.0f64, 1.0f64);
+    let (mut growing, mut grow_t, mut set) = (false, 0.0f64, false);
     jet_bp.set(1000.0, 1.0, fs);
     let k_jet = 1.0 - dmath::exp(-dt / 0.003);
     let k_tau = 1.0 - dmath::exp(-dt / 0.01);
@@ -353,11 +383,13 @@ fn line_in(
                 let n = &fnn.n;
                 let ftube = hz(n.midi) / fl.ratio(fnn.mode(fl)) * pow2(corr[i] / 1200.0);
                 let slurred = n.slur.is_some() && i > 0 && notes[i - 1].n.tie;
-                seg_from = if cur_f < 0.0 || (!slurred && gate_prev < 0.05) {
-                    dmath::log2(ftube)
-                } else {
-                    cur_f
-                };
+                let fresh = cur_f < 0.0 || (!slurred && gate_prev < 0.05);
+                seg_from = if fresh { dmath::log2(ftube) } else { cur_f };
+                set = emb.is_some() && fresh;
+                if set {
+                    growing = true;
+                    grow_t = n.t;
+                }
                 seg_t0 = n.t;
                 seg_tb = if slurred { n.glide.unwrap_or(0.008) } else { 0.004 };
                 if fnn.tech == Tech::Click {
@@ -424,7 +456,7 @@ fn line_in(
                 } else if n.tongue == Tongue::B {
                     smooth(tau / fl.batt)
                 } else {
-                    let at = fl.att * (1.0 - 0.5 * n.acc);
+                    let at = if set { fl.att_set } else { fl.att } * (1.0 - 0.5 * n.acc);
                     let g = smooth(tau / at);
                     g * (1.0 + (0.15 + 0.4 * n.acc) * dmath::exp(-(tau / 0.04)))
                 };
@@ -504,10 +536,16 @@ fn line_in(
         a_ms += (ac * ac - a_ms) * (dt / 0.01).min(1.0);
         if drive > 0.1 {
             let a_est = (2.0 * a_ms).sqrt() + 1e-6;
-            lg += dt / fl.agc * dmath::ln(a_tgt / a_est).clamp(-3.0, 3.0);
+            let step = dt / fl.agc * dmath::ln(a_tgt / a_est).clamp(-3.0, 3.0);
+            if growing && (a_est >= a_tgt || now - grow_t > SET_WAIT) {
+                growing = false;
+            }
+            if !growing || step < 0.0 {
+                lg += step;
+            }
             lg = lg.clamp(-3.0, 0.7);
         } else {
-            lg += (0.0 - lg) * (dt / 0.05).min(1.0);
+            lg += (rest - lg) * (dt / 0.05).min(1.0);
         }
         let eta = ac + yoff + turb;
         let split = dmath::tanh(eta);
@@ -540,7 +578,7 @@ fn line_in(
         }
         out[k] = o;
     }
-    (out, tube)
+    (out, tube, lg)
 }
 
 /// A finer reading of a pitch near `f`: the peak of `x`'s windowed spectrum within 40 cents of it (the
@@ -587,10 +625,11 @@ fn pitch_refine(x: &[f64], fs: f64, f: f64) -> f64 {
 
 const TRIAL_SEED: u64 = 17;
 
-/// The player's ear on one note alone, held: the tube trimmed (three tries at most) until it sounds in tune.
-fn tune(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
+/// The player's ear on one note alone, held: the tube trimmed (three tries at most) until it sounds in tune, and the
+/// embouchure the note settled on in the last try (none for the techniques with no note to hold).
+fn tune(fl: &FluteParts, f: &FNote, fs: f64) -> (f64, Option<f64>) {
     if matches!(f.tech, Tech::Jet | Tech::Air | Tech::Click) {
-        return 0.0;
+        return (0.0, None);
     }
     let fs_s = fs * fl.os as f64;
     let n = &f.n;
@@ -628,16 +667,18 @@ fn tune(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
         t.n.vel = ((velk - fl.vmin) / (fl.vmax - fl.vmin)).clamp(0.0, 1.2);
     }
     let target = hz(n.midi);
-    let mut c = 0.0;
+    let (mut c, mut emb) = (0.0, 0.0);
     for _ in 0..3 {
-        let (_, tube) = line(
+        let (_, tube, e) = line(
             fl,
             std::slice::from_ref(&t),
             &[c],
             (0.42 * fs_s) as usize,
             TRIAL_SEED,
             fs_s,
+            None,
         );
+        emb = e;
         let a = (fl.tun_a * fs_s) as usize;
         let e = ((0.40 * fs_s) as usize).min(tube.len());
         let (fr, _) = pitch_of(&tube[a..e], fs_s, target);
@@ -654,18 +695,20 @@ fn tune(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
             break;
         }
     }
-    c
+    (c, Some(emb))
 }
 
 type TriedKey = (&'static str, Vec<u64>);
+type Tried = (f64, Option<f64>);
 
-fn tried() -> &'static Mutex<HashMap<TriedKey, f64>> {
-    static TRIED: OnceLock<Mutex<HashMap<TriedKey, f64>>> = OnceLock::new();
+fn tried() -> &'static Mutex<HashMap<TriedKey, Tried>> {
+    static TRIED: OnceLock<Mutex<HashMap<TriedKey, Tried>>> = OnceLock::new();
     TRIED.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// The trim the ear settles on for `f`: from the table where it has the note, else tried when first asked and kept.
-fn tuned(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
+/// The trim the ear settles on for `f` and the embouchure the player sets for it: from the table where it has the
+/// note, else tried when first asked and kept.
+fn tuned(fl: &FluteParts, f: &FNote, fs: f64) -> Tried {
     let n = &f.n;
     let g: Vec<u64> = [n.sfz, n.swell, n.swell2]
         .into_iter()
@@ -674,7 +717,7 @@ fn tuned(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
     let tech = match f.tech {
         Tech::Harm(k) => 100 + k as u64,
         Tech::Whistle(k) => 200 + k as u64,
-        Tech::Jet | Tech::Air | Tech::Click => return 0.0,
+        Tech::Jet | Tech::Air | Tech::Click => return (0.0, None),
         Tech::Normal | Tech::Sing(_) => 0,
     };
     if let Some(t) = fl.table
@@ -693,8 +736,8 @@ fn tuned(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
             let i = ((k - k0).floor() as usize).min(nv - 1);
             let j = (i + 1).min(nv - 1);
             let x = k - k0 - i as f64;
-            let (a, b) = (t.rows[row + i], t.rows[row + j]);
-            return a + (b - a) * x;
+            let between = |r: &[f64]| r[row + i] + (r[row + j] - r[row + i]) * x;
+            return (between(t.rows), Some(between(t.embs)));
         }
     }
     let key = (
@@ -716,12 +759,13 @@ fn tuned(fl: &FluteParts, f: &FNote, fs: f64) -> f64 {
 
 /// What the player's ear settles on for the note `play` at sample rate `fs`: its tube's trim, cents.
 pub fn ear(p: &FluteParts, play: &Play, fs: f64) -> f64 {
-    tuned(p, &FNote::of(p, play, 0.0), fs)
+    tuned(p, &FNote::of(p, play, 0.0), fs).0
 }
 
-/// The ear's trial passes for a plain note (the tables' rows), cents.
-pub fn tune_plain(p: &FluteParts, midi: f64, vel: f64, fs: f64) -> f64 {
-    tune(p, &FNote::of(p, &Play::plain(midi, 0.5, vel), 0.0), fs)
+/// The ear's trial passes for a plain note (the tables' rows): its trim, cents, and the embouchure it settled on.
+pub fn tune_plain(p: &FluteParts, midi: f64, vel: f64, fs: f64) -> (f64, f64) {
+    let (c, e) = tune(p, &FNote::of(p, &Play::plain(midi, 0.5, vel), 0.0), fs);
+    (c, e.unwrap_or(0.0))
 }
 
 const SLUR_PRE: f64 = 0.2;
@@ -771,16 +815,22 @@ pub fn note(p: &FluteParts, play: &Play, len: usize, variant: u64, fs: f64) -> V
     let f = FNote::of(p, play, t0);
     let mut notes = Vec::new();
     let mut corr = Vec::new();
+    // the embouchure is set for the line's first note: the lead-in's when slurred
+    let mut emb = None;
     if let Some(s) = slur {
         let mut lead = FNote::of(p, &Play::plain(s.clamp(0.0, 127.0), t0, play.vel), 0.0);
         lead.n.tie = true;
-        corr.push(tuned(p, &lead, fs));
+        let (c, e) = tuned(p, &lead, fs);
+        corr.push(c);
+        emb = Some(e);
         notes.push(lead);
     }
-    corr.push(tuned(p, &f, fs));
+    let (c, e) = tuned(p, &f, fs);
+    corr.push(c);
+    let emb = emb.unwrap_or(e);
     notes.push(f);
     let n_s = (pre + out_n) * p.os + 32 * p.os + 2;
-    let (mut out, _) = line(p, &notes, &corr, n_s, seed(variant, play.midi), fs_s);
+    let (mut out, _, _) = line(p, &notes, &corr, n_s, seed(variant, play.midi), fs_s, emb);
     let x = radiate(p, &mut out, fs, pre + out_n);
     let mut y = x[pre..].to_vec();
     y.resize(len, 0.0);
@@ -804,10 +854,10 @@ pub fn phrase(
     let ls: Vec<FNote> = notes.iter().map(|(t, play)| FNote::of(p, play, *t)).collect();
     let corr: Vec<f64> = match tunings {
         Some(t) => t.to_vec(),
-        None => ls.iter().map(|f| tuned(p, f, fs)).collect(),
+        None => ls.iter().map(|f| tuned(p, f, fs).0).collect(),
     };
     let n_s = len * p.os + 32 * p.os + 2;
-    let (mut out, _) = line(p, &ls, &corr, n_s, seed, fs_s);
+    let (mut out, _, _) = line(p, &ls, &corr, n_s, seed, fs_s, None);
     radiate(p, &mut out, fs, len)
 }
 
@@ -822,8 +872,8 @@ mod tests {
         note(p, play, n, variant, fs)
     }
 
-    /// Both picks sit on their notes across their ranges, held, vibrato off (measured within 0.7 cents), and at 44.1
-    /// kHz too (within 1.2).
+    /// Both picks sit on their notes across their ranges, held, vibrato off (measured within 1.2 cents), and at 44.1
+    /// kHz too (within 1.7).
     #[test]
     fn the_flutes_play_in_tune_across_their_ranges() {
         for (p, ms) in [
@@ -850,7 +900,7 @@ mod tests {
             (FluteParts::PC1, 95.0, 0.475),
             (FluteParts::PC1, 103.0, 0.875),
         ] {
-            let (t, e) = (ear(&p, &Play::plain(m, 0.5, v), FS), tune_plain(&p, m, v, FS));
+            let (t, e) = (ear(&p, &Play::plain(m, 0.5, v), FS), tune_plain(&p, m, v, FS).0);
             assert!(
                 (t - e).abs() < 0.3,
                 "{} {m} at {v}: table {t:.2}, tried {e:.2} cents",
@@ -862,8 +912,8 @@ mod tests {
         }
     }
 
-    /// Blown harder, the 3rd to 6th harmonics climb against the fundamental (measured 9 dB on the flute, 11 on the
-    /// piccolo, between strengths 0.35 and 0.95).
+    /// Blown harder, the 3rd to 6th harmonics climb against the fundamental (measured 9.4 dB on the flute, 10.5 on
+    /// the piccolo, between strengths 0.35 and 0.95).
     #[test]
     fn louder_is_brighter() {
         for (p, m) in [(FluteParts::FL1, 79.0), (FluteParts::PC1, 86.0)] {
@@ -1008,7 +1058,7 @@ mod tests {
     }
 
     /// A tied note and the note slurred from it join without a click, a gap or a doubled start (measured at most
-    /// 0.78, 2.7 dB under and 0.5 dB over).
+    /// 0.76, 3.0 dB under and 0.55 dB over).
     #[test]
     fn slurred_and_tied_notes_join_without_a_click() {
         for (p, a, b) in [(FluteParts::FL1, 79.0, 83.0), (FluteParts::PC1, 86.0, 91.0)] {
@@ -1035,6 +1085,46 @@ mod tests {
             assert!(step < 1.5, "{} {a} to {b}: a click ({step:.2})", p.name);
             assert!(lo > -6.0, "{} {a} to {b}: a gap ({lo:.1} dB)", p.name);
             assert!(hi < 3.0, "{} {a} to {b}: a doubled start ({hi:.1} dB)", p.name);
+        }
+    }
+
+    /// A note from rest starts on its breath and its tone grows out of it, as a flautist's does: over the first 20 ms
+    /// the breath between the harmonics is about as loud as in the held note (measured 4.2 dB under at most; with the
+    /// embouchure not set before the note, 10.6 to 33 dB under), and over 20 to 60 ms the 3rd harmonic stands no
+    /// higher over the fundamental than in the held note (measured 1.4 dB over at most; not set, 9.3 to 10.3 dB over:
+    /// the jet overdriven while the embouchure wound up).
+    #[test]
+    fn a_note_from_rest_starts_on_its_breath() {
+        for (p, m) in [
+            (FluteParts::FL1, 72.0),
+            (FluteParts::FL1, 84.0),
+            (FluteParts::PC1, 84.0),
+            (FluteParts::PC1, 96.0),
+            (FluteParts::PC1, 103.0),
+        ] {
+            let x = render(&p, &still(m, 0.6, 0.62), 0, FS);
+            let f = hz(m);
+            let blip = upper(&x, f, 3, 3, 0.02, 0.06, FS) - upper(&x, f, 3, 3, 0.25, 0.4, FS);
+            assert!(
+                blip < 4.0,
+                "{} {m}: the 3rd harmonic {blip:.1} dB over the held note's",
+                p.name
+            );
+            let between =
+                |a: f64, b: f64| [1.5, 2.5, 3.5].iter().map(|k| at_hz(&x, k * f, a, b, FS)).sum::<f64>() / 3.0;
+            let held = (0..8)
+                .map(|i| {
+                    let a = 0.25 + 0.02 * f64::from(i);
+                    between(a, a + 0.02)
+                })
+                .sum::<f64>()
+                / 8.0;
+            let first = between(0.0, 0.02) - held;
+            assert!(
+                first > -8.0,
+                "{} {m}: the breath {first:.1} dB under the held note's",
+                p.name
+            );
         }
     }
 

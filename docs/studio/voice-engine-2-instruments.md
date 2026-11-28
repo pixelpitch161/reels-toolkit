@@ -559,7 +559,11 @@ tuned over the part heard): they play as heard.
   curve, driving the tube's resonances; breath noise in the loop; a slow embouchure control holding the jet steady.
   Its ear is three trial passes a note, made offline into `brass_tune.rs` too at every strength step (a strength
   between two steps takes the trim between theirs, within a quarter of a cent of the ear's own); a swell, a harmonic,
-  a whistle tone or another rate is tried as asked and kept.
+  a whistle tone or another rate is tried as asked and kept. The same passes give the embouchure each note settles
+  on, and the player sets it before the note: the tongue lets the air go at once (the jet up to speed in 12 ms) and
+  the embouchure waits for the note to sound (80 ms at most) before it pushes, so a note from rest starts on its
+  breath and the tone grows out of it in 20 to 75 ms over the fighters' registers (the sketch's control, starting
+  relaxed, wound the jet's gain up while the tube was still quiet: every start overdriven, a bright clean blip).
 - **Speed.** The breath's random draws are made ahead on a second thread in the generator's own order (the tongue's
   puffs after the last tongued start not worked at all), the resonances are set again only when the tuning moves, the
   bell's filters run in one pass and the decimator and the pulse limiter's windows work four outputs at once: the
