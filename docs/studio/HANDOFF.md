@@ -214,11 +214,12 @@ holds files), then add the new folder's SHA-256s to `FROZEN` in `crates/bf-app/t
 - **Tests run on this PC, never in a cloud container** (the owner, Nov 23, 2026). A thread that works on this PC
   (Remote Control) runs its tests here as above. A thread in a cloud container builds and tests nothing there: it
   pushes, and names the tests it needs in its last commit's message, one line each, `PC-Tests: -p bf-sim --test
-  violin_quick` (what follows `cargo test --release --locked` in `studio/`). The `pc-tests` workflow runs them on
-  this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface tests run too; the
-  result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what changed, none for a
-  small change. Every push that touches `studio/` also runs the `studio` checks on this PC. Setup, the switch
-  (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
+  violin_quick` (what follows `cargo test --release --locked` in `studio/`), at most 10 lines; one line can name
+  several test files (`-p bf-harness --test a --test b`) or filters (`--lib -- music:: polish`). The `pc-tests`
+  workflow runs them on this PC's runner, with the reference cache and DirectX 12, so bf-harness and the interface
+  tests run too; the result is on that run's page (Actions, `pc-tests`). The same rules choose the tests: only what
+  changed, none for a small change. Every push that touches `studio/` also runs the `studio` checks on this PC.
+  Setup, the switch (`BF_PC_RUNNER`) and fixes: `tools/pc-runner/README.md`. The runner keeps its own build folder in
   `F:\bf-runner\target` (30 to 95 GB), which counts toward the 150 GB to keep free on F:.
 - The reference Python (`.studio-tools\py313`) only for the exact route below.
 - **Nothing under `projects/`, `reelkit/` or `series/` is ever edited.** `git status --short projects reelkit series`
@@ -275,6 +276,54 @@ can show at once; the 4 s gap between names counts per fighter).
   draws contact sheets of the frames round each kind of event. `fights/dev/bold_<slug>.toml` (against the target
   dummy) and `bold_<slug>_low.toml` (against a real fighter with the odds against it, for the low-HP move) exist
   for every fighter.
+
+## Voice Engine 2 (realistic instruments, from Nov 26)
+
+Voice Engine 2 is the Studio's own instrument synthesizer. Since stage 1b each instrument family has its **own built
+engine**, modelled from how the instrument physically works and judged by ear, with real recordings as the reference
+for facts (the owner's rule, 2026-11-26): the piano is the struck-string engine (`strings.rs` with `board.rs`, the
+owner's pick P16), the organ the pipe engine (`pipes.rs`, O8); since stage 2 the acoustic, electric, bass guitar,
+ukulele and harp play the plucked-string engine (`plucked.rs`, the picks A6, E2, B3, U6, H3), with a wooden body
+(`body.rs`) for the acoustic, the ukulele and the harp and an amp and cabinet (`amp.rs`, through the voice's
+`Space.amp`, playing on the fighter's whole bus in the Composed polish) for the electric and the bass; since stage 3
+the violin, viola, cello, contrabass and octobass play the bowed-string engine (`bowed.rs`, the picks Vn3, Va3, Vc1,
+Cb1, Oc2: a string held by a bow's friction, its twist, the player's ear, the body; plucks as the string's modes); since
+stage 4 the saxophones, clarinets, oboe, bassoons, bagpipes and accordion play the reed engine (`reed.rs`, the picks
+Ss2, As2, Ts2, Bs2, Cl1, Bc1, Cc1, Ob1, Bn1, Cf2, Bp1, Ac1: a reed valve on a bore of tuned resonances, the register
+vent, the player's tuning and ear; the accordion's free reeds; the bagpipe's grace notes and held drones);
+since stage 5 the trumpet, cornet, flugelhorn, horn, mellophone, trombone, euphonium, tuba and sousaphone play the brass
+engine (`brass.rs`, the picks Tp1, Co1, Fh1, Hn1, Me1, Tb1, Eu1, Tu1, Su1: the lips a mass on a spring against the
+horn's resonances, the blare of the bore, the player's ear made offline into `brass_tune.rs`, mutes and the hand) and
+the flute and piccolo the flute engine (`flute.rs`, Fl1, Pc1: an air jet driving the tube). Every
+instrument plays all its techniques (pedals, harmonics, stops, swell box, picks, slaps, palm mutes, bends...), and
+the engines run one note at a time at any sample rate (a plugin could use them later). Stage 1's **recipe** engine (overtones measured from recordings) is kept but played by no fighter. It all
+plays only under the Composed arrangement; Classic is untouched, byte for byte. The families follow one stage at a
+time, each with its own engine and voice lab, stopping at a listening page for the owner's review
+(`docs/studio/2026-11-26-voice-engine-2-design.md`, "Revision: built engines").
+
+- **Where:** the engines in `bf-sound/src/voice/engine2/` (`strings.rs`, `board.rs`, `pipes.rs`, `plucked.rs`, `bowed.rs`,
+  `reed.rs`, `brass.rs` with `brass_tune.rs`, `flute.rs`, `body.rs`, `amp.rs`, `eq.rs`; `play.rs`
+  for how a note is played; `space.rs` for width and an instrument's own room; the kept recipe engine's format,
+  player and parts); each fighter's instrument in `bf-content/src/fighters/<slug>/voice.rs` (`ENGINE2`, built with
+  `Instrument::built`; `RECIPE` the kept recipe voice); parts ask for notes with `MusicCtx::note_played`. The built
+  voices' yardstick is `bf-harness/tests/engine2_built.rs` (the listening riffs against the real instruments' octave
+  bands and the owner's picks as built); each technique has its own unit test beside its engine. The recordings
+  tool is `cargo run --release -p bf-harness --example recipes -- <fetch|study|measure|check|reference|sets>`, the
+  measuring `bf-harness/src/e2measure.rs`.
+- **The licence rule:** a shipped recipe is measured only from CC0 or "free for any use" recordings. CC BY and
+  CC BY-SA sets may be studied (general facts about the instrument), never shipped from; non-commercial and
+  all-rights-reserved sets are not used at all. Every set is listed in `docs/studio/voice-engine-2-sources.md`.
+  Recordings are never committed (they live in the git-ignored `studio/reference/.cache/`).
+- **Adding a family** (a later stage): `recipes fetch` and `recipes study` its sets (PC-only sets by Remote
+  Control) and write its sheet in `docs/studio/voice-engine-2-instruments.md` (working parts, every technique, the
+  spread across the sources, the published acoustics); sketch its engine from its parts in a voice lab and let the
+  owner pick by ear (rounds of named variants); port the pick into `engine2/` (one sample or one short block at a
+  time, the sample rate passed in, never a fixed 48 kHz) with a test per technique; give the fighter its `ENGINE2`
+  (`Instrument::built`) and add it to `engine2_built.rs`; then `ballfight levels <fights> --write
+  crates/bf-content/src/levels_table.rs` for its row, and the speed check (at most 25% slower than before on its
+  fights).
+- **Playing:** `docs/studio/voice-engine-2-playing.md` lists what a note can ask for (accent, swell, pedals, mute,
+  technique, stops, swell box, chord size...) and each instrument's techniques, for the owner's composition system.
 
 ## How to add a fighter
 

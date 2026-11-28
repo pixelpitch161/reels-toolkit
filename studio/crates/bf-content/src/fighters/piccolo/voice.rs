@@ -5,6 +5,9 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::synth;
+use bf_sound::voice::engine2::flute::FluteParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice};
 
@@ -108,11 +111,34 @@ pub const REWORK: Rework = Rework {
     tail: &[],
 };
 
+/// The Composed arrangement's PICCOLO (Voice Engine 2): built from how it works, on the flute engine (an air jet across
+/// the embouchure hole driving the tube's resonances), Aedan's pick Pc1, the silver piccolo: bright and sparkling, with
+/// every technique it has, in a light room of its own (`docs/studio/voice-engine-2-instruments.md`, "The brass and
+/// flutes"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "PICCOLO",
+    Parts::Flute(FluteParts::PC1),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 /// PICCOLO's voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PiccoloVoice;
 
 impl Voice for PiccoloVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, _noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         tone(midi, vel, dur)
     }

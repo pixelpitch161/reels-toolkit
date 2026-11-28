@@ -59,6 +59,13 @@ fn samples(seconds: f64) -> Result<usize, MusicError> {
 /// As [`MusicCtx::note`].
 pub fn tuba(ctx: &MusicCtx, m: f64, beats: f64, vel: f64) -> Samples {
     let dur = beats * ctx.show.grid.beat * 0.92;
+    if ctx.engine2_of("TUBA").is_some() {
+        // sound upgrade (Voice Engine 2): under Composed the built tuba holds the note itself for the whole of it, so
+        // the kit's buzzing sustain under a long note is left out
+        return Ok(ctx
+            .note("TUBA", m, round_nd(dur, 3), round_nd(dur + 0.2, 2), round_nd(vel, 1))?
+            .to_vec());
+    }
     let x = ctx.note(
         "TUBA",
         m,
@@ -109,6 +116,17 @@ pub fn sub_drone(dur: f64, f0: f64, f1: f64) -> Samples {
             dmath::np_tanh(2.0 * x) * clip(tt[i] / 0.1, 0.0, 1.0) * (0.4 + 0.6 * u[i])
         })
         .collect())
+}
+
+/// The lowest note the built tuba sounds as a pedal under the oom (its player's table reaches down to it).
+const SUB_LOWEST: i32 = 24;
+
+/// `x` brought to the loudness (root mean square) of `like`, the kit's own tone it stands in for.
+fn at_level(x: &[f64], like: &[f64]) -> Vec<f64> {
+    let rms = |v: &[f64]| (v.iter().map(|a| a * a).sum::<f64>() / v.len().max(1) as f64).sqrt();
+    let (a, b) = (rms(x), rms(like));
+    let k = if a > 0.0 { b / a } else { 0.0 };
+    x.iter().map(|v| v * k).collect()
 }
 
 /// `np.sin(2 * np.pi * f * tt)` for `n` samples.
@@ -208,6 +226,21 @@ impl TubaSound {
                         .zip(&env)
                         .map(|(s, e)| s * e)
                         .collect();
+                    let sub = if ctx.engine2_of("TUBA").is_some() && root - 12 >= SUB_LOWEST {
+                        // sound upgrade (Voice Engine 2): under Composed the sub-octave is the built tuba's own
+                        // pedal note, at the sine's level (under its pedal reach the kit's sine stays)
+                        let held = beats * beat * 0.9;
+                        let x = ctx.note(
+                            "TUBA",
+                            f64::from(root - 12),
+                            round_nd(held, 3),
+                            round_nd(held + 0.2, 2),
+                            0.9,
+                        )?;
+                        at_level(&x, &sub)
+                    } else {
+                        sub
+                    };
                     mix.note(&bus, &Sig::Mono(sub), tq, 0.22 * py_min(1.0, lead * 4.0), 0.0, one);
                 }
             } else if kind == "pah" && event_is(H, e, 2, k)? {

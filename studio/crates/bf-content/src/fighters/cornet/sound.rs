@@ -11,6 +11,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{MusicCtx, MusicError, Samples, event_is_str, event_number};
 use bf_sound::synth::{self, THUD_SEED, clip};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::{Mute, Play, Swell};
 
 /// The name the part's errors carry.
 const H: &str = "CORNET";
@@ -50,6 +51,26 @@ impl CornetSound {
     fn horn(&self, ctx: &MusicCtx, m: i32, dur: f64, vel: f64, cap: f64) -> Samples {
         let pp = ctx.cfg[self.k].pp.as_str();
         Ok(ctx.note(pp, f64::from(m), dur, cap, vel)?.to_vec())
+    }
+
+    /// `wah(horn(m, dur, vel, cap), open)`: a plunger note, closed, opened by `open` s and closed again. Under the
+    /// Composed arrangement the CORNET's built instrument plays it with its own plunger (Co1's, the wah its
+    /// `expression`), at the voice's level; under Classic the kit's [`wah`] over the voice's note.
+    fn wah_horn(&self, ctx: &MusicCtx, m: i32, dur: f64, vel: f64, cap: f64, open: f64) -> Samples {
+        let pp = ctx.cfg[self.k].pp.as_str();
+        if ctx.engine2_of(pp).is_none() {
+            return Ok(wah(&self.horn(ctx, m, dur, vel, cap)?, open));
+        }
+        let play = Play {
+            mute: Mute::Plunger,
+            expression: Some(Swell {
+                from: 0.0,
+                to: 1.0,
+                over: open.max(1e-3),
+            }),
+            ..Play::plain(f64::from(m), dur, vel)
+        };
+        Ok(ctx.note_played(pp, &play, cap)?.to_vec())
     }
 
     /// `T.chord_notes(ch, lo, hi)`, refused when empty.
@@ -128,7 +149,7 @@ impl Sound for CornetSound {
         };
         let ms = self.tones(ctx, ch, 62, 79)?;
         for (j, (tc, _)) in ctx.show.grid.count.iter().take(3).enumerate() {
-            let x = wah(&self.horn(ctx, ms[j % ms.len()], 0.2, 0.8, 1.0)?, 0.08);
+            let x = self.wah_horn(ctx, ms[j % ms.len()], 0.2, 0.8, 1.0, 0.08)?;
             mix.place(&bus, &Sig::Mono(x), *tc, 0.26, 0.0);
         }
         Ok(())
@@ -172,7 +193,7 @@ impl Sound for CornetSound {
                     // (Composed: the line's note in place of the chord tone)
                     let ms = self.tones(ctx, ch, 60, 74)?;
                     let m = self.line(ctx, tq, ms[0])?;
-                    let x = wah(&self.horn(ctx, m, beat * 0.9, 0.8, 1.0)?, beat * 0.3);
+                    let x = self.wah_horn(ctx, m, beat * 0.9, 0.8, 1.0, beat * 0.3)?;
                     mix.note(&bus, &Sig::Mono(x), tq, 0.24, 0.1, one);
                 }
                 "wah" => {
@@ -180,7 +201,7 @@ impl Sound for CornetSound {
                     let ms = self.tones(ctx, ch, 62, 81)?;
                     // (Composed: the line's note in place of the climb up the chord)
                     let m = self.line(ctx, tq, ms[(n - 1) % ms.len()])?;
-                    let x = wah(&self.horn(ctx, m, beat * 0.7, 0.9, 1.1)?, beat * 0.22);
+                    let x = self.wah_horn(ctx, m, beat * 0.7, 0.9, 1.1, beat * 0.22)?;
                     mix.note(&bus, &Sig::Mono(x), tq, 0.30, 0.15, one);
                 }
                 "derby_land" => {
@@ -235,7 +256,7 @@ impl Sound for CornetSound {
                         let ms = self.tones(ctx, ch, 65, 81)?;
                         for j in 0..4 {
                             let m = ms[j % 2 % ms.len()];
-                            let x = wah(&self.horn(ctx, m, beat * 0.45, 0.85, 1.0)?, beat * 0.12);
+                            let x = self.wah_horn(ctx, m, beat * 0.45, 0.85, 1.0, beat * 0.12)?;
                             mix.place(&bus, &Sig::Mono(x), tq + j as f64 * beat * 0.5, 0.26, 0.0);
                         }
                     } else if is(&cfg.unlock2.name)? {
@@ -259,7 +280,7 @@ impl Sound for CornetSound {
         let bus = self.bus(ctx);
         let t_hs = ctx.show.t_hs;
         for j in 0..6 {
-            let x = wah(&self.horn(ctx, 74 - 2 * j, 0.12, 0.7, 0.8)?, 0.05);
+            let x = self.wah_horn(ctx, 74 - 2 * j, 0.12, 0.7, 0.8, 0.05)?;
             mix.place(
                 &bus,
                 &Sig::Mono(x),
@@ -275,7 +296,7 @@ impl Sound for CornetSound {
     fn stinger(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix, tw: f64) -> Played {
         let ch = self.first_chord(ctx)?;
         let m = self.tones(ctx, ch, 67, 79)?[0];
-        let x = wah(&self.horn(ctx, m, 0.9, 1.0, 1.3)?, 0.3);
+        let x = self.wah_horn(ctx, m, 0.9, 1.0, 1.3, 0.3)?;
         mix.place("solo", &Sig::Mono(x), tw, 0.34, 0.0);
         Ok(())
     }

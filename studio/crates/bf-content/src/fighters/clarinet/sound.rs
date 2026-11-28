@@ -24,6 +24,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::Play;
 use bf_sound::voice::pp;
 use bf_sound::voice::real::{self, RealNotes};
 
@@ -66,6 +67,34 @@ pub struct ClarinetSound {
     notes: Mutex<BTreeMap<Key, Arc<[f64]>>>,
     /// The Composed arrangement's notes, reworked toward the real clarinet (sound upgrade, stage 3, S1).
     real: RealNotes,
+}
+
+/// Under the Composed arrangement, `play` as the reed fighter's built instrument plays it (Voice Engine 2, through
+/// [`MusicCtx::note_played`]: `cap` seconds at the voice's own level, its repeats taking turns), for a `level` of
+/// `(head, rms)` levelled as the kit levels its own notes (the first `head` seconds to that RMS). `None` under
+/// Classic.
+///
+/// # Errors
+/// As [`MusicCtx::note_played`].
+pub(crate) fn built_reed(
+    ctx: &MusicCtx,
+    pp: &str,
+    play: &Play,
+    cap: f64,
+    level: Option<(f64, f64)>,
+) -> Result<Option<Arc<[f64]>>, MusicError> {
+    if ctx.engine2_of(pp).is_none() {
+        return Ok(None);
+    }
+    let x = ctx.note_played(pp, play, cap)?;
+    Ok(Some(match level {
+        None => x,
+        Some((head, rms)) => {
+            let h: Vec<f64> = x[..x.len().min((head * SRF) as usize)].iter().map(|v| v * v).collect();
+            let g = rms / (dsp::mean(&h).sqrt() + 1e-9);
+            x.iter().map(|v| v * g).collect()
+        }
+    }))
 }
 
 /// A rest where the clarinet needs a note (Python hands `None` to arithmetic there).
@@ -120,12 +149,19 @@ impl ClarinetSound {
         Ok(x)
     }
 
-    /// The note as the arrangement plays it: [`Self::clar`]'s own under Classic; under Composed (sound upgrade, stage 3,
-    /// S1) reworked toward the real clarinet ([`REWORK`]), its repeats taking turns (the Goodman squeal stays its own).
+    /// The note as the arrangement plays it: [`Self::clar`]'s own under Classic; under Composed the built clarinet's
+    /// (Voice Engine 2, Cl1), cut and levelled as `clar` cuts and levels its own (the Goodman squeal stays its own).
     ///
     /// # Errors
     /// As [`Self::clar`].
     fn played(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, tone: Reed) -> Result<Arc<[f64]>, MusicError> {
+        if tone == Reed::Boehm && pp::has_len(dur + 0.14) {
+            let play = Play::plain(m, dur, vel);
+            let cap = round_nd(dur + 0.14, 3);
+            if let Some(x) = built_reed(ctx, &ctx.cfg[self.k].pp, &play, cap, Some((0.25, 0.16)))? {
+                return Ok(x);
+            }
+        }
         let x = self.clar(m, dur, vel, tone)?;
         if !ctx.composed_on() || tone != Reed::Boehm {
             return Ok(x);

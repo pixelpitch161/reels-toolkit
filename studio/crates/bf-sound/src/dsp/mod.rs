@@ -5,7 +5,7 @@
 //! - [`butter`]: Butterworth designs (`scipy.signal.butter`), as second-order sections or `b`, `a`.
 //! - [`iir`]: `sosfilt` and `lfilter`.
 //! - [`resample`]: `resample_poly` with its Kaiser-windowed low-pass and `upfirdn`.
-//! - [`fft`]: the Studio's own radix-2 FFT; [`conv`]: `fftconvolve` on it, and `np.convolve` with the BLAS dot
+//! - [`fft`]: the Studio's own radix-2 FFT; [`conv`]: `fftconvolve` on it (and `oaconvolve`, by overlap-add), and `np.convolve` with the BLAS dot
 //!   product under it.
 //! - [`npstat`]: pairwise sums and means, `cumsum`, `linspace`, `interp`, `percentile`.
 //! - [`peaks`]: `scipy.signal.find_peaks` by height and distance.
@@ -24,8 +24,8 @@ pub mod peaks;
 pub mod resample;
 
 pub use self::butter::{FilterKind, butter_ba, butter_sos};
-pub use self::conv::{blas_dot, convolve_full, convolve_same, fftconvolve};
-pub use self::iir::{Sos, lfilter, lfilter_stereo, sosfilt, sosfilt_stereo};
+pub use self::conv::{blas_dot, convolve_full, convolve_same, fftconvolve, oaconvolve};
+pub use self::iir::{Sos, lfilter, lfilter_flushed, lfilter_stereo, lfilter_stereo_flushed, sosfilt, sosfilt_stereo};
 pub use self::npstat::{cumsum, interp, interp_lr, linspace, mean, percentile, sum, sum_axis0};
 pub use self::peaks::{find_peaks, local_maxima, select_by_peak_distance};
 pub use self::resample::{firwin_kaiser, resample_poly, upfirdn};

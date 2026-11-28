@@ -35,10 +35,25 @@ pub const HOP: usize = SR / 10;
 pub const RUMBLE: (f64, f64) = (0.0, 200.0);
 pub const PIERCING: (f64, f64) = (2000.0, 6000.0);
 
-/// `x` through the two K-weighting filters.
+/// `x` through the two K-weighting filters. Their delays are flushed to zero under the smallest normal number
+/// ([`dsp::lfilter_stereo_flushed`]): a bus that falls silent otherwise rings them out into subnormal numbers, about 11
+/// times slower to work, while every measure here squares the output, which comes out the same to the bit.
+/// A long signal's two sides are filtered on two threads (each side on its own, so the same numbers).
 pub fn k_weight(x: &[[f64; 2]]) -> Vec<[f64; 2]> {
-    let y = dsp::lfilter_stereo(&K_SHELF.0, &K_SHELF.1, x);
-    dsp::lfilter_stereo(&K_HIGH_PASS.0, &K_HIGH_PASS.1, &y)
+    if x.len() < SR {
+        let y = dsp::lfilter_stereo_flushed(&K_SHELF.0, &K_SHELF.1, x);
+        return dsp::lfilter_stereo_flushed(&K_HIGH_PASS.0, &K_HIGH_PASS.1, &y);
+    }
+    let side = |c: usize| -> Vec<f64> {
+        let ch: Vec<f64> = x.iter().map(|f| f[c]).collect();
+        let y = dsp::lfilter_flushed(&K_SHELF.0, &K_SHELF.1, &ch);
+        dsp::lfilter_flushed(&K_HIGH_PASS.0, &K_HIGH_PASS.1, &y)
+    };
+    let (left, right) = std::thread::scope(|s| {
+        let right = s.spawn(|| side(1));
+        (side(0), right.join().expect("the right side's weighting"))
+    });
+    left.into_iter().zip(right).map(|(l, r)| [l, r]).collect()
 }
 
 /// The loudness of a mean square summed over the channels, in LUFS.
@@ -160,17 +175,23 @@ pub fn true_peak(x: &[[f64; 2]]) -> f64 {
     if x.is_empty() {
         return 0.0;
     }
-    let mut peak = 0.0f64;
-    for c in 0..2 {
+    // each channel on a thread of its own: the largest of the two is the same number either way
+    let channel = |c: usize| -> f64 {
         let ch: Vec<f64> = x.iter().map(|f| f[c]).collect();
+        let mut peak = 0.0f64;
         for v in dsp::resample_poly(&ch, 4, 1) {
             peak = peak.max(v.abs());
         }
         for v in &ch {
             peak = peak.max(v.abs());
         }
-    }
-    peak
+        peak
+    };
+    let (left, right) = std::thread::scope(|s| {
+        let right = s.spawn(|| channel(1));
+        (channel(0), right.join().expect("the right channel's peak"))
+    });
+    left.max(right)
 }
 
 /// `20 log10(x)`, with a floor of -200 dB.

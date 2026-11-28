@@ -27,6 +27,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, event_int, event_is_str, event_number, noise_seed};
 use bf_sound::synth::{self, FILTER_O, WHOOSH_SEED, clip};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::Mute;
 
 /// The name the part's errors carry.
 const H: &str = "VIOLA";
@@ -533,6 +534,19 @@ impl ViolaSound {
             .ok_or_else(|| MusicError::new(H, format!("the chord {c:?} has no tone from C3 to G4")))
     }
 
+    /// A pizzicato (`muted`: the kit's muted one, short): under the Composed arrangement the VIOLA's built
+    /// instrument's (Va3), at the level of the kit's own pluck; under Classic the kit's [`pizz`].
+    fn pluck(&self, ctx: &MusicCtx, m: i32, vel: f64, muted: bool) -> Result<Vec<f64>, MusicError> {
+        let pp = &ctx.cfg[self.k].pp;
+        match ctx.engine2_of(pp) {
+            Some(inst) => {
+                let mute = if muted { Mute::Choked } else { Mute::Open };
+                crate::fighters::violin::sound::built_pluck(ctx, pp, inst, m, vel, mute)
+            }
+            None => pizz(m, vel, muted),
+        }
+    }
+
     /// The note the viola sounds at `t`. Under the Composed arrangement it is its own written line's note there,
     /// through [`MusicCtx::play_line`] (sound upgrade: every pitched fighter plays its line); under Classic, and on
     /// a rest of the line, the kit's inner voice under the enemy's line ([`ViolaSound::inner`]).
@@ -605,7 +619,14 @@ impl Sound for ViolaSound {
     fn count_in(&self, ctx: &MusicCtx, _: &dyn Bed, mix: &mut Mix) -> Played {
         let bus = self.bus(ctx);
         for (j, (tc, _)) in ctx.show.grid.count.iter().take(3).enumerate() {
-            put(mix, &bus, pizz([55, 59, 62][j], 0.9, false)?, *tc, 0.22, -0.2);
+            put(
+                mix,
+                &bus,
+                self.pluck(ctx, [55, 59, 62][j], 0.9, false)?,
+                *tc,
+                0.22,
+                -0.2,
+            );
         }
         Ok(())
     }
@@ -640,7 +661,14 @@ impl Sound for ViolaSound {
                     } else {
                         48.max(m - if count == 1 { 12 } else { 0 })
                     };
-                    put(mix, &bus, pizz(m, 0.7, true)?, tq, 0.22 + 0.03 * count as f64, -0.2);
+                    put(
+                        mix,
+                        &bus,
+                        self.pluck(ctx, m, 0.7, true)?,
+                        tq,
+                        0.22 + 0.03 * count as f64,
+                        -0.2,
+                    );
                 }
                 "note" => {
                     let nkind = event_int(H, e, 8)?;
@@ -811,7 +839,7 @@ impl Sound for ViolaSound {
         let grid = &ctx.show.grid;
         for (j, m) in [48, 55, 60, 63, 67, 72].into_iter().enumerate() {
             let tj = ctx.q16(grid.t_reassemble + (grid.t_glide - grid.t_reassemble) * j as f64 / 6.0);
-            put(mix, &bus, pizz(m, 0.7, false)?, tj, 0.20, -0.2);
+            put(mix, &bus, self.pluck(ctx, m, 0.7, false)?, tj, 0.20, -0.2);
         }
         Ok(())
     }

@@ -28,6 +28,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, WHOOSH_RISE, WHOOSH_SEED};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::{Play, Technique};
 use bf_sound::voice::pp;
 use bf_sound::voice::real::{self, RealNotes};
 
@@ -101,9 +102,24 @@ impl BassoonSound {
     /// # Errors
     /// Where Python raises: a `dur` the reed has no note for (below -0.14 s, or not a number), or one `fit` has no
     /// room for.
-    /// Under Composed (sound upgrade, stage 3, S1) the note is reworked toward the real bassoon ([`REWORK`]), its
-    /// repeats taking turns; under Classic it is the reed's own.
+    /// Under Composed the note is the built bassoon's (Voice Engine 2, Bn1; a growl the engine's), cut and levelled the
+    /// same way, its repeats taking turns; under Classic it is the reed's own.
     pub fn bsn(&self, ctx: &MusicCtx, m: f64, dur: f64, vel: f64, growl: f64) -> Result<Arc<[f64]>, MusicError> {
+        if pp::has_len(dur + 0.14) && (pp::midi_hz(m) * 10.0).is_finite() && vel.is_finite() && growl.is_finite() {
+            let play = Play {
+                technique: if growl > 0.0 {
+                    Technique::Growl
+                } else {
+                    Technique::Normal
+                },
+                ..Play::plain(m, dur, vel)
+            };
+            let pp = &ctx.cfg[self.k].pp;
+            let cap = round_nd(dur + 0.09, 3);
+            if let Some(x) = crate::fighters::clarinet::sound::built_reed(ctx, pp, &play, cap, Some((0.12, 0.16)))? {
+                return Ok(x);
+            }
+        }
         let x = self.own(m, dur, vel, growl)?;
         if !ctx.composed_on() {
             return Ok(x);

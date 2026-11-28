@@ -3,6 +3,9 @@
 //! harmonics), a quicker attack and a faster, slightly wider vibrato, so it buzzes. Made at 44,100 Hz and resampled to
 //! 48,000 Hz, like the other Pixel Pitch voices. It draws only the alto generator, as ALTO SAX does.
 
+use bf_sound::voice::engine2::reed::ReedParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::alto::{AltoTone, alto_tone, alto_tone_real};
 use bf_sound::voice::pp::{self};
 use bf_sound::voice::real::{self, Profile, Shape};
@@ -99,7 +102,29 @@ pub fn tone_real(
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SopranoSaxVoice;
 
+/// The Composed arrangement's SOPRANO SAX (Voice Engine 2): built from how it works, on the reed engine (Aedan's pick
+/// Ss2, the jazz soprano: an open, bright mouthpiece, played with a quick vibrato), with every technique it has, in a
+/// light room of its own (`docs/studio/voice-engine-2-instruments.md`, "The reeds"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "SOPRANO SAX",
+    Parts::Reed(ReedParts::SS2),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 impl Voice for SopranoSaxVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         pp::to_48k(&alto_tone(&mut noise.1.alto, pp::midi_hz(midi), dur, vel, &TONE))
     }

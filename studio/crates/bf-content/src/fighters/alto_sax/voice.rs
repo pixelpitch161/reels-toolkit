@@ -10,6 +10,9 @@
 //! `PpNoise.1.alto`), wherever that stands: a fresh generator of seed 23 at the start of a build, and whatever the
 //! ALTO SAX's part last seeded it with after that (`sound.rs`). The series' shared noise stream is not touched.
 
+use bf_sound::voice::engine2::reed::ReedParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::alto::{AltoTone, alto_tone, alto_tone_real};
 use bf_sound::voice::pp::{self};
 use bf_sound::voice::real::{self, Profile, Shape};
@@ -112,7 +115,29 @@ pub fn tone_real(
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AltoSaxVoice;
 
+/// The Composed arrangement's ALTO SAX (Voice Engine 2): built from how it works, on the reed engine (Aedan's pick As2,
+/// the jazz alto: an open, bright mouthpiece, played with a singing vibrato), with every technique it has, in a light
+/// room of its own (`docs/studio/voice-engine-2-instruments.md`, "The reeds"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "ALTO SAX",
+    Parts::Reed(ReedParts::AS2),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 impl Voice for AltoSaxVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         // synth: alto_tone(_midi_hz(m), dur, v)
         pp::to_48k(&alto_tone(&mut noise.1.alto, pp::midi_hz(midi), dur, vel, &TONE))

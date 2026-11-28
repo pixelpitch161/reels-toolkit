@@ -23,6 +23,7 @@ use bf_sound::mix::{Mix, Sig};
 use bf_sound::music::{ColourArgs, MusicCtx, MusicError, Thinner, bend, clank, fit, gliss, noise_seed, roar, vibrato};
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::{Play, Technique};
 use bf_sound::voice::pp;
 use bf_sound::voice::real::Repeats;
 
@@ -118,8 +119,9 @@ impl TenorSaxSound {
     /// the series' level: `M.fit(_resample(tenor_tone(_midi_hz(int(m)), dur, vel, honk=honk, sub=sub)), dur + 0.25)
     /// * g0`, kept by `(int(m), round(dur, 3), round(vel, 2), round(honk, 2), round(sub, 2))`.
     ///
-    /// Under the Composed arrangement the note is the real tenor's ([`tenor_tone_real`], sound upgrade, stage 3),
-    /// its repeats taking turns among a few variants; under Classic it is the kit's, to the sample.
+    /// Under the Composed arrangement the note is the built tenor's (Voice Engine 2, Ts2): a honk its accent (half the
+    /// honk), a subtone its subtone, its repeats taking turns among a few variants; under Classic it is the kit's, to
+    /// the sample.
     ///
     /// # Errors
     /// An argument is not a number, or the note would have a negative number of samples (Python raises there); the
@@ -137,6 +139,19 @@ impl TenorSaxSound {
             if !v.is_finite() {
                 return Err(MusicError::new(H, format!("a tone's {what} is {v}, not a number")));
             }
+        }
+        let pp = &ctx.cfg[self.k].pp;
+        if ctx.engine2_of(pp).is_some() && m >= 0 && pp::has_len(dur + 0.18) {
+            let play = Play {
+                accent: round_nd(0.5 * honk.clamp(0.0, 1.0), 2),
+                technique: if sub > 0.0 {
+                    Technique::Subtone
+                } else {
+                    Technique::Normal
+                },
+                ..Play::plain(f64::from(m), dur, vel)
+            };
+            return ctx.note_played(pp, &play, round_nd(dur + 0.25, 3));
         }
         // self.g0: the level `made` measured (the context keeps it)
         let g0 = ctx.inst_gain(&ctx.cfg[self.k].pp)?;

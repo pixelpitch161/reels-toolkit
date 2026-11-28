@@ -31,6 +31,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth;
 use bf_sound::traits::{Bed, Played, SOUND_COLOUR_DRIVE_K, Sound};
+use bf_sound::voice::engine2::play::{Play, Technique};
 use bf_sound::voice::pp::alto::{AltoTone, alto_tone, part_seed};
 use bf_sound::voice::pp::{self};
 use bf_sound::voice::real::Repeats;
@@ -84,8 +85,8 @@ impl AltoSaxSound {
     }
 
     /// `tone(m, dur, vel=0.85, **kw)`: one tone of the rebuilt alto, `dur + 0.25` s at 48 kHz, level-matched; the
-    /// only keyword the part passes is `growl`. Under the Composed arrangement the tone is the real alto's
-    /// ([`tone_real`], sound upgrade, stage 3), its repeats taking turns among a few variants; under Classic it is
+    /// only keyword the part passes is `growl`. Under the Composed arrangement the tone is the built alto's (Voice
+    /// Engine 2, As2; a growl the engine's own), its repeats taking turns among a few variants; under Classic it is
     /// the kit's, to the sample.
     ///
     /// # Errors
@@ -108,6 +109,18 @@ impl AltoSaxSound {
         // key = (int(m), round(dur, 3), round(vel, 2), tuple(sorted(kw.items())))
         let mi = m.trunc();
         let real = ctx.composed_on();
+        let pp = &ctx.cfg[self.k].pp;
+        if ctx.engine2_of(pp).is_some() && mi >= 0.0 && pp::has_len(dur + TAIL) {
+            let play = Play {
+                technique: if growl.is_some_and(|g| g > 0.0) {
+                    Technique::Growl
+                } else {
+                    Technique::Normal
+                },
+                ..Play::plain(mi, dur, vel)
+            };
+            return ctx.note_played(pp, &play, round_nd(dur + 0.25, 3));
+        }
         let first = (
             mi as i64,
             key_bits(round_nd(dur, 3)),

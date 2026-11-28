@@ -134,6 +134,58 @@ pub fn lfilter_stereo(b: &[f64], a: &[f64], x: &[[f64; 2]]) -> Vec<[f64; 2]> {
         .collect()
 }
 
+/// [`lfilter`] with each delay set to zero once it falls under the smallest normal number (see
+/// [`lfilter_stereo_flushed`]).
+///
+/// # Panics
+/// As [`lfilter`].
+pub fn lfilter_flushed(b: &[f64], a: &[f64], x: &[f64]) -> Vec<f64> {
+    let (b, a) = normalised(b, a, x.len());
+    if a.len() == 1 {
+        return fir(&b, x);
+    }
+    let mut z = vec![0.0; b.len() - 1];
+    x.iter().map(|&v| lfilter_run_flushed(&b, &a, &mut z, v)).collect()
+}
+
+/// [`lfilter_run`], then any delay under the smallest normal number set to zero.
+fn lfilter_run_flushed(b: &[f64], a: &[f64], z: &mut [f64], x: f64) -> f64 {
+    let y = lfilter_run(b, a, z, x);
+    for d in z.iter_mut() {
+        if d.abs() < f64::MIN_POSITIVE {
+            *d = 0.0;
+        }
+    }
+    y
+}
+
+/// [`lfilter_stereo`] with each delay set to zero once it falls under the smallest normal number.
+///
+/// A recursive filter left ringing on silence decays into subnormal numbers, which the processor works with many
+/// times more slowly (a loudness measure over a bus that falls silent ran about 11 times slower). Flushing them
+/// changes only outputs that are themselves under about 1e-290, whose squares are zero either way, so a sum of squares
+/// of the output is the same to the bit as [`lfilter_stereo`]'s.
+///
+/// # Panics
+/// As [`lfilter`].
+pub fn lfilter_stereo_flushed(b: &[f64], a: &[f64], x: &[[f64; 2]]) -> Vec<[f64; 2]> {
+    let (b, a) = normalised(b, a, x.len());
+    if a.len() == 1 {
+        // no delays to flush
+        return lfilter_stereo(&b, &a, x);
+    }
+    let mut zl = vec![0.0; b.len() - 1];
+    let mut zr = vec![0.0; b.len() - 1];
+    x.iter()
+        .map(|&[l, r]| {
+            [
+                lfilter_run_flushed(&b, &a, &mut zl, l),
+                lfilter_run_flushed(&b, &a, &mut zr, r),
+            ]
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -171,6 +223,46 @@ mod tests {
         let y = lfilter_stereo(&b, &a, &x);
         assert_eq!(y.iter().map(|f| f[0]).collect::<Vec<_>>(), lfilter(&b, &a, &l));
         assert_eq!(y.iter().map(|f| f[1]).collect::<Vec<_>>(), lfilter(&b, &a, &r));
+    }
+
+    #[test]
+    fn a_flushed_filter_rings_out_to_zero_and_squares_the_same() {
+        // A burst, then a long silence: the plain filter's tail decays into subnormal numbers, the flushed one's
+        // stops at zero, and the sums of the squares agree to the bit.
+        let (b, a) = ([1.0, -2.0, 1.0], [1.0, -1.99004745483398, 0.99007225036621]);
+        let x: Vec<[f64; 2]> = (0..400_000)
+            .map(|i| {
+                let v = if i < 4_800 {
+                    bf_core::dmath::sin(i as f64 * 0.37) * 0.5
+                } else {
+                    0.0
+                };
+                [v, -0.5 * v]
+            })
+            .collect();
+        let plain = lfilter_stereo(&b, &a, &x);
+        let flushed = lfilter_stereo_flushed(&b, &a, &x);
+        let tiny = |y: &[[f64; 2]]| y.iter().flatten().filter(|v| v.is_subnormal()).count();
+        assert!(
+            tiny(&plain) > 1_000,
+            "the plain filter's tail should reach the subnormals"
+        );
+        assert_eq!(tiny(&flushed), 0);
+        assert_eq!(&flushed[..4_800], &plain[..4_800]);
+        let squares = |y: &[[f64; 2]]| y.iter().fold(0.0, |s, f| s + f[0] * f[0] + f[1] * f[1]);
+        assert_eq!(squares(&flushed).to_bits(), squares(&plain).to_bits());
+        for (p, q) in plain.iter().flatten().zip(flushed.iter().flatten()) {
+            assert!(p == q || p.abs() < 1e-290, "{p:e} against {q:e}");
+        }
+        // each side on its own is the mono filter's
+        let left: Vec<f64> = x.iter().map(|f| f[0]).collect();
+        let mono = lfilter_flushed(&b, &a, &left);
+        assert_eq!(flushed.iter().map(|f| f[0]).collect::<Vec<_>>(), mono);
+        // with one `a` coefficient there is no delay, and it is the plain filter
+        assert_eq!(
+            lfilter_stereo_flushed(&[0.5], &[2.0], &x[..10]),
+            lfilter_stereo(&[0.5], &[2.0], &x[..10])
+        );
     }
 
     #[test]

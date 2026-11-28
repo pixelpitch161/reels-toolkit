@@ -1,0 +1,301 @@
+# Voice Engine 2: how a note can be played
+
+For Aedan's composition system. A Voice Engine 2 instrument is asked for a note with a **`Play`**
+(`bf-sound/src/voice/engine2/play.rs`): the pitch and length, plus everything a player does with one note. A part asks
+with `MusicCtx::note_played(voice, &play, cap)`. Under Classic, or for a voice that is not on Voice Engine 2 yet, the
+same call plays the voice's ordinary note and leaves the rest of the `Play` aside, so asking never breaks anything.
+
+Every instrument can play every one of its techniques (Aedan, 2026-11-26): what is one note's business is asked for in
+its `Play`; what is notes in a row (trills, runs, repeated notes, glissandos, clusters, a pedal changed between
+chords) is the composition system's, made of single notes. An instrument takes what it can do and ignores the rest: a
+piano has no vibrato, an organ no accent by touch. Since stage 1b the piano is the struck-string engine (Aedan's pick
+P16) and the organ the pipe engine (O8); since stage 2 the acoustic guitar, electric guitar, bass guitar, ukulele and
+harp are the plucked-string engine (A6, E2, B3, U6, H3); since stage 3 the violin, viola, cello, contrabass and
+octobass are the bowed-string engine (Vn3, Va3, Vc1, Cb1, Oc2); since stage 4 the soprano, alto, tenor and bari
+saxophones, the clarinet, bass clarinet and contrabass clarinet, the oboe, the bassoon and contrabassoon, the bagpipes
+and the accordion are the reed engine (Ss2, As2, Ts2, Bs2, Cl1, Bc1, Cc1, Ob1, Bn1, Cf2, Bp1, Ac1). The winds (reeds,
+brass and flutes) share one set of ways to play (below, "The winds' ways"); each wind family's table comes with its
+engine.
+
+The engines work one note at a time at any sample rate, so the same notes could later be played by a plugin.
+
+## The fields
+
+| Field | In plain words | Piano | Organ |
+|---|---|---|---|
+| `midi` | Which note (60 is middle C; a fraction is between two keys). | yes | yes (under G2 on the pedal board) |
+| `dur` | How long the key is held, in seconds. The note rings on after it as the instrument does. | yes: the dampers land when the key comes up (the top keys from F6 have none, as on a real piano) | yes: the pipes stop quickly |
+| `vel` | How hard, 0 to 1. | strength: the hammer's speed, harder is louder and brighter | how loud only (a pipe sounds the same however the key goes down) |
+| `accent` | An accent on top of `vel`, 0 to 1. | a harder strike (up to 0.12 more strength) | the pipes speak quicker, with more of their start's chiff |
+| `slur_from` | Join this note to the one before without a new start. | no (a piano always strikes) | no |
+| `bend` | Slide the pitch: a bend, a fall, a doit. | no | no |
+| `scoop` | Start the note off its pitch and slide onto it. | no | no |
+| `swell` | A change over the note's start, from one value to another (0 to 1). | no | the crescendo: the stops come in, in the order a builder adds them, from the softest towards the full set |
+| `vibrato` | A wobble, so many cents, so many times a second. | no | the tremulant: the wind shakes the level and a hair of the pitch (0.25 dB and 0.4 cents for every cent asked) |
+| `pedals` | The piano's three pedals (below). | yes | no |
+| `mute` | `Open`, `Muted`, `Choked`, `Clipped`. | `Muted`: damped by hand on the strings (short, dull); `Choked`, `Clipped`: the dampers land twice as hard | `Choked`, `Clipped`: the quickest stop |
+| `together` | How many notes start at once, this one included. | no | a chord of 3 or more sags a hair in pitch, as the wind does under a big chord |
+| `technique` | `Normal`, `Harmonic(n)`, `Plucked`. | `Harmonic(n)`: the string touched at 1/n as it is struck (2 sounds an octave up); `Plucked`: the string pulled by a finger inside the piano | no |
+| `stops` | The organ's registration (below). | no | yes; none asked is the grand chorus Aedan picked |
+| `register` | An accordion's register: which banks of reeds sound. | no | no |
+| `expression` | A volume pedal over the note, 0 shut to 1 open, with no new start. | no | the swell box: shut is 24 dB quieter and much darker |
+| `position` | Where a plucked string is plucked, as a part of the string from the bridge (0.5 the middle). | no | no |
+| `string` | Which string a fretted note is played on, from 0 (a guitar's low E, a ukulele's high G). | no | no |
+
+The plucked strings take `midi`, `dur`, `vel`, `accent`, `slur_from`, `bend`, `vibrato`, `mute`, `technique`,
+`position` and `string` (below); the rest they leave aside. The bowed strings take those and `swell`, `expression`
+and `tie` (below), `position` there being where the bow sits and `string` counted from the lowest string. The reeds
+take `midi`, `dur`, `vel`, `accent`, `slur_from`, `tie`, `bend`, `scoop`, `swell`, `vibrato`, `mute` (the tongue
+stops), `technique` and, on the accordion, `register` (below).
+
+`Play::plain(midi, dur, vel)` is a note with none of the extras: open, on its own, no pedal, the organ's own stops.
+
+## The piano's techniques
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | a slow hammer is soft and round; a fast one squeezes the felt and is louder and brighter |
+| Accent | `accent` | a harder strike on top of the strength |
+| Staccato, legato | `dur` | the dampers land when the key comes up, over about 20 ms |
+| Sustain pedal | `pedals.sustain = 1.0` | the dampers stay off: the note rings on and the strings around it ring along softly |
+| Half pedal | `pedals.sustain` between 0 and 0.9 | the dampers only touch the strings: the note dies between damped and held |
+| Pedal up at a moment | `pedals.lift = Some(s)` | the sustain and middle pedals come up `s` seconds into the note, and the dampers land then |
+| Soft pedal (una corda) | `pedals.soft = true` | one string fewer struck, with softer felt: quieter and darker |
+| Middle pedal (sostenuto) | `pedals.sostenuto = true` | this note's dampers stay up, the other strings stay quiet (no ring-along) |
+| Damped by hand | `mute = Muted` | a hand on the strings: a short, dull note |
+| Choked | `mute = Choked` or `Clipped` | the dampers land twice as hard |
+| Harmonic | `technique = Harmonic(n)` | the string touched at 1/n of its length: only every n-th overtone rings on (2 an octave up, 3 an octave and a fifth) |
+| Plucked inside | `technique = Plucked` | the string pulled aside and let go: no hammer's knock, a softer, rounder start |
+
+Trills, runs, repeated notes, glissandos and clusters are the composition system's, as single notes (a key's repeats
+already take turns among three slightly different strikes).
+
+## The organ's techniques
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Registration | `stops` | which stops sound; `Stops::of(manual, pedal)` names them, and there are ready sets (below) |
+| Couplers | `stops.sub`, `stops.octave` | every manual note also an octave under, or over |
+| Crescendo | `swell` | the stops come in over the note's start, in a builder's order |
+| Swell box | `expression` | a volume pedal: quieter and darker shut |
+| Tremulant | `vibrato` | the wind shakes |
+| Accent | `accent` | the pipes speak quicker and with more chiff |
+| Short stop | `mute = Clipped` | as short as the pipes go |
+| Big chord | `together` | the wind sags a hair |
+
+The stops: manual Praestant 16', Bourdon 16', Principal 8', Gedackt 8', Salicional 8', Voix celeste 8', Octave 4',
+Rohrflute 4', Quint 2 2/3', Superoctave 2', Mixture IV, Cymbal III, Trumpet 8', Oboe 8'; pedal Subbass 16',
+Octavebass 8', Choralbass 4', Posaune 16'. Ready sets: `soft` (a stopped flute), `flutes`, `strings` (the celeste
+beating gently), `principal`, `chorus` (8' to the mixture), `grand` (the chorus with the 16' stops, O8 as picked),
+`full` (with the cymbal and the reeds), `trumpet` (a trumpet solo over a flute), `oboe`.
+
+## The plucked strings' techniques
+
+ACOUSTIC, ELECTRIC, BASS GUITAR, UKULELE and HARP. A plain note is the instrument's own way: the electric and the bass
+with a pick, the rest with the fingers.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | louder, and a touch brighter (the string leaves a harder pluck sooner) |
+| Accent | `accent` | a harder pluck on top of the strength |
+| Let ring, staccato | `dur` | the fretting finger lifts (or the hand damps) when the note is let go; a harp's strings ring on unless damped |
+| Fingers, pick, nails, thumb | `technique = Fingers`, `Picked`, `Nails`, `Thumb` | the flesh is round, a pick sharp and bright with a click, nails crisp, the thumb deep and soft |
+| Pluck point | `position` | near the bridge (0.05) thin and bright (sul ponticello, a harp's pres de la table); over the neck (0.4) round (sul tasto) |
+| Which string | `string` | the same note higher up a lower string: rounder |
+| Slap, pop | `technique = Slap`, `Pop` | the bass's thumb struck over the last frets, the finger snapping a string on the frets: a bright knock, a crack |
+| Tapping | `technique = Tapped` | a fingertip hammered onto the fret, no pluck: softer, rounder |
+| Hammer-on, pull-off | `technique = Hammer` with `slur_from` | no new pluck: the pitch changes at once, the string still ringing |
+| Slide | `slur_from` | no new pluck: the string slides from that pitch to this one over 60 ms |
+| Bend, scoop, fall | `bend` | the pitch pushed up (or down) by so many cents, starting at a moment, over a time; a bend let down is the bent pitch as both the note and `slur_from`, with a bend down from it |
+| Vibrato | `vibrato` | the fretting finger rocks the pitch, growing in over a quarter second |
+| Harmonic | `technique = Harmonic(n)` | the string touched at 1/n: only every n-th overtone rings (2 an octave up) |
+| Pinch harmonic | `technique = PinchHarmonic` | the pick and the thumb's edge together: a high overtone squeals out (with the electric's amp) |
+| Palm mute, etouffe | `mute = Muted` | the side of the hand on the strings by the bridge: short and dull (the chug); a harp's string damped by the palm |
+| Dead note, chunk | `mute = Choked` | the string muted by the fretting hand: a short, pitchless thud |
+| As short as it goes | `mute = Clipped` | let go at once |
+
+Strums, rolled chords, tremolo picking, trills, glissandos and a harp's bisbigliando are the composition system's,
+made of single notes (a strum is the chord's notes a few milliseconds apart, low to high going down). The electric's
+and the bass's amps play on the fighter's whole part, so a chord's notes distort together, as on a real amp.
+
+## The bowed strings' techniques
+
+VIOLIN, VIOLA, CELLO, CONTRABASS and OCTOBASS. A plain note is bowed (détaché); on the contrabass and the octobass a
+plain note under half a second is plucked, as an orchestra's bass plays a walking line, and `Arco` bows it whatever its
+length.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | the bow's speed and weight together: louder, with the same overtone balance (no darker) |
+| Accent | `accent` | a bitten start: more speed and weight at once, settling on the note within about 30 ms; a strong accent starts quicker |
+| Détaché, legato | `dur` | the bow lifts after the note and the string rings on freely until the finger lifts (an open string until it dies away) |
+| Slur | `slur_from` | the bow keeps moving: no new start, the finger moving to the new note in a few milliseconds |
+| Tie, slur on | `tie` | this note hands over to the next instead of stopping (the next comes with `slur_from` set to this pitch) |
+| Portamento | `slur_from` with a `bend` of 0 cents | the finger slides from the note before over the bend's `over` seconds |
+| Bend, scoop, fall | `bend` | the finger slides the pitch so many cents, from a moment, over a time |
+| Martelé | `technique = Martele` | a hammered stroke: a strong accent, and the bow stopped on the string at the note's end (its weight let off with its speed) |
+| Spiccato | `technique = Spiccato` | the bow dropped onto the string and bouncing off: a short, light note that rings on free |
+| Tremolo | `technique = Tremolo` | the bow back and forth 14 times a second all through the note |
+| Col legno battuto | `technique = ColLegno` | the string struck with the bow's wood: a dry tick with a ghost of the note |
+| Col legno tratto | `technique = ColLegnoTratto` | drawn with the wood: a thin, airy, whistling bowed note |
+| Sul ponticello, sul tasto | `position` | where the bow sits, as a part of the string from the bridge (0.02 to 0.3): by the bridge glassy and thin (a lighter, slower bow, as a player does there), over the fingerboard soft and sweet; none is the instrument's own spot |
+| Harmonic | `technique = Harmonic(n)` | the string touched lightly at 1/n: the n-th overtone sounds, the fundamental gone (2 an octave up, 3 an octave and a fifth) |
+| Con sordino | `mute = Muted` | a mute on the bridge: darker and veiled, a little quieter |
+| Pizzicato | `technique = Pizzicato` | plucked by the finger, dying away |
+| Snap pizzicato | `technique = SnapPizz` | pulled up and let slap back onto the fingerboard: louder, with a crack |
+| Left-hand pizzicato | `technique = LeftHandPizz` | plucked by the stopping hand: softer and thinner |
+| Slap | `technique = Slap` | the basses' slap: the string pulled and let hit the fingerboard, a clack with the note |
+| Vibrato | `vibrato` | the finger rocks the pitch, so many cents, so many times a second, coming in after `wait`; `None` is the player's own (the violin 24 cents at 5 Hz, the octobass 12 at 4.6), a vibrato of 0 cents none at all |
+| Swell, expression | `swell`, `expression` | the bow's speed and weight change over the note: a crescendo, a diminuendo |
+| Choked | `mute = Choked` | the hand damps the string as the bow leaves |
+| As short as it goes | `mute = Clipped` | a stroke of 60 ms at the most, the bow stopped on the string |
+| Which string | `string` | counted from the lowest (0 is the violin's G, the cello's C); the same note higher up a lower string is a heavier string, stopped: fuller and more covered; none, or a string tuned over the note, the highest string that has it |
+
+Double stops and chords are several notes at once (one `Play` each). Trills, runs, glissandos of notes, sautillé and
+ricochet runs are the composition system's, made of single notes; a note's repeats already take turns among three
+slightly different bows.
+
+## The reeds' techniques
+
+SOPRANO SAX, ALTO SAX, TENOR SAX, BARI SAX, CLARINET, BASS CLARINET, CONTRABASS CLARINET, OBOE, BASSOON,
+CONTRABASSOON, BAGPIPES and ACCORDION, asked with the winds' ways (below). A plain note is tongued; on the BAGPIPES a
+plain note has the piper's high-G grace in front of it (high A before a high G), as the bag never stops the air and the
+tongue never touches the reed.
+
+| Technique | Ask for it with | What it does |
+|---|---|---|
+| Strength | `vel` | the breath: louder and brighter (more of the reed's beating) |
+| Accent | `accent` | more breath at the start and more loudness at the bell, settling in about 70 ms |
+| Tongued start | `technique = Normal` | the tongue leaves the reed: the breath held behind it pushes in and the reed swings a little wider for a few cycles |
+| "k" tongue (double, triple tonguing) | `technique = BackTongue` | a softer, slower release than the "t" (its notes in a row are the composition system's) |
+| Soft "d" tongue | `technique = SoftTongue` | a gentle release and a gentle stop, for a tongued legato |
+| Breath start | `technique = Breath` | no tongue: the breath builds the note, with more air heard at first |
+| Key click | `technique = KeyClick` | the keys slapped shut with no breath: a small pitched pop of the tube, no tone |
+| Slur | `slur_from` (and `tie` on the note before) | one breath: the fingers move, no new start; across registers each resonance hands on its swing |
+| Smear, glide | `slur_from` with a `bend` of 0 cents | the pitch glides from the note before over the bend's `over` seconds |
+| Bend | `bend` | the lip slides the pitch so many cents, from `at`, over `over` (the ear lets go meanwhile) |
+| Fall, doit | `bend` from the note's end (`at` = `dur`) | the pitch drops (or rises) as the breath goes, over `over` |
+| Scoop | `scoop` | starts so many cents off (under it when negative), stays `at`, reaches the note over `over` |
+| Swell, sforzando | `swell` | the breath changes over the note (a sforzando: an accent with a swell from 1 down) |
+| Vibrato | `vibrato` | the jaw rocks the pitch, so many cents, so many times a second, coming in after `wait` and growing over 0.3 s (held to 400 cents and 20 Hz); `None` is the player's own (the saxophones 15 to 18 cents at 4.8 to 5.8 Hz, the oboe 16 at 5.4, the bassoons 15 and 12; the clarinets, the bagpipe and the accordion none), 0 cents none at all |
+| Tongue stop, staccato | `mute = Choked` or `Clipped` | the tongue lands back on the reed at the note's end |
+| Growl | `technique = Growl` | the throat growls into the tone: a rough buzz (97 Hz) through the breath |
+| Hummed note | `technique = Sung(n)` | the voice hums n semitones from the note into the instrument, beating against it |
+| Flutter tongue | `technique = Flutter` | the tongue rolls an "r" against the reed, 26 times a second |
+| Subtone | `technique = Subtone` | the lip damps the reed: soft, breathy and dark, started by the breath |
+| Slap tongue | `technique = Slap` | the tongue pulls the reed off and lets it snap back: a pop, then the note |
+| Air tone | `technique = AirTone` | breath through the instrument, the reed hardly sounding (on the accordion the air button: the bellows with no reed) |
+| Register, harmonic | `technique = Harmonic(n)` | the note on the tube's n-th resonance (a clarinet's 1, 3, 5; a saxophone's 1, 2, 3) |
+| Shake | `technique = Shake` | a wide, quick lip shake (70 cents at 7 Hz) |
+| Grace notes, drones (BAGPIPES) | a plain note; `slur_from` for none; `register = Bass` for the drones | the high-G grace before a plain note, none on a slurred one; the drones (two tenors on A3, a bass on A2, struck in one after the other) as one note held as long as asked |
+| Registers (ACCORDION) | `register` | `One` one reed, `Two` two (one 9 cents sharp), `Musette` three (14 cents either way), `Low` an octave down, `Octave` the bandoneon's two octaves, `Master` all five; the bass side's `Bass` button (the note and two octaves over) and `Chord` button; none asked is the musette |
+| Bellows shake (ACCORDION) | `technique = Tremolo` | the bellows shaken 7 times a second |
+| Bend, wobble (ACCORDION) | `bend`, `vibrato` | the bellows pushed for a bend; a vibrato is the bellows' wobble of the level (its cents over 100 the share of the level that swings, at most 0.6) |
+
+Trills, runs, repeated tonguing, a rip and multiphonics in a row are the composition system's, made of single notes;
+a note's repeats already take turns among three slightly different takes (the breath and the player's wander).
+
+## The brass and flutes' techniques
+
+The brass engine (TRUMPET, CORNET, FLUGELHORN, HORN, MELLOPHONE, TROMBONE, EUPHONIUM, TUBA, SOUSAPHONE) and the flute
+engine (FLUTE, PICCOLO) take the winds' fields below; this is how each sounds on them.
+
+| Technique | Ask for it with | What the engine does |
+|---|---|---|
+| Plain note | `Play::plain` | a tongued start ("t"): the tongue lets go, the breath rises with a little overshoot, the lips lock on their natural note (on the flutes the breath first, the tone growing out of it as the jet locks onto its resonance) |
+| Strength | `vel` | the breath: louder is brighter, the blare (the wave steepening down the bore) growing on the loudest notes |
+| Accent | `accent` | a quicker start, a bigger overshoot, a harder tongue |
+| Sforzando | `swell` from over 1 (`from`: how far over, `to`: where it falls back, `over`: how quickly) | the breath thrown in hard and dropped back (brass 1.5 to 0.45 in 0.12 s as the round played it, flutes 1.6 to 0.55) |
+| Crescendo, diminuendo | `swell` from 1 or under | the breath over the note; `expression` a second swell on top |
+| Double, triple tonguing | `technique = BackTongue` on the "k" notes | brass: a softer, slower back-of-the-tongue start played after its tongued note (the horn still ringing); flutes: as tongued, as the round's flute tongued them |
+| Soft tongue, breath start | `technique = SoftTongue`, `Breath` | a "d": slower, no overshoot; no tongue: the breath swells in (the flutes' breathy "hoo") |
+| Slur, lip slur | `slur_from`, `tie` on the note before | the note it slurs from plays for 0.2 s first, the lips carried across (re-set where they would land between natural notes); 12 ms join |
+| Smear, glide, trombone slide | `slur_from` with a `bend` of 0 cents | the pitch glides over the bend's `over` |
+| Scoop, fall, doit, bend | `scoop`, `bend` | the lips (and half-pressed valves past what the lips can pull) carry the pitch; a fall of over 150 cents dies away |
+| Vibrato | `vibrato` | none asked: the player's own on notes of half a second or more (Tp1 5 cents, Tb1 4.8, Fl1 6 at 5.2 Hz, Pc1 5 at 5.8 Hz, Su1 none); 0 cents none |
+| Tongue stop, shortest note | `mute = Choked`, `Clipped` | the breath cut in 5 ms; a note of 60 ms at most |
+| Lip shake | `technique = Shake` | the lips flick to the next natural note up and back, 6.5 times a second, after 0.15 s |
+| Flutter tongue | `technique = Flutter` | the tongue rolls an R: the air cut and let go about 24 times a second |
+| Growl | `technique = Growl` | the player hums into the horn: a rough 92 Hz buzz in the breath under the note |
+| Half valve | `technique = HalfValve` | the valves half down: a choked, nasal note a little flat (Fh1 0.55, the rest 0.6) |
+| Natural note | `technique = Harmonic(n)` | brass: the n-th natural note, its fingering found to suit; flutes: the note fingered as the n-th harmonic of a lower one |
+| Fingering | `string` | semitones the valves or slide lower the horn (0 open, the trombone's first position), 100 and over the double horn's other side |
+| Mutes | `mute = Muted`/`Straight`, `Cup`, `Harmon`, `HarmonStem`, `Practice`, `StopMute` | each a filter with the round's level against the open horn (3 to 15 dB quieter on the trumpet) |
+| Plunger | `mute = Plunger`, its opening `expression` (from, to, over) | closed with none; with one, opening from `from` to `to` over `over` and back (a wah every 2 x `over`) while the note holds |
+| Stopped horn | `mute = Stopped` | the hand closing the bell: brassy and buzzing |
+| Whistle tone, jet whistle | `technique = WhistleTone`, `JetWhistle` | flutes: a faint pure whistle on a high harmonic; a rush of air through the tube |
+| Key clicks, air | `technique = KeyClick`, `AirTone` | flutes: the pads alone, pitched by the tube; the breath through the flute with no note |
+| Singing while playing | `technique = Sung(n)` | flutes: a hummed note n semitones from the played one, beating against it |
+
+A brass note over the player's reliable top (MELLOPHONE 81, EUPHONIUM 72, SOUSAPHONE 56), or one no lip tension
+sounds cleanly, is played an octave down, as a player out of reach would.
+
+## The winds' ways
+
+The reeds (saxophones, clarinets, oboe, bassoon, contrabassoon, bagpipe, accordion), the brass (trumpet, cornet,
+flugelhorn, horn, mellophone, trombone, euphonium, tuba, sousaphone) and the flutes (flute, piccolo) are asked with the
+same fields. A wind takes the ones its players have and leaves the rest (a flute has no mute, a trumpet no subtone).
+
+| Technique | Ask for it with |
+|---|---|
+| Tongued start ("t"), the plain note | `technique = Normal` |
+| Double and triple tonguing | the "k" notes `technique = BackTongue` ("tu-ku", "tu-tu-ku" are notes in a row) |
+| Soft legato tongue ("d") | `technique = SoftTongue` |
+| Breath start, no tongue | `technique = Breath` |
+| Slur, lip slur | `slur_from`, with `tie` on the note before |
+| Smear, glissando, a trombone's slide | `slur_from` with a `bend` of 0 cents: the glide over the bend's `over` |
+| Accent, sforzando | `accent`; a sforzando is an accent with a `swell` from 1 down, or a `swell` from over 1 (the breath thrown in past the note's strength, as the brass and flutes' round played it; the reeds take a swell up to 1.2): either way works on every wind |
+| Crescendo, diminuendo | `swell` |
+| Vibrato | `vibrato`; none is the player's own, 0 cents none at all |
+| Scoop | `scoop`: starts so many cents off, stays `at`, reaches the note over `over` |
+| Fall, doit, bend | `bend` (down a fall, up a doit) |
+| Tongue stop | `mute = Choked` |
+| Flutter tongue, growl | `technique = Flutter`, `Growl` |
+| Slap tongue (reeds) | `technique = Slap` |
+| Subtone (saxophones) | `technique = Subtone` |
+| Air tone | `technique = AirTone` |
+| Key clicks | `technique = KeyClick` |
+| Register, harmonic, natural note | `technique = Harmonic(n)`: the n-th resonance of the tube (a clarinet's 1, 3, 5; a flute's harmonic; a brass natural note) |
+| Lip shake (brass) | `technique = Shake` |
+| Half valve (brass) | `technique = HalfValve` |
+| Fingering (brass) | `string`: how many semitones the valves or the slide lower the horn (0 open, the trombone's first position), plus 100 for a double horn's other side |
+| Mutes (brass) | `mute = Muted` (the straight mute), `Straight`, `Cup`, `Harmon` (stem out), `HarmonStem` (stem in), `Plunger` (its opening over the note is `expression`, none closed), `Practice` |
+| Stopped horn | `mute = Stopped` (the hand), `StopMute` (the brass stopping mute) |
+| Whistle tone, jet whistle (flutes) | `technique = WhistleTone`, `JetWhistle` |
+| Singing while playing (flutes) | `technique = Sung(n)`: a hummed note n semitones from the played one |
+| Accordion register | `register`: `One`, `Two`, `Musette`, `Low`, `Octave` (bandoneon), `Master`, `Bass`, `Chord` |
+| Bellows shake (accordion) | `technique = Tremolo` |
+
+Trills, runs, repeated tonguing, a rip up the natural notes and multiphonics in a row are the composition system's,
+made of single notes.
+
+## What today's parts pass by themselves
+
+- Every fighter note that goes through `MusicCtx::note` (the attacks' riffs, the music's lines) is played as
+  `Play::plain` with its pitch, length and strength, and its repeats take turns among three slightly different takes,
+  as a real player never plays a note twice the same.
+- The organ fighter's chords pass `together` (the chord's size) and, for CATHEDRAL, PULL ALL STOPS and the title blast,
+  a `swell` from halfway (or 0.6) through the stops to the full set.
+- Every note's loudness at its `vel` is the old voice's at that velocity (matched once per voice from 0.1 to 1, in
+  the middle of its register), so the balance today's parts were written for stands; only the tone changes with
+  `vel`. A real piano's soft notes are much quieter than that: the composition system can be given that range when
+  it is built.
+
+## How the composition system would ask for a phrase
+
+A sketch, not code that exists yet:
+
+```text
+piano, bars 1-2, pedal down for the bar:
+  C4 0.5 s  vel 0.55  sustain 1.0  lift 2.0
+  E4 0.5 s  vel 0.50  sustain 1.0  lift 1.5
+  G4 1.0 s  vel 0.65  sustain 1.0  lift 1.0  accent 0.5      (the top of the phrase leans in)
+  C6 1.0 s  vel 0.6   technique Harmonic(2)                    (a bell-like harmonic over it)
+organ, under it:
+  chord C3 E3 G3  2.0 s  vel 0.8  together 3  stops flutes  swell 0.0 -> 1.0 over 1.5 s   (stops coming in)
+  chord F3 A3 C4  1.0 s  vel 0.8  together 3  stops chorus  mute Clipped                  (a short, dry stab)
+  chord G2 D3 B3  2.0 s  vel 0.8  together 3  stops strings  expression 0.3 -> 1.0 over 2 s  vibrato 6 cents
+```
+
+Each line is one `Play`; a chord is several `Play`s that share `together`. The composition system decides the
+musical choices (where the pedal goes down, which note leans in, which stops); the instrument decides how that sounds.
