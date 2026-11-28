@@ -202,7 +202,7 @@ engine (FLUTE, PICCOLO) take the winds' fields below; this is how each sounds on
 
 | Technique | Ask for it with | What the engine does |
 |---|---|---|
-| Plain note | `Play::plain` | a tongued start ("t"): the tongue lets go, the breath rises with a little overshoot, the lips lock on their natural note (the flute's jet onto its resonance) |
+| Plain note | `Play::plain` | a tongued start ("t"): the tongue lets go, the breath rises with a little overshoot, the lips lock on their natural note (on the flutes the breath first, the tone growing out of it as the jet locks onto its resonance) |
 | Strength | `vel` | the breath: louder is brighter, the blare (the wave steepening down the bore) growing on the loudest notes |
 | Accent | `accent` | a quicker start, a bigger overshoot, a harder tongue |
 | Sforzando | `swell` from over 1 (`from`: how far over, `to`: where it falls back, `over`: how quickly) | the breath thrown in hard and dropped back (brass 1.5 to 0.45 in 0.12 s as the round played it, flutes 1.6 to 0.55) |
