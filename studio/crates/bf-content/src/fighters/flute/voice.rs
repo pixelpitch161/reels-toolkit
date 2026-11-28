@@ -16,6 +16,9 @@
 
 use bf_core::dmath::{self, PI};
 use bf_sound::dsp;
+use bf_sound::voice::engine2::flute::FluteParts;
+use bf_sound::voice::engine2::space::{Home, Space};
+use bf_sound::voice::engine2::{Instrument, Parts};
 use bf_sound::voice::pp::{self, SRF};
 use bf_sound::voice::real::{Correction, Fill, Rework};
 use bf_sound::voice::{PpNoise, Voice};
@@ -102,11 +105,34 @@ pub const REWORK: Rework = Rework {
     tail: &[],
 };
 
+/// The Composed arrangement's FLUTE (Voice Engine 2): built from how it works, on the flute engine (an air jet across
+/// the embouchure hole driving the tube's resonances), Aedan's pick Fl1, the silver flute: clear and sweet, with a
+/// little breath, with every technique it has, in a light room of its own (`docs/studio/voice-engine-2-instruments.md`,
+/// "The brass and flutes"). Classic keeps the note below.
+pub static ENGINE2: Instrument = Instrument::built(
+    "FLUTE",
+    Parts::Flute(FluteParts::FL1),
+    Space {
+        width: 0.0,
+        tilt: 0.0,
+        home: Some(Home {
+            length: 2.6,
+            under: 14.0,
+            hp: 120.0,
+        }),
+        amp: None,
+    },
+);
+
 /// The FLUTE's Pixel Pitch voice.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FluteVoice;
 
 impl Voice for FluteVoice {
+    fn engine2(&self) -> Option<&'static Instrument> {
+        Some(&ENGINE2)
+    }
+
     fn note(&self, noise: &mut PpNoise, midi: f64, vel: f64, dur: f64) -> Vec<f64> {
         pp::to_48k(&synth(noise, midi, vel, dur))
     }

@@ -25,6 +25,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, WHOOSH_SEED, clip};
 use bf_sound::traits::{Bed, BedHook, Played, Sound};
+use bf_sound::voice::engine2::play::{Mute, Play};
 
 use crate::fighters::shared::hash::h01;
 
@@ -165,6 +166,27 @@ impl HornSound {
         Ok(ctx
             .note("HORN", f64::from(m), round_nd(dur, 3), cap, round_nd(vel, 1))?
             .to_vec())
+    }
+
+    /// STOPPED HORN's note, `stopped(horn(m, dur, 1.0))`. Under the Composed arrangement the HORN's built instrument
+    /// plays it hand-stopped (Hn1's hand closing the bell: the brassy, buzzing stopped tone), at the loudness of the
+    /// kit's own stopped tone; under Classic the kit's [`stopped`] over the voice's note.
+    ///
+    /// # Errors
+    /// As [`MusicCtx::note`].
+    pub fn stopped_horn(&self, ctx: &MusicCtx, m: i32, dur: f64) -> Samples {
+        let own = stopped(&self.horn(ctx, m, dur, 1.0, None)?);
+        if ctx.engine2_of("HORN").is_none() {
+            return Ok(own);
+        }
+        let play = Play {
+            mute: Mute::Stopped,
+            ..Play::plain(f64::from(m), round_nd(dur, 3), 1.0)
+        };
+        let x = ctx.note_played("HORN", &play, round_nd(dur + 0.35, 2))?;
+        let rms = |v: &[f64]| (v.iter().map(|a| a * a).sum::<f64>() / v.len().max(1) as f64).sqrt();
+        let k = if rms(&x) > 0.0 { rms(&own) / rms(&x) } else { 0.0 };
+        Ok(x.iter().map(|v| v * k).collect())
     }
 
     /// `tonic(lo=60)`: the key's tonic at or above MIDI `lo` (D: D4 = 62, #34's calls).
@@ -438,7 +460,7 @@ impl Sound for HornSound {
                     if is(&cfg.unlock1.name)? {
                         // STOPPED HORN: the brassy, buzzing stopped tone
                         let m = self.theme_at(ctx, tq)?.ok_or_else(|| rest("its theme", tq))?;
-                        let x = stopped(&self.horn(ctx, m, beat * 1.5, 1.0, None)?);
+                        let x = self.stopped_horn(ctx, m, beat * 1.5)?;
                         mix.place(&bus, &Sig::Mono(x), tq, 0.18, 0.0);
                         let beats = cfg.unlock1.get("dur_beats").ok_or_else(|| {
                             MusicError::new(H, "STOPPED HORN's ability has no dur_beats (Python raises)")

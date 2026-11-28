@@ -520,3 +520,97 @@ point heard, the free ring, joins without a click, repeats, odd asks finite, and
 
 Nothing recorded ships. The VSCO 2 CE string recordings (CC0) the bodies were fitted to while sketching were
 yardsticks only; the bodies are their own resonances, not the recordings.
+
+## The brass and flutes (fighters TRUMPET, CORNET, FLUGELHORN, HORN, MELLOPHONE, TROMBONE, EUPHONIUM, TUBA, SOUSAPHONE, FLUTE, PICCOLO)
+
+Two engines for the family, built from how the instruments work and tuned by ear in one listening round with five
+fixes (sketch `br.rs` with `winds.py`, `/mnt/project-files/ballfight-studio/voice-engine-2/brass1/`): the brass
+engine (`bf-sound/src/voice/engine2/brass.rs`, the players' ears made offline in `brass_tune.rs`) and the flute engine
+(`flute.rs`). Aedan's picks (2026-11-27 18:44Z): Tp1, Co1, Fh1, Hn1, Me1, Tb1, Eu1, Tu1, Su1, Fl1, Pc1, version 1 of
+each. The round's fixes, all carried into the engines: the standard fingerings (fewest valves, no crowded high natural
+notes); slurred notes tuned as they are played, from the note they slur from, the lips set afresh where they land
+between natural notes; the flute's ear reading pitch from the spectrum; the stop easing the horn's ringing onto the
+note; the euphonium leaning on a quick settle. Tu1 and Su1 were heard before the round's last change (short low notes
+tuned over the part heard): they play as heard.
+
+### Working parts
+
+- **The lips** (brass). A mass on a spring, striking inward: the breath pushes them shut, the flow through the gap
+  between them pulls them apart, and they buzz at the horn's resonance they lock onto. Their tension picks the natural
+  note; tongued starts kick them open, a back-tongued ("k") start is softer, a soft ("d") start slower, a breath start
+  has no tongue.
+- **The horn** (brass). Its input as a set of resonances, one per natural note, strongest round the mouthpiece's
+  ring and gone above the bell's cutoff, with the tube's own resistance over them; the valves or the slide scale every
+  resonance down together. The flow is worked out against them every sample, at 4 times the sample rate (twice for
+  the tuba and the sousaphone), brought down with a windowed-sinc decimator.
+- **The blare** (brass). The wave going out steepens over the bore's cylindrical length, more the louder it is: the
+  brassy edge of a loud note. Then the wall's loss, the bell's two high-passes and its soft top.
+- **The player** (brass). Each note's lip tension and the horn's trim come from trial runs of the note (the ear): the
+  tension that sounds the right natural note cleanly with the least lipping and a quick start, then the horn trimmed
+  until it is in tune; another fingering where the usual gives no clean note. The trial runs for every plain note of
+  every pick over its fighter's register and an octave round it, at every strength in the round's steps of 0.05 (0
+  to 1.2), are made once offline into `brass_tune.rs`, so a fight never runs them; a note the table lacks (off its
+  semitones, at another sample rate, forced onto a natural note or fingering) is tried at run time and kept. A
+  slurred note is tried as played, from its lead-in. A note over the player's reliable top, or one no lip tension
+  sounds cleanly, is taken down the octave.
+- **After the horn** (brass). A pulse limiter (each pulse held to 2.2 times the typical wave peak around it), the
+  mutes and the horn player's hand as filters with the round's levels against the open horn, a soft limiter.
+- **The flute.** An air jet crossing the embouchure hole: delayed by its travel, split by the edge through a soft
+  curve, driving the tube's resonances; breath noise in the loop; a slow embouchure control holding the jet steady.
+  Its ear is three trial passes a note, made offline into `brass_tune.rs` too at every strength step (a strength
+  between two steps takes the trim between theirs, within a quarter of a cent of the ear's own); a swell, a harmonic,
+  a whistle tone or another rate is tried as asked and kept.
+- **Speed.** The breath's random draws are made ahead on a second thread in the generator's own order (the tongue's
+  puffs after the last tongued start not worked at all), the resonances are set again only when the tuning moves, the
+  bell's filters run in one pass and the decimator and the pulse limiter's windows work four outputs at once: the
+  same samples, about twice as fast.
+
+### The picks
+
+| Code | Fighter | The instrument | Heard as |
+|---|---|---|---|
+| Tp1 | TRUMPET | orchestra C trumpet | clear and ringing, little vibrato |
+| Co1 | CORNET | brass band cornet | mellow and sweet, a gentle vibrato |
+| Fh1 | FLUGELHORN | flugelhorn | soft, dark and velvety |
+| Hn1 | HORN | double horn, the hand in the bell | warm and noble |
+| Me1 | MELLOPHONE | marching mellophone | bright and loud, like a big trumpet |
+| Tb1 | TROMBONE | orchestra tenor trombone with the F valve | full, then a brassy roar |
+| Eu1 | EUPHONIUM | euphonium | warm, rich and singing |
+| Tu1 | TUBA | orchestra tuba in C | deep, solid and round |
+| Su1 | SOUSAPHONE | brass sousaphone | big, punchy and buzzy |
+| Fl1 | FLUTE | silver flute | clear and sweet, a little breath |
+| Pc1 | PICCOLO | silver piccolo | bright and sparkling |
+
+### How it is played
+
+Every technique, as the engines play it (asked for as in `voice-engine-2-playing.md`): strength (the breath);
+accents and sforzandos; tongued, back-tongued (double and triple tonguing are the notes in a row), soft-tongued and
+breath starts; slurs and lip slurs, smears and the trombone's glide; scoops, falls, doits and bends; crescendos,
+diminuendos and a breath swell over the note; vibrato, its depth, rate and wait, or none; the tongue stop and the
+shortest note; on the brass the lip shake, flutter tongue, growl, half valve, a natural note asked for, the fingering
+(valves or slide, the double horn's other side), the straight, cup, harmon (stem in and out), plunger (its wah over
+the note), practice and stopping mutes, the hand-stopped horn; on the flutes the breathy start, flutter tongue,
+harmonics, whistle tone, jet whistle, key clicks, singing while playing and air alone. Trills, runs, rips up the
+natural notes and repeated tonguing are the composition system's, made of single notes.
+
+### The built engines (stage 5)
+
+- One note at a time, at any sample rate: a note is the sketch's line of that one note; a slurred note plays the note
+  it slurs from for 0.2 s as its lead-in, and a back-tongued note its tongued note, then comes in over 12 ms as the
+  note before goes out.
+- The kits' own notes go through the engines under Composed: the euphonium's, the sousaphone's and the piccolo's own
+  notes, the tuba's long notes (held by the engine, no sustain under them) and its pedal under the oom, the flute's
+  shriek and its flutter tonguing, the horn's STOPPED HORN, the cornet's plunger wahs.
+- Each fighter's room is the sketch's light room (2.6 s, 14 LU under), the dry in the middle.
+
+Checked against the sketch: the engines play the round's riffs as one line to the sketch's numbers (correlation
+1.000000, every pick); note by note, as a fight plays them, every pick's riff within 4 cents and 1 dB of the round's
+on nearly every note (`bf-harness/tests/engine2_built.rs`, `tests/reference/wind_riffs.txt`, each riff's octave
+bands within 2 dB). Each engine has its own checks in `brass.rs` and `flute.rs`: in tune across the range and at
+44.1 kHz, notes the table lacks tried and in tune, louder brighter, every technique finite and changing the note,
+mutes quieter and shaped, the hand darker, joins without a click, repeats, untried notes and the top of every range.
+
+### Licences
+
+Nothing recorded ships. Literature numbers (input impedances, lip and jet models) set the parts; no recording was
+fitted.

@@ -23,6 +23,7 @@ use bf_sound::music::{
 };
 use bf_sound::synth::{self, FILTER_O, THUD_SEED, clip, noise};
 use bf_sound::traits::{Bed, Played, Sound};
+use bf_sound::voice::engine2::play::{Bend, Play, Swell, Technique, Vibrato};
 
 /// The name the part's errors carry.
 const H: &str = "FLUTE";
@@ -210,6 +211,62 @@ impl FluteSound {
         Ok(x.to_vec())
     }
 
+    /// `flutter(flute(m, dur, vel), rate)`: a flutter-tongued note. Under the Composed arrangement it is the FLUTE's
+    /// built instrument's own (Fl1's tongue rolling an R in the air), at the voice's level; under Classic the kit's
+    /// [`flutter`] over the voice's note.
+    ///
+    /// # Errors
+    /// As [`MusicCtx::note`].
+    pub fn fluttered(&self, ctx: &MusicCtx, m: i32, dur: f64, vel: f64, rate: f64) -> Samples {
+        match ctx.engine2_of("FLUTE") {
+            Some(_) => {
+                let held = py_max(0.06, dur);
+                let play = Play {
+                    technique: Technique::Flutter,
+                    ..Play::plain(f64::from(m), round_nd(held, 3), round_nd(vel, 1))
+                };
+                Ok(ctx.note_played("FLUTE", &play, round_nd(held + 0.18, 2))?.to_vec())
+            }
+            None => Ok(flutter(&self.flute(ctx, m, dur, vel)?, rate)),
+        }
+    }
+
+    /// `shriek(dur, SHRIEK_F0)`: PICCOLO's piercing E7. Under the Composed arrangement the FLUTE's built instrument
+    /// plays it (E7 overblown hard: an accent, scooped up a semitone over 80 ms, a fast narrow vibrato, dying away
+    /// over the length as the kit's does), at the kit's shriek's loudness; under Classic the kit's [`shriek`].
+    ///
+    /// # Errors
+    /// `dur` is not a length; as [`MusicCtx::note`].
+    pub fn shrieked(&self, ctx: &MusicCtx, dur: f64) -> Samples {
+        let own = shriek(dur, SHRIEK_F0)?;
+        if ctx.engine2_of("FLUTE").is_none() {
+            return Ok(own);
+        }
+        let play = Play {
+            accent: 1.0,
+            scoop: Some(Bend {
+                cents: -100.0,
+                at: 0.0,
+                over: 0.08,
+            }),
+            vibrato: Some(Vibrato {
+                cents: 20.0,
+                hz: 7.5,
+                wait: 0.0,
+            }),
+            swell: Some(Swell {
+                from: 1.0,
+                to: 0.2,
+                over: dur,
+            }),
+            ..Play::plain(100.0, round_nd(dur, 3), 1.0)
+        };
+        let x = ctx.note_played("FLUTE", &play, round_nd(dur + 0.18, 2))?;
+        let rms = |v: &[f64]| (v.iter().map(|a| a * a).sum::<f64>() / v.len().max(1) as f64).sqrt();
+        let k = if rms(&x) > 0.0 { rms(&own) / rms(&x) } else { 0.0 };
+        Ok(x.iter().map(|v| v * k).collect())
+    }
+
     /// `self.colour(x, t, drive_k)` with the part's own colour arguments.
     fn tone(&self, ctx: &MusicCtx, x: &[f64], t: f64, drive_k: f64) -> Result<(Vec<f64>, f64, f64), MusicError> {
         self.colour(ctx, x, t, drive_k, &self.colour_args())
@@ -286,10 +343,11 @@ impl FluteSound {
         let hasted = ctx.run_at("HA", tq, k)? > 0.0;
         let dancing = look.dances.iter().any(|&(a, b)| a <= tq && tq < b);
         let dur = if hasted || dancing { 0.11 } else { 0.2 };
-        let mut x = self.flute(ctx, m, dur, 0.8)?;
-        if hasted {
-            x = flutter(&x, FLUTTER_RATE);
-        }
+        let x = if hasted {
+            self.fluttered(ctx, m, dur, 0.8, FLUTTER_RATE)?
+        } else {
+            self.flute(ctx, m, dur, 0.8)?
+        };
         let (sig, g, lead) = self.tone(ctx, &x, tq, 0.9)?;
         mix.note(&bus, &Sig::Mono(sig), tq, 0.26 * g * soft, -0.2, one);
         if hasted || dancing {
@@ -317,10 +375,11 @@ impl FluteSound {
                 }
             };
             if m2 != m || dancing {
-                let mut x2 = self.flute(ctx, m2, 0.1, 0.7)?;
-                if hasted {
-                    x2 = flutter(&x2, FLUTTER_RATE);
-                }
+                let x2 = if hasted {
+                    self.fluttered(ctx, m2, 0.1, 0.7, FLUTTER_RATE)?
+                } else {
+                    self.flute(ctx, m2, 0.1, 0.7)?
+                };
                 let grace = self.tone(ctx, &x2, tq, 1.0)?.0;
                 // (a 16th after its note, it is a note of the run: under Composed it ends the 8th before it)
                 let soft2 = ctx.soften(name, m2);
@@ -421,7 +480,7 @@ impl FluteSound {
                 let is = |name: &str| event_is_str(H, e, 3, name);
                 if is(&cfg.unlock1.name)? {
                     // FLUTTER TONGUE
-                    let x = flutter(&self.flute(ctx, 88, 0.5, 0.9)?, 26.0);
+                    let x = self.fluttered(ctx, 88, 0.5, 0.9, 26.0)?;
                     mix.place(&bus, &Sig::Mono(x), tq, 0.20, -0.2);
                 } else if is(&cfg.unlock2.name)? {
                     // SNAKE DANCE: a rattle of hisses as the cobras leave.
@@ -432,7 +491,7 @@ impl FluteSound {
                     }
                 } else if is(&cfg.low.name)? {
                     // PICCOLO: the highest note, a piercing shriek on E7.
-                    mix.place(&bus, &Sig::Mono(shriek(1.7, SHRIEK_F0)?), tq, 0.13, -0.2);
+                    mix.place(&bus, &Sig::Mono(self.shrieked(ctx, 1.7)?), tq, 0.13, -0.2);
                     let top = self.tone(ctx, &self.flute(ctx, 93, 0.9, 1.0)?, t, 2.0)?.0;
                     mix.place(&bus, &Sig::Mono(top), tq, 0.16, 0.0);
                 }
@@ -485,7 +544,7 @@ impl Sound for FluteSound {
         let Some(&top) = hits.last() else {
             return Err(MusicError::new(H, "the title hits are an empty list"));
         };
-        let x = flutter(&self.flute(ctx, top, 0.5, 1.0)?, 26.0);
+        let x = self.fluttered(ctx, top, 0.5, 1.0, 26.0)?;
         mix.place(&bus, &Sig::Mono(x), t + 3.5 * s16, 0.32, -0.15);
         mix.place(&bus, &Sig::Mono(breath(0.4, 81)?), t, 0.10, -0.15);
         Ok(())
